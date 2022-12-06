@@ -1,2 +1,19 @@
 # HMSSS2
 HMSSS version 2
+
+# HMS-S-S
+HMS-S-S: a tool for the identification of sulfur metabolism-related genes and analysis of operon structures in genome and metagenome assemblies
+
+## Installing HMSSS on Linux
+You can install HMSSS by downloading it directly from GitHub in compiled or non-compiled form.
+
+1. Download the latest release from github
+
+2. In a terminal, 'cd' to the downloaded package
+
+3. Extract the files
+
+4. Test you can run by './dist/HMSSS -h' or 'python HMSSS/HMSSS.py -h'
+
+5. Installation of required external programs HMSSS depends on:
+_5.1 on the HMMER3 package for searching fasta files and prodigal for translation of nucleotide fasta
