@@ -18,6 +18,9 @@ You can install HMSSS by downloading it directly from GitHub in compiled or non-
 5. Installation of required external programs HMSSS depends on:
 
     5.1 HMMER3 package depends on the hmmer3 package, which can be downloaded from hmmer.org
+    
     5.2 Prodigal for translation of nucleotide fasta github.com/hyattpd/Prodigal
   
 6. That's it! You can now run HMSSS on a directory of protein sequence fasta files with gff files or nucleotide fasta files
+
+##
