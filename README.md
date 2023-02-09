@@ -2,7 +2,7 @@
 HMSSS version 2
 
 # HMS-S-S
-HMS-S-S: a tool for the identification of sulfur metabolism-related genes and analysis of operon structures in genome and metagenome assemblies
+HMS-S-S: a tool for the identification of sulfur metabolism-related genes and analysis of operon structures in genome and metagenome assemblies. It searches fasta files for sulfur metabolism associated proteins using hidden markov models and defined threshold scores. Furthermore, the genes of the detected proteins are analyzed for their position in the genome. The detected gene clusters are then named with a keyword if it is a known pattern of a gene cluster. HMSSS can also be extended with other compatible HMMs.
 
 ## Installing HMSSS on Linux
 You can install HMSSS by downloading it directly from GitHub in compiled or non-compiled form.
@@ -43,14 +43,32 @@ HMSSS also comes with several options which are scribed in the help accessed by 
 ### Extending the HMM library and gene cluster patterns
 * `-l` sets the HMM library. By default this is set to the library in the source folder which includes the sulfur related HMMs. However this library can either be extended by or changed to any other HMM library compatible with the HMMER3 package. 
 * `-t` sets the threshold file. Specific threshold scores for each HMM in the library are located here in a tab separated file. Each name is assigned to threshold score. In case of extended libraries the threshold scores should be set here.
-* `-p` sets the syntenic gene patterns to be detected. All genes are listed in a tab separated file. Each line corresponds to one syntenic cluster. Collinearity is defined by the order of appearence. The first word in the line defines the name of the whole genecluster and is used as keyword.
+* `-p` sets the syntenic gene patterns to be detected. All genes are listed in a tab separated file. Each line corresponds to one syntenic cluster. Collinearity is defined by the order of appearence. The first word in the line defines the name of the whole genecluster and is used as keyword. A gencluster can be given several different keywords, but not the same one more than once.
 *  `-c` sets the number of CPUs to be used by HMMER
 *  `-nt` sets the number of nucleotides between two genes to be considered as syntenic. The distance is calculated between the closest ends of two genes.
-*  `-mc` sets the minimal fraction of the gene cluster to be present to assign a keyword. By default 0.5. 
-*  `-t`
-*  `-t`
-*  `-t`
+*  `-mc` sets the minimal fraction of the gene cluster to be present to assign a keyword. if the match between the defined gene cluster pattern and the examined gene cluster is greater than this threshold, the corresponding keyword is given to the gene cluster. 
+### Work step regulation
+*  `-gtdb`
+*  `-gtdb`
+*  `-gtdb`
 
+
+### Result files and output
+Results are stored in a local database which can be accessed to retrieve different results of interest. The local database can also be extended by later searched. If not defined before the search HMSSS will create a new local database for each run.
+*  `-r` sets the directory for all results to be stored.
+*  `-db` sets the database to be created/extended or from which results should be retrieved
+*  `-gtdb` sets the path to a metadata file from the GTDB. This is required if it is desired to use the taxonomic information from GTDB.
+
+The output from a database requires the `-db` opotion to define the database from which the desired output is taken. As the output is normally a set of sequences from a certain protein, possibly with a defined genomic vicinity or from specified taxonomic group there are several options to limit the number of retrieved sequences.
+Limiting output to certain genomes:
+
+*  `-dll` sets the level of taxonomy. If output should be limit to a group of organisms sharing the same taxonomic group this option sets the level of taxonomy between superkingdom and species.
+*  `-dlt` sets the name of the taxonomic group. Together with `-dll` this defines the taxon for which results should be fetched
+*  `-dlp` limits retrieved results to organisms which encode for the specified protein
+*  `-dlk` limits retrieved results to organisms which encode for a genecluster with the specified keyword
+*  `-fl` & `-ft` retrieve all sequences from all organisms of this taxon.`-fl` specifies taxonomic hirarchy level,`-ft` specifies the name of the taxon
+*  `-fd` fetch proteins with the given domain. If several domains are desired these should be separated by whitespace characters. These will be handeled as connected by an logical OR, which means any protein matching one of the given domains will be retrieved
+*  `-fk` fetch proteins from geneclusters with the given keyword. If several keywords are desired these should be separated by whitespace characters. The connection between the keywords can be set to AND or OR by the `-kc` option. With AND proteins from geneclusters matching all given keywords will be fetched. Otherwise proteins from geneclusters matching any of the given keyword are retrieved.
 
 
 
