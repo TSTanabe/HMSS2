@@ -16,4 +16,4 @@ You can install HMSSS by downloading it directly from GitHub in compiled or non-
 4. Test you can run by './dist/HMSSS -h' or 'python HMSSS/HMSSS.py -h'
 
 5. Installation of required external programs HMSSS depends on:
-_5.1 on the HMMER3 package for searching fasta files and prodigal for translation of nucleotide fasta
+5.1 on the HMMER3 package for searching fasta files and prodigal for translation of nucleotide fasta
