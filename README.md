@@ -30,10 +30,11 @@ To run HMSSS on your own data type:
 ./HMSSS -f Directory
 
 Replace "Directory" with the directory containing your input fasta files, with one file per species. The names of the files should match the identifiers of the genomes, since the name of the files will later be used for identification. When using protein fasta files with gff files, the names of the related files should be the same except for the file extension. HMSSS will look for input fasta files with any of the following filename extensions:
-    *.fna
-    *.fna.gz
-    *.faa
-    *.faa.gz
-    *.fasta
-In case of try to transcripe to protein fasta in case of .fna is detected    
+*.fna
+*.fna.gz
+*.faa
+*.faa.gz
+*.fasta
+
+In case of any .fna file extension HMSSS will try to transcripe to protein fasta via prodigal. 
     
