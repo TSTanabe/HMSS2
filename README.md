@@ -38,7 +38,41 @@ Replace "Directory" with the directory containing your input fasta files, with o
 * .fasta
 
 In case of any .fna file extension HMSSS will try to transcripe to protein fasta via prodigal. 
-    
+HMSSS also comes with several options which are scribed in the help accessed by `-h` and in the following:
+
 ### Extending the HMM library and gene cluster patterns
-The HMM library is by default set to the library in the source folder, but can be changed to any other library compatible with the HMMER3 package. In this case specific threshold scores have to be provided in a tab separated file following the '-t'
+* `-l` sets the HMM library. By default this is set to the library in the source folder which includes the sulfur related HMMs. However this library can either be extended by or changed to any other HMM library compatible with the HMMER3 package. 
+* `-t` sets the threshold file. Specific threshold scores for each HMM in the library are located here in a tab separated file. Each name is assigned to threshold score. In case of extended libraries the threshold scores should be set here.
+* `-p` sets the syntenic gene patterns to be detected. All genes are listed in a tab separated file. Each line corresponds to one syntenic cluster. Collinearity is defined by the order of appearence. The first word in the line defines the name of the whole genecluster and is used as keyword.
+*  `-c` sets the number of CPUs to be used by HMMER
+*  `-nt` sets the number of nucleotides between two genes to be considered as syntenic. The distance is calculated between the closest ends of two genes.
+*  `-mc` sets the minimal fraction of the gene cluster to be present to assign a keyword. By default 0.5. 
+*  `-t`
+*  `-t`
+*  `-t`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
