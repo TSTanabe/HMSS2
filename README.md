@@ -39,3 +39,6 @@ Replace "Directory" with the directory containing your input fasta files, with o
 
 In case of any .fna file extension HMSSS will try to transcripe to protein fasta via prodigal. 
     
+### Extending the HMM library and gene cluster patterns
+The HMM library is by default set to the library in the source folder, but can be changed to any other library compatible with the HMMER3 package. In this case specific threshold scores have to be provided in a tab separated file following the '-t'
+
