@@ -66,17 +66,40 @@ Limiting output to certain genomes:
 *  `-dlt` sets the name of the taxonomic group. Together with `-dll` this defines the taxon for which results should be fetched
 *  `-dlp` limits retrieved results to organisms which encode for the specified protein
 *  `-dlk` limits retrieved results to organisms which encode for a genecluster with the specified keyword
+
+Sequences for proteins can be retrieved and written to fasta files with the following commands:
+
 *  `-fl` & `-ft` retrieve all sequences from all organisms of this taxon.`-fl` specifies taxonomic hirarchy level,`-ft` specifies the name of the taxon
-*  `-fd` fetch proteins with the given domain. If several domains are desired these should be separated by whitespace characters. These will be handeled as connected by an logical OR, which means any protein matching one of the given domains will be retrieved
-*  `-fk` fetch proteins from geneclusters with the given keyword. If several keywords are desired these should be separated by whitespace characters. The connection between the keywords can be set to AND or OR by the `-kc` option. With AND proteins from geneclusters matching all given keywords will be fetched. Otherwise proteins from geneclusters matching any of the given keyword are retrieved.
+*  `-fd` fetch sequences for proteins with the given domain. If several domains are desired these should be separated by whitespace characters. These will be handeled as connected by an logical OR, which means any protein matching one of the given domains will be retrieved.
+*  `-fk` fetch sequences for proteins from geneclusters with the given keyword. If several keywords are desired these should be separated by whitespace characters. The connection between the keywords can be set to AND or OR by the `-kc` option. With AND proteins from geneclusters matching all given keywords will be fetched. Otherwise proteins from geneclusters matching any of the given keyword are retrieved. 
+
+The output always includes several files with reports of the written sequences and some subsets for proteins. Each file starts with a short summary of the given command, followed by the name of the protein whose sequences were written to the file. Proteins which have more than one domain previously detected by HMSSS are separately written to files and names by the all detected domains. Furthermore subsets prepared whch include sequences from genomes only encoding for a single ortholog. These are marked by the extension `singleton`. Second subset includes all remaining sequences and is marked by the extions `doublicate`. The metadata of the output sequences are presented in a report in a text file in a short summary. Columns of this file report the proteinID, domains, domains scores, domain coordinates in the proteins sequence, as well as the contig, gene stat and end, strand and locustag. If a genecluster is present the keyword , completeness of the gepattern and collinearity is also added to this list.   The columns of this file described the following data:
+        Protein attributes:
+        proteinID get_domains domain_scores domain_coordinates
+        gene_contig gene_start gene_end gene_strand gene_locustag
+        Cluster attributes:
+        keyword completeness csb
+        Taxonomy lineage 
+        
+        Reports in a textfile a abbreviated summary of the protein information with cluster and lineage
 
 
 
+Information about the presence of given proteins and/or keywords in a taxon or species can be retrieved and written to tsv files. This also includes iTol dataset compatible files but not fasta sequences will be retrieved:
+
+*  `-dfd` retrieve presence/absence in the genome for given protein
+*  `-dfk` retrieve presence/absence in the genome for given keyword
+
+The output includes presence absence for each level of taxonomy in absolute and relative values normalised by the number of genomes in the given taxonomic level respectively.
+
+### Processing result files
+Protein sequences are written to files with identifiers retrieved from the local database. These can be directly used. However if desired HMSSS also comes with some functions to alter these files.
 
 
-
-
-
+*  `-merge_fasta` Merges one or more files with .faa extension into a single file without doublicates.
+*  `-dfk` retrieve presence/absence in the genome for given keyword
+*  `-dfd` retrieve presence/absence in the genome for given protein
+*  `-dfk` retrieve presence/absence in the genome for given keyword
 
 
 
