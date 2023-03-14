@@ -48,9 +48,10 @@ HMSSS also comes with several options which are scribed in the help accessed by 
 *  `-nt` sets the number of nucleotides between two genes to be considered as syntenic. The distance is calculated between the closest ends of two genes.
 *  `-mc` sets the minimal fraction of the gene cluster to be present to assign a keyword. if the match between the defined gene cluster pattern and the examined gene cluster is greater than this threshold, the corresponding keyword is given to the gene cluster. 
 ### Work step regulation
-*  `-gtdb`
-*  `-gtdb`
-*  `-gtdb`
+*  `-redo_csb` start at the collinear synthenic block prediction. This will only include data already stored in the database
+*  `-redo_csb_naming`start at the synthenic block naming. This function restarts the comparison of gene clusters in the database with the entered gene cluster naming patterns. Old naming patterns are not overwritten.
+*  `-redo_search` FASTA files wihich have already been searched and have an entry in the database will not be ignored but searched again.
+*  `-redo_taxonomy` make the taxonomic assignment again.
 
 
 ### Result files and output
@@ -72,9 +73,10 @@ Sequences for proteins can be retrieved and written to fasta files with the foll
 *  `-fl` & `-ft` retrieve all sequences from all organisms of this taxon.`-fl` specifies taxonomic hirarchy level,`-ft` specifies the name of the taxon
 *  `-fd` fetch sequences for proteins with the given domain. If several domains are desired these should be separated by whitespace characters. These will be handeled as connected by an logical OR, which means any protein matching one of the given domains will be retrieved.
 *  `-fk` fetch sequences for proteins from geneclusters with the given keyword. If several keywords are desired these should be separated by whitespace characters. The connection between the keywords can be set to AND or OR by the `-kc` option. With AND proteins from geneclusters matching all given keywords will be fetched. Otherwise proteins from geneclusters matching any of the given keyword are retrieved. 
-*  `-fd` & `-fk` in combination retrieves all sequences matching both, the given keyword(s) and the given domain(s). From each category at least one has to be present.
+*  `-fd` & `-fk` in combination retrieves all sequences matching both, the given keyword(s) and the given domain(s).
 
 The output always includes several files with reports of the written sequences and some subsets for proteins. Each file starts with a short summary of the given command, followed by the name of the protein whose sequences were written to the file. Proteins which have more than one domain previously detected by HMSSS are separately written to files and names by the all detected domains. Furthermore subsets prepared whch include sequences from genomes only encoding for a single ortholog. These are marked by the extension `singleton`. Second subset includes all remaining sequences and is marked by the extions `doublicate`. The metadata of the output sequences are presented in a report in a text file in a short summary. Columns of this file report the proteinID, domains, domains scores, domain coordinates in the proteins sequence, as well as the contig, gene stat and end, strand and locustag. If a genecluster is present the keyword , completeness of the gepattern and collinearity is also added to this list.   The columns of this file described the following data:
+        
         Protein attributes:
         proteinID get_domains domain_scores domain_coordinates
         gene_contig gene_start gene_end gene_strand gene_locustag
@@ -86,21 +88,29 @@ The output always includes several files with reports of the written sequences a
 
 
 
-Information about the presence of given proteins and/or keywords in a taxon or species can be retrieved and written to tsv files. This also includes iTol dataset compatible files but not fasta sequences will be retrieved:
+Information about the presence of given proteins and/or keywords in a taxon or species can be retrieved and written to tsv files. This also includes iTol dataset compatible files but sequences will not be retrieved:
 
 *  `-dfd` retrieve presence/absence in the genome for given protein
 *  `-dfk` retrieve presence/absence in the genome for given keyword
+*  `-dff` retrieve presence/absence in the genome for given proteins with two or more domains in a genome
+*  `-dfpk` retrieve presence/absence in the genome for given protein inside a gene cluster with the given keyword(s)
+*  `-dmc` minimum similarity between pattern and gene cluster to be considered present
+*  `-dcb` retrieve presence/absence in the genome for given keyword
 
-The output includes presence absence for each level of taxonomy in absolute and relative values normalised by the number of genomes in the given taxonomic level respectively.
+The output contains the number for the presence of the desired proteine/keywords at each taxonomy level in absolute and relative values, each normalized to the number of genomes in the given taxonomy level. An iTol binary dataset is also output, with the specified names consisting of the genome identifiers and the taxonomic line
 
 ### Processing result files
 Protein sequences are written to files with identifiers retrieved from the local database. These can be directly used. However if desired HMSSS also comes with some functions to alter these files.
 
 
 *  `-merge_fasta` Merges one or more files with .faa extension into a single file without doublicates.
-*  `-dfk` retrieve presence/absence in the genome for given keyword
-*  `-dfd` retrieve presence/absence in the genome for given protein
-*  `-dfk` retrieve presence/absence in the genome for given keyword
+*  `-filter_fasta` retrieve presence/absence in the genome for given keyword
+*  `-filter_limits` retrieve presence/absence in the genome for given protein
+*  `-concat_alignment` retrieve presence/absence in the genome for given keyword
+*  `-add_taxonomy` retrieve presence/absence in the genome for given keyword
+*  `-add_genomic_context` retrieve presence/absence in the genome for given keyword
+*  `-create_gene_cluster_dataset` retrieve presence/absence in the genome for given keyword
+*  `-create_type_range_dataset` retrieve presence/absence in the genome for given keyword
 
 
 
