@@ -1,6 +1,6 @@
 # HMSS2
 
-HMS-S-S: a tool for the identification of sulfur metabolism-related genes and analysis of operon structures in genome and metagenome assemblies. It searches fasta files for sulfur metabolism associated proteins using hidden markov models and defined threshold scores. Furthermore, the genes of the detected proteins are analyzed for their position in the genome. The detected gene clusters are then named with a keyword if it is a known pattern of a gene cluster. HMSS2 can also be extended with other compatible HMMs.
+HMSS2: a tool for the identification of sulfur metabolism-related genes and analysis of operon structures in genome and metagenome assemblies. The tool searches fasta files for sulfur metabolism associated proteins using hidden markov models and defined threshold scores. Furthermore, the genes of the detected proteins are analyzed for their position in the genome. The detected gene clusters are then named with a keyword if it is a known pattern of a gene cluster. HMSS2 can also be extended with other compatible HMMs.
 
 ## Installing HMSS2 on Linux
 You can install HMSS2 by downloading it directly from GitHub in compiled or non-compiled form.
