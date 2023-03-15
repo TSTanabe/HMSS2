@@ -39,7 +39,7 @@ Replace "Directory" with the directory containing your input fasta files, with o
 
 In case of any .fna file extension HMSSS will try to transcripe to protein fasta via prodigal. 
 HMSSS also comes with several options which are scribed in the help accessed by `-h` and in the following:
-
+## Optional commands
 ### Extending the HMM library and gene cluster patterns
 * `-l` sets the HMM library. By default this is set to the library in the source folder which includes the sulfur related HMMs. However this library can either be extended by or changed to any other HMM library compatible with the HMMER3 package. 
 * `-t` sets the threshold file. Specific threshold scores for each HMM in the library are located here in a tab separated file. Each name is assigned to threshold score. In case of extended libraries the threshold scores should be set here.
@@ -60,7 +60,8 @@ Results are stored in a local database which can be accessed to retrieve differe
 *  `-db` sets the database to be created/extended or from which results should be retrieved
 *  `-gtdb` sets the path to a metadata file from the GTDB. This is required if it is desired to use the taxonomic information from GTDB.
 
-The output from a database requires the `-db` opotion to define the database from which the desired output is taken. As the output is normally a set of sequences from a certain protein, possibly with a defined genomic vicinity or from specified taxonomic group there are several options to limit the number of retrieved sequences.
+#### Sequence FASTA File output
+The output from a database requires the `-db` option to define the database from which the desired output is taken. As the output is normally a set of sequences from a certain protein, possibly with a defined genomic vicinity or from specified taxonomic group there are several options to limit the number of retrieved sequences.
 Limiting output to certain genomes:
 
 *  `-dll` sets the level of taxonomy. If output should be limit to a group of organisms sharing the same taxonomic group this option sets the level of taxonomy between superkingdom and species.
@@ -87,7 +88,7 @@ The output always includes several files with reports of the written sequences a
         Reports in a textfile a abbreviated summary of the protein information with cluster and lineage
 
 
-
+#### Dataset output without sequnces
 Information about the presence of given proteins and/or keywords in a taxon or species can be retrieved and written to tsv files. This also includes iTol dataset compatible files but sequences will not be retrieved:
 
 *  `-dfd` retrieve presence/absence in the genome for given protein
