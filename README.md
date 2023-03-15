@@ -36,7 +36,10 @@ Replace "Directory" with the directory containing your input fasta files, with o
 * .fasta
 
 In case of any .fna file extension HMSS2 will try to transcripe to protein fasta via prodigal. 
-HMSSS also comes with several options which are scribed in the help accessed by `-h` and in the following:
+
+Protein sequences detected by the hidden Markov Models can be retrieved with `-fd` followed by the names of the desired proteins. All proteins of a named gene cluster can be retrieved with the `-fk` command followed by the keywords of the desired gene cluster(s). Both commands combined retrieves all sequences matching both, the given keyword(s) and the given domain(s).
+
+HMSSS also comes with several options which are scribed in the help accessed by `-h`.
 
 ## Optional commands
 
