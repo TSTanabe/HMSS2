@@ -57,14 +57,15 @@ HMSSS also comes with several options which are scribed in the help accessed by 
 *  `-redo_taxonomy` make the taxonomic assignment again.
 
 
-### Result files and output
+## Result files and output
 Results are stored in a local database which can be accessed to retrieve different results of interest. The local database can also be extended by later searched. If not defined before the search HMSS2 will create a new local database for each run.
 *  `-r` sets the directory for all results to be stored.
 *  `-db` sets the database to be created/extended or from which results should be retrieved
 *  `-gtdb` sets the path to a metadata file from the GTDB. This is required if it is desired to use the taxonomic information from GTDB.
 
-#### Sequence FASTA File output
-The output from a database requires the `-db` option to define the database from which the desired output is taken. As the output is normally a set of sequences from a certain protein, possibly with a defined genomic vicinity or from specified taxonomic group there are several options to limit the number of retrieved sequences.
+### Sequence FASTA File output
+The output from a database requires the `-db` option to define the database from which the desired output is taken. As the output is normally a set of sequences from a certain protein, possibly with a defined genomic vicinity or from specified taxonomic group there are several options to limit the number of retrieved sequences. In the result directory for each attemptd to retreive sequences a new folder is created.
+
 Limiting output to certain genomes:
 
 *  `-dll` sets the level of taxonomy. If output should be limit to a group of organisms sharing the same taxonomic group this option sets the level of taxonomy between superkingdom and species.
@@ -98,7 +99,7 @@ Files always contain only one type of protein sequences. The output includes sev
   
   `with_keyword` files contain sequences associated with a keyword. These files appear if several keywords are given.
 
-#### Dataset output without sequnces
+### Dataset output without sequnces
 Information about the presence of given proteins and/or keywords in a taxon or species can be retrieved and written to tab separated files. This also includes iTol dataset compatible files but sequences will not be retrieved:
 
 *  `-dfd` retrieve presence/absence in the genome for given protein
