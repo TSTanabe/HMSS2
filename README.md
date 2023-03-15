@@ -1,11 +1,9 @@
-# HMSSS2
-HMSSS version 2
+# HMSS2
 
-# HMS-S-S
-HMS-S-S: a tool for the identification of sulfur metabolism-related genes and analysis of operon structures in genome and metagenome assemblies. It searches fasta files for sulfur metabolism associated proteins using hidden markov models and defined threshold scores. Furthermore, the genes of the detected proteins are analyzed for their position in the genome. The detected gene clusters are then named with a keyword if it is a known pattern of a gene cluster. HMSSS can also be extended with other compatible HMMs.
+HMS-S-S: a tool for the identification of sulfur metabolism-related genes and analysis of operon structures in genome and metagenome assemblies. It searches fasta files for sulfur metabolism associated proteins using hidden markov models and defined threshold scores. Furthermore, the genes of the detected proteins are analyzed for their position in the genome. The detected gene clusters are then named with a keyword if it is a known pattern of a gene cluster. HMSS2 can also be extended with other compatible HMMs.
 
-## Installing HMSSS on Linux
-You can install HMSSS by downloading it directly from GitHub in compiled or non-compiled form.
+## Installing HMSS2 on Linux
+You can install HMSS2 by downloading it directly from GitHub in compiled or non-compiled form.
 
 1. Download the latest release from github
 
@@ -15,17 +13,17 @@ You can install HMSSS by downloading it directly from GitHub in compiled or non-
 
 4. Test you can run by './dist/HMSSS -h' or 'python HMSSS/HMSSS.py -h'
 
-5. Installation of required external programs HMSSS depends on:
+5. Installation of required external programs HMSS2 depends on:
 
     5.1 HMMER3 package depends on the hmmer3 package, which can be downloaded from hmmer.org
     
     5.2 Prodigal for translation of nucleotide fasta github.com/hyattpd/Prodigal
   
-6. That's it! You can now run HMSSS on a directory of protein sequence fasta files with gff files or nucleotide fasta files
+6. That's it! You can now run HMSS2 on a directory of protein sequence fasta files with gff files or nucleotide fasta files
 
-## Running HMSSS
+## Running HMSS2
 
-To run HMSSS on your own data type:
+To run HMSS2 on your own data type:
 
 ./HMSSS -f Directory
 
@@ -37,7 +35,7 @@ Replace "Directory" with the directory containing your input fasta files, with o
 * .faa.gz
 * .fasta
 
-In case of any .fna file extension HMSSS will try to transcripe to protein fasta via prodigal. 
+In case of any .fna file extension HMSS2 will try to transcripe to protein fasta via prodigal. 
 HMSSS also comes with several options which are scribed in the help accessed by `-h` and in the following:
 
 ## Optional commands
@@ -57,7 +55,7 @@ HMSSS also comes with several options which are scribed in the help accessed by 
 
 
 ### Result files and output
-Results are stored in a local database which can be accessed to retrieve different results of interest. The local database can also be extended by later searched. If not defined before the search HMSSS will create a new local database for each run.
+Results are stored in a local database which can be accessed to retrieve different results of interest. The local database can also be extended by later searched. If not defined before the search HMSS2 will create a new local database for each run.
 *  `-r` sets the directory for all results to be stored.
 *  `-db` sets the database to be created/extended or from which results should be retrieved
 *  `-gtdb` sets the path to a metadata file from the GTDB. This is required if it is desired to use the taxonomic information from GTDB.
@@ -103,7 +101,7 @@ Information about the presence of given proteins and/or keywords in a taxon or s
 The output contains the number for the presence of the desired proteine/keywords at each taxonomy level in absolute and relative values, each normalized to the number of genomes in the given taxonomy level. An iTol binary dataset is also output, with the specified names consisting of the genome identifiers and the taxonomic line
 
 ### Processing result files
-Protein sequences are written to files with identifiers retrieved from the local database. These FASTA formatted files can be directly used or are the basis for further file generation. HMSSS comes with further tools to create additional files based on the initial output:
+Protein sequences are written to files with identifiers retrieved from the local database. These FASTA formatted files can be directly used or are the basis for further file generation. HMSS2 comes with further tools to create additional files based on the initial output:
 
 
 *  `-merge_fasta` Merges one or more files with .faa extension into a single file without doublicates. As argument specific files or a whole directory is taken
