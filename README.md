@@ -15,9 +15,9 @@ You can install HMSS2 by downloading it directly from GitHub in compiled or non-
 
 5. Installation of required external programs HMSS2 depends on:
 
-    5.1 HMMER3 package depends on the hmmer3 package, which can be downloaded from hmmer.org
+    5.1 [Prodigal](https://github.com/hyattpd/Prodigal) for translation of nucleotide fasta
     
-    5.2 Prodigal for translation of nucleotide fasta github.com/hyattpd/Prodigal
+    5.2 [HMMER3](http://hmmer.org/) for the detection and annotation
   
 6. That's it! You can now run HMSS2 on a directory of protein sequence fasta files with gff files or nucleotide fasta files
 
@@ -27,22 +27,23 @@ To run HMSS2 on your own data type:
 
 ./HMSSS -f Directory
 
-Replace "Directory" with the directory containing your input fasta files, with one file per species. The names of the files should match the identifiers of the genomes, since the name of the files will later be used for identification. When using protein fasta files with gff files, the names of the related files should be the same except for the file extension. HMSSS will look for input fasta files with any of the following filename extensions:
+Replace "Directory" with the directory containing your input fasta files, with one file per species. The names of the files should match the identifiers of the genomes, since the name of the files will later be used for identification. When using protein fasta files with gff files, the names of the related files should be the same except for the file extension. File names will be used as genome identifiers. HMSS2 will look for input fasta files with any of the following filename extensions:
 
-* .fna
-* .fna.gz
-* .faa
-* .faa.gz
+* .fna or fna.gz
+* .faa or .faa.gz
+* .gff or .gff.gz
 * .fasta
 
 In case of any .fna file extension HMSS2 will try to transcripe to protein fasta via prodigal. 
 
 Protein sequences detected by the hidden Markov Models can be retrieved with `-fd` followed by the names of the desired proteins. All proteins of a named gene cluster can be retrieved with the `-fk` command followed by the keywords of the desired gene cluster(s). Both commands combined retrieves all sequences matching both, the given keyword(s) and the given domain(s).
 
-HMSSS also comes with several options which are scribed in the help accessed by `-h`.
 ![image info](./Figures/HMSS2_flowchart.svg "Title")
+<figcaption>HMSS2 process overview. External programs are Progal and HMMER3. The input can consist of either assemblies with nucleotide sequences or protein sequences in fasta format with corresponding GFF3 files. New features of HMSS2 are marked in yellow. </figcaption>
 
 ## Optional commands
+
+HMSSS also comes with several options which are scribed in the help accessed by `-h`.
 
 ### Define HMM library, gene cluster patterns file and other run options
 * `-l` sets the HMM library. By default this is set to the library in the source folder which includes the sulfur related HMMs. However this library can either be extended by or changed to any other HMM library compatible with the HMMER3 package. 
