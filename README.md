@@ -23,7 +23,7 @@ You can install HMSS2 by downloading it directly from GitHub in compiled or non-
 
 ## Running HMSS2
 
-To run HMSS2 on your own data type:
+To run HMSS2 on your own data type in the command line:
 
 ./HMSSS -f Directory
 
@@ -34,7 +34,7 @@ Replace "Directory" with the directory containing your input fasta files, with o
 * .gff or .gff.gz
 * .fasta
 
-In case of any .fna file extension HMSS2 will try to transcripe to protein fasta via prodigal. 
+In case of any present file with .fna extension HMSS2 will try to transcripe to protein fasta via prodigal. Annotation and gene cluster prediction is then automatically performed.
 
 Protein sequences detected by the hidden Markov Models can be retrieved with `-fd` followed by the names of the desired proteins. All proteins of a named gene cluster can be retrieved with the `-fk` command followed by the keywords of the desired gene cluster(s). Both commands combined retrieves all sequences matching both, the given keyword(s) and the given domain(s).
 
