@@ -67,7 +67,7 @@ Results are stored in a local database which can be accessed to retrieve differe
 *  `-db` sets the database to be created/extended or from which results should be retrieved
 *  `-gtdb` sets the path to a metadata file from the GTDB. This is required if it is desired to use the taxonomic information from GTDB.
 
-### Sequence FASTA File output
+## Sequence FASTA File output
 The output from a database requires the `-db` option to define the database from which the desired output is taken. As the output is normally a set of sequences from a certain protein, possibly with a defined genomic vicinity or from specified taxonomic group there are several options to limit the number of retrieved sequences. In the result directory for each attemptd to retreive sequences a new folder is created.
 
 Limiting output to certain genomes:
