@@ -41,7 +41,9 @@ Protein sequences detected by the hidden Markov Models can be retrieved with `-f
 ![image info](./Figures/HMSS2_flowchart.svg "Title")
 <figcaption>HMSS2 process overview. External programs are Progal and HMMER3. The input can consist of either assemblies with nucleotide sequences or protein sequences in fasta format with corresponding GFF3 files. New features of HMSS2 are marked in yellow. </figcaption>
 
-## Optional commands
+## Output files
+
+## Command options
 
 HMSSS also comes with several options which are scribed in the help accessed by `-h`.
 
