@@ -41,7 +41,36 @@ Protein sequences detected by the hidden Markov Models can be retrieved with `-f
 ![image info](./Figures/HMSS2_flowchart.svg "Title")
 <figcaption>HMSS2 process overview. External programs are Progal and HMMER3. The input can consist of either assemblies with nucleotide sequences or protein sequences in fasta format with corresponding GFF3 files. New features of HMSS2 are marked in yellow. </figcaption>
 
-## Output files
+## Result files
+The results are stored in the local database and only output on request. the `-fd` or `-dfd` option can be used for this (see also command options). Each request generates a new folder with a unique timestamp that includes all generated files:
+
+* **report.txt** is a tab separated file with a summary of the metadata of the output sequences. Columns of this file report the proteinID, domains, domains scores, domain coordinates in the proteins sequence, as well as the contig, gene stat and end, strand and locustag. If a genecluster is present the keyword , completeness of the gepattern and collinearity is also added to this list. The columns of this file described the following data:
+        
+        proteinID get_domains domain_scores domain_coordinates gene_contig gene_start gene_end gene_strand gene_locustag keyword completeness csb taxonomy_lineage 
+        RS_GCF_000025485 RS_GCF_000025485-NC_013851.1_1249 oxDsrC 173 3:112 NC_013851.1 1443433 1443771 + RS_GCF_000025485_9 oxDsr,oxDsrMK 1.0,1.0 0,1 RS_GCF_000025485_Bacteria__Proteobacteria_Gammaproteobacteria_Chromatiales_Chromatiaceae_Allochromatium_Allochromatium-vinosum
+        [...]
+
+* **protein_type.faa** is a FASTA formatted file with all sequences of a specific protein type.
+* **protein_type_singleton.faa** is FASTA formatted file with all sequences of the protein type that only occured once per genome and therefore have no paralogous sequence
+* **protein_type_doublicate.faa** is FASTA formatted file with all sequences of the protein type that occured at least twice per genome and therefore have paralogous sequences
+* **keywords_(keyword).faa** is FASTA formatted file with all sequences of a protein type occuring in a gene cluster with a defined keyword
+* **absolute_count** is a tab separated file with the number of genomes in a taxonomic lineage encoding for each protein type/keyword that was requested in the query
+* **relative_count** is a tab separated file with the percentage of genomes in a taxonomic lineage encoding for each protein type/keyword that was requested in the query
+* **iTol_binary_dataset.txt** is a iTol binary dataset file with the presence/absence matrix for each protein/keyword requested. The genome identifier and the taxonomic information is used as identifier for each line in the dataset.
+* **iTol_taxon_domain_dataset.txt** is a iTol domain dataset file with the that is only generated when the `-add_genomic_context` option is used on an already existing FASTA file. The genome identifier and the taxonomic information is used as identifier for each line in the dataset. The dataset represents the genomic vicinity of each protein in the original FASTA file.
+* **faa.taxonomy** is a fasta formatted file that is only generated when the `-add_taxonomy` option is used on an already existing FASTA file. The the identifiers for each sequence in the file is exchanged to the taxonomic lineage, matching the same identifiers as in the iTol dataset files.
+* **context.tsv** is a tab separated file that is only generated when the `-add_genomic_context`option is used on an already existing FASTA file. For each protein in the file the adjacent genes are listed in the resulting file. As more than one copy per protein type may occur the list is indexed in relation to the originally selected protein. Thus, the index 0 corresponds to the protein from the FASTA file. 
+
+        Index ProteinID Domain(s) Hit_score hit_align contig start end strand Superkingdom Clade Phylum Class Ordnung Family Genus Species
+        0	RS_GCF_900102855-NZ_FMWD01000005.1_179	oxDsrC	152	0:112	NZ_FMWD01000005.1	203348	203686	+	Bacteria		Proteobacteria	Gammaproteobacteria	Thiohalomonadales	Thiohalomonadaceae	Thiohalomonas	Thiohalomonas denitrificans
+        1	RS_GCF_900102855-NZ_FMWD01000005.1_183	oxDsrA	779	0:416	NZ_FMWD01000005.1	206250	207503	+	Bacteria		Proteobacteria	Gammaproteobacteria	Thiohalomonadales	Thiohalomonadaceae	Thiohalomonas	Thiohalomonas denitrificans
+        2	RS_GCF_900102855-NZ_FMWD01000005.1_184	oxDsrB	732	2:356	NZ_FMWD01000005.1	207590	208660	+	Bacteria		Proteobacteria	Gammaproteobacteria	Thiohalomonadales	Thiohalomonadaceae	Thiohalomonas	Thiohalomonas denitrificans
+        3	RS_GCF_900102855-NZ_FMWD01000005.1_185	DsrE	246	0:130	NZ_FMWD01000005.1	208695	209087	+	Bacteria		Proteobacteria	Gammaproteobacteria	Thiohalomonadales	Thiohalomonadaceae	Thiohalomonas	Thiohalomonas denitrificans
+        4	RS_GCF_900102855-NZ_FMWD01000005.1_186	DsrF	201	3:122	NZ_FMWD01000005.1	209120	209488	+	Bacteria		Proteobacteria	Gammaproteobacteria	Thiohalomonadales	Thiohalomonadaceae	Thiohalomonas	Thiohalomonas denitrificans
+        5	RS_GCF_900102855-NZ_FMWD01000005.1_187	DsrH	156	0:99	NZ_FMWD01000005.1	209503	209802	+	Bacteria		Proteobacteria	Gammaproteobacteria	Thiohalomonadales	Thiohalomonadaceae	Thiohalomonas	Thiohalomonas denitrificans
+        6	RS_GCF_900102855-NZ_FMWD01000005.1_188	oxDsrC	173	2:111	NZ_FMWD01000005.1	209848	210183	+	Bacteria		Proteobacteria	Gammaproteobacteria	Thiohalomonadales	Thiohalomonadaceae	Thiohalomonas	Thiohalomonas denitrificans
+        7	RS_GCF_900102855-NZ_FMWD01000005.1_189	oxDsrM	417	3:240	NZ_FMWD01000005.1	210250	210975	+	Bacteria		Proteobacteria	Gammaproteobacteria	Thiohalomonadales	Thiohalomonadaceae	Thiohalomonas	Thiohalomonas denitrificans
+
 
 ## Command options
 
@@ -61,13 +90,13 @@ HMSSS also comes with several options which are scribed in the help accessed by 
 *  `-redo_taxonomy` make the taxonomic assignment again.
 
 
-## Result files and output
+### Result files and output
 Results are stored in a local database which can be accessed to retrieve different results of interest. The local database can also be extended by later searched. If not defined before the search HMSS2 will create a new local database for each run.
 *  `-r` sets the directory for all results to be stored.
 *  `-db` sets the database to be created/extended or from which results should be retrieved
 *  `-gtdb` sets the path to a metadata file from the GTDB. This is required if it is desired to use the taxonomic information from GTDB.
 
-## Sequence FASTA File output
+### Sequence FASTA File output
 The output from a database requires the `-db` option to define the database from which the desired output is taken. As the output is normally a set of sequences from a certain protein, possibly with a defined genomic vicinity or from specified taxonomic group there are several options to limit the number of retrieved sequences. In the result directory for each attemptd to retreive sequences a new folder is created.
 
 Limiting output to certain genomes:
@@ -86,22 +115,6 @@ Sequences for proteins can be retrieved and written to fasta files with the foll
 
 Files always contain only one type of protein sequences. The output includes several files with reports of the written sequences and some subsets for proteins. Each file starts with a short summary of the given command, followed by the name of the protein whose sequences were written to the file. Proteins which have more than one domain previously detected by HMSSS are separately written to files and names by the all detected domains. Furthermore two subsets are prepared: 
   
-  `singleton` file includes all protein sequences found only once in the whole genome.
-  
-  `doublicate` file includes all proteins sequences found at least twice in the whole genome.
-  
-  `report.txt` The metadata of the output sequences are presented in a report in a text file in a short summary. Columns of this file report the proteinID, domains, domains scores, domain coordinates in the proteins sequence, as well as the contig, gene stat and end, strand and locustag. If a genecluster is present the keyword , completeness of the gepattern and collinearity is also added to this list. The columns of this file described the following data:
-        
-        Protein attributes:
-        proteinID get_domains domain_scores domain_coordinates
-        gene_contig gene_start gene_end gene_strand gene_locustag
-        Cluster attributes:
-        keyword completeness csb
-        Taxonomy lineage 
-        
-        Reports in a textfile a abbreviated summary of the protein information with cluster and lineage
-  
-  `with_keyword` files contain sequences associated with a keyword. These files appear if several keywords are given.
 
 ### Dataset output without sequnces
 Information about the presence of given proteins and/or keywords in a taxon or species can be retrieved and written to tab separated files. This also includes iTol dataset compatible files but sequences will not be retrieved:
