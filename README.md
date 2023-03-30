@@ -151,7 +151,7 @@ To run HMSS2 with additional custom HMMs or HMMs from public databases concat al
 The all gene cluster patterns to be recognized have to be stored in a tab separated file. First columns defines the keyword, which is assigned to gene clusters matching the pattern. The following columns define the names of the HMMs to be present in a gene cluster to be recognized. All columns have to be tab separated.
 By default the HMM library, the score threshold file and the gene cluster pattern file are stored in the `src` folder. The path to a custom gene cluster patterns file can be set with the `-p`command followed by the corresponding path.
 
-
+BEISPIELE FÜR PATTERN FILE; UND THRESHOLD FILE ZEIGEN DAMIT VERSTÄNDLICH IST WIE SIE ERWEITERT WERDEN
 
 
 
