@@ -165,7 +165,7 @@ The path to a custom gene cluster patterns file can be set with the `-p` command
 
 ## Taxonomy assignment
 
-Taxonomic assignment to genomes with NCBI genome ID can be done automatically. For this, taxdump must be downloaded from NCBI and located in the src folder. Alternatively, the GTDB taxonomy can be used.
+Taxonomic assignment to genomes with NCBI genome ID can be done automatically. For this, [NCBI taxdump](https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/) must be downloaded from NCBI, unpacked and located in the src folder. Alternatively, the [GTDB taxonomy](https://data.gtdb.ecogenomic.org/releases/release207/207.0/) can be used.
 If own genome identifiers are used, the taxonomic assignment needs a file containing the respective taxonomic information. This must be a tab separated file with the following columns:
 
     genomeID superkingdom clade phylum class order family genus species strain taxid biosample bioproject genbank refseq completeness contamination typestrain
