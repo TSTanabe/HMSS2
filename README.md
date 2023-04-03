@@ -116,7 +116,7 @@ Sequences for proteins can be retrieved and written to fasta files with the foll
 Files always contain only one type of protein sequences. The output includes several files with reports of the written sequences and some subsets for proteins. Each file starts with a short summary of the given command, followed by the name of the protein whose sequences were written to the file. Proteins which have more than one domain previously detected by HMSSS are separately written to files and names by the all detected domains. Furthermore two subsets are prepared: 
   
 
-### Dataset output without sequnces
+### Dataset output without sequences
 Information about the presence of given proteins and/or keywords in a taxon or species can be retrieved and written to tab separated files. This also includes iTol dataset compatible files but sequences will not be retrieved:
 
 *  `-dfd` retrieve presence/absence in the genome for given protein
@@ -161,11 +161,16 @@ The all gene cluster patterns to be recognized have to be stored in a tab separa
     sHdr	sHdrC1	sHdrB1	sHdrA	sHdrH	sHdrC2	sHdrB2
     sHdr	sHdrC1	sHdrB1	sHdrA	sHdrH	sEtfA	sEtfB
 
-The path to a custom gene cluster patterns file can be set with the `-p`command followed by the corresponding path.
+The path to a custom gene cluster patterns file can be set with the `-p` command followed by the corresponding path.
 
+## Taxonomy assignment
 
+Taxonomic assignment to genomes with NCBI genome ID can be done automatically. For this, taxdump must be downloaded from NCBI and located in the src folder. Alternatively, the GTDB taxonomy can be used.
+If own genome identifiers are used, the taxonomic assignment needs a file containing the respective taxonomic information. This must be a tab separated file with the following columns:
 
+    genomeID superkingdom clade phylum class order family genus species strain taxid biosample bioproject genbank refseq completeness contamination typestrain
 
+With the exception of the first column, not all columns must contain values. The type strain column must contain either the value 0 or 1 to be evaluable. The Contamination and Completeness columns should contain values between 0 and 100.
 
 
 
