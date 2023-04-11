@@ -38,7 +38,7 @@ In case of any present file with .fna extension HMSS2 will try to transcripe to 
 
 Protein sequences detected by the hidden Markov Models can be retrieved with `-fd` followed by the names of the desired proteins. All proteins of a named gene cluster can be retrieved with the `-fk` command followed by the keywords of the desired gene cluster(s). Both commands combined retrieves all sequences matching both, the given keyword(s) and the given domain(s).
 
-![image info](./Figures/HMSS2_flowchart.svg "Title")
+![image info](./Figures/HMSS2_flowchart2.svg "Title")
 <figcaption>HMSS2 process overview. External programs are Progal and HMMER3. The input can consist of either assemblies with nucleotide sequences or protein sequences in fasta format with corresponding GFF3 files. New features of HMSS2 are marked in yellow. </figcaption>
 
 ## Result files
