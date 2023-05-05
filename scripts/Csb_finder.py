@@ -5,6 +5,7 @@
 #	Subroutine getKeywords
 
 import re
+from . import ParseReports
 
 class Cluster:
     """
@@ -14,6 +15,7 @@ class Cluster:
     Args
         clusterID = unique string
         
+    11.04.23 added the cluster_start and cluster_end lines    
     """
     def __init__(self,clusterID,distance = 3500):
         self.clusterID = clusterID
@@ -22,11 +24,22 @@ class Cluster:
         self.types = []
         self.keywords = []
         self.keywords_dict = dict()
+        self.cluster_start = None
+        self.cluster_end = None
         
         
-    def add_gene(self,proteinID,types):
+    def add_gene(self,proteinID,types,start=None,end=None):
         self.genes.append(proteinID)
         self.types.append(types)
+        if self.cluster_start is None:
+            self.cluster_start = start
+        elif self.cluster_start > start:
+            self.cluster_start = start
+        if self.cluster_end is None:
+            self.cluster_end = end
+        elif self.cluster_end < end:
+            self.cluster_end = end
+
         
     def add_keyword(self,keyword,completeness=0,csb="."):
         #self.keywords.append(Keyword(keyword,completeness,csb))
@@ -41,6 +54,13 @@ class Cluster:
             listing.append(v)
         
         return listing
+
+    def get_cluster_start(self):
+        return self.cluster_start
+
+    def get_cluster_end(self):
+        return self.cluster_end
+
        
     def get_clusterID(self):
         return self.clusterID
@@ -221,13 +241,13 @@ def find_syntenicblocks(genomeID,protein_dict,distance=3500):
                 if new_sb:
                     # add prev and curr protein to new syntenic block (sb) and sb = false
                     new_sb = 0
-                    cluster.add_gene(prev_el_proteinID,prev_protein.get_domains())
+                    cluster.add_gene(prev_el_proteinID,prev_protein.get_domains(),prev_protein.gene_start,prev_protein.gene_end)
                     prev_protein.set_clusterID(cluster.get_clusterID())
-                    cluster.add_gene(curr_el_proteinID,curr_protein.get_domains())
+                    cluster.add_gene(curr_el_proteinID,curr_protein.get_domains(),curr_protein.gene_start,curr_protein.gene_end)
                     curr_protein.set_clusterID(cluster.get_clusterID())
                 else:
                     #add current protein to current syntenic block
-                    cluster.add_gene(curr_el_proteinID,curr_protein.get_domains())
+                    cluster.add_gene(curr_el_proteinID,curr_protein.get_domains(),curr_protein.gene_start,curr_protein.gene_end)
                     curr_protein.set_clusterID(cluster.get_clusterID())
             elif new_sb == 0:
                 #block wurde erweitert aber das neue element liegt außerhalb
@@ -305,20 +325,79 @@ def name_syntenicblocks(patterns,pattern_names,clusterID_dict,min_completeness=0
     return clusterID_dict
     
 
+def find_csb_pattern_difference(patterns,pattern_names,cluster_dict,min_pattern_length=4):
+    #11.04.23
+    #part of the synteny supported correction of hits below cutoff
+    missing_proteins_list_dict = {} #list of types missing per cluster
+    for clusterID,cluster in cluster_dict.items():
+        protein_type_list = cluster.get_domain_ends_list() #set of proteins in the cluster
+        keywords = cluster.get_keywords() #keywords assigned to the cluster
+        missing_proteins = set()
+        for keyword in keywords:
+            if keyword.get_completeness() < 1: # iterates all incomplete keyword patterns
+
+                name = keyword.keyword
+                pattern_id_list = [k for k, v in pattern_names.items() if v == name] #key is the ID, value is the keyword/the name of the pattern. Saves all ID that have the keyword assigned. Can be multiple because different patterns may have the same keyword
+                for ID in pattern_id_list:
+                    difference = set(patterns[ID]) - set(protein_type_list)
+                    missing_proteins.update(difference)
+                    
+        if missing_proteins: #if not empty there are proteins missing
+            missing_proteins_list_dict[cluster.clusterID] = missing_proteins
+
+    
+    missing_protein_types = set() #from all clusters these types are missing
+    for protein_types in missing_proteins_list_dict.values():
+        missing_protein_types.update(protein_types)
+
+    return  missing_protein_types, missing_proteins_list_dict
 
 
+def synteny_completion(gff3_file,protein_dict,cluster_dict,candidate_protein_dict,missing_proteins_list_dict,difference = 3500):
+    #11.04.23
+    #part of the synteny supported correction of hits below cutoff
+    
+    with open(gff3_file,"r") as reader:
+        for line in reader.readlines():
+            if line.startswith("#"):
+                continue
+            match = re.search('ID=(cds-){0,1}(\S+?)\W{0,1};',line)
+            proteinID = match.group(2) #using the match as proteinID in the redo_csb routine possible?
+            if proteinID in candidate_protein_dict.keys():
+                
+                gff = line.split("\t")
+                start = gff[3]
+                end = gff[4]
+                
+                for clusterID,cluster_list in missing_proteins_list_dict.items():
+                    
+                    if candidate_protein_dict[proteinID][0] in cluster_list: #if proteintype in clusterlist of missing proteins then continue testing
+                        cluster = cluster_dict[clusterID]
+                        
+                        if cluster.cluster_start-difference < int(start) < cluster.cluster_end+difference or cluster.cluster_start-difference < int(end) < cluster.cluster_end+difference:
+                            #print(cluster.clusterID)
+                            #print(cluster.cluster_start-difference ," < ", int(start) ," < ", cluster.cluster_end+difference ," or ", cluster.cluster_start-difference ," < ", int(end) ," < ", cluster.cluster_end+difference)
+                            
+                        #if yes then the below threshold hit has the correct type and is part of the cluster
+                            #print(candidate_protein_dict[proteinID][0])
+                            if proteinID in protein_dict:
+                                protein = protein_dict[proteinID]
+                                protein.add_domain(candidate_protein_dict[proteinID][0],candidate_protein_dict[proteinID][1],candidate_protein_dict[proteinID][2],candidate_protein_dict[proteinID][3])
+                            else:
+                                #print(proteinID)
+                                #print(candidate_protein_dict[proteinID][0],candidate_protein_dict[proteinID][1],candidate_protein_dict[proteinID][2],candidate_protein_dict[proteinID][3])
+                                protein_dict[proteinID] = ParseReports.Protein(proteinID,candidate_protein_dict[proteinID][0],candidate_protein_dict[proteinID][1],candidate_protein_dict[proteinID][2],candidate_protein_dict[proteinID][3])
+                                protein = protein_dict[proteinID]
+                                protein.set_gene_contig(gff[0])
+                                protein.set_gene_start(gff[3])
+                                protein.set_gene_end(gff[4])
+                                protein.set_gene_strand(gff[6])
+                                locustag = ParseReports.getLocustag(line)
+                                protein.set_gene_locustag(locustag)
+                                protein.set_clusterID(cluster.clusterID)
 
-
-
-
-
-
-
-
-
-
-
-
+                                cluster.add_gene(proteinID,candidate_protein_dict[proteinID][0],int(start),int(end)) #TODO this cluster should run again trough the naming routine
+                                
 
 
 

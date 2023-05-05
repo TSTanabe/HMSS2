@@ -50,7 +50,9 @@ class HMSSS:
         self.result_files_directory = __location__+"/results" #Directory for all results files
         self.logfile = "logfile"
         self.genomize = None
-
+        
+        self.synthenic_block_support_detection = False
+        
         self.taxonomyfile = None
         self.assembly_stat_file_directory = ""
         self.assembly_stat_mode = "NCBI" #Where to retrieve taxonomy information
@@ -136,8 +138,10 @@ def parse_arguments(arguments):
     parameters.add_argument('-c','-cores',nargs=1, type=int, default = [2], metavar='<int>', help='Number of cores used by HMMsearch')    
     parameters.add_argument('-nt','-nucleotides',nargs=1, type=int, default = [3500], metavar='<int>', help='Max. number of nucleotides between synthenic genes')    
     parameters.add_argument('-mc','-min_completeness',nargs=1, type=int, default = [0.5], metavar='<int>', help='Min. fraction of existing pattern name or fetch csb')
+    parameters.add_argument('-sbs', action='store_false', help='Use synthenic block support for detection')     
     parameters.add_argument('-noise_cut', action='store_true', help='Use noise cutoff scores as threshold')
-    parameters.add_argument('-trusted_cut', action='store_true', help='Use trusted cutoff scores as threshold')    
+    parameters.add_argument('-trusted_cut', action='store_true', help='Use trusted cutoff scores as threshold')
+    
     # Result space
     results = parser.add_argument_group("Result directory")
     results.add_argument('-r','-results',nargs=1, type=myUtil.dir_path, default=[__location__+"/results"], metavar='<directory>', help='Directory to project')    
@@ -238,11 +242,14 @@ def parse_arguments(arguments):
     if namespace.noise_cut and namespace.trusted_cut:
         print("WARNING: Choose either trusted or noise cutoff.")
         sys.exit()
-        
+    
+    if namespace.sbs:
+        options.synthenic_block_support_detection = True
+    
     if namespace.noise_cut:
-        options.threshold_type = 2
-    if namespace.trusted_cut:
         options.threshold_type = 3
+    if namespace.trusted_cut:
+        options.threshold_type = 2
 
     
     if namespace.redo_search: #redo search for genomes present in database and all other given assemblies
@@ -656,10 +663,29 @@ def search_and_csb(options):
         
         # Parse results & write to database
         protein_diction = ParseReports.parseHMMreport(hmm_report,score_threshold_diction)
-        ParseReports.getProteinSequence(faa_file,protein_diction)
         ParseReports.parseGFFfile(gff_file,protein_diction)
         
+        # Update the protein dict with previous results
+        if genomeID in options.finished_genomes.keys():
+            protein_diction.update(Database.fetch_protein_dict(options.database_directory,genomeID)) #dict1.update(dict2)
+            
+        # Synteny and cluster naming    
+        cluster_diction = Csb_finder.find_syntenicblocks(genomeID,protein_diction,options.nucleotide_range)
+        Csb_finder.name_syntenicblocks(csb_patterns_diction,csb_pattern_names,cluster_diction,options.min_completeness)
         
+        # Increase detection sensitivity by non-homologous synteny detection criterum
+        if options.synthenic_block_support_detection:
+            missing_protein_types, missing_proteins_list_dict = Csb_finder.find_csb_pattern_difference(csb_patterns_diction,csb_pattern_names,cluster_diction,3)
+            candidate_proteins_dict = ParseReports.parseHMMreport_below_cutoff_hits(missing_protein_types,hmm_report,score_threshold_diction)
+            Csb_finder.synteny_completion(gff_file,protein_diction,cluster_diction,candidate_proteins_dict,missing_proteins_list_dict,options.nucleotide_range)
+        
+        
+        ParseReports.getProteinSequence(faa_file,protein_diction)
+        Database.insert_database_genomeID(options.database_directory,genomeID)
+        Database.insert_database_protein(options.database_directory,genomeID,protein_diction)
+        Database.insert_database_cluster(options.database_directory,genomeID,cluster_diction)
+
+        """11.4.23 deprecated
         if genomeID in options.finished_genomes.keys(): #present database is extended, protein_dict might be incomplete at the start
             Database.extend_database_protein(options.database_directory,genomeID,protein_diction)
 
@@ -675,8 +701,10 @@ def search_and_csb(options):
             cluster_diction = Csb_finder.find_syntenicblocks(genomeID,protein_diction,options.nucleotide_range)
             Csb_finder.name_syntenicblocks(csb_patterns_diction,csb_pattern_names,cluster_diction,options.min_completeness)
             Database.insert_database_cluster(options.database_directory,genomeID,cluster_diction)
+        """
         
         # Write output files
+        
         Output.output_genome_report(options.genomize+"/"+genomeID,protein_diction,cluster_diction)
         
         write_logfile_entry(genomeID,options)

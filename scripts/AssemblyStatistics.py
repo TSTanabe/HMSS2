@@ -19,8 +19,10 @@ def taxdump_perl_script(perlscript,directory,filepath,taxdump):
     3.10.22
     
     Args:
+        perlscript  executable compiled perl script
         directory   Directory of the assembly statistic files
         filepath    Path to Outputfile
+        taxdump     location of the taxdump
         
     Output:
         TSV-file    Columns are: filename superkingdom clade phylum class order family genus

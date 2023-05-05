@@ -406,16 +406,16 @@ def fetch_cluster_dict(database,genomeID):
     with sqlite3.connect(database) as con:
         cur=con.cursor()
         #query = "SELECT clusterID,proteinID from Proteins WHERE proteinID = ?"
-        cur.execute("""SELECT DISTINCT Proteins.clusterID,Proteins.proteinID,domain from Proteins JOIN Domains ON Proteins.proteinID = Domains.proteinID WHERE genomeID = ? ;""",[genomeID])
+        cur.execute("""SELECT DISTINCT Proteins.clusterID,Proteins.proteinID,domain,Protein.start,Protein.end from Proteins JOIN Domains ON Proteins.proteinID = Domains.proteinID WHERE genomeID = ? ;""",[genomeID])
         for count,row in enumerate(cur):
             print(f"\tSelected proteins {count}",end="\r")
             if not row[0] in cluster_dict:
                 cluster = Csb_finder.Cluster(row[0])
-                cluster.add_gene(row[1],row[2])
+                cluster.add_gene(row[1],row[2],row[3],row[4]) #11.04.23 added row 3 & 4
                 cluster_dict[row[0]] = cluster
             else:
                 cluster = cluster_dict[row[0]]
-                cluster.add_gene(row[1],row[2])
+                cluster.add_gene(row[1],row[2],row[3],row[4]) #11.04.23 added row 3 & 4
 
     con.close()    
     return cluster_dict

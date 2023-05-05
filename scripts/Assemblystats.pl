@@ -33,7 +33,7 @@ my %assembly_stats;
 my %taxonid;
 
 &getGenomesAssembly();
-
+&getGenomesAssembly2();
 
 
 ##################################################################
@@ -146,6 +146,126 @@ print $fh2 $file."\t".$taxonid{$Taxid}.$assembly_stats{$file}."\t\t\t\t\n";
 close $fh2;
 
 }
+
+
+
+
+
+sub getGenomesAssembly2{
+##
+#Collect assembly statistics and taxonid
+#Input directory with genome assembly statistics
+##
+my $assemblyFiles = &getallFiles($directory,"data_summary.tsv");
+
+	for my $file (@$assemblyFiles){
+	#print "Assembly stats from $file\n";
+	my ($genomeID,$Biosample,$Bioproject,$Refseq,$Genbank,$Taxid) = (0,0,0,0,0,0,0);
+
+
+	
+	open my $fh, '<', $file or die "Could not open file '$file' $!";
+
+	my @headers = split(/\t/, <$fh>);
+
+	while (my $line = <$fh>) {
+	  chomp $line;
+	  my %data;
+	  my @values = split(/\t/, $line);
+	  for (my $i = 0; $i < scalar(@headers); $i++) {
+	    $data{$headers[$i]} = $values[$i];
+	  }
+	$Taxid = $data{"Taxonomy id"};
+	$genomeID = $data{"Assembly Accession"};
+	$taxonid{$Taxid} = "1";
+	$assembly_to_taxid{$genomeID} = $Taxid;
+	#$assembly_stats{$file} = "$Taxid\t".$data{"BioSample"}."\t".$data{"BioProject"}."\t$genomeID\t$genomeID";
+	$assembly_stats{$genomeID} = "$Taxid\t \t \t$genomeID\t$genomeID";
+	}
+
+	close $fh;
+	}
+
+##
+#Collect the lineage with the taxonID
+##
+my ($num,@taxonid);
+
+#print "Starting taxonomy search\n";
+my $cwd = getcwd;
+my $taxonDB = Bio::DB::Taxonomy->new(-source => 'flatfile', -directory => "$taxdump", -nodesfile => "$taxdump/nodes.dmp" , -namesfile => "$taxdump/names.dmp");
+#$num = $taxonDB->get_num_taxa();
+#print "There are $num taxa stores in the TaxonDB $taxonDB\n";
+while (my ($key, $value) = each(%taxonid)) {
+
+	my %lineage;
+	my $taxonid = $key;
+	my $taxon;
+	#print "Retrieving lineage for taxon id $taxonid\n";
+	#Retrieve lineage of Phylogeny with rank from flatfileDB
+		do{
+		
+		$taxon = $taxonDB->get_taxon(-taxonid => $taxonid);
+			if(defined $taxon){
+			$lineage{$taxon->rank} = $taxon->scientific_name;
+			$taxonid = $taxon->parent_id;
+			}else{
+			$taxonid{$key} = "\t\t\t\t\t\t\t\t\n"; # If taxid id completely undefined
+			next;
+			}
+		}until($taxon->rank eq "superkingdom");
+
+	#Write correct ranks into Database
+	#	strain species genus family order class phylum kingdom superkingdom
+	
+	
+	my $species = $lineage{'species'};
+	unless($lineage{"strain"}){
+	$lineage{"strain"} = "";
+	}elsif($species){
+	$lineage{"strain"} =~ s/$species //g;
+	}
+	#print "Concating lineage information\n\n";
+	my @ranks = ("superkingdom","clade","phylum","class","order","family","genus","species","strain");
+	my $string = "";
+	for my $i (0..$#ranks){
+		my $rank = $ranks[$i];
+		if(defined $lineage{$rank}){
+			#print "$rank defined \n";
+			$string .= $lineage{$rank};
+			$string .= "\t";
+		}else{
+			#print "$rank undefiend \n";
+			$string .= "\t";
+		}
+	}
+	#print($string,"\n");
+	$taxonid{$key} = $string
+}
+#print "Finished taxon assignment\n";
+
+##
+#Write results to file
+##
+
+open(my $fh2, '>>', $output_file);
+while (my ($file, $Taxid) = each(%assembly_to_taxid)) {
+
+print $fh2 $file."\t".$taxonid{$Taxid}.$assembly_stats{$file}."\t\t\t\t\n";                 
+#filename superkingdom clade phylum class order family genus species strain taxid biosample bioproject genbank refseq completeness contamination typestrain
+
+}
+close $fh2;
+
+}
+
+
+
+
+
+
+
+
 
 
 sub getallFiles{

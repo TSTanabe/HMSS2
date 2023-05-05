@@ -317,6 +317,48 @@ def parseHMMreport(Filepath,Thresholds):
                     protein_dict[hit_proteinID] = Protein(hit_proteinID,query,hsp_start,hsp_end,hit_bitscore)
     return protein_dict
 
+
+
+def parseHMMreport_below_cutoff_hits(protein_types,Filepath,Thresholds):
+    """
+    11.04.2023
+    Routine shall find hits that are below the  threshold but that are still significant
+    candidate hits are returned in a dictionary with proteinID as key and list as value
+    """
+    candidate_dict = {}
+    for hmmer_qresults in SearchIO.parse(Filepath,"hmmer3-text"):
+        query = hmmer_qresults.id
+        if query in protein_types:
+            hit_proteinID = ""
+            hit_bitscore = 0
+            hit_bias = 0
+            hit_evalue = 1
+            threshold = 10
+            if query in Thresholds:
+                threshold = Thresholds[query] #Upper limit
+                cutoff = threshold * 0.1 # Lower limit
+                
+                for hit in hmmer_qresults:
+                    if hit.bitscore<threshold and hit.bitscore > cutoff:
+                        hit_proteinID = hit.id
+                        hit_bitscore = hit.bitscore
+                        hit_bias = hit.bias
+                        hit_evalue = hit.evalue
+                        hsp_bitscore = 0
+                        hsp_start = 0
+                        hsp_end = 0
+                        for hsp in hit:#take highest scoring domain as coordinates
+                            if hsp_bitscore < hsp.bitscore:
+                                hsp_start = hsp.hit_start
+                                hsp_end = hsp.hit_end
+                                hsp_bitscore = hsp.bitscore
+                        candidate_dict[hit_proteinID] = [query,hsp_start,hsp_end,hsp_bitscore]
+    
+    return candidate_dict
+
+
+
+
 def parseGFFfile(Filepath,protein_dict):
     """
     3.9.22
