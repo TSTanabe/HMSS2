@@ -100,7 +100,83 @@ def parse_gtdb_metadata(directory,queued_genomeIDs,filepath):
     writer.close()
     return
 
+def parse_custom_metadata(directory,queued_genomeIDs,filepath):
+    """
+    23.05.23
+    
+    Args:
+        directory   Directory of the metadata file
+        filepath    Path to Outputfile
+        
+    Output:
+        TSV-file    Columns are: filename superkingdom clade phylum class order family genus
+                                 species strain taxid biosample bioproject genbank refseq completeness contamination
+                                 
+    """
+    genomeIDs = dict.fromkeys(queued_genomeIDs, 1)
 
+    #file öffnen
+    writer = open(filepath,"a")
+    with open (directory,"r",newline="") as reader:
+        
+        header = reader.readline()
+        header = header.replace("\n","")
+        headers = header.split("\t")
+        #header_dict = {k: v for v, k in enumerate(headers)} #create header => index dictionary
+    #genomeID superkingdom clade phylum class order family genus species strain taxid biosample bioproject genbank refseq completeness contamination typestrain
+        accession_idx = headers.index('genomeID')
+        taxonomy_superkingdom = headers.index('superkingdom')
+        taxonomy_clade = headers.index('clade')
+        taxonomy_phylum = headers.index('phylum')
+        taxonomy_class = headers.index('class')
+        taxonomy_order = headers.index('order')
+        taxonomy_family = headers.index('family')
+        taxonomy_genus = headers.index('genus')
+        taxonomy_species = headers.index('species')
+        completeness_idx = headers.index('completeness')
+        contamination_idx = headers.index('contamination')
+        ncbi_taxid_idx = headers.index('taxid')
+        ncbi_bioproject_idx = headers.index('bioproject')
+        ncbi_biosample_idx = headers.index('biosample')
+        ncbi_genbank_idx = headers.index('genbank')
+        ncbi_typestrain_idx = headers.index('typestrain')
+        ncbi_strain_idx = headers.index('strain')
+        
+        for line in reader.readlines():
+           
+            listing = ()
+            line = line.replace("\n","")
+            line = line.split("\t")    
+            lineage = []
+            typestrain = "0"
+            
+            genomeID = myUtil.getGenomeID(line[accession_idx])
+            if genomeID in genomeIDs:
+                ##parse gtdb taxnonomy field
+                #gtdb_taxonomy = line[taxonomy_idx]
+                #gtdb_taxonomy.strip("\n")
+                #gtdb_taxonomy = gtdb_taxonomy.split(";")
+                #domain phylum class order family genus species
+                #for field in gtdb_taxonomy:
+                #    lineage.append(field[3:])
+                
+                if line[ncbi_typestrain_idx]:
+                    typestrain = "1"
+  
+                #TSV-file Columns are: filename => 0 superkingdom => 1 clade => 2 phylum => 3
+                #                      class => 4 order => 5 family => 6 genus => 7 
+                #                      species => 8 strain => 9 taxid => 10 biosample => 11
+                #                      bioproject => 12 genbank => 13 refseq => 14 completeness => 15 contamination => 16 typestrain => 17
+
+                    
+                #filename superkingdom clade phylum class order family genus species strain taxid biosample bioproject genbank refseq completeness contamination typestrain
+                listing = (line[accession_idx],line[taxonomy_superkingdom],line[taxonomy_clade],line[taxonomy_phylum],line[taxonomy_class],line[taxonomy_order],line[taxonomy_family],line[taxonomy_genus],line[taxonomy_species],\
+                           line[ncbi_strain_idx],line[ncbi_taxid_idx],line[ncbi_biosample_idx],line[ncbi_bioproject_idx],line[ncbi_genbank_idx],"",\
+                           line[completeness_idx],line[contamination_idx],typestrain)
+                string = "\t".join(listing)
+                writer.write(string+"\n")
+    writer.close()
+    return
 
 def insert_database_assembly_statistics(database,filepath,genomeIDs):
     """

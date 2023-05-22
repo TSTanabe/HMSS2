@@ -41,6 +41,7 @@ class HMSSS:
         self.pattern_file_directory = __location__+"/src/Patterns"
         self.taxdump = __location__+"/src/taxdump"
         self.library = __location__+"/src/HMMlib"
+        self.ziplibrary = __location__+"compressed_HMMlib.zip"
         self.cores = 1
         self.nucleotide_range = 3500
         self.min_completeness = 0.5
@@ -55,7 +56,7 @@ class HMSSS:
         
         self.taxonomyfile = None
         self.assembly_stat_file_directory = ""
-        self.assembly_stat_mode = "NCBI" #Where to retrieve taxonomy information
+        self.assembly_stat_mode = "" #Where to retrieve taxonomy information
         self.db_get_genomeIDs = 0   #if database is provided, this will be extended and taxonomy will be updated
 
         #Control structures
@@ -123,8 +124,14 @@ def parse_arguments(arguments):
        regarding taxonomy and sequence sorting/merging and concatenation
     """
     options = HMSSS()
+    
+    #check if HMMlib has to be unpacked
+    if not os.path.isfile(__location__+"/src/HMMlib"):
+        if os.path.isfile(__location__+"/src/HMMlib.gz"):
+            myUtil.unpackgz(__location__+"/src/HMMlib.gz")
+    
     formatter = lambda prog: argparse.HelpFormatter(prog,max_help_position=72,width =200)
-    parser = argparse.ArgumentParser(formatter_class=formatter, description = "HMSSS version 1.1.2 \nSyntax: HMSSS [OPTIONS]",epilog = "Please cite: Tanabe TS, Dahl C. HMS-S-S: A tool for the identification of sulphur metabolism-related genes and analysis of operon structures in genome and metagenome assemblies. Mol Ecol Resour. 2022;22(7):2758-2774. doi:10.1111/1755-0998.13642")
+    parser = argparse.ArgumentParser(formatter_class=formatter, description = "HMSS2 version 1.0.5 \nSyntax: HMSSS [OPTIONS]",epilog = "Please cite: Tanabe TS, Dahl C. HMS-S-S: A tool for the identification of sulphur metabolism-related genes and analysis of operon structures in genome and metagenome assemblies. Mol Ecol Resour. 2022;22(7):2758-2774. doi:10.1111/1755-0998.13642")
     parser.add_argument('-n','-name',nargs=1, type=str, default=["project"], metavar='<string>', help='Name new project')
     parser.add_argument('-index_db', action='store_true', help='Create index table for database')
     # Resources
@@ -147,8 +154,9 @@ def parse_arguments(arguments):
     results.add_argument('-r','-results',nargs=1, type=myUtil.dir_path, default=[__location__+"/results"], metavar='<directory>', help='Directory to project')    
     results.add_argument('-db','-database',nargs=1, type=myUtil.file_path, metavar='<filepath>', help='Filepath to existing database')    
     results.add_argument('-gtdb',nargs=1, type=myUtil.file_path, metavar='<filepath>', help='GTDB metadata filepath')
-    results.add_argument('-img',nargs=1, type=myUtil.file_path, metavar='<filepath>', help='IMG metadata filepath')
+    #results.add_argument('-img',nargs=1, type=myUtil.file_path, metavar='<filepath>', help='IMG metadata filepath')
     results.add_argument('-cutax',nargs=1, type=myUtil.file_path, metavar='<filepath>', help='Custom taxonomy metadata filepath')
+    
     #Flow regulators
     flow = parser.add_argument_group("Work step regulation")
     flow.add_argument('-redo_csb', action='store_true', help='Redo the collinear synthenic block prediction')
@@ -203,7 +211,7 @@ def parse_arguments(arguments):
     process.add_argument('-create_gene_cluster_dataset', nargs=1, type=myUtil.file_path, metavar='<file>', help='Create gene cluster dataset from sequences fasta file, requires -db with taxonomy')
     
     #process.add_argument('-dir',nargs=1, type=myUtil.dir_path, metavar='<directory>', help='Directory with fasta and alignment files')
-    #TODO trennzeichen als option anbieten 
+
     
 
     
@@ -226,18 +234,19 @@ def parse_arguments(arguments):
         options.database_directory = namespace.db[0] # Specify database directory
         options.result_files_directory = os.path.dirname(namespace.db[0]) # Set the project path to the directory of the database
 
-    if namespace.gtdb and namespace.img:
-        print("WARNING: Only GTDB or IMG can be used to assign taxonomy. Assigning GTDB taxonomy...")
+    #if namespace.gtdb and namespace.img:
+    #    print("WARNING: Only GTDB or IMG can be used to assign taxonomy. Assigning GTDB taxonomy...")
     
-    if namespace.img:
-        options.assembly_stat_file_directory = namespace.img[0]
-        options.assembly_stat_mode = "IMG"
+    #if namespace.img:
+    #    options.assembly_stat_file_directory = namespace.img[0]
+    #    options.assembly_stat_mode = "IMG"
     if namespace.gtdb:
         options.assembly_stat_file_directory = namespace.gtdb[0]
         options.assembly_stat_mode = "GTDB"
     if namespace.cutax:
         options.assembly_stat_file_directory = namespace.cutax[0]
         options.assembly_stat_mode = "custom"
+        #options.assembly_stat_mode = "GTDB"
         
     if namespace.noise_cut and namespace.trusted_cut:
         print("WARNING: Choose either trusted or noise cutoff.")
@@ -396,7 +405,7 @@ def create_logfile(directory):
     logfile = directory +"/logfile"
     #print(logfile)
     with open (logfile,"w") as writer:
-        writer.write("Date\tgenomeID\tLibrary\tdatabase\tfile")
+        writer.write("Date\tgenomeID\tLibrary\tdatabase\tfile\n")
     
     return logfile
 
@@ -480,7 +489,7 @@ def prepare_result_space(options,project="project"):
             print(f"Database: New database {options.database_directory}")
             
             
-            
+        #check for HMMlibrary    
         #check for logfile and continue if present
 
         if os.path.isfile(directory + "/logfile"):
@@ -711,7 +720,8 @@ def search_and_csb(options):
 
         myUtil.unlink(faa_file)
         myUtil.unlink(gff_file)
-
+    print("\nFinished")
+    
 def csb(options):
     """
         18.10.22
@@ -769,7 +779,12 @@ def collect_taxonomy_information(options):
       
       converts first the input format into a HMSSS compatible format and then adds it 
       to the DB
+     22.5.23
+        NCBI deactivated, trouble with bioperl script in 
     """  
+    if not options.assembly_stat_mode:
+        return
+        
     myUtil.print_header(f"\nTaxonomy assignment via {options.assembly_stat_mode} taxonomy")
     print("Assigning assembly statistics --",end="\r")
     if options.redo_taxonomy:
@@ -787,18 +802,20 @@ def collect_taxonomy_information(options):
     
     #For NCBI it has to be checked if directory was given as it is default and with -redo_taxonomy
     # it could also mean that only the DB genomeIDs should be redone
-    if options.assembly_stat_mode == "NCBI" and os.path.isdir(options.assembly_stat_file_directory):
-        AssemblyStatistics.taxdump_perl_script(__location__+"/bin/Assemblystats",options.assembly_stat_file_directory,\
-                                               options.taxonomyfile,options.taxdump)
-        print("Assigning assembly statistics -- ok")  
-    elif options.assembly_stat_mode == "GTDB":
+    #if options.assembly_stat_mode == "NCBI" and os.path.isdir(options.assembly_stat_file_directory):
+    #    AssemblyStatistics.taxdump_perl_script(__location__+"/bin/Assemblystats",options.assembly_stat_file_directory,\
+    #                                           options.taxonomyfile,options.taxdump)
+    #    print("Assigning assembly statistics -- ok")  
+    if options.assembly_stat_mode == "GTDB":
         AssemblyStatistics.parse_gtdb_metadata(options.assembly_stat_file_directory,\
                                                options.queued_genomes,options.taxonomyfile)
         print("Assigning assembly statistics -- ok")  
     #elif options.assembly_stat_mode = "IMG": %TODO
         #AssemblyStatistics.IMG_perl_script(options.assembly_stat_file_directory,options.taxonomyfile)
-    elif options.assembly_stat_mode == "custom": #%TODO custom set means direct entry of the file 
-        options.taxonomyfile = options.assembly_stat_file_directory
+    elif options.assembly_stat_mode == "custom": # custom set means direct entry of the file 
+        AssemblyStatistics.parse_custom_metadata(options.assembly_stat_file_directory,\
+                                               options.queued_genomes,options.taxonomyfile)
+        print("Assigning assembly statistics -- ok")
     
       
     print("Writing taxonomy to file --", end="\r")
