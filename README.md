@@ -11,13 +11,15 @@ You can install HMSS2 by downloading it directly from GitHub in compiled or non-
 
 3. Extract the files
 
-4. Test you can run by './dist/HMSSS -h' or 'python HMSSS/HMSSS.py -h'
+4. Test you can run by './dist/HMSSS -h' or 'python HMSS2/HMSSS.py -h'
 
 5. Installation of required external programs HMSS2 depends on:
 
     5.1 [Prodigal](https://github.com/hyattpd/Prodigal) for translation of nucleotide fasta
     
     5.2 [HMMER3](http://hmmer.org/) for the detection and annotation
+    
+    5.3 pip install biopython
   
 6. That's it! You can now run HMSS2 on a directory of protein sequence fasta files with gff files or nucleotide fasta files
 
