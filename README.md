@@ -11,7 +11,7 @@ You can install HMSS2 by downloading it directly from GitHub in compiled or non-
 
 3. Extract the files
 
-4. Test you can run by './dist/HMSSS -h' or 'python HMSS2/HMSSS.py -h'
+4. Test you can run by './HMSS2/HMSSS -h' for the [precompiled version](https://github.com/TSTanabe/HMSS2/releases/download/v1.0.5/HMSS2.zip) or 'python HMSS2/HMSSS.py -h' for the [uncompiled version](https://github.com/TSTanabe/HMSS2/releases/download/v1.0.5/HMSS2_source.zip)
 
 5. Installation of required external programs HMSS2 depends on:
 
@@ -19,7 +19,7 @@ You can install HMSS2 by downloading it directly from GitHub in compiled or non-
     
     5.2 [HMMER3](http://hmmer.org/) for the detection and annotation
     
-    5.3 pip install biopython
+    5.3 `pip install biopython` if you are using the uncompiled version
   
 6. That's it! You can now run HMSS2 on a directory of protein sequence fasta files with gff files or nucleotide fasta files
 
