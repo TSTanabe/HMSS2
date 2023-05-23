@@ -15,9 +15,9 @@ You can install HMSS2 by downloading it directly from GitHub in compiled or non-
 
 5. Installation of required external programs HMSS2 depends on:
 
-    5.1 [Prodigal](https://github.com/hyattpd/Prodigal) for translation of nucleotide fasta
+    5.1 [Prodigal](https://github.com/hyattpd/Prodigal) or `sudo apt-get install -y prodigal` for translation of nucleotide fasta
     
-    5.2 [HMMER3](http://hmmer.org/) for the detection and annotation
+    5.2 [HMMER3](http://hmmer.org/) or `sudo apt-get install -y hmmer` for the detection and annotation
     
     5.3 `pip install biopython` if you are using the uncompiled version
   
