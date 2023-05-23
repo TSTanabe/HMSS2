@@ -44,7 +44,7 @@ Protein sequences detected by the hidden Markov Models can be retrieved with `-f
 <figcaption>HMSS2 process overview. External programs are Progal and HMMER3. The input can consist of either assemblies with nucleotide sequences or protein sequences in fasta format with corresponding GFF3 files. New features of HMSS2 are marked in yellow. </figcaption>
 
 ## Result files
-The results are stored in the local database and only output on request. the `-fd` or `-dfd` option can be used for this (see also command options). Each request generates a new folder with a unique timestamp that includes all generated files:
+The results are stored in the local database located at scripts/results in separete project folders. For each search, the respective storage location of the HMSS2 database is output in the terminal. Output from a datebase specified by the `-db` option is made on request via the `-fd` or `-dfd` option can be used for this (see also command options). Each request generates a new folder with a unique timestamp that includes all generated files:
 
 * **report.txt** is a tab separated file with a summary of the metadata of the output sequences. Columns of this file report the proteinID, domains, domains scores, domain coordinates in the proteins sequence, as well as the contig, gene stat and end, strand and locustag. If a genecluster is present the keyword , completeness of the gene pattern and collinearity is also added to this list. The columns of this file described the following data:
         
