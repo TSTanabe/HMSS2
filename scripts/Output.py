@@ -741,7 +741,7 @@ def add_genomic_context(database,filepath):
                     
         print(f"\tAssigning genetic environment:")
         for current_proteinID,current_clusterID in cp_dict.items():
-            print(f"\tFetched: {current_proteinID} {current_lusterID}",end="\r")
+            print(f"\tFetched: {current_proteinID} {current_clusterID}",end="\r")
             protein_dict = dict()
             fusion_protIDs = dict()
             query = "SELECT DISTINCT Proteins.proteinID,Proteins.genomeID,Proteins.clusterID,contig,start,end,strand,sequence,domain,domStart,domEnd,score,dom_count from Proteins LEFT JOIN Domains ON Proteins.proteinID = Domains.proteinID WHERE Proteins.clusterID = ?"
