@@ -157,11 +157,7 @@ def taxonomy_lineage(array,trennzeichen):
         string = string.replace(" ","-")
         return string
     except:
-        array = ["Superkingdom","Clade","Phylum","Class","Ordnung","Family","Genus","Species"]
-        div = ''.join(trennzeichen)
-        string = div.join(array)
-        string = string.replace(" ","-")
-        return string
+        return 0
 
 def clean_empty_files(directory):
 
