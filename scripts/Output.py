@@ -680,7 +680,7 @@ def add_taxonomy(database,filepath,trennzeichen='_'):
             cur.execute("""SELECT genomeID,Superkingdom,Clade,Phylum,Class,Ordnung,Family,Genus,Species FROM Genomes WHERE genomeID = ?""",(genomeID,))
             row = cur.fetchone()
             lineage = myUtil.taxonomy_lineage(row, trennzeichen)
-            dataset_range_line = lineage if record_dict[genomeID] == 1 else f"{lineage}{trennzeichen}{record_dict[genomeID]}"
+            dataset_range_line = lineage if record_dict[genomeID] == 1 and lineage else record.id
 
 
             try:
