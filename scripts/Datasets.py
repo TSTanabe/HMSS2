@@ -634,7 +634,9 @@ def iTol_domain_dataset(directory,database,filepath,trennzeichen='_'):
                     protein_dict[row[0]] = protein
 
                     
-                                    
+            if not protein_dict:
+            	continue
+                
             proteinID_list = sorted(protein_dict, key=lambda x: protein_dict[x].gene_start) # sort proteins into correct order
             
             start_coordinate = protein_dict[proteinID_list[0]].gene_start
