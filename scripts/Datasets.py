@@ -597,10 +597,8 @@ def iTol_domain_dataset(directory,database,filepath,trennzeichen='_'):
             cur.execute("""SELECT genomeID,Superkingdom,Clade,Phylum,Class,Ordnung,Family,Genus,Species FROM Genomes WHERE genomeID = ?""",(genomeID,))
             row = cur.fetchone()
             lineage = myUtil.taxonomy_lineage(row, trennzeichen)
+            dataset_range_line = lineage if record_dict[genomeID] == 1 else str(lineage)+str(trennzeichen)+str(record_dict[genomeID])
             
-            dataset_range_line = lineage if lineage else record.id
-            if record_dict[genomeID] > 1:
-                dataset_range_line += '_'+str(record_dict[genomeID])
             
             #Fetch protein domains
             #Creating the actual domain dataset infos
