@@ -680,8 +680,10 @@ def add_taxonomy(database,filepath,trennzeichen='_'):
             cur.execute("""SELECT genomeID,Superkingdom,Clade,Phylum,Class,Ordnung,Family,Genus,Species FROM Genomes WHERE genomeID = ?""",(genomeID,))
             row = cur.fetchone()
             lineage = myUtil.taxonomy_lineage(row, trennzeichen)
-            dataset_range_line = lineage if record_dict[genomeID] == 1 and lineage else record.id
 
+            dataset_range_line = lineage if lineage else record.id
+            if record_dict[genomeID] > 1:
+                dataset_range_line += '_'+str(record_dict[genomeID])
 
             try:
                 dom_type = record.description.split(' ')[1]
