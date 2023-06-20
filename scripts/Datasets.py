@@ -606,6 +606,8 @@ def iTol_domain_dataset(directory,database,filepath,trennzeichen='_'):
             #node,1200,RE|100|150|#ff0000|SH2,EL|400|500|#0000ff|SH3,OC|700|900|#00ff00|PH
             cur.execute("""SELECT clusterID from Proteins WHERE proteinID = ?""",(proteinID,))
             row = cur.fetchone()
+            if not row:
+                continue
             clusterID = row[0]
             
             
@@ -635,7 +637,7 @@ def iTol_domain_dataset(directory,database,filepath,trennzeichen='_'):
 
                     
             if not protein_dict:
-            	continue
+                continue
                 
             proteinID_list = sorted(protein_dict, key=lambda x: protein_dict[x].gene_start) # sort proteins into correct order
             
