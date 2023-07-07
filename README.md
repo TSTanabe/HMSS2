@@ -111,6 +111,8 @@ The results each search are stored in the local database located at scripts/resu
 HMSSS also comes with several options which are scribed in the help accessed by `-h`.
 
 ### Define HMM library, gene cluster patterns file and other run options (optional)
+These options allow you to change the hidden Markov models used and set up custom libraries, thresholds, and reference gene clusters. By default these are set to the HMSS2 library and thresholds. 
+
 * `-l` sets the HMM library. By default this is set to the library in the source folder which includes the sulfur related HMMs. However this library can either be extended by or changed to any other HMM library compatible with the HMMER3 package. 
 * `-t` sets the threshold file. Specific threshold scores for each HMM in the library are located here in a tab separated file. Each name is assigned to threshold score. In case of extended libraries the threshold scores should be set here.
 * `-p` sets the syntenic gene patterns to be detected. All genes are listed in a tab separated file. Each line corresponds to one syntenic cluster. Collinearity is defined by the order of appearence. The first word in the line defines the name of the whole genecluster and is used as keyword. A gencluster can be given several different keywords, but not the same one more than once.
