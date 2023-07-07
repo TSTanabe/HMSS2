@@ -364,7 +364,7 @@ def synteny_completion(gff3_file,protein_dict,cluster_dict,candidate_protein_dic
         for line in reader.readlines():
             if line.startswith("#"):
                 continue
-            match = re.search('ID=(cds-){0,1}(\S+?)\W{0,1};',line)
+            match = re.search('ID=(cds-){0,1}(\S+?)\W{0,1}(;|$)',line)
             proteinID = match.group(2) #using the match as proteinID in the redo_csb routine possible?
             if proteinID in candidate_protein_dict.keys():
                 
