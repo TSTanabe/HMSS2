@@ -375,7 +375,7 @@ def parseGFFfile(Filepath,protein_dict):
         for line in reader.readlines():
             if line.startswith("#"):
                 continue
-            match = re.search('ID=(cds-){0,1}(\S+?)\W{0,1};',line)
+            match = re.search('ID=(cds-){0,1}(\S+?)\W{0,1}(;|$)',line)
             match = match.group(2)
             if match in protein_dict:
                 #print(protein_dict[match].get_protein())
