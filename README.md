@@ -25,7 +25,7 @@ You can install HMSS2 by downloading it directly from GitHub in compiled or non-
 
 ## Running HMSS2
 
-To run HMSS2 on your own data type in the command line. The only required argument is the file containing directory:
+To run HMSS2 on your own data type in the command line:
 
     ./HMSSS -f Directory
 
@@ -62,15 +62,21 @@ Since the identifiers of prodigal itself in protein sequence fasta file and .gff
 
     NZ_CABKUE010000001.1	Prodigal_v2.6.3	CDS	3	320	60.2	-	0	ID=NZ_CABKUE010000001.1_1;
 
-### Retrieve sequences from database examples
-Protein sequences detected by the hidden Markov Models can be retrieved with `-fd` followed by the names of the desired proteins. All proteins of a named gene cluster can be retrieved with the `-fk` command followed by the keywords of the desired gene cluster(s). Both commands combined retrieves all sequences matching both, the given keyword(s) and the given domain(s).
+If the line end after the identifier no `;` character may be required.
 
-if sequences of one or more proteins are to be output from the local database, the options -db and -fd are required. By default, the local database is located in the results folder of HMSS2. In addition, the corresponding path is also output during the initial search in the terminal. The desired protein types are written after the -fd option separated by blanks. the names can also be incomplete. An input of Dsr would therefore output all proteins that have Dsr in their designation (oxDsrA, redDsrA 
+### Retrieve sequences from database examples
+Protein sequences detected by the hidden Markov Models can be retrieved with `-fd` followed by the names of the desired proteins. All proteins of a named gene cluster can be retrieved with the `-fk` command followed by the keywords of the desired gene cluster(s). Both commands combined retrieves all sequences matching both, the given keyword(s) and the given domain(s). All these option require the `-db` command to specify the local database.
+
+If sequences of one or more proteins are to be output from the local database, the options `-db` and `-fd` are required. By default, the local database is located in the results folder of HMSS2. In addition, the corresponding path is also output during the initial search in the terminal. The desired protein types are written after the -fd option separated by blanks. the names can also be incomplete. An input of Dsr would therefore output all proteins that have Dsr in their designation (oxDsrA, redDsrA, oxDsrB ...).
 
     ./HMSSS -db /path/to/database.db -fd protein_1 protein_2 protein_3
 
+Analogously, all proteins sequences of a certain named gene cluster type can be output. This is specified via `-fk`.
+
+    ./HMSSS -db /path/to/database.db -fk cluster_type1 cluster_type2
+
 ## Result files
-The results are stored in the local database located at scripts/results in separete project folders. For each search, the respective storage location of the HMSS2 database is output in the terminal. Output from a datebase specified by the `-db` option is made on request via the `-fd` or `-dfd` option can be used for this (see also command options). Each request generates a new folder with a unique timestamp that includes all generated files:
+The results each search are stored in the local database located at scripts/results in separate project folders. For each search, the respective storage location of the HMSS2 database is output in the terminal. Output from a datebase specified by the `-db` option is made on request via the `-fd` or `-fk` option can be used for this (see also command options). Each request generates a new folder with a unique timestamp that includes all generated files:
 
 * **report.txt** is a tab separated file with a summary of the metadata of the output sequences. Columns of this file report the proteinID, domains, domains scores, domain coordinates in the proteins sequence, as well as the contig, gene stat and end, strand and locustag. If a genecluster is present the keyword , completeness of the gene pattern and collinearity is also added to this list. The columns of this file described the following data:
         
@@ -104,21 +110,23 @@ The results are stored in the local database located at scripts/results in separ
 
 HMSSS also comes with several options which are scribed in the help accessed by `-h`.
 
-### Define HMM library, gene cluster patterns file and other run options
+### Define HMM library, gene cluster patterns file and other run options (optional)
 * `-l` sets the HMM library. By default this is set to the library in the source folder which includes the sulfur related HMMs. However this library can either be extended by or changed to any other HMM library compatible with the HMMER3 package. 
 * `-t` sets the threshold file. Specific threshold scores for each HMM in the library are located here in a tab separated file. Each name is assigned to threshold score. In case of extended libraries the threshold scores should be set here.
 * `-p` sets the syntenic gene patterns to be detected. All genes are listed in a tab separated file. Each line corresponds to one syntenic cluster. Collinearity is defined by the order of appearence. The first word in the line defines the name of the whole genecluster and is used as keyword. A gencluster can be given several different keywords, but not the same one more than once.
 *  `-c` sets the number of CPUs to be used by HMMER
 *  `-nt` sets the number of nucleotides between two genes to be considered as syntenic. The distance is calculated between the closest ends of two genes.
 *  `-mc` sets the minimal fraction of the gene cluster to be present to assign a keyword. if the match between the defined gene cluster pattern and the examined gene cluster is greater than this threshold, the corresponding keyword is given to the gene cluster. 
-### Work step regulation
+### Work step regulation (optional)
+Restarts the pipeline at a specific point. This options allow to reanalyze, extend and reannotate genomes already present in a specified database. Without these options extending databases is possible, altough all genomes that have been processed before and are present in the local database will not be altered.
+
 *  `-redo_csb` start at the collinear synthenic block prediction. This will only include data already stored in the database
 *  `-redo_csb_naming`start at the synthenic block naming. This function restarts the comparison of gene clusters in the database with the entered gene cluster naming patterns. Old naming patterns are not overwritten.
 *  `-redo_search` FASTA files wihich have already been searched and have an entry in the database will not be ignored but searched again.
 *  `-redo_taxonomy` make the taxonomic assignment again.
 
 
-### Result files and output
+### Result files and output (optional)
 Results are stored in a local database which can be accessed to retrieve different results of interest. The local database can also be extended by later searched. If not defined before the search HMSS2 will create a new local database for each run.
 *  `-r` sets the directory for all results to be stored.
 *  `-db` sets the database to be created/extended or from which results should be retrieved
@@ -134,7 +142,7 @@ Limiting output to certain genomes:
 *  `-dlp` limits retrieved results to organisms which encode for the specified protein
 *  `-dlk` limits retrieved results to organisms which encode for a genecluster with the specified keyword
 
-Sequences for proteins can be retrieved and written to fasta files with the following commands:
+Sequences for proteins can be retrieved and written to fasta files with the following commands. The `-fd` and `-fk` options will also automatically generate iTol datasets and  presence/absences matrices, identical to the dataset generating options:
 
 *  `-fl` & `-ft` retrieve all sequences from all organisms of this taxon.`-fl` specifies taxonomic hirarchy level,`-ft` specifies the name of the taxon
 *  `-fd` fetch sequences for proteins with the given domain. If several domains are desired these should be separated by whitespace characters. These will be handeled as connected by an logical OR, which means any protein matching one of the given domains will be retrieved.
@@ -144,7 +152,7 @@ Sequences for proteins can be retrieved and written to fasta files with the foll
 Files always contain only one type of protein sequences. The output includes several files with reports of the written sequences and some subsets for proteins. Each file starts with a short summary of the given command, followed by the name of the protein whose sequences were written to the file. Proteins which have more than one domain previously detected by HMSSS are separately written to files and names by the all detected domains. Furthermore two subsets are prepared: 
   
 
-### Dataset output without sequences
+### Dataset output without sequences (optional)
 Information about the presence of given proteins and/or keywords in a taxon or species can be retrieved and written to tab separated files. This also includes iTol dataset compatible files but sequences will not be retrieved:
 
 *  `-dfd` retrieve presence/absence in the genome for given protein
@@ -156,7 +164,7 @@ Information about the presence of given proteins and/or keywords in a taxon or s
 
 The output contains the number for the presence of the desired proteine/keywords at each taxonomy level in absolute and relative values, each normalized to the number of genomes in the given taxonomy level. An iTol binary dataset is also output, with the specified names consisting of the genome identifiers and the taxonomic line
 
-### Processing result files
+### Processing result files (optional)
 Protein sequences are written to files with identifiers retrieved from the local database. These FASTA formatted files can be directly used or are the basis for further file generation. HMSS2 comes with further tools to create additional files based on the initial output:
 
 
