@@ -1,32 +1,39 @@
 #!/usr/bin/python
-
-
-
-
 import os
 import sys
 import argparse
 from datetime import datetime
 
 from . import Translation
-from . import Search
-from . import ParseReports
 from . import Csb_finder
-from . import AssemblyStatistics
+
+from . import Csb_Mp_Algorithm
+from . import Csb_redo
+from . import Csb_cluster
 from . import Database
 from . import Datasets
 from . import myUtil
 from . import Output
+from . import Project
+from . import Queue
+from . import ParallelSearch
+from . import BulkSearch
+from . import Processing
 
 
+# - sollen unterschiedlicher feld informationen trennen
+# _ sollen namentrennungen sein, bzw indices
 #get location of script or executable
 #for the output module report 
+#TODO fc option sollte auch die patterns adden, die über den pattern file eingetragen werden
+#TODO print a database description file from database (otherwise it is too complex for a short task)
+#TODO syntenycompletion is not properly working
 
 if getattr(sys, 'frozen', False):
     __location__ = os.path.split(sys.executable)[0]
 else:
     __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-print(__location__)
+#print(__location__)
 
 
 
@@ -36,87 +43,41 @@ class HMSSS:
     """
     def __init__(self):
         #Parameters
-        self.fasta_file_directory = None #bug from prodigal if parentheses are in path
-        self.score_threshold_file_directory = __location__+"/src/Thresholds"
-        self.pattern_file_directory = __location__+"/src/Patterns"
-        self.taxdump = __location__+"/src/taxdump"
-        self.library = __location__+"/src/HMMlib"
-        self.ziplibrary = __location__+"compressed_HMMlib.zip"
-        self.cores = 1
-        self.nucleotide_range = 3500
-        self.min_completeness = 0.5
-        self.threshold_type = 1
+        self.execute_location = __location__
         
-        self.database_directory = None                       #Directory for database results
-        self.result_files_directory = __location__+"/results" #Directory for all results files
-        self.logfile = "logfile"
-        self.genomize = None
-        
-        self.synthenic_block_support_detection = False
-        
-        self.taxonomyfile = None
-        self.assembly_stat_file_directory = ""
-        self.assembly_stat_mode = "" #Where to retrieve taxonomy information
-        self.db_get_genomeIDs = 0   #if database is provided, this will be extended and taxonomy will be updated
-
-        #Control structures
-        self.redo_taxonomy = False
-        self.redo_search = False
-        self.redo_csb = False
-        self.redo_csb_naming = False
-        self.stat_genomes = False
-        
-        #Functional dictionaries
+        #queue functional dictionaries
         self.finished_genomes = {}
         self.queued_genomes = {}
         self.faa_files = {}
         self.gff_files = {}
         
-        self.parameter_required = ("-f","-fasta","-l","-library","-t","-thresholds","-p","--patterns","-c","--cores","-nt","-nucleotide_range","-db","--database","-r","--results","-as","--assembly_stat","-gtdb","-img")
+        #csb prediction dereplication
+        self.redundant = 0
+        self.non_redundant = 0
+        self.redundancy_hash = dict()
+        self.computed_Instances_dict = 0 #for json of computed csb
+        
+        #Limiter
+        self.limiter = False
+        
         #Fetching data
         self.fetch = False
-        self.fetch_lineage = 0
-        self.fetch_taxon = 0
-        self.fetch_proteins = []
-        self.fetch_keywords = []
-        self.keywords_connector = 'OR'
-        self.fetch_all = 0
         
         #Alignment and fasta file processing
-        self.align_directory = None
-        self.merge_fasta = False            # 1 means file list 2: directory
-        self.filter_fasta = False           
-        self.filter_limits = []
-        self.concat_alignment = False       # 1 means file list 2: directory
-        self.add_aln_taxonomy = False
         self.process = False
-        self.add_genomic_context = False
-        
-        #iTol dataset creation
-        self.dataset_limit_lineage = 0
-        self.dataset_limit_taxon = 0
-        self.dataset_limit_proteins = []
-        self.dataset_limit_keywords = []
-        self.dataset_limit_min_cluster_completeness = 0
-        self.dataset_divide_sign = '_'
-        
-        self.dataset_fetch_proteins = []
-        self.dataset_fetch_keywords = []
-        self.dataset_fetch_fusion = []
-        self.dataset_fetch_protkeys = []
-        self.dataset_min_cluster_completeness = 0
-        self.dataset_combine_binary = 3
-        self.dataset_combine_file = 0
-        self.create_type_range_dataset = 0 #range dataset for iTol from a protein fasta file
-        self.create_gene_cluster_dataset = 0 #gene cluster dataset for iTol from a protein fasta file
-        self.dataset = False
         
         self.project_name = "project"
         self.index_db = False
-
+        
+        self.csb_name_prefix = "csb-" #prefix of clusterIDs determined by csb finder algorithm
+        self.csb_name_suffix = "." #suffix of clusterIDs determined by csb finder algorithm
+        
+        self.genomeID_divider = '___' #dividing sign between genomeID and proteinID, first part will be taken as genomeID
+        
+        self.synthenic_block_support_detection = False #TODO dummy option before implementation
+        
 def parse_arguments(arguments):
     """
-       15.10.22 ongoing
        Argument parser organizing the different groups of arguments the user can give.
        This includes Search and directory and workflow operators. Also operators for the
        output of data in sequence fasta format, and iTol dataset format
@@ -125,629 +86,218 @@ def parse_arguments(arguments):
     """
     options = HMSSS()
     
-    #check if HMMlib has to be unpacked
-    if not os.path.isfile(__location__+"/src/HMMlib"):
-        if os.path.isfile(__location__+"/src/HMMlib.gz"):
-            myUtil.unpackgz(__location__+"/src/HMMlib.gz")
-    
+    #Define the Argpase headers and footers
     formatter = lambda prog: argparse.HelpFormatter(prog,max_help_position=72,width =200)
-    parser = argparse.ArgumentParser(formatter_class=formatter, description = "HMSS2 version 1.0.5 \nSyntax: HMSSS [OPTIONS]",epilog = "Please cite: Tanabe TS, Dahl C. HMS-S-S: A tool for the identification of sulphur metabolism-related genes and analysis of operon structures in genome and metagenome assemblies. Mol Ecol Resour. 2022;22(7):2758-2774. doi:10.1111/1755-0998.13642")
-    parser.add_argument('-n','-name',nargs=1, type=str, default=["project"], metavar='<string>', help='Name new project')
-    parser.add_argument('-index_db', action='store_true', help='Create index table for database')
+    description = ""
+    epilog = "Please cite: Tanabe TS, Dahl C. HMSS2: An advanced tool for the analysis of sulphur metabolism, including organosulphur compound transformation, in genome and metagenome assemblies. Mol Ecol Resour. 2023;23(8):1930-1945. doi:10.1111/1755-0998.13848"
+    prog = "HMSS2 version 1.0.7"
+    usage = "HMSSS [OPTIONS] (*) dependent on the -db option"
+    
+    parser = argparse.ArgumentParser(formatter_class=formatter, description = description, epilog = epilog, usage = usage)
+    parser.add_argument('-f', dest= 'fasta_file_directory', type=myUtil.dir_path, default = None, metavar='<directory>', help='Directory to be searched')
+    parser.add_argument('-glob_report', dest='glob_report', type=myUtil.dir_path, metavar='<directory>', help = 'Directory with multipliple hmmreports from a search of concatenated genomes. Only one HMM per result file.')
+    parser.add_argument('-r', dest='result_files_directory', type=myUtil.dir_path, metavar='<directory>', default = __location__+"/results", help='Directory for the result files')
+    parser.add_argument('-n', dest='name', type=str, default="project", metavar='<string>', help='Name new project')
+    parser.add_argument('-s', dest='stage', type=int, default = 0, choices= [0,1,2,3,4,5,6,7,8,9],help='Start at stage')
+    
+    # Informations
+    information = parser.add_argument_group("Information on resources")
+    #information.add_argument('-index_db', action='store_true',help='Create index table for database') #moved the index database routine into the output routine as default
+    information.add_argument('-stat_keywords', action='store_true', help='Print patterns for keyword naming')
+    information.add_argument('-stat_csb', action='store_true', help='Print automatically found csbs')
+    information.add_argument('-stat_genomes', action='store_true', help='Print taxonomy information from database')
+    
+      
+    
+ 
     # Resources
     resources = parser.add_argument_group("Search resources")
-    resources.add_argument('-f','-fasta',nargs=1, type=myUtil.dir_path, metavar='<directory>', help='Directory to be searched')
-    resources.add_argument('-l','-library',nargs=1, type=myUtil.file_path, default=[__location__+"/src/HMMlib"], metavar='<filepath>', help='Filepath to HMM library')
-    resources.add_argument('-t','-thresholds',nargs=1, type=myUtil.file_path, default=[__location__+"/src/Thresholds"], metavar='<filepath>', help='Filepath to threshold file')
-    resources.add_argument('-p','-patterns',nargs=1, type=myUtil.file_path, default=[__location__+"/src/Patterns"], metavar='<filepath>', help='Filepath to patterns file')
+    resources.add_argument('-l', dest= 'library', type=myUtil.file_path, default=__location__+"/src/HMMlib", metavar='<filepath>', help='Filepath to HMM library')
+    resources.add_argument('-c', dest= 'cores' , type=int, default = 4, metavar='<int>', help='Allocated CPU cores. Default: 4')
+    resources.add_argument('-t', dest= 'score_threshold_file', type=myUtil.file_path, default=__location__+"/src/Thresholds", metavar='<filepath>', help='Filepath to threshold file')
+    resources.add_argument('-p', dest= 'patterns_file' , type=myUtil.file_path, default=__location__+"/src/Patterns", metavar='<filepath>', help='Filepath to patterns file')
+    resources.add_argument('-db',dest='database_directory', type=myUtil.file_path, metavar='<filepath>', help='Filepath to existing database')
+    resources.add_argument('-tax', dest='taxonomy_file', type=myUtil.file_path, metavar='<filepath>', help ='Filepath to taxonomy tsv file')
+    resources.add_argument('-clean', dest='clean_reports', action='store_true', help = 'Clean up any pre-existing HMMreport file')
+    resources.add_argument('-reports', dest='individual_reports', action='store_true', help = 'Write individual files per genome')
+    resources.add_argument('-glob_search', dest='glob_search', action='store_true', help = 'Concat to single glob fasta')
+    resources.add_argument('-glob_chunks', dest='glob_chunks', type=int, default=5000, metavar='<int>', help='Chunk size for parsing results from glob before entering into database')
+    
     # Parameters
     parameters = parser.add_argument_group("Search parameters")
-    parameters.add_argument('-c','-cores',nargs=1, type=int, default = [2], metavar='<int>', help='Number of cores used by HMMsearch')    
-    parameters.add_argument('-nt','-nucleotides',nargs=1, type=int, default = [3500], metavar='<int>', help='Max. number of nucleotides between synthenic genes')    
-    parameters.add_argument('-mc','-min_completeness',nargs=1, type=int, default = [0.5], metavar='<int>', help='Min. fraction of existing pattern name or fetch csb')
-    parameters.add_argument('-sbs', action='store_false', help='Use synthenic block support for detection')     
-    parameters.add_argument('-noise_cut', action='store_true', help='Use noise cutoff scores as threshold')
-    parameters.add_argument('-trusted_cut', action='store_true', help='Use trusted cutoff scores as threshold')
+    parameters.add_argument('-mc', dest= 'min_completeness', type=int, default = 0.5, metavar='<int>', help='Minimal fraction of predefined csb to be recognized')
+    #parameters.add_argument('-sbs', dest= 'synthenic_block_support_detection', action='store_true', help='Use synthenic block support for detection') TODO this has to be added again but only for predefined patterns
+    parameters.add_argument('-cut_type', dest='threshold_type', type=int, default = 1, metavar='<int>', choices = [1,2,3], help='Choice of cutoff: 1 optimized; 2 trusted; 3 noise; Default: 1')
+    parameters.add_argument('-cut_score', dest='thrs_score', type=int, default = 10, metavar='<int>', help='Default cutoff score. Default: 10')
     
     # Result space
-    results = parser.add_argument_group("Result directory")
-    results.add_argument('-r','-results',nargs=1, type=myUtil.dir_path, default=[__location__+"/results"], metavar='<directory>', help='Directory to project')    
-    results.add_argument('-db','-database',nargs=1, type=myUtil.file_path, metavar='<filepath>', help='Filepath to existing database')    
-    results.add_argument('-gtdb',nargs=1, type=myUtil.file_path, metavar='<filepath>', help='GTDB metadata filepath')
-    #results.add_argument('-img',nargs=1, type=myUtil.file_path, metavar='<filepath>', help='IMG metadata filepath')
-    results.add_argument('-cutax',nargs=1, type=myUtil.file_path, metavar='<filepath>', help='Custom taxonomy metadata filepath')
+    csb = parser.add_argument_group("Collinear syntenic block prediction")
+    csb.add_argument('-nt', dest= 'nucleotide_range', type=int, default = 3500, metavar='<int>', help='Max. nucleotide distance to be considered synthenic genes. Default: 3500')    
+    csb.add_argument('-insertions', dest='insertions', type=int,default = 1, metavar='<int>', help='Max. insertions in a csb. Default: 1')
+    csb.add_argument('-occurence', dest='occurence', type=int,default = 2, metavar='<int>', help='Min. number occurences to be recognized as csb. Default: 2')
+    csb.add_argument('-min_csb_size', dest='min_csb_size', type=int,default = 4, metavar='<int>', help='Min. number of genes in a csb before recognized. Default: 4')
+    csb.add_argument('-jaccard', dest='jaccard', type=float,default = 0.2, metavar='<float>', help='Acceptable dissimilarity in jaccard clustering [0-1]. Default: 0.2') #. 0.2 means that 80 percent have to be the same genes
     
     #Flow regulators
     flow = parser.add_argument_group("Work step regulation")
-    flow.add_argument('-redo_csb', action='store_true', help='Redo the collinear synthenic block prediction')
-    flow.add_argument('-redo_csb_naming', action='store_true', help='Redo pattern matching for collinear synthenic blocks')
-    flow.add_argument('-redo_search', action='store_true', help='Do not exclude genomes already stored in the database')
-    flow.add_argument('-redo_taxonomy', action='store_true', help='Redo the taxonomy')
+    flow.add_argument('-redo_csb', dest= 'redo_csb', action='store_true', help='Redo the collinear synthenic block prediction *. Default:False')
+    flow.add_argument('-redo_csb_naming', dest= 'redo_csb_naming', action='store_true', help='Redo pattern matching for collinear synthenic blocks *. Default: False')
+    flow.add_argument('-redo_search', dest= 'redo_search', action='store_true', help='Do not exclude genomes already stored in the database for the hmmsearch *. Default: False')
+    flow.add_argument('-redo_taxonomy', dest = 'redo_taxonomy', action='store_true', help='Redo the taxonomy assignment*. Default: False')
     
+    
+    
+    ########################################### Fetch & Process operators ########################
     #Limiter for genomes to account to
-    limiter = parser.add_argument_group("Limit output to genomes with conditions")
-    limiter.add_argument('-dll','-dlimit_lineage',nargs=1, type=str, metavar='<string>', choices = ['Superkingdom','Phylum','Class','Ordnung','Family','Genus','Species'],\
+    limiter = parser.add_argument_group("Limit output to genomes with conditions *")
+    limiter.add_argument('-dll',dest='dataset_limit_lineage', type=str, default = None, metavar='<string>', choices = ['Superkingdom','Phylum','Class','Ordnung','Family','Genus','Species'],\
                             help='Taxonomy level [Superkingdom,Phylum,Class,Ordnung,Family,Genus,Species]')
-    limiter.add_argument('-dlt','-dfetch_taxon',nargs=1, type=str, metavar='<string>', help='Taxonomic name e.g. Proteobacteria. Requires -dll')
-    limiter.add_argument('-dlp','-dlimit_proteins',nargs='+', type=str, help='Limit fetch to genomes with <protein>')
-    limiter.add_argument('-dlk','-dlimit_keyword',nargs='+', type=str, help='Limit fetch to genomes with <keyword>')
-    limiter.add_argument('-dlc','-dlmin_cluster_compl',nargs=1, default = [0], type=int, help='Minimal cluster completeness for -dlk keywords. Default 0.75')
+    limiter.add_argument('-dlt',dest='dataset_limit_taxon', type=str, default = None, metavar='<string>', help='Taxonomic name e.g. Proteobacteria. Requires -dll')
+    limiter.add_argument('-dlp',dest='dataset_limit_proteins', type=str, default = 0, metavar='<list>', help='Limit fetch to genomes with <protein>')
+    limiter.add_argument('-dlk',dest='dataset_limit_keywords', type=str, default = 0, metavar='<list>', help='Limit fetch to genomes with <keyword>')
 
-    limiter.add_argument('-dtd','-dtaxon_separator',nargs='+', default = '_', type=str, help='Separator for taxonomy information')
+    limiter.add_argument('-dtd',dest='dataset_divide_sign', default = '.', type=str, metavar='<string>', help='Separator for taxonomy information. The characters ";" ":" and "," cause strange behavior') #TODimplement this in fetch_bulk and all other dataset routines
     
     #Fetch operator
-    operators = parser.add_argument_group("Output sequences with these conditions")
-    operators.add_argument('-fl','-fetch_taxonrank',nargs=1, type=str, metavar='<string>', choices = ['Superkingdom','Phylum','Class','Ordnung','Family','Genus','Species'],\
+    operators = parser.add_argument_group("Output sequences with these conditions *")
+    operators.add_argument('-fl',dest='dataset_limit_lineage', type=str, metavar='<string>', choices = ['Superkingdom','Phylum','Class','Ordnung','Family','Genus','Species'],\
                             help='Taxonomy level [Superkingdom,Phylum,Class,Ordnung,Family,Genus,Species]')
-    operators.add_argument('-ft','-fetch_taxon',nargs=1, type=str, metavar='<string>', help='Taxonomic name e.g. Proteobacteria. Requires -fl')
-    operators.add_argument('-fd','-fetch_domains',nargs='+', type=str, help='Select only proteins with this domain')
-    operators.add_argument('-fk','-fetch_keywords',nargs='+', type=str, help='Select only proteins in gene cluster with this keyword')
-    operators.add_argument('-kc','-key_connector',nargs=1, type=str, default = ['OR'], choices = ['AND','OR'], help='Select cluster with keywords connected by AND or OR')
-    operators.add_argument('-fetch_all', action='store_true', help='Select everything in DB without limitation')
-    operators.add_argument('-stat_genomes', action='store_true', help='Print taxonomy information from database')
-    
-    
-    dataset = parser.add_argument_group("Dataset generation")
-    dataset.add_argument('-dfd','-dfetch_domains',nargs='+', type=str, help='Presence/absence matrix of domains')
-    dataset.add_argument('-dfk','-dfetch_keywords',nargs='+', type=str, help='presence/absence matrix of keywords')
-    dataset.add_argument('-dff','-dfetch_fusions',nargs='+', type=str, help='Presence/absence matrix of multi domain proteins (Syntax A+B C+D)')
-    dataset.add_argument('-dfpk','-dfetch_protkeys',nargs='+', type=str, help='presence/absence matrix of proteins with keywords (Syntax dom+key+key )')
-
-    dataset.add_argument('-dmc','-dmin_cluster_compl',nargs='+', default = [0], type=int, help='Minimal cluster completeness for -dfk keywords. Default 0')
-    dataset.add_argument('-dcb','-dcombined_binary',nargs=1, default = [3], type=int, help='Calculate n levels of binary permutations')
-    dataset.add_argument('-dcf','-dcombined_file',nargs=1, default = [0], type=myUtil.file_path, metavar='<file>', help='Tab seperated file with specified combinations')
-    
-    #these two define the genomes to be searched, if none provided than all in database will be in iTol dataset and set statistics
-
+    operators.add_argument('-ft',dest='dataset_limit_taxon', type=str, metavar='<string>', help='Taxonomic name e.g. Proteobacteria. Requires -fl')
+    operators.add_argument('-fg', nargs='+', dest='fetch_genomes', type=str, default=[],metavar='<list>', help='Select only genomes with these identifiers (whitespace separated)')
+    operators.add_argument('-fd', nargs='+', dest='fetch_proteins', type=str, default=[],metavar='<list>', help='Select only proteins with these domains (whitespace separated)')
+    operators.add_argument('-fc', nargs='+', dest='fetch_csbs', type=str, default=[],metavar='<list>', help='Select only csb containing the given proteins (whitespace separated)')
+    operators.add_argument('-fk', nargs='+', dest='fetch_keywords', type=str, default=[],metavar='<list>', help='Select only proteins in gene cluster with this keyword (whitespace separated)')
+    operators.add_argument('-kc', dest='keywords_connector', type=str, default = 'OR', choices = ['AND','OR'], help='Select cluster with keywords connected by AND or OR')
+  
     #Alignment and sequence file processing filter_fasta
     process = parser.add_argument_group("Alignment and sequence file processing")
-    process.add_argument('-merge_fasta', nargs='+', type=str, metavar='<file> or <directory>', help='Merges two or more sequence files with extention .faa without doublicate')
-    process.add_argument('-filter_fasta', nargs=1, type=str, metavar='<file>', help='Filter fasta file by sequence length')
-    process.add_argument('-filter_limits', nargs=2, type=int, metavar='<int>', help='Filters sequences by length upper and lower limit')
-    process.add_argument('-concat_alignment', nargs='+', type=str, metavar='<file> or <directory>', help='Concatenates alignment files with extention .fasta_aln')
-    process.add_argument('-add_taxonomy', nargs=1, type=str, metavar='<file> or <directory>', help='Adds taxonomy to alignment files in <dir>, requires -db with taxonomy')
-    process.add_argument('-add_genomic_context', nargs=1, type=myUtil.file_path, metavar='<file>', help='Adds genomic context to sequences from fasta file, requires -db with taxonomy')
-    process.add_argument('-create_type_range_dataset', nargs=1, type=myUtil.file_path, metavar='<file>', help='Create protein type range dataset from sequences fasta file, requires -db with taxonomy')
-    process.add_argument('-create_gene_cluster_dataset', nargs=1, type=myUtil.file_path, metavar='<file>', help='Create gene cluster dataset from sequences fasta file, requires -db with taxonomy')
-    
-    #process.add_argument('-dir',nargs=1, type=myUtil.dir_path, metavar='<directory>', help='Directory with fasta and alignment files')
+    process.add_argument('-merge_fasta',dest='merge_fasta', type=myUtil.dir_path, metavar='<directory>', help='Merges two or more sequence files with extention .faa without doublicates')
+    process.add_argument('-filter_fasta', dest='filter_fasta', type=str, metavar='<file> <int> <int>', help='Filter fasta file by length upper and lower limit')
+    process.add_argument('-concat_alignment',dest='concat_alignment', type=myUtil.dir_path, metavar='<directory>', help='Concatenates alignment files with extention .fasta_aln')
+    process.add_argument('-add_taxonomy',dest='add_taxonomy', type=str, metavar='<file> or <directory>', help='Adds taxonomy to alignment files in <dir>, requires -db with taxonomy')
+    process.add_argument('-add_genomic_context',dest='add_genomic_context', type=myUtil.file_path, metavar='<file>', help='Adds genomic context to sequences from fasta file, requires -db with taxonomy')
+    process.add_argument('-create_type_range_dataset',dest='create_type_range_dataset', type=myUtil.file_path, metavar='<file>', help='Create protein type range dataset from sequences fasta file, requires -db with taxonomy')
+    process.add_argument('-create_gene_cluster_dataset',dest='create_gene_cluster_dataset', type=myUtil.file_path, metavar='<file>', help='Create gene cluster dataset from sequences fasta file, requires -db with taxonomy')
+    process.add_argument('-aln_gaps', dest='gaps',action='store_true',help='When concating alignments add gaps for missing sequences')
 
     
+    
+    #### Parse the arguments
 
-    
-    namespace = parser.parse_args()
-    
-    #Assign Namespace variables to options
-    if namespace.f:
-        options.fasta_file_directory = namespace.f[0]
-        options.assembly_stat_file_directory = namespace.f[0]
-    options.library = namespace.l[0]
-    options.thresholds = namespace.t[0]
-    options.patterns = namespace.p[0]
-    
-    options.cores = namespace.c[0]
-    options.nucleotide_range = namespace.nt[0]
-    options.min_completeness = namespace.mc[0]
-    
-    options.result_files_directory = namespace.r[0]
-    if namespace.db:
-        options.database_directory = namespace.db[0] # Specify database directory
-        options.result_files_directory = os.path.dirname(namespace.db[0]) # Set the project path to the directory of the database
-
-    #if namespace.gtdb and namespace.img:
-    #    print("WARNING: Only GTDB or IMG can be used to assign taxonomy. Assigning GTDB taxonomy...")
-    
-    #if namespace.img:
-    #    options.assembly_stat_file_directory = namespace.img[0]
-    #    options.assembly_stat_mode = "IMG"
-    if namespace.gtdb:
-        options.assembly_stat_file_directory = namespace.gtdb[0]
-        options.assembly_stat_mode = "GTDB"
-    if namespace.cutax:
-        options.assembly_stat_file_directory = namespace.cutax[0]
-        options.assembly_stat_mode = "custom"
-        #options.assembly_stat_mode = "GTDB"
+    if len(sys.argv) == 1: # Check if no arguments were provided and exit
+        parser.print_help()
+        sys.exit(1)
         
-    if namespace.noise_cut and namespace.trusted_cut:
-        print("WARNING: Choose either trusted or noise cutoff.")
-        sys.exit()
+        
+    options = HMSSS()
+    parser.parse_args(namespace=options)
     
-    if namespace.sbs:
-        options.synthenic_block_support_detection = True
     
-    if namespace.noise_cut:
-        options.threshold_type = 3
-    if namespace.trusted_cut:
-        options.threshold_type = 2
-
+    # Get default values dynamically from the parser
+    default_values = {action.dest: action.default for action in parser._actions if action.dest != 'help'}
+    # Filter out default values only for the limiters fetch operators and process operators
+    relevant_groups = ['dataset_limit_lineage', 'dataset_limit_taxon', 'dataset_limit_proteins', 'dataset_limit_keywords', 'dataset_limit_min_cluster_completeness', 'dataset_divide_sign',
+                       'fetch_proteins', 'fetch_genomes', 'fetch_csbs', 'fetch_keywords', 'keywords_connector', 'stat_genomes', 'stat_csb',
+                       'merge_fasta', 'filter_fasta',
+                       'concat_alignment', 'add_taxonomy', 'add_genomic_context', 'create_type_range_dataset', 'create_gene_cluster_dataset', 'gaps']
+    default_values = {key: value for key, value in default_values.items() if key in relevant_groups}
+    process_args = Project.any_process_args_provided(options, default_values) #returns bool
     
-    if namespace.redo_search: #redo search for genomes present in database and all other given assemblies
-        options.redo_search = True
-    if namespace.redo_csb: #redo csb and csb naming
-        options.redo_csb = True    
-    if namespace.redo_csb_naming: #redo naming of csb only
-        options.redo_csb_naming = True
-    if namespace.redo_taxonomy:
-        options.redo_taxonomy = True
-        if namespace.f:
-            options.assembly_stat_file_directory = namespace.f[0]
-        if options.database_directory == None:
-            sys.exit("\nERROR: Database is required to redo taxonomic assginment.")
-            raise Exception(f"\nERROR: No writing rights.")
+    
+    
+    
+    if options.redo_taxonomy:
+        if options.taxonomy_file and options.database_directory:
+            options.stage = 5 # direct the stage to taxonomy addition
         else:
-            options.taxonomyfile = os.path.dirname(namespace.db[0]) + "/taxonomy"
-            
-            
-    if namespace.stat_genomes: #print database statistics
-        options.stat_genomes = True
-    if namespace.n:
-        options.project_name = namespace.n[0]
-    if namespace.index_db:
-        options.index_db = True
+            sys.exit("Please use the -db argument to provide a valid database and -tax argument to provide a taxonomy table")
+    if options.redo_csb_naming:
+    	options.stage = 4
+    if options.redo_csb:
+        options.stage = 3
     
-    #Limiter options        do not start fetch by itself    
-    if namespace.dll and namespace.dlt:
-        options.dataset_limit_lineage = namespace.dll
-        options.dataset_limit_taxon = namespace.dlt
-    if namespace.dlp:
-	    options.dataset_limit_proteins = namespace.dlp
-    if namespace.dlk:
-        options.dataset_limit_keywords = namespace.dlk
-    if namespace.dlc:
-        options.dataset_limit_min_cluster_completeness = namespace.dlc
-    if namespace.dmc:
-        options.dataset_min_cluster_completeness = namespace.dmc
-    if namespace.dtd:
-        options.dataset_divide_sign = namespace.dtd 
-    
-    #Sequence retrieve      do start fetch
-    if namespace.fl and namespace.ft:
-        options.dataset_limit_lineage = namespace.fl[0]
-        options.dataset_limit_taxon = namespace.ft[0]
-        options.fetch = True
-    if namespace.fd:
-        options.fetch_proteins = namespace.fd #class list
-        options.fetch = True
-    if namespace.fk:
-        options.fetch_keywords = namespace.fk #class list
-        options.fetch = True
-    if namespace.kc:
-        options.keywords_connector = namespace.kc[0] #AND or OR
-    if namespace.fetch_all:
-        options.fetch_all = 1
-        options.fetch = True
-    
-    #Dataset generation without sequence output     do start by itself
-    if namespace.dfd:
-        options.dataset_fetch_proteins = namespace.dfd
-        options.dataset = True
-    if namespace.dfk:
-        options.dataset_fetch_keywords = namespace.dfk
-        options.dataset = True   
-    if namespace.dff:
-        options.dataset_fetch_fusion = namespace.dff
-        options.dataset = True
-    if namespace.dfpk:
-        options.dataset_fetch_protkeys = namespace.dfpk
-        options.dataset = True   
+ #####Processes are at stage 100
+    if process_args:
+        options.stage = 100
+        
+        
+        if options.fetch_proteins or options.fetch_keywords or options.fetch_csbs or options.fetch_genomes:
+            options.fetch = True
+            if not options.database_directory:
+                sys.exit("Please use the -db argument to provide a valid database")
 
-    if namespace.dcb:
-        options.dataset_combine_binary = namespace.dcb[0]
-    if namespace.dcf:
-        options.dataset_combine_file = namespace.dcf
-       
+            if options.dataset_limit_proteins or options.dataset_limit_keywords or options.dataset_limit_lineage or options.dataset_limit_taxon:
+                options.limiter = True
         
+        if options.filter_fasta or options.concat_alignment or options.merge_fasta:
+            options.process = True
+        
+        if options.add_taxonomy or options.add_genomic_context or options.create_type_range_dataset or options.create_gene_cluster_dataset:
+            options.process = True
+            if not options.database_directory:
+                    sys.exit("Please use the -db argument to provide a valid database")
 
-    if namespace.merge_fasta:        
-        if os.path.isdir(namespace.merge_fasta[0]):
-            options.align_directory = namespace.merge_fasta[0]
-            options.merge_fasta = 2
-            options.process = True
-            
-        else:
-            for path in namespace.merge_fasta:
-                myUtil.file_path(path)
-            options.align_directory = namespace.merge_fasta
-            options.merge_fasta = 1
-            options.process = True
+
     
-    if namespace.concat_alignment:
-        if os.path.isdir(namespace.concat_alignment[0]):
-            options.align_directory = namespace.concat_alignment[0]
-            options.concat_alignment = 2
-            options.process = True
-            
-        else:
-            for path in namespace.concat_alignment:
-                myUtil.file_path(path)
-            options.align_directory = namespace.concat_alignment
-            options.concat_alignment = 1
-            options.process = True
-        
-        
-    if namespace.filter_fasta:
-        options.filter_fasta = namespace.filter_fasta[0]
-        options.process = True
-    if namespace.filter_limits:
-        options.filter_limits.append(namespace.filter_limits[0])
-        options.filter_limits.append(namespace.filter_limits[1])
-    
-    if namespace.add_taxonomy:            
-        options.add_aln_taxonomy = namespace.add_taxonomy[0]
-        options.process = True    
-    if namespace.add_genomic_context:
-        options.add_genomic_context = namespace.add_genomic_context[0]
-        options.process = True    
-    if namespace.create_type_range_dataset:
-        options.create_type_range_dataset = namespace.create_type_range_dataset[0]
-        options.process = True    
-    if namespace.create_gene_cluster_dataset:
-        options.create_gene_cluster_dataset = namespace.create_gene_cluster_dataset[0]
-        options.process = True            
     return options
     
 
 #############
 ####   Subroutines for preparation of the result folder
 #############
-def create_project(directory,projectname="project"):
-    now = datetime.now()
-    timestamp = datetime.timestamp(now)
-    directory = directory + "/" + str(timestamp) + "_" + projectname
-    try:
-        os.mkdir(directory)
-    except:
-        sys.exit("\nERROR: Could not create result directory. No writing rights.")
-        raise Exception(f"\nERROR: No writing rights.")
-    return directory
+     
     
-def create_logfile(directory):
-    logfile = directory +"/logfile"
-    #print(logfile)
-    with open (logfile,"w") as writer:
-        writer.write("Date\tgenomeID\tLibrary\tdatabase\tfile\n")
-    
-    return logfile
-
-def create_genomize_dir(directory):
-    os.mkdir(directory+"/per_genome")
-    return  directory+"/per_genome"
-
-def read_logfile(filepath):
-    used_files = set()
-    #f = open(filepath,"r")
-    #print(f.readlines())
-    with open(filepath,"r") as reader:
-        line = reader.readline()  # skip header
-        for line in reader.readlines():
-            line = line.replace("\n","")
-            array = line.split("\t")
-            #used_files[array[1]] = 1    # genomeID into array
-            used_files.add(array[1])
-    return used_files
-
-def write_logfile_entry(genomeID,options):
-    array = [str(datetime.now()),genomeID,myUtil.getFileName(options.library),options.database_directory,options.faa_files[genomeID]]
-    string = "\t".join(array)+"\n"
-    with open (options.logfile,"a") as writer:
-        writer.write(string)
-    writer.close()
-    return
-
-def create_taxonomyfile(directory):
-    taxon = directory +"/taxonomy"
-    #print(logfile)
-    with open (taxon,"w") as writer:
-                       #filename superkingdom clade phylum class order family genus species strain taxid biosample bioproject genbank refseq completeness contamination typestrain
-                        writer.write("genomeID\tsuperkingdom\tclade\tphylum\tclass\torder\tfamily\tgenus\tspecies\tstrain\ttaxid\tbiosample\tbioproject\tgenbank\trefseq\tcompleteness\tcontamination\ttypestrain\n")
-    return taxon
-
-  
-    
-def prepare_result_space(options,project="project"):
-    """
-        6.10.22
-        Args:
-            directory   directory for the result files to be stored
-        Return:
-            path        directory path for the result files
-            continue    boolean if old project should be continues
-        Options taken are
-        Flowchart for this routine
-            Checks if user input directory is already present
-             if not 
-                try to create this one
-             if yes 
-                check if database is already present
-                 if no
-                    create new one
-                 if yes
-                    continue writing on this existing database
-            when database is created follow with the other report files        
-            
-    """
-    myUtil.print_header("\nPreparing space for the results")
-    directory = options.result_files_directory
-    database = options.database_directory
-    logfile = 0
-    
-    if os.path.isdir(directory):   #check if directory is existing
-        #if exists check for database, without database create new one
-        if options.database_directory == None and os.path.isfile(directory+"/database.db"):
-            options.database_directory = directory+"/database.db" #old DB found
-            print(f"Database: Extending database {options.database_directory}")
-            options.db_get_genomeIDs = 1                          #get genomeIDs from database without taxonomy
-        elif not options.database_directory == None:
-            print(f"Database: Extending database {options.database_directory}")
-            options.db_get_genomeIDs = 1
-        elif not os.path.isfile(directory+"/database.db"): #dir does not contain any DB, so it is a result folder and new projects are added here
-
-            directory = create_project(directory,project) #create new project in the folder
-            
-            options.database_directory = directory+"/database.db" #no old DB found creating new one
-            Database.create_database(options.database_directory)
-            print(f"Database: New database {options.database_directory}")
-            
-            
-        #check for HMMlibrary    
-        #check for logfile and continue if present
-
-        if os.path.isfile(directory + "/logfile"):
-            print(f"Project: Continue project {directory}")
-            options.logfile = directory + "/logfile"
-        
-        else:
-            options.logfile = create_logfile(directory)
-        
-        if options.taxonomyfile == None and os.path.isfile(directory+"/taxonomy"):
-            options.taxonomyfile = directory+"/taxonomy"
-        elif not os.path.isfile(directory+"/taxonomy"):
-            print("Writing taxonomy to: "+directory+"/taxonomy")
-            options.taxonomyfile = create_taxonomyfile(directory)
-        
-        try:
-            options.genomize = create_genomize_dir(directory)
-        except:
-            options.genomize = directory+"/per_genome"
-          
-            
-    else:                           #if not existing create one
-        try:
-            os.mkdir(directory)
-        except:
-            sys.exit("\nERROR: Could not create result directory. Missing writing rights.")
-            raise Exception(f"\nERROR: No writing rights.")
-    
-        directory = create_project(directory,project)
-        print(f"Project: New project {directory}")
-        options.genomize = create_genomize_dir(directory)
-        options.logfile = create_logfile(directory)
-        options.taxonomyfile = create_taxonomyfile(directory)
-        if options.database_directory == None:
-            options.database_directory = directory+"/database.db" #no old DB found creating new one
-            print(f"Database: New database {options.database_directory}")
-            Database.create_database(options.database_directory)
-        else:
-            print(f"Created new project but using database {options.database_directory}")
-            print(f"There was no logfile found. Searching all given files in {options.fasta_file_directory}")
-    
-      
-def queue_files(options):
-    """
-        9.10.22
-        Args:
-            directory   directory for the result files to be stored
-            finished    set with genome identifiers already processed
-            options     current options object
-        Operation:
-            collect all zip protein fasta files and unzipped protein fasta files
-            collect all corresponding gff files and check for existance of this file
-            if both files present
-            get the genome identifiers
-    """
-    print("\nFilling the queue with faa files --")
-    queue = set()
-    faa_files = {}
-    gff_files = {}
-
-    #For all zipped .faa files find corresponding zipped or unzipped gff. Fill hashes with zipped format only
-    all_zip_FaaFiles = myUtil.getAllFiles(options.fasta_file_directory,".faa.gz")
-    for zip_FaaFile in all_zip_FaaFiles:
-        faa_file = myUtil.removeExtension(zip_FaaFile)
-        file_name = myUtil.removeExtension(faa_file)
-        #print(file_name+".gff.gz")
-        if os.path.isfile(file_name+".gff.gz"):
-            gff_file = file_name+".gff.gz"
-            genomeID = myUtil.getGenomeID(faa_file)
-            queue.add(genomeID) #GenomeIDs that are queued
-            faa_files[genomeID] = zip_FaaFile
-            gff_files[genomeID] = gff_file
-        elif os.path.isfile(file_name+".gff"):
-            gff_file = myUtil.packgz(file_name+".gff")
-            myUtil.unlink(file_name+".gff")
-            genomeID = myUtil.getGenomeID(faa_file)
-            queue.add(genomeID)
-            faa_files[genomeID] = zip_FaaFile
-            gff_files[genomeID] = gff_file
-        else:
-            print(f"\tWARNING: No corresponding .gff file found for {zip_FaaFile}")
-    
-    #For all unzipped .faa files find corresponding zipped or unzipped gff. Fill hashes with zipped format only
-    all_FaaFiles = myUtil.getAllFiles(options.fasta_file_directory,".faa")
-    for FaaFile in all_FaaFiles:
-        zip_FaaFile = myUtil.packgz(FaaFile)
-        myUtil.unlink(FaaFile)
-        faa_file = myUtil.removeExtension(zip_FaaFile)
-        file_name = myUtil.removeExtension(faa_file)
-        if os.path.isfile(file_name+".gff.gz"):
-            gff_file = file_name+".gff.gz"
-            genomeID = myUtil.getGenomeID(faa_file)
-            queue.add(genomeID)
-            faa_files[genomeID] = zip_FaaFile
-            gff_files[genomeID] = gff_file
-        elif os.path.isfile(file_name+".gff"):
-            gff_file = myUtil.packgz(file_name+".gff")
-            myUtil.unlink(file_name+".gff")
-            genomeID = myUtil.getGenomeID(faa_file)
-            queue.add(genomeID)
-            faa_files[genomeID] = zip_FaaFile
-            gff_files[genomeID] = gff_file
-        else:
-            print(f"\tWARNING: No corresponding .gff file found for {zip_FaaFile}")
-
-    #compare two sets
-    options.queued_genomes = queue
-    options.faa_files = faa_files
-    options.gff_files = gff_files
-    
-    
-    #compare with database leaving out all genomes already searched previously
-    if options.redo_search: #redo the search for all
-        genomeIDs = Database.fetch_genomeIDs(options.database_directory)
-        options.finished_genomes = {}
-        for genomeID in genomeIDs:
-            options.finished_genomes[genomeID] = 1 #requires for extending the protein dict in csb assignment with all old results
-    else: #leave out all genomeIDs in the database
-        genomeIDs = Database.fetch_genomeIDs(options.database_directory)
-        for genomeID in genomeIDs:
-            if genomeID in faa_files.keys():
-                print(f"\tFound assembly {genomeID} in database leaving out {myUtil.getFileName(faa_files[genomeID])}")
-                del faa_files[genomeID]
-                del gff_files[genomeID]
-                options.queued_genomes.remove(genomeID)
-    
-    print(f"Queued {len(options.queued_genomes)} for processing")
-    if len(options.queued_genomes) == 0:
-        print("There were 0 genomes queued. Use -redo_search option if genomes are already present in database")
-    print("\nFilling the queue with faa files -- ok")
-    
-
-    
-def translate_and_transcripe_fasta(directory):
-    """
-        9.10.22
-        Args:
-            directory   fasta file directory
-        Return:
-            nothing
-        Process:
-            takes all fna files without gff (either .gz or not) and uses prodigal
-            for translation to faa and gff
-            
-            takes all faa without gff (either .gz or not) and transcripes
-            to gff if it is a prodigal derived file            
-    """
-    myUtil.print_header("\nProkaryotic gene recognition and translation via prodigal")
-    Translation.translation(directory)
-    Translation.transcription(directory)
   
             
-def search_and_csb(options):
-    """
-        9.10.22
-        Args:
-            options object
-        Return:
-            nothing
-            
-        Reads threshold file and stores in a hash
-        Reads pattern files and stores in a hash
-    """
-    myUtil.print_header("\nPerforming protein annotation and collinear synthenic block prediction")
-    # prepare thresholds and patterns
-    score_threshold_diction = Search.makeThresholdDict(options.score_threshold_file_directory,options.threshold_type)
-    csb_patterns_diction,csb_pattern_names = Csb_finder.makePatternDict(options.pattern_file_directory)
+def initial_search(options):
     
-    for index,genomeID in enumerate(options.queued_genomes):
-        now = datetime.now()
-        print(f"{now} Processing assembly {index+1} of {len(options.queued_genomes)}") #print control sequence output
-        #Prepare names
-        faa_file = myUtil.unpackgz(options.faa_files[genomeID])
-        gff_file = myUtil.unpackgz(options.gff_files[genomeID])
-        file_name = myUtil.removeExtension(faa_file)
-        hmm_report = myUtil.getReportName(faa_file)
-        
-        # Search
-        Search.HMMsearch(faa_file,options.library,options.cores)
-        
-        # Parse results & write to database
-        protein_diction = ParseReports.parseHMMreport(hmm_report,score_threshold_diction)
-        ParseReports.parseGFFfile(gff_file,protein_diction)
-        
-        # Update the protein dict with previous results
-        if genomeID in options.finished_genomes.keys():
-            protein_diction.update(Database.fetch_protein_dict(options.database_directory,genomeID)) #dict1.update(dict2)
-            
-        # Synteny and cluster naming    
-        cluster_diction = Csb_finder.find_syntenicblocks(genomeID,protein_diction,options.nucleotide_range)
-        Csb_finder.name_syntenicblocks(csb_patterns_diction,csb_pattern_names,cluster_diction,options.min_completeness)
-        
-        # Increase detection sensitivity by non-homologous synteny detection criterum
-        if options.synthenic_block_support_detection:
-            missing_protein_types, missing_proteins_list_dict = Csb_finder.find_csb_pattern_difference(csb_patterns_diction,csb_pattern_names,cluster_diction,3)
-            candidate_proteins_dict = ParseReports.parseHMMreport_below_cutoff_hits(missing_protein_types,hmm_report,score_threshold_diction)
-            Csb_finder.synteny_completion(gff_file,protein_diction,cluster_diction,candidate_proteins_dict,missing_proteins_list_dict,options.nucleotide_range)
-        
-        
-        ParseReports.getProteinSequence(faa_file,protein_diction)
-        Database.insert_database_genomeID(options.database_directory,genomeID)
-        Database.insert_database_protein(options.database_directory,genomeID,protein_diction)
-        Database.insert_database_cluster(options.database_directory,genomeID,cluster_diction)
-
-        """11.4.23 deprecated
-        if genomeID in options.finished_genomes.keys(): #present database is extended, protein_dict might be incomplete at the start
-            Database.extend_database_protein(options.database_directory,genomeID,protein_diction)
-
-            protein_diction = Database.fetch_protein_dict(options.database_directory,genomeID) #get all proteins of the altered genome and find/name csb
-            cluster_diction = Csb_finder.find_syntenicblocks(genomeID,protein_diction,options.nucleotide_range)
-            Csb_finder.name_syntenicblocks(csb_patterns_diction,csb_pattern_names,cluster_diction,options.min_completeness)
-            Database.insert_database_cluster(options.database_directory,genomeID,cluster_diction)
-        
-        else: #new genome was searched, protein_dict likely complete
-            Database.insert_database_genomeID(options.database_directory,genomeID)
-            Database.insert_database_protein(options.database_directory,genomeID,protein_diction)
-
-            cluster_diction = Csb_finder.find_syntenicblocks(genomeID,protein_diction,options.nucleotide_range)
-            Csb_finder.name_syntenicblocks(csb_patterns_diction,csb_pattern_names,cluster_diction,options.min_completeness)
-            Database.insert_database_cluster(options.database_directory,genomeID,cluster_diction)
-        """
-        
-        # Write output files
-        
-        Output.output_genome_report(options.genomize+"/"+genomeID,protein_diction,cluster_diction)
-        
-        write_logfile_entry(genomeID,options)
-
-        myUtil.unlink(faa_file)
-        myUtil.unlink(gff_file)
-    print("\nFinished")
+    Queue.queue_files(options) #looks for .faa.gz and .gff.gz file pairs and queues them
     
-def csb(options):
-    """
-        18.10.22
-        Args:
-            options object
-        Return:
-            nothing
-    """
-    myUtil.print_header(f"\nRedo collinear syntenic block assignment")
-    print("Reading pattern")
-    csb_patterns_diction,csb_pattern_names = Csb_finder.makePatternDict(options.pattern_file_directory)
-    print("Collecting genomeIDs")
-    genomeIDs = Database.fetch_genomeIDs(options.database_directory)
-    lim = str(len(genomeIDs))
-    for index,genomeID in enumerate(genomeIDs):
-        print(f"Genome number {index+1} of {lim}", end="\r")
-        protein_diction = Database.fetch_protein_dict(options.database_directory,genomeID)
-        #print("\t Looking for syntenic blocks")
-        cluster_diction = Csb_finder.find_syntenicblocks(genomeID,protein_diction,options.nucleotide_range)
-        #print("\t Naming syntenic blocks")
-        Csb_finder.name_syntenicblocks(csb_patterns_diction,csb_pattern_names,cluster_diction,options.min_completeness)
-        #print("\t Insert into database")
-        Database.insert_database_cluster(options.database_directory,genomeID,cluster_diction)
-    print("Finished csb naming\n")
+    #Create database if not exist
+    if os.path.isfile(options.database_directory):
+        genomeIDs = Database.fetch_genomeIDs(options.database_directory)
+        Queue.compare_with_existing_database(options,genomeIDs)
+        Database.drop_specified_indices(options.database_directory)
+    else:
+        print(f"Saving results to database: {options.database_directory}")
+        Database.create_database(options.database_directory)
+    
+    #Start the search or bulk parse
+    if options.glob_report:
+        BulkSearch.initial_bulk_reports(options)
+    
+    elif options.cores <= 2:
+        ParallelSearch.initial_search(options)
+    
+    elif options.cores >= 3:
+        ParallelSearch.multi_search_process(options)
 
-def csb_names(options):
+def csb_finder(options):
+    Csb_cluster.csb_prediction(options)
+    csb_gene_cluster_dict = Csb_cluster.csb_jaccard(options)
+    Database.delete_keywords_from_csb(options.database_directory, options) #remove keys with options.csb_name_prefix options.csb_name_suffix to avoid old keyword interference
+    Database.update_keywords(options.database_directory,csb_gene_cluster_dict) #assigns the names of the keywords to the clusters
+
+
+
+
+
+
+def redo_block_assignment(options):
+    """
+        This routine has to be modified to run more efficiently and print the results out to the gene_cluster_file for further processing
+        Parallelization is possible with a detached writing process
+    """
+    
+    Database.light_index_database(options.database_directory) #make it light: for proteinIDs and genomeIDs only, not cluster
+    Csb_redo.redo_csb_reports(options)
+    Csb_cluster.csb_prediction(options)
+    csb_gene_cluster_dict = Csb_cluster.csb_jaccard(options)
+    Database.delete_keywords_from_csb(options.database_directory, options) #remove keys with options.csb_name_prefix options.csb_name_suffix to avoid old keyword interference
+    Database.update_keywords(options.database_directory,csb_gene_cluster_dict) #assigns the names of the keywords to the clusters
+
+
+def redo_csb_names(options):
     """
         09.11.22
         Args:
@@ -758,7 +308,7 @@ def csb_names(options):
     
     myUtil.print_header(f"\nRedo collinear syntenic block assignment")
     print("Reading pattern")
-    csb_patterns_diction,csb_pattern_names = Csb_finder.makePatternDict(options.pattern_file_directory)
+    csb_patterns_diction,csb_pattern_names = Csb_finder.makePatternDict(options.patterns_file)
     print("Collecting genomeIDs")
     genomeIDs = Database.fetch_genomeIDs(options.database_directory)
     lim = str(len(genomeIDs))
@@ -771,62 +321,14 @@ def csb_names(options):
     print("\nFinished csb naming")    
     
 def collect_taxonomy_information(options):
-    """
-     12.10.22 no comment
-     19.2.23
-      can either be invoked by default when a new database is created and searched
-      or as a redo with existing database
-      
-      converts first the input format into a HMSSS compatible format and then adds it 
-      to the DB
-     22.5.23
-        NCBI deactivated, trouble with bioperl script in 
-    """  
-    if not options.assembly_stat_mode:
-        return
-        
-    myUtil.print_header(f"\nTaxonomy assignment via {options.assembly_stat_mode} taxonomy")
-    print("Assigning assembly statistics --",end="\r")
-    if options.redo_taxonomy:
-        #get all genomeIDs regardless of pre-existing taxonomy
-        options.queued_genomes = Database.fetch_genomeIDs(options.database_directory)
-    elif options.db_get_genomeIDs:
-        #get all genomIDs were any taxonomy level information is missing and all queued genomes for assignment
-        DBset = Database.fetch_genomeID_without_phylogeny(options.database_directory)
-        options.queued_genomes = set.union(options.queued_genomes,DBset)
-
-    
-    #database to insert into the information => options.database_directory
-    #genomeIDs to search taxonomic information for => options.queued_genomes
-    #directory with the assembly metadata => options.assembly_stat_file_directory
-    
-    #For NCBI it has to be checked if directory was given as it is default and with -redo_taxonomy
-    # it could also mean that only the DB genomeIDs should be redone
-    #if options.assembly_stat_mode == "NCBI" and os.path.isdir(options.assembly_stat_file_directory):
-    #    AssemblyStatistics.taxdump_perl_script(__location__+"/bin/Assemblystats",options.assembly_stat_file_directory,\
-    #                                           options.taxonomyfile,options.taxdump)
-    #    print("Assigning assembly statistics -- ok")  
-    if options.assembly_stat_mode == "GTDB":
-        AssemblyStatistics.parse_gtdb_metadata(options.assembly_stat_file_directory,\
-                                               options.queued_genomes,options.taxonomyfile)
-        print("Assigning assembly statistics -- ok")  
-    #elif options.assembly_stat_mode = "IMG": %TODO
-        #AssemblyStatistics.IMG_perl_script(options.assembly_stat_file_directory,options.taxonomyfile)
-    elif options.assembly_stat_mode == "custom": # custom set means direct entry of the file 
-        AssemblyStatistics.parse_custom_metadata(options.assembly_stat_file_directory,\
-                                               options.queued_genomes,options.taxonomyfile)
-        print("Assigning assembly statistics -- ok")
-    
+    myUtil.print_header(f"\nTaxonomy assignment")
       
     print("Writing taxonomy to file --", end="\r")
-    AssemblyStatistics.insert_database_assembly_statistics(options.database_directory,options.taxonomyfile,options.queued_genomes)
+    Database.insert_taxonomy_data(options.database_directory, options.taxonomy_file)
     print("Writing taxonomy to file -- ok")
 
 def output_operator(options):
     """
-        17.10.22
-        07.11.22
-        10.11.22
         Args:
             options object
         Return:
@@ -834,126 +336,25 @@ def output_operator(options):
         Output:
             File    fasta formatted file
             File    metadata file
-    
-
     """
 
     myUtil.print_header(f"\nOutput from database")
     
     #Set directory
     date = datetime.now()
-    database = options.database_directory
-    path = myUtil.getPath(options.database_directory)
-    directory = path+str(date)+"_dataset/"
-    os.mkdir(directory)
-    #path1 = directory+str(options.fetch_lineage)+"_"+str(options.fetch_taxon)+"_"+str(options.fetch_proteins)+"_"+str(options.fetch_keywords)+".txt"
-    #path2 = directory+str(options.fetch_lineage)+"_"+str(options.fetch_taxon)+"_"+str(options.fetch_proteins)+"_"+str(options.fetch_keywords)
-    path1 = directory+"1_hit_table.txt"
-    path2 = directory+"2_Protein"
-    
-    
-    #Limit the genomeIDs and fetch the lineage
-    print("Collecting taxonomy lineage information")
-    taxon_diction = Output.fetch_limiter_data(database,options.dataset_limit_lineage,\
-                                              options.dataset_limit_taxon,\
-                                              options.dataset_limit_proteins,\
-                                              options.dataset_limit_keywords,\
-                                              options.dataset_limit_min_cluster_completeness,\
-                                              options.dataset_divide_sign)
-    print("\nCollecting taxonomy lineage information -- ok\n")
-    #Fetch protein/cluster diction                      
-    print("Collecting protein sequences")                        
-    protein_diction,cluster_diction = Output.fetch_bulk_data(options.database_directory,\
-                                                             options.fetch_proteins,options.fetch_keywords,\
-                                                             taxon_diction,options.min_completeness)
-    print("Collecting proteins sequences -- ok\n")
-    
-    
-    print("Writing output to disc\n")
-    Output.output_genome_report(path1,protein_diction,cluster_diction,taxon_diction)    #Output report
-    files = Output.output_distinct_fasta_reports(path2,protein_diction,cluster_diction) #Output per domain
-    Output.singletons(directory,files)                                                  #Output singleton per genome and doublicates
-    
-    files = Output.output_combined_keyword_fasta_reports(directory,files,options.fetch_keywords)
-    Output.singletons(directory,files)
-    myUtil.clean_empty_files(directory)
-    protein_diction.clear()
-    cluster_diction.clear()
-    print(f"\nWrote output to :\n{path1} \nand\n{path2}")
-    
-    
-    #Fetch dataset dictionary and headers       
-    print("\n\nCollecting presence/absence of sequences per genome\n")
-    dataset_dict,headers = Datasets.fetch_binary_dataline(database,taxon_diction,\
-                                                          options.fetch_proteins,options.fetch_keywords,\
-                                                          list(),list(),\
-                                                          options.dataset_min_cluster_completeness)
-    print("Collecting presence/absence of sequences per genome -- ok")
-    print("Writing datasets on disk space")
-    #Output iTol dataset and Matrices
-    iTol_data_dict = Datasets.iTol_lineage_to_binary_dataline(taxon_diction,dataset_dict)
-    Datasets.iTol_binary_file_dataset(directory,iTol_data_dict,headers)
-    combined_dataset_dict,combined_headers = Datasets.dataline_combinations(dataset_dict,headers,options.dataset_combine_file,options.dataset_combine_binary)
-    Datasets.dataset_statistics(database,directory,combined_headers,combined_dataset_dict)
-    print("Writing datasets on disk space -- ok")
-    print("Finished")
-    
-    
-def dataset_generation(options):
-    """
-        06.11.22
-        Args:
-            options object with directory and mode
-                -database
-                -taxonomy/protein/keyword limiter
-                -matrix proteins/keywords
-                -minimal cluster completeness
-                -level of permutations
-        Return:
-            nothing
-        Output:
-            File    for each taxonomy level presence absence matrix of proteins and keywords
-            File    iTol dataset of the 
-            
-        
-    """
-    date = datetime.now()
-    database = options.database_directory
-    path = myUtil.getPath(options.database_directory)
-    directory = path+str(date)+"_dataset/"
-    os.mkdir(directory)
+    directory = os.path.dirname(options.database_directory)+"/"+str(date)+"_dataset/"
+    os.mkdir(directory) #save results in the same folder as the database
 
-
-    print("Collecting taxonomy lineage information")
-    taxon_dict = Output.fetch_limiter_data(database,options.dataset_limit_lineage,\
-                                              options.dataset_limit_taxon,\
-                                              options.dataset_limit_proteins,\
-                                              options.dataset_limit_keywords,\
-                                              options.dataset_limit_min_cluster_completeness,\
-                                              options.dataset_divide_sign) #return hold taxonomy data
-    print("\nCollecting taxonomy lineage information -- ok\n")
-    #Datasets.iTol_taxonomy_range_dataset(directory,taxon_dict)     Commented out because range datasets have far too many possibilites to just be made here by incidence.
-    print("Collecting presence/absence of domains and keywords per genome")                                              
-    dataset_dict,headers = Datasets.fetch_binary_dataline(database,taxon_dict,\
-                                                          options.dataset_fetch_proteins,options.dataset_fetch_keywords,\
-                                                          options.dataset_fetch_fusion,options.dataset_fetch_protkeys,\
-                                                          options.dataset_min_cluster_completeness) #return genomeID => binary line tab separated
-    print("Collecting presence/absence of domains and keywords per genome -- ok")
-    print("Writing datasets on disk space")
-    iTol_data_dict = Datasets.iTol_lineage_to_binary_dataline(taxon_dict,dataset_dict)
-    Datasets.iTol_binary_file_dataset(directory,iTol_data_dict,headers) #iTol binary dataset output
-    combined_dataset_dict,combined_headers = Datasets.dataline_combinations(dataset_dict,headers,options.dataset_combine_file,options.dataset_combine_binary) #combined presence absence
-    Datasets.dataset_statistics(database,directory,combined_headers,combined_dataset_dict)
-    print("Writing datasets on disk space -- ok")
-    print("Finished")
-
+    #primary output routine for fasta files
+    protein_dict, cluster_dict, taxon_dict = Output.print_fasta_and_hit_table(directory,options)
     
-    
+    #dataset generation
+    Datasets.main_binary_dataset(options, directory, taxon_dict, protein_dict, cluster_dict)
+    return
 
     
 def output_statistics(options):    
     Database.fetch_genome_statistic(options.database_directory)
-    Database.fetch_bulk_statistic(options.database_directory)
     
     
 def process_operator(options):
@@ -970,82 +371,34 @@ def process_operator(options):
         This process shall merge fasta files, concat alignments, and add taxonomic information to fasta/alignment files    
     """
     myUtil.print_header(f"\nProcessing sequence files")
-    #if not options.align_directory and not options.add_aln_taxonomy and not options.filter_fasta and not options.add_genomic_context:
-    #    print("WARNING: Missing alignment file directory, please use -dir argument")
-    #    return
     
-#Merge fasta files
+    #Merge fasta files
     if options.merge_fasta:
-        if options.merge_fasta == 2:
-            fasta_files = myUtil.getAllFiles(options.align_directory,".faa")
-            output = options.align_directory+"/concat.fasta"
-        elif options.merge_fasta == 1:
-            fasta_files = options.align_directory
-            path = myUtil.getPath(options.align_directory[0])
-            output = path+"/concat.faa"
-            
-        Output.merge_fasta(output,fasta_files)
-        print(f"\nWrote merged fasta files without doublicates to:\n {output}")
-#Concat alignment files    
+        Processing.merge_fasta(options)
+        
+    #Concat alignment files    
     if options.concat_alignment:
-        if options.concat_alignment == 2:
-             fasta_files = myUtil.getAllFiles(options.align_directory,"fasta_aln")
-             output = options.align_directory+"/concat.fasta_aln"
-        elif options.concat_alignment == 1:
-            fasta_files = options.align_directory
-            path = myUtil.getPath(options.align_directory[0])
-            output = path+"/concat.faa"
-            
-        Output.concat_alignments(output,fasta_files)
-        print(f"\nWrote concatenated alignments to:\n {output}")    
+        Processing.concat_alignments(options)
+        
 
 #Filter fasta files by length    
     if options.filter_fasta:
-        if os.path.isfile(options.filter_fasta): 
-            Output.filter_length_fasta(options.filter_fasta,options.filter_limits[0],options.filter_limits[1])
+        Processing.filter_length_fasta(options.filter_fasta[0],options.filter_fasta[1],options.filter_fasta[2])
     
 #Add taxonomy information    
-    if options.add_aln_taxonomy:
-        if not options.database_directory:
-            print("WARNING: Missing database to assign taxonomy, please use -db argument")
-            return  
-        if os.path.isdir(options.add_aln_taxonomy): 
-        #if directory was provided
-        #name all sequences and concat all files
-            fasta_files = myUtil.getAllFiles(options.add_aln_taxonomy,".faa")
-            for fasta in fasta_files:
-                Output.add_taxonomy(options.database_directory,fasta)
+    if options.add_taxonomy:
+        Processing.taxonomy_comprehension(options)
 
-            print("Concatenating named fasta files")
-            fasta_files = myUtil.getAllFiles(options.add_aln_taxonomy,".taxon_names")    
-            output = options.add_aln_taxonomy+"/concat.fasta_aln"
-            Output.concat_alignments(output,fasta_files)
-            print(f"\nWrote concatenated alignments to:\n {output}")
-            
-        elif os.path.isfile(options.add_aln_taxonomy):
-        #if single file was provided
-        #name all sequences
-            Output.add_taxonomy(options.database_directory,options.add_aln_taxonomy)
-            
-        else:
-            print(f"ERROR: {options.add_aln_taxonomy} is not a file or directory")
-
-#Get a textfile with genomic context based on provided sequence fasta file    
+    #Get a textfile with genomic context based on provided sequence fasta file    
     if options.add_genomic_context:
-        if not options.database_directory:
-            print("WARNING: Missing database to assign taxonomy, please use -db argument")
-            return 
-        Output.add_genomic_context(options.database_directory,options.add_genomic_context)
+        Processing.add_genomic_context(options.database_directory,options.add_genomic_context)
 
-#Get a iTol dataset file with gene cluster dataset    
+    #Get a iTol dataset file with gene cluster dataset    
     if options.create_gene_cluster_dataset:
-        if not options.database_directory:
-            print("WARNING: Missing database to assign taxonomy, please use -db argument")
-            return 
         directory = os.path.dirname(options.create_gene_cluster_dataset)
         Datasets.iTol_domain_dataset(directory,options.database_directory,options.create_gene_cluster_dataset,options.dataset_divide_sign)
 
-#Get a iTol dataset file with range data per protein type
+    #Get a iTol dataset file with range data per protein type
     if options.create_type_range_dataset:
         if not options.database_directory:
             print("WARNING: Missing database to assign taxonomy, please use -db argument")
@@ -1058,54 +411,73 @@ def process_operator(options):
 
 
 def main(args=None):
-    #1
+    
+    Queue.prepare_HMMlib(__location__)
+
     options = parse_arguments(args)
-    if options.redo_csb:
-        #8
-        csb(options)
-    elif options.redo_csb_naming:
-        #8
-        csb_names(options)
-    elif options.redo_taxonomy:
-        #7
+    if options.stat_keywords:
+        Output.print_file_content(options.patterns_file)
+        sys.exit()
+
+            
+    #print(f"Start at stage {options.stage}")    
+    myUtil.print_header("\nInitilizing result file directory")
+    
+    Project.prepare_result_space(options,options.name)
+    
+    
+    if options.stat_csb:
+        Output.print_file_content(options.csb_output_file)
+        sys.exit()
+        
+    if options.stage <= 1 and not options.glob_report:
+        #ignored if bulk is used because nobody should want to translate a glob via prodigal
+        myUtil.print_header("\nProkaryotic gene recognition and translation via prodigal")
+        Translation.parallel_translation(options.fasta_file_directory, options.cores)      #fine
+        Translation.parallel_transcription(options.fasta_file_directory, options.cores)    #fine
+    
+    
+    if options.stage <= 2 or options.redo_search:
+        myUtil.print_header("\nSearching for homologoues sequences")
+        initial_search(options)
+        options.stage = 2
+        
+    if options.redo_csb or options.redo_search:
+        myUtil.print_header(f"\nRedo collinear syntenic block assignment")
+        redo_block_assignment(options)
+        options.stage = 5
+
+    if options.stage <= 3:
+        myUtil.print_header("\nSearching for collinear syntenic blocks")
+        csb_finder(options)
+   
+    if options.redo_csb_naming:
+        redo_csb_names(options)
+
+    if options.stage <= 5:
         collect_taxonomy_information(options)
-    elif options.fasta_file_directory:
-        #2
-        translate_and_transcripe_fasta(options.fasta_file_directory)
-        #3
-        prepare_result_space(options,options.project_name)
-        #4
-        queue_files(options)    
-        #5 & 6
-        search_and_csb(options)
-        #7
-        collect_taxonomy_information(options)
+            
+
+
     
     
     
-    
-    
-    
-    
-    if options.index_db:
-        #12
-        Database.index_database(options.database_directory)
+# These routines modify the existing data and output    
+        
     if options.fetch:
         #14
+        Database.index_database(options.database_directory)
         output_operator(options)
+        
     if options.stat_genomes:
         #9
         output_statistics(options)
-       
+    
+
+    
     if options.process:
-        #10 special because not in pipeline
         # file/alignment concat utilities
         process_operator(options)
-        
-    if options.dataset:
-        #11 light version of #14
-        #on big datasets faster when separately invoked
-        dataset_generation(options) 
     
 
     

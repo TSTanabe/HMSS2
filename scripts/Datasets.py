@@ -1,7 +1,7 @@
 #!/usr/bin/python
-#		Module PrepareGenomicData
-#		Subroutine FaaToGff
-#		Subroutine Translation
+from collections import defaultdict
+import os
+
 
 import sqlite3
 import random
@@ -13,236 +13,166 @@ from operator import add
 from itertools import combinations
 from math import floor
 
-##############################################################
-########## Fetch information from database routines ##########
-##############################################################
 
-    #TODO the keys and proteins value has to be controlled by the upper layer in main otherwise there occur errors
-def fetch_binary_dataline(database,taxon_dict,proteins,keywords,fusions,protkeys,min_cluster_completeness=0,keys_and_proteins=0):
-    """
-    04.11.22
-        Args:
-            database        Name of the database to be worked on
-            taxon_dict      dictionary with limiting genomeIDs => taxonomic lineage
-            protein list    limits the db fetch to specific protein type
-            keyword list    limits the db fetch to specific cluster keyword
-            protkeys        empty list
-            fusions         empty list
-            min_cluster_completeness     minimal completeness for cluster keywords to occur in the output
-        Return:
-            dataset_dict dictionary with limited genomeIDs => list with binary data
-            headers     headline/ name of each list            
-            
-            In the prediction that taxon dict datasets will only be displayed on somewhat species tree
-            dataset_dict may be used for genome statistics
-    22.11.22
-        extend routine to fetch specific fusion proteins
-        and
-        proteins combined with keyword; additionally select and count these proteins without this keyword
-    12.12.22
-        proteins are now searched in keyword clusters if any keywords are provided. If proteins are meant to be
-        searched alone please use separate fetch commands for iTol datasets    
-    
-    Searches for presence/absence matrix. If proteins are given, protein presence. If keyword is given keyword presence.
-    If both is given it searches for presence of proteins with this keyword
-    22.03.23
-        remodel the routine
-    """
-    dataset_dict = {}
-    for key in taxon_dict.keys():
-        dataset_dict[key] = []
-    
-    #define the taxon_dict limiter
-    genome_ids = "'" + "', '".join(taxon_dict.keys()) + "'"
-    limiter = " AND Proteins.genomeID IN ({genome_ids})"
-    limiter = limiter.format(genome_ids=genome_ids)
-        
-    with sqlite3.connect(database) as con:
-        cur=con.cursor()
-        cur.execute("""PRAGMA foreign_keys = ON;""")
-        query = "SELECT Proteins.genomeID from Proteins LEFT JOIN Domains ON Proteins.proteinID = Domains.proteinID LEFT JOIN Keywords ON Proteins.clusterID = Keywords.clusterID WHERE domain LIKE ? "
-        
+##################################################################
+########## Species tree mapping matrix from diction ##############
+##################################################################
 
+
+
+def main_binary_dataset(options, directory, taxon_dict, protein_dict, cluster_dict):
+    """
+    Main function to process species binary datasets for proteins and keywords.
+
+    Args:
+        options: Object containing options for fetching proteins and keywords.
+        directory: Directory where the output files will be written.
+        taxon_dict: Dictionary mapping genomeID to taxonomic lineage.
+        protein_dict: Dictionary of protein data.
+        cluster_dict: Dictionary of cluster data.
+    """
+    # Process protein dataset
+    protein_presence_dict = fetch_protein_presence(protein_dict)
+    protein_binary_matrix_dict, prot_headers = create_presence_absence_matrix(taxon_dict, options.fetch_proteins, protein_presence_dict)
+    process_binary_dataset(taxon_dict, protein_binary_matrix_dict, prot_headers, directory, options.dataset_divide_sign, "domains")
+    
+    # Process keyword dataset
+    keywords_presence_dict = fetch_keyword_presence(cluster_dict)
+    keywords_binary_matrix_dict, key_headers = create_presence_absence_matrix(taxon_dict, options.fetch_keywords, keywords_presence_dict)
+    process_binary_dataset(taxon_dict, keywords_binary_matrix_dict, key_headers, directory, options.dataset_divide_sign, "keywords")
+
+    return
+    
+def process_binary_dataset(taxon_dict, binary_matrix_dict, headers, directory, divide_sign, suffix=""):
+    """
+    Helper function to process and write binary datasets and taxon group counts.
+
+    Args:
+        taxon_dict: Dictionary mapping genomeID to taxonomic lineage.
+        binary_matrix_dict: Dictionary mapping genomeID to binary presence/absence data.
+        headers: List of headers for the binary data.
+        directory: Directory where the output files will be written.
+        dataset_name: Name of the dataset (e.g., "domains", "keywords").
+    """
+    # Create the iTol binary dataline
+    dataline_dict = iTol_lineage_to_binary_dataline(taxon_dict, binary_matrix_dict)
+    
+    # Write the iTol binary dataset
+    iTol_binary_file_dataset(directory, dataline_dict, headers, suffix)
+    
+    # Count taxon group presence by level
+    taxon_group_counts_by_level = count_taxon_group_presence_by_level(taxon_dict, binary_matrix_dict,divide_sign)
+    
+    # Write the taxon group counts to TSV files
+    write_taxon_group_counts_to_tsv(taxon_group_counts_by_level, directory, headers, suffix)
+
+
+def fetch_protein_presence(protein_dict):
+    # Dictionary, das die Domains als Schlüssel enthält und Sets von genomeIDs als Werte
+    domain_to_genomeIDs = {}
+
+    # Iteriere über alle Protein-Objekte im protein_dict
+    for protein in protein_dict.values():
+        # Hole die Domain des aktuellen Proteins (single string)
+        domain = protein.get_domains()
+
+        # Hole die genomeID des aktuellen Proteins
+        genomeID = protein.genomeID
+
+        # Füge die genomeID dem entsprechenden Set für die Domain hinzu
+        if domain not in domain_to_genomeIDs:
+            # Initialisiere ein neues Set, wenn die Domain noch nicht im Dictionary existiert
+            domain_to_genomeIDs[domain] = set()
+
+        # Füge die genomeID zum Set hinzu
+        domain_to_genomeIDs[domain].add(genomeID)
+
+    return domain_to_genomeIDs
+
+def fetch_keyword_presence(cluster_dict):
+    # Dictionary, das die Keywords als Schlüssel enthält und Sets von genomeIDs als Werte
+    keyword_to_genomeIDs = {}
+
+    # Iteriere über alle Cluster-Objekte im cluster_dict
+    for cluster in cluster_dict.values():
+        # Hole die Keywords des aktuellen Clusters
+        keywords = cluster.get_keywords()
+
+        # Hole die genomeID des aktuellen Clusters
+        genomeID = cluster.genomeID
         
-        keywords_array = []
-        keyword_args = []
-        keyword_query_string = ""
+        # Füge für jedes Keyword die genomeID dem entsprechenden Set hinzu
         for keyword in keywords:
-            keywords_array.append(" keyword LIKE ? ")
-            keyword_args.append('%'+keyword+'%')
-
-        
-        # searching for protein domains in clusters with keyword X
-        if keys_and_proteins:
-            if keywords_array:
-                keyword_query_string = " AND (" + "OR".join(keywords_array) + ")"
-                query = query + keyword_query_string    
-                print("Searching for entries:" + str(len(proteins)) + " proteins with " + str(len(keywords)) + " keywords")
-                # For each protein check presence in gene cluster with keyword
-                for protein in proteins: 
-                    args = ['%'+protein+'%'] + keyword_args
-                    cur.execute(query,args)
-                    fetched = {} #genomeIDs with presenct domain in gene cluster
-
-                    print(f"\tDomains 0",end= "\r")
-                    for count,row in enumerate(cur):
-                        print(f"\tFound {count} domains for protein {protein}",end= "\r")
-                        fetched[row[0]] = 1
-                        
-                    print(f"\n\tSaving presence absence of domains {protein}")    
-                    for genomeID,listing in dataset_dict.items():
-                        if genomeID in fetched:    
-                            listing.append(1)
-                        else:
-                            listing.append(0)
-
-
-        #If not keywords and proteins where provided do it separately
-        else:
-            print("Searching for entries: " + str(len(proteins)) + " proteins and " + str(len(keywords)) + " keywords independently")        
-            query = "SELECT Proteins.genomeID from Proteins LEFT JOIN Domains ON Proteins.proteinID = Domains.proteinID LEFT JOIN Keywords ON Proteins.clusterID = Keywords.clusterID WHERE domain LIKE ? " + limiter
-
-            for protein in proteins:
-                cur.execute(query,['%'+protein+'%'])
-                fetched = {}
-                #print("Found: " + str(len(cur)) + " entries like " + protein)
-                print(f"\tDomains 0",end= "\r")
-                for count,row in enumerate(cur):
-                    print(f"\tFound {count} domains for protein {protein}",end= "\r")
-                    fetched[row[0]] = 1
-                print(f"\n\tSaving presence absence of domains {protein}")    
-                for genomeID,listing in dataset_dict.items():
-                    if genomeID in fetched:    
-                        listing.append(1)
-                    else:
-                        listing.append(0)            
-                        
-            query = "SELECT DISTINCT Proteins.genomeID from Proteins LEFT JOIN Keywords ON Proteins.clusterID = Keywords.clusterID WHERE keyword LIKE ?" + limiter
-            for keyword in keywords:
+            key = keyword.get_keyword()
+            if key not in keyword_to_genomeIDs:
+                # Initialisiere ein neues Set, wenn das Keyword noch nicht im Dictionary existiert
+                keyword_to_genomeIDs[key] = set()
             
-                cur.execute(query,['%'+keyword+'%'])
-                fetched = {}
-                for count,row in enumerate(cur):
-                    fetched[row[0]] = 1
-                    print(f"\tFound {count} clusters for keyword {keyword}",end= "\r")
-                print(f"\n\tSaving presence absence of keyword {keyword}")
-                for genomeID,listing in dataset_dict.items():
-                    if genomeID in fetched:    
-                        listing.append(1)
-                    else:
-                        listing.append(0)
-         
-        #Dealing with use provided fusion proteins 
-        for fusion in fusions:
-            #Format: A+B
-            #parse fusion
-            domains = fusion.split("+")
-            protein_domains = len(domains)-1 #number of domains in the protein - 1 because of the > comparison
-            query = "SELECT DISTINCT Proteins.proteinID from Proteins LEFT JOIN Domains ON Proteins.proteinID = Domains.proteinID WHERE dom_count > ? AND domain LIKE ? ;"
-            domain_dict_set = {} # key domain => value set of proteinIDs
-            for domain in domains:
-                proteinID_set = set()
-                cur.execute(query,[protein_domains,domain])
+            # Füge die genomeID zum Set hinzu
+            keyword_to_genomeIDs[key].add(genomeID)
+
+    return keyword_to_genomeIDs
+    
+def create_presence_absence_matrix(taxon_dictionary, order_list, genome_presence_dictionary):
+    # Dictionary that will store a tab-separated string for each genomeID
+    # The string will represent the presence/absence matrix for each genomeID
+    presence_absence_dict = {}
+
+    # Identify the additional elements not covered in order_list
+    genome_presence = {key for key in genome_presence_dictionary.keys()}
+    additional_elements = sorted(set(genome_presence) - set(order_list))
+    valid_order_list = []
+    
+    # Iterate over all genomeIDs in the taxon_dictionary
+    for genomeID in taxon_dictionary:
+        presence_absence_list = []
+
+        # Iterate over the list order to check presence in the specified order
+        for element in order_list:
+            if element in genome_presence_dictionary:
+                valid_order_list.append(element)
+                if genomeID in genome_presence_dictionary[element]:
+                    presence_absence_list.append('1')
+                else:
+                    presence_absence_list.append('0')
                 
-                for row in cur:
-                    proteinID_set.add(row[0]) #first collect all multidomain proteins containing each single domain
+        # Iterate over the additional elements in a consistent order
+        for additional_element in additional_elements:
+            if genomeID in genome_presence_dictionary[additional_element]:
+                presence_absence_list.append('1')
+            else:
+                presence_absence_list.append('0')
 
+        # Create the tab-separated string and store it in the dictionary
+        presence_absence_dict[genomeID] = presence_absence_list
+    header_order = valid_order_list + additional_elements
+    
+    return presence_absence_dict, header_order
 
-                domain_dict_set[domain] = proteinID_set
-
-            #find proteinIDs, which are intersect here
-            intersection = set.intersection(domain_dict_set.values()) # third find the intersection between the multidomain proteins with either domain, therefore having both of them
-            
-            query = "SELECT genomeID from Proteins WHERE proteinID = ?"
-            fetched = {}
-            for proteinID in intersection:
-                cur.execute(query,[proteinID])
-                for row in cur:
-                    fetched[row[0]] = 1
-
-            for genomeID,listing in dataset_dict.items():
-                    if genomeID in fetched:    
-                        listing.append(1)
-                    else:
-                        listing.append(0)
-         
-         #for proteins with keywords and without keyword
-        protkeys_headers = []  
-        for protkey in protkeys:
-            # will find domain with keyA or keyB or ...
-            #format p + k{n}
-            protkey_keywords = protkey.split("+")
-            domain = protkey_keywords.pop(0)
-            args['%'+domain+'%']
-            add_array = []
-            proteins_array = []
-            keywords_array =[]
-            
-            protkeys_headers.append(protkey)
-            protkeys_headers.append(domain + "-".join(protkey_keywords))            
-            #parsing the query
-            query = "SELECT DISTINCT Proteins.genomeID from Proteins LEFT JOIN Domains ON Proteins.proteinID = Domains.proteinID LEFT JOIN Keywords ON Proteins.clusterID = Keywords.clusterID WHERE domain LIKE ? "
-            for protkey_keyword in protkey_keywords:
-                keywords_array.append(" keyword LIKE ? ")
-                args.append('%'+keyword+'%')
-            if keywords_array:
-                add_array.append("(" + "OR".join(keywords_array) + ")")
-            query = query + " AND ".join(add_array) + ";"
-            
-            #executing bulk fetch for protkey
-            cur.execute(query,args)
-            fetched = {}
-            for count,row in enumerate(cur):
-                fetched[row[0]] = 1
-                print(f"\tKeyword {count}",end= "\r")
-            print("\n\tSaving presence absence of domains with keyword")  
-            for genomeID,listing in dataset_dict.items():
-                if genomeID in fetched:    
-                    listing.append(1)
-                else:
-                    listing.append(0)
-                     
-            #parsing the query
-            query = "SELECT DISTINCT Proteins.genomeID from Proteins LEFT JOIN Domains ON Proteins.proteinID = Domains.proteinID LEFT JOIN Keywords ON Proteins.clusterID = Keywords.clusterID WHERE domain LIKE ? "
-            for protkey_keyword in protkey_keywords:
-                keywords_array.append(" NOT keyword LIKE ? ")
-                args.append('%'+keyword+'%')
-            if keywords_array:
-                add_array.append("(" + "OR".join(keywords_array) + ")")
-            query = query + " AND ".join(add_array) + ";"
-            
-            #executing bulk fetch for protkey
-            cur.execute(query,args)
-            fetched = {}
-            for count,row in enumerate(cur):
-                fetched[row[0]] = 1
-                print(f"\tKeyword {count}",end= "\r")
-            print("\n\tSaving presence absence of domains with keyword")  
-            for genomeID,listing in dataset_dict.items():
-                if genomeID in fetched:    
-                    listing.append(1)
-                else:
-                    listing.append(0) 
-            
-            
-            
-            
-    headers = [*proteins,*keywords,*fusions,*protkeys_headers]
-    return dataset_dict,headers
-
-def iTol_lineage_to_binary_dataline(taxon_dict,dataset_dict):
-    #04.11.22
-    #concats the lineage to the dataset line by the genomeID
-    #key is the genomeID value is the taxonomy + presence absence
+    
+    
+def iTol_lineage_to_binary_dataline(taxon_dict, dataset_dict):
+    # 17.08.24
+    # Concatenates the lineage to the dataset line by the genomeID
+    # Key is the genomeID, value is the taxonomy + presence/absence
     dataline_dict = {}
-    for genomeID in taxon_dict.keys():
-        dataline = '\t'.join(str(item) for item in dataset_dict[genomeID])
-        dataline_dict[genomeID] = taxon_dict[genomeID] + "\t" + dataline + "\n"
-        #print(taxon_dict[genomeID])
+
+    # Iterate over the taxon_dict, assuming taxon_dict and dataset_dict share the same keys
+    for genomeID, lineage in taxon_dict.items():
+        # Check if genomeID exists in dataset_dict
+        if genomeID in dataset_dict:
+            # Convert the list in dataset_dict[genomeID] to a tab-separated string
+            dataline = '\t'.join(dataset_dict[genomeID])
+            # Concatenate the lineage with the dataline and add to dataline_dict
+            dataline_dict[genomeID] = f"{lineage}\t{dataline}\n"
+        else:
+            print(f"Warning: genomeID {genomeID} not found in dataset_dict")
     
-    return dataline_dict    
+    return dataline_dict
     
-def iTol_binary_file_dataset(directory,dataline_dict,headers):
+    
+    
+def iTol_binary_file_dataset(directory,dataline_dict,headers,name=""):
     """
     04.11.22
         Args:
@@ -255,7 +185,7 @@ def iTol_binary_file_dataset(directory,dataline_dict,headers):
     
     Writes down the iTol dataset for presence/absence of protein or keyword        
     """
-    writer = open(directory+"/iTol_binary_dataset.txt","w")    
+    writer = open(directory+f"/iTol_binary_dataset_{name}.txt","w")    
     
     writer.write("DATASET_BINARY\n")
     writer.write("SEPARATOR TAB\n")    
@@ -267,7 +197,7 @@ def iTol_binary_file_dataset(directory,dataline_dict,headers):
     writer.write("LEGEND_TITLE\tlegend_title\n")
     writer.write("LEGEND_SHAPES" + "\t2" * len(headers) + "\n")
     writer.write("LEGEND_COLORS" + "\t#2b2c7c" * len(headers) + "\n")
-    writer.write("LEGEND_SHAPE_SCALES,1,1,0.5\n")
+    writer.write("LEGEND_SHAPE_SCALES\t1\t1\t0.5\n")
     writer.write("HEIGHT_FACTOR\t2\n")
     writer.write("SYMBOL_SPACING\t15\n")
     writer.write("FIELD_SHAPES" + "\t2" * len(headers) + "\n")
@@ -280,7 +210,88 @@ def iTol_binary_file_dataset(directory,dataline_dict,headers):
         
     writer.close()
     
-    return
+    return    
+    
+    
+    
+########################################################################################    
+#################### Presence/absence dataset statistics ###############################
+########################################################################################
+    
+def count_taxon_group_presence_by_level(taxon_dict, presence_absence_dict,divide_sign):
+    # Define the taxonomic ranks (adjust this list based on your specific data)
+    taxonomic_ranks = ["Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"]
+
+    # Dictionary to store the count of '1's for each taxonomic group, grouped by level
+    taxon_group_counts_by_level = defaultdict(lambda: defaultdict(list))
+
+    # Iterate over the genomes and their presence/absence lists
+    for genomeID, presence_list in presence_absence_dict.items():
+        # Get the full taxonomic lineage for the current genomeID
+        
+        lineage = taxon_dict[genomeID].split(divide_sign)  # Split the lineage into components
+        # Iterate over each taxonomic level in the lineage (e.g., Proteobacteria, Gammaproteobacteria)
+        for level, taxon_group in enumerate(lineage[1:]):
+            # Map the level to the corresponding taxonomic rank
+            taxonomic_rank = taxonomic_ranks[level] if level < len(taxonomic_ranks) else f"Level {level + 1}"
+            # Initialize the count list for the taxonomic group at this level if not already present
+            if not taxon_group_counts_by_level[taxonomic_rank][taxon_group]:
+                taxon_group_counts_by_level[taxonomic_rank][taxon_group] = [0] * len(presence_list)
+
+            # Iterate over the presence/absence list and count the '1's at each index
+            for index, presence in enumerate(presence_list):
+                if presence == '1':
+                    taxon_group_counts_by_level[taxonomic_rank][taxon_group][index] += 1
+
+    return taxon_group_counts_by_level #is a dict with dicts with lists
+
+
+def write_taxon_group_counts_to_tsv(taxon_group_counts_by_level, output_directory, headers, suffix):
+    """
+    Writes the taxon group counts, grouped by taxonomic rank, into separate TSV files.
+    
+    Args:
+        taxon_group_counts_by_level: Dictionary containing taxon group counts grouped by taxonomic rank.
+        output_directory: Directory where the output TSV files will be written.
+        headers: List of headers for the presence/absence columns.
+    """
+    
+    # Iterate over each taxonomic rank (e.g., Phylum, Class, etc.)
+    for taxonomic_rank, taxon_group_counts in taxon_group_counts_by_level.items():
+        # Create the output file path for this taxonomic rank
+        output_file = os.path.join(output_directory, f"Absolute_counts_{suffix}_{taxonomic_rank}.tsv")
+        
+        # Open the file for writing
+        with open(output_file, 'w') as tsv_file:
+            # Write the header row (e.g., "Taxon_Group", "Presence_1", "Presence_2", ...)
+            tsv_file.write("Taxon\t" + "\t".join(headers) + "\n")
+            
+            # Iterate over each taxon group and its counts
+            for taxon_group, counts in taxon_group_counts.items():
+                # Convert the counts to strings and join them with tabs
+                counts_str = "\t".join(map(str, counts))
+                # Write the taxon group name followed by the counts
+                tsv_file.write(f"{taxon_group}\t{counts_str}\n")
+        
+        print(f"Taxon group counts written to {output_file}")
+
+
+
+
+
+
+
+
+
+   
+    
+    
+##################################################################
+############## Protein tree mapping iTol datasets ################
+##################################################################
+
+    
+
     
 def iTol_taxonomy_range_dataset(directory,taxon_dict):
     """
@@ -460,7 +471,7 @@ def dataset_statistics(database,directory,headers,dataline_dict):
         writer.close()
         #print("\tFinished dataset statistics")
     
-def iTol_range_dataset(directory,database,filepath,trennzeichen='_'):
+def iTol_range_dataset(directory,database,filepath,trennzeichen=';'):
     """
     11.03.23
         Args:
@@ -598,7 +609,9 @@ def iTol_domain_dataset(directory,database,filepath,trennzeichen='_'):
             row = cur.fetchone()
             lineage = myUtil.taxonomy_lineage(row, trennzeichen)
             dataset_range_line = lineage if record_dict[genomeID] == 1 else str(lineage)+str(trennzeichen)+str(record_dict[genomeID])
-            
+            dataset_range_line = lineage if lineage else record.id
+            if record_dict[genomeID] > 1:
+                dataset_range_line += '_'+str(record_dict[genomeID])
             
             #Fetch protein domains
             #Creating the actual domain dataset infos
@@ -637,8 +650,7 @@ def iTol_domain_dataset(directory,database,filepath,trennzeichen='_'):
 
                     
             if not protein_dict:
-                continue
-                
+                continue                        
             proteinID_list = sorted(protein_dict, key=lambda x: protein_dict[x].gene_start) # sort proteins into correct order
             
             start_coordinate = protein_dict[proteinID_list[0]].gene_start

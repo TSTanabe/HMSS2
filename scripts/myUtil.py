@@ -18,25 +18,82 @@ def packgz(path):
         dst.writelines(src)
     return file
 
-
-
 def unpackgz(path):
-# gunzip file from path and return unpacked file name
+    # Check if the file is a .gz file
+    if not path.endswith('.gz'):
+        return path
+    
+    # Determine the name of the unpacked file
     file = path[:-3]
+    
+    # Check if the unpacked file already exists
+    if os.path.exists(file):
+        return file  # Unpacked file already exists, no need to unpack
+    
+    # Unpack the .gz file
     with gzip.open(path, 'rb') as f_in:
         with open(file, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
+    
     return file
     
-def command(string):
-    os.system(string)
-    
-    return
-    
-    
-def unlink(path):
-    os.unlink(path)
-    return
+def dir_path(string):
+#check if path is valid dir
+    if os.path.isdir(string):
+        if string[-1] == "/":
+            return string[:-1]
+        else:
+            return string
+    else:
+        sys.exit(f"\nERROR: {string} is not a valid directory")
+        #raise Exception(f"\nERROR: {string} is not a valid directory")
+
+def file_path(string):
+#check if path is valid file
+    if os.path.isfile(string):
+        return string
+    else:
+        sys.exit(f"\nERROR: {string} is not a valid file")
+        #raise Exception(f"\nERROR: {string} is not a valid directory")
+
+
+def print_header(string,verbose=0):
+    if not verbose:
+        print("\n"+string)
+        print(len(string)*"-")
+        
+def clean_empty_files(directory):
+
+    # Loop over all files in the directory
+    for filename in os.listdir(directory):
+        # Check if the file is not a directory
+        if not os.path.isdir(os.path.join(directory, filename)):
+            # Check if the file is empty
+            if os.path.getsize(os.path.join(directory, filename)) == 0:
+                # Remove the file
+                os.remove(os.path.join(directory, filename))
+                #print(filename, 'was removed')
+
+def generate_color(seed_int):
+    random.seed(seed_int)
+    color = '#{:06x}'.format(random.randint(0, 0xFFFFFF))
+    return color        
+        
+def getAllFiles(directory, ending = 0):
+#get all files of a directory with all subdirectories and return a list
+    list = []
+    for path, subdirs, files in os.walk(directory):
+        for name in files:
+            file = os.path.join(path, name)
+            if ending == 0:
+                list.append(file)
+            elif file.endswith(ending):
+                list.append(file)
+            
+    return list        
+        
+        
+        
     
 def removeExtension(path):
     return os.path.splitext(path)[0] 
@@ -58,44 +115,12 @@ def removeExtension2(path):
     else:
         return
 
-def getPath(Path):
-    return os.path.split(Path)[0]+"/"
 
-def getAllFiles(directory, ending = 0):
-#get all files of a directory with all subdirectories and return a list
-    list = []
-    for path, subdirs, files in os.walk(directory):
-        for name in files:
-            file = os.path.join(path, name)
-            if ending == 0:
-                list.append(file)
-            elif file.endswith(ending):
-                list.append(file)
-            
-    return list
 
 def getFileName(Path):
     file_name = os.path.basename(Path)
     return file_name
 
-def dir_path(string):
-#check if path is valid dir
-    if os.path.isdir(string):
-        if string[-1] == "/":
-            return string[:-1]
-        else:
-            return string
-    else:
-        sys.exit(f"\nERROR: {string} is not a valid directory")
-        #raise Exception(f"\nERROR: {string} is not a valid directory")
-
-def file_path(string):
-#check if path is valid file
-    if os.path.isfile(string):
-        return string
-    else:
-        sys.exit(f"\nERROR: {string} is not a valid file")
-        #raise Exception(f"\nERROR: {string} is not a valid directory")
 
 def compareFileLists(directory,ext1=0,ext2=0):
 #return a list of all files with extension 1 which have no equivalent with extension 2
@@ -155,26 +180,9 @@ def taxonomy_lineage(array,trennzeichen):
         div = ''.join(trennzeichen)
         string = div.join(array)
         string = string.replace(" ","-")
-        return string
+        return str(string)
     except:
-        return 0
-
-def clean_empty_files(directory):
-
-    # Loop over all files in the directory
-    for filename in os.listdir(directory):
-        # Check if the file is not a directory
-        if not os.path.isdir(os.path.join(directory, filename)):
-            # Check if the file is empty
-            if os.path.getsize(os.path.join(directory, filename)) == 0:
-                # Remove the file
-                os.remove(os.path.join(directory, filename))
-                #print(filename, 'was removed')
-
-def generate_color(seed_int):
-    random.seed(seed_int)
-    color = '#{:06x}'.format(random.randint(0, 0xFFFFFF))
-    return color
+        return "NoTaxonomy"
 
 
 
@@ -183,10 +191,9 @@ def generate_color(seed_int):
 
 
 
-def print_header(string,verbose=0):
-    if not verbose:
-        print("\n"+string)
-        print(len(string)*"-")
+
+
+
 
 def print_start():
     print("HMSSS v 1.0.0")

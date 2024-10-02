@@ -1,58 +1,15 @@
 #!/usr/bin/python
-#		Module PrepareGenomicData
-#		Subroutine FaaToGff
-#		Subroutine Translation
 
-from datetime import datetime
-from . import myUtil
+import os
 import re
+import multiprocessing
+
+from . import myUtil
 
 
-
-
-def prodigalFaaToGff(File):
-#Translates faa files from prodigal to normal gff3 formated files. returns the gff3 file name    
-    #GffFile = re.sub("faa","gff",File)
-    Gff = File[:-3] + 'gff'
-    writer = open(Gff,"w")
-
-    with open(File, "r") as reader:
-        for line in reader.readlines():
-            if line[0] == ">":
-                try:
-                    line = line[1:]
-                    ar = line.split("#")
-                    #print(ar)
-                    contig = re.split("\_{1}\d+\W+$",ar[0])
-                    #print(contig)
-                    strand = '+' if ar[3] == '1' else '-'
-                    writer.write(contig[0]+"\tprodigal\tcds\t"+ar[1]+"\t"+ar[2]+"\t0.0\t"+strand+"\t0\tID=cds-"+ar[0]+";"+ar[3]+"\n")
-                except:
-                    print(f"Error: Missformated header\n {line}")
-    return Gff
-
-def check_prodigal_format(File):
-    
-    with open(File, "r") as reader:
-        for line in reader.readlines():
-            if line[0] == ">":
-                line = line[1:]
-                ar = line.split("#")
-                #print(ar)
-                #print(len(ar))
-                contig = re.split("\_{1}\d+\W+$",ar[0])
-                #print(contig)
-                #writer.write(contig[0]+"\tprodigal\tcds\t"+ar[1]+"\t"+ar[2]+"\t0.0\t+\t0\tID=cds-"+ar[0]+";"+ar[3]+"\n")
-                if len(ar) == 5:
-                    return 1
-                else:
-                    return 0
-    return Gff
-
-
-def translation(directory):
+def parallel_translation(directory,cores):
     """
-    3.9.22
+    18.5.24
         Args:  
             directory   fasta file containing directory
             
@@ -63,43 +20,51 @@ def translation(directory):
     FnaFiles = myUtil.compareFileLists(directory,".fna",".faa")
     fastaFiles = myUtil.getAllFiles(directory,".fasta")
     NucleotideFastaFiles = zipFnaFiles + FnaFiles + fastaFiles
-    print(f"Found {len(NucleotideFastaFiles)} assemblies in nucleotide format for prodigal")
-    for index,fasta in enumerate(NucleotideFastaFiles):
-        #entpacken falls notwendig
-        now = datetime.now()
-        print(f"{now} Processing assembly {index+1} of {len(NucleotideFastaFiles)}")
-        if myUtil.getExtension(fasta) == ".gz":
-            fasta = myUtil.unpackgz(fasta)
-        else:
-            myUtil.packgz(fasta)    
-        #prodigal
-        output = myUtil.removeExtension(fasta)
-        faa = output + ".faa"
-        features = output + ".features"
-        string = "prodigal -a "+faa+" -f gff -i "+fasta+" -o "+features+" >/dev/null 2>&1"
-        try:
-            myUtil.command(string)
-        except:
-            print(f"\tWARNING: Could not translate {fasta}")
-        else:
-            gff = prodigalFaaToGff(faa)
-            myUtil.packgz(gff)
-            myUtil.unlink(gff)
-
-            myUtil.packgz(faa)
-            myUtil.unlink(faa)
-
-            myUtil.packgz(features)
-            myUtil.unlink(features)
+    print(f"Found {len(NucleotideFastaFiles)} assemblies in nucleotide or ambigous format for prodigal")
     
-        #pack und unlink für mehr speicher
+    manager  = multiprocessing.Manager()
+    counter = manager.Value('i',0)
+    lock = manager.Lock()
+    length = len(NucleotideFastaFiles)
+    with multiprocessing.Pool(processes=cores) as pool:
+        args_list = [(fasta, length ,counter,lock) for fasta in NucleotideFastaFiles]
+        pool.map(translate_fasta, args_list)
 
-        
-        myUtil.unlink(fasta)
-        
     return
 
-def transcription(directory):
+
+
+def translate_fasta(args):
+    fasta,length, counter, lock = args
+
+    #unpack if required
+    if os.path.splitext(fasta)[-1] == ".gz":
+        fasta = myUtil.unpackgz(fasta)
+
+    #Run prodigal
+    output = os.path.splitext(fasta)[0]
+    faa = output + ".faa"
+    string = "prodigal -a "+faa+" -i "+fasta+" >/dev/null 2>&1"
+    try:
+        os.system(string)
+    except Exception as e:
+        with lock:
+            print(f"\tWARNING: Could not translate {fasta} - {e}")
+        
+    with lock:
+        counter.value += 1
+        print(f"\rProcessing assembly {counter.value} of {length}", end ='',flush=True)        
+    return
+
+
+
+
+############################################################################
+############### Parallel Transcription #####################################
+############################################################################
+
+
+def parallel_transcription(directory,cores):
     """
     8.10.22
         Args:  
@@ -110,40 +75,120 @@ def transcription(directory):
         Unlink unpacked versions afterwards
         Warning: if the directory path includes parentheses function prodigal is not working
     """
+            
     
-    gffFiles = myUtil.getAllFiles(directory,".gff")
-    print(f"Found {len(gffFiles)} gff files to pack")
-    for gff in gffFiles:
-    	myUtil.packgz(gff)
-    	myUtil.unlink(gff)
+
+    gzfaaFiles = myUtil.getAllFiles(directory,".faa.gz")
+    gzgffFiles = myUtil.getAllFiles(directory,".gff.gz")
+    print(f"Found {len(gzfaaFiles)} zipped faa files")
+    print(f"Found {len(gzgffFiles)} zipped gff files")
+
+    with multiprocessing.Pool(processes=cores) as pool:
+        pool.map(unpacker,gzgffFiles)
+    with multiprocessing.Pool(processes=cores) as pool:
+        pool.map(unpacker,gzfaaFiles)   
+    
     faaFiles = myUtil.getAllFiles(directory,".faa")
-    print(f"Found {len(faaFiles)} faa files to pack")
-    for faa in faaFiles:
-    	myUtil.packgz(faa)
-    	myUtil.unlink(faa)
-    	
-    zipFaaFiles = myUtil.compareFileLists(directory,".faa.gz",".gff.gz")
-    print(f"Found {len(zipFaaFiles)} protein fasta files without gff")
+    gffFiles = myUtil.getAllFiles(directory,".gff")   
+    print(f"Found {len(gffFiles)} gff files")
+    print(f"Found {len(faaFiles)} faa files")    
+        	
+    FaaFiles = myUtil.compareFileLists(directory,".faa",".gff")
+    print(f"Found {len(FaaFiles)} protein fasta files without gff")
     
-    for index,fasta in enumerate(zipFaaFiles):
-        print(f"Trying to generate gff for file {index+1} of {len(zipFaaFiles)}",end="\r")        
-        if myUtil.getExtension(fasta) == ".gz":
-            fasta = myUtil.unpackgz(fasta)
-        else:
-            myUtil.packgz(fasta)
-            
-        if check_prodigal_format(fasta):        
-            gff = prodigalFaaToGff(fasta)
-            
-            myUtil.packgz(gff)
-            myUtil.unlink(fasta)
-            myUtil.unlink(gff)
-            
+    manager = multiprocessing.Manager()
+    counter = manager.Value('i',0)
+    lock = manager.Lock()
+    length = len(FaaFiles)
     
-    print("Finished file preparation")
+    with multiprocessing.Pool(processes=cores) as pool:
+        args_list = [(fasta, length, counter, lock) for fasta in FaaFiles]
+        pool.map(transcripe_fasta, args_list)
+    
+    print("\nFinished faa and gff file preparation")
     return
 
 
+def transcripe_fasta(args):
+    fasta, length, counter, lock = args
+    gff = ""
+            
+    if check_prodigal_format(fasta):        
+        gff = prodigalFaaToGff(fasta)
+    
+        with lock:
+            counter.value += 1
+            print(f"\rProcessing file {counter.value} of {length}", end='', flush=True)
+  
+    return
+
+def check_prodigal_format(File):
+    
+    with open(File, "r") as reader:
+        for line in reader.readlines():
+            if line[0] == ">":
+                line = line[1:]
+                ar = line.split("#")
+                if len(ar) == 5:
+                    return 1
+                else:
+                    return 0
+    return Gff
+
+def prodigalFaaToGff(filepath):
+#Translates faa files from prodigal to normal gff3 formated files. returns the gff3 file name    
+    dir_path = os.path.dirname(filepath)
+    # Extract the filename with extensions
+    filename_with_ext = os.path.basename(filepath)
+    
+    if filename_with_ext.endswith('.gz'):
+        filename_with_ext = os.path.splitext(filename_with_ext)[0]
+
+    # Remove the .faa extension if present
+    if filename_with_ext.endswith('.faa'):
+        filename_without_ext = os.path.splitext(filename_with_ext)[0]
+    else:
+        filename_without_ext = filename_with_ext
+    
+    Gff = dir_path+"/"+filename_without_ext+'.gff'
+    
+    writer = open(Gff,"w")
+    
+    with open(filepath, "r") as reader:
+        genomeID = myUtil.getGenomeID(filepath)
+        for line in reader.readlines():
+            if line[0] == ">":
+                try:
+                    line = line[1:]
+                    ar = line.split("#")
+                    #print(ar)
+                    contig = re.split("\_{1}\d+\W+$",ar[0])
+                    #print(contig)
+                    strand = '+' if ar[3] == ' 1 ' else '-'
+                    writer.write(contig[0]+"\tprodigal\tcds\t"+ar[1]+"\t"+ar[2]+"\t0.0\t"+strand+"\t0\tID=cds-"+ar[0]+";Genome="+genomeID+"\n")
+                except Exception as e:
+                    print(f"Error: Missformated header\n {line} - {e}")
+    writer.close()
+    return Gff
 
 
+def prepare_gff_faa_packing(directory,cores):
 
+    #Prepare the packing status
+    gffFiles = myUtil.getAllFiles(directory,".gff")
+    faaFiles = myUtil.getAllFiles(directory,".faa")
+    
+    if len(gffFiles) > 0 or len(faaFiles) > 0:
+        print(f"Found {len(gffFiles)} gff files to pack")
+        print(f"Found {len(faaFiles)} faa files to pack")
+        with multiprocessing.Pool(processes=cores) as pool:
+            pool.map(packer,gffFiles)
+        with multiprocessing.Pool(processes=cores) as pool:
+            pool.map(packer,faaFiles) 
+    return
+
+
+def packer(file):
+    myUtil.packgz(file)
+def unpacker(file):
+    myUtil.unpackgz(file)    
