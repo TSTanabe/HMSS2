@@ -217,36 +217,8 @@ def get_alignments(options):
     alignment_files = myUtil.getAllFiles(options.concat_alignment,".fasta_aln")            
     return alignment_files,output,trim_output
 
-def get_executable_dir():
-    """
-    Get the directory of the current executable or script.
-    This works whether the script is compiled or run directly as a Python script.
-    """
-    if getattr(sys, 'frozen', False):
-        # If the program is compiled, sys.frozen is True, and sys.executable gives the path to the executable
-        return os.path.dirname(sys.executable)
-    else:
-        # If running as a script, __file__ gives the path to the script
-        return os.path.dirname(os.path.abspath(__file__))
 
-def find_executable(executable):
-    """
-    Find the MAFFT executable.
-    First check in the system's PATH, then in the local ./bin directory relative to the executable/script.
-    Returns the path to the MAFFT executable.
-    """
-    # Check if MAFFT is in the system's PATH
-    executable_path = shutil.which(f"{executable}")
-    if executable_path:
-        return executable_path
-    
-    # If not found, check in the local ./bin directory relative to the executable or script
-    executable_dir = get_executable_dir()
-    local_executable_path = os.path.join(executable_dir, "bin", f"{executable}")
-    if os.path.isfile(local_executable_path) and os.access(local_executable_path, os.X_OK):
-        return local_executable_path
-    
-    raise FileNotFoundError(f"{executable} executable not found in system PATH or local bin directory.")
+
 
 def align_fasta_with_mafft(input_fasta, output_fasta):
     """
@@ -257,7 +229,7 @@ def align_fasta_with_mafft(input_fasta, output_fasta):
         output_fasta: Path to the output aligned FASTA file.
     """
     # Find MAFFT executable
-    mafft = find_executable("mafft")  # Ensure this function finds the MAFFT executable
+    mafft = myUtil.find_executable("mafft")  # Ensure this function finds the MAFFT executable
 
     # Run MAFFT alignment
     try:
@@ -282,7 +254,7 @@ def remove_gaps_with_trimal(input_fasta, output_alignment, gap_threshold=0.95):
         output_alignment: Path to the output trimmed alignment file.
         gap_threshold: Proportion of gaps allowed in a column (default: 0.95).
     """
-    trimal = find_executable("trimal")
+    trimal = myUtil.find_executable("trimal")
     try:
         # Run the trimAl command with the gap threshold
         subprocess.run([

@@ -185,18 +185,43 @@ def taxonomy_lineage(array,trennzeichen):
         return "NoTaxonomy"
 
 
+def get_executable_dir():
+    """
+    Get the directory of the current executable or script.
+    This works whether the script is compiled or run directly as a Python script.
+    """
+    if getattr(sys, 'frozen', False):
+        # If the program is compiled, sys.frozen is True, and sys.executable gives the path to the executable
+        return os.path.dirname(sys.executable)
+    else:
+        # If running as a script, __file__ gives the path to the script
+        return os.path.dirname(os.path.abspath(__file__))
 
-
-
-
-
+def find_executable(executable):
+    """
+    Find the any executable.
+    First check in the system's PATH, then in the local ./bin directory relative to the executable/script.
+    Returns the path to the executable.
+    """
+    # Check if MAFFT is in the system's PATH
+    executable_path = shutil.which(f"{executable}")
+    if executable_path:
+        return executable_path
+    
+    # If not found, check in the local ./bin directory relative to the executable or script
+    executable_dir = get_executable_dir()
+    local_executable_path = os.path.join(executable_dir, "bin", f"{executable}")
+    if os.path.isfile(local_executable_path) and os.access(local_executable_path, os.X_OK):
+        return local_executable_path
+    
+    raise FileNotFoundError(f"{executable} executable not found in system PATH or local bin directory.")
 
 
 
 
 
 def print_start():
-    print("HMSSS v 1.0.0")
+    print("HMSSS v 1.0.7")
     print(20*"-")
     #print("2022 by Tomohisa Sebastian Tanabe")
     

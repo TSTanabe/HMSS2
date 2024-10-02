@@ -44,7 +44,10 @@ def translate_fasta(args):
     #Run prodigal
     output = os.path.splitext(fasta)[0]
     faa = output + ".faa"
-    string = "prodigal -a "+faa+" -i "+fasta+" >/dev/null 2>&1"
+    
+    prodigal = myUtil.find_executable("prodigal")
+    
+    string = f"{prodigal} -a {faa} -i {fasta} >/dev/null 2>&1"
     try:
         os.system(string)
     except Exception as e:
