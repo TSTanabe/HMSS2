@@ -25,8 +25,10 @@ from . import Processing
 #get location of script or executable
 #for the output module report 
 #TODO fc option sollte auch die patterns adden, die über den pattern file eingetragen werden
-#TODO print a database description file from database (otherwise it is too complex for a short task)
+#TODO print a database description file from database (otherwise it is too complex for a short task) should include the 
+#TODO print the hit tables per genome
 #TODO syntenycompletion is not properly working
+
 
 if getattr(sys, 'frozen', False):
     __location__ = os.path.split(sys.executable)[0]
@@ -118,8 +120,8 @@ def parse_arguments(arguments):
     resources.add_argument('-db',dest='database_directory', type=myUtil.file_path, metavar='<filepath>', help='Filepath to existing database')
     resources.add_argument('-tax', dest='taxonomy_file', type=myUtil.file_path, metavar='<filepath>', help ='Filepath to taxonomy tsv file')
     resources.add_argument('-clean', dest='clean_reports', action='store_true', help = 'Clean up any pre-existing HMMreport file')
-    resources.add_argument('-reports', dest='individual_reports', action='store_true', help = 'Write individual files per genome')
-    resources.add_argument('-glob_search', dest='glob_search', action='store_true', help = 'Concat to single glob fasta')
+    resources.add_argument('-no_reports', dest='individual_reports', action='store_false', help = 'Do not write individual files per genome')
+    resources.add_argument('-glob_search', dest='glob_search', action='store_true', help = 'Input reports from search of concatenated genomes')
     resources.add_argument('-glob_chunks', dest='glob_chunks', type=int, default=5000, metavar='<int>', help='Chunk size for parsing results from glob before entering into database')
     
     # Parameters
@@ -270,6 +272,7 @@ def initial_search(options):
     
     elif options.cores >= 3:
         ParallelSearch.multi_search_process(options)
+
 
 def csb_finder(options):
     Csb_cluster.csb_prediction(options)
