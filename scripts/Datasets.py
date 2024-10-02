@@ -121,7 +121,7 @@ def create_presence_absence_matrix(taxon_dictionary, order_list, genome_presence
     # Identify the additional elements not covered in order_list
     genome_presence = {key for key in genome_presence_dictionary.keys()}
     additional_elements = sorted(set(genome_presence) - set(order_list))
-    valid_order_list = []
+    #valid_order_list = []
     
     # Iterate over all genomeIDs in the taxon_dictionary
     for genomeID in taxon_dictionary:
@@ -130,7 +130,7 @@ def create_presence_absence_matrix(taxon_dictionary, order_list, genome_presence
         # Iterate over the list order to check presence in the specified order
         for element in order_list:
             if element in genome_presence_dictionary:
-                valid_order_list.append(element)
+                #valid_order_list.append(element)
                 if genomeID in genome_presence_dictionary[element]:
                     presence_absence_list.append('1')
                 else:
@@ -145,7 +145,7 @@ def create_presence_absence_matrix(taxon_dictionary, order_list, genome_presence
 
         # Create the tab-separated string and store it in the dictionary
         presence_absence_dict[genomeID] = presence_absence_list
-    header_order = valid_order_list + additional_elements
+    header_order = order_list + additional_elements
     
     return presence_absence_dict, header_order
 
