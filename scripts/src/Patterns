@@ -1,4 +1,11 @@
+LplAB	LplA	LplB
+LipAB	LipA	LipB
+LipSM	LipS1	LipM	LipS2
+LipSA	LipS1	LplA	LipS2
+LipSAB	LipS1	LplA	LplB	LipS2
+Rbs	L2	L3	L4	L5	L6	L14	L15	L16	L18	L22	L24	S3	S8	S10	S17	S19
 Sox	SoxX	SoxY	SoxZ	SoxA	SoxB	SoxC	SoxD
+SoxReg	SoxS	SoxR	SoxT
 oxDsr	oxDsrA	oxDsrB	oxDsrC	DsrE	DsrF	DsrH
 sHdr	sHdrC1	sHdrB1	sHdrA	sHdrH	sHdrC2	sHdrB2
 sHdr	sHdrC1	sHdrB1	sHdrA	sHdrH	sEtfA	sEtfB
@@ -35,5 +42,4 @@ Qrc	QrcA	QrcB	QrcC	QrcD
 Hmc	HmcA	HmcB	HmcC	HmcD	HmcE	HmcF
 Tmc	TmcA	TmcB	TmcC	TmcD
 DTR	DsrE2	TusA	Rhd
-
-
+Rpo	RpoB	RpoC
