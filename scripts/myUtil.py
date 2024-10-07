@@ -1,12 +1,7 @@
 #!/usr/bin/python
-#		Subroutine getallFiles
-#		Subroutine packgz
-#		Subroutine unpackgz
-
 
 import os
 import sys
-#import subprocess
 import gzip
 import shutil
 import random
@@ -95,33 +90,7 @@ def getAllFiles(directory, ending = 0):
         
         
     
-def removeExtension(path):
-    return os.path.splitext(path)[0] 
-
-def getExtension(path):
-    return os.path.splitext(path)[-1]
-     
-def getExtension2(path):
-    name = getFileName(path)
-    if os.path.splitext(path)[-1]:
-        return "."+name.split(".",1)[-1]
-    else:
-        return
-
-def removeExtension2(path):
-    name = getFileName(path)
-    if os.path.splitext(path)[0]:
-        return name.split(".",1)[0]
-    else:
-        return
-
-
-
-def getFileName(Path):
-    file_name = os.path.basename(Path)
-    return file_name
-
-
+#### Next three routines are meant to work together
 def compareFileLists(directory,ext1=0,ext2=0):
 #return a list of all files with extension 1 which have no equivalent with extension 2
     if ext1 and ext2:
@@ -156,21 +125,19 @@ def addExtToList(listing,ext):
         index += 1
     return listing
 
-def getGenomeID(Path):
-    #should return genomeID according to standard genome identifiers from common source
-    #29.8.22
-    File = getFileName(Path)
-    File = removeExtension2(File)
-    return File
 
-def getReportName(Input):
-    file_name = removeExtension(Input)
+
+def getGenomeID(path):
+    #return genomeID according to standard genome identifiers from common source. DO NOT USE '.' Where they do not belong in the filename!!!
+    basename = os.path.basename(path)
+    genomeID = basename.split('.')[0]
+    return genomeID
+
+def getReportName(path):
+    file_name = os.path.splitext(path)[0]
     hmm_report = file_name+".HmmReport"
     return hmm_report
 
-def duplicate(input_list):
-    #returns a list with the doublicate values
-    return list(set([x for x in input_list if input_list.count(x) > 1]))
 
 def taxonomy_lineage(array,trennzeichen):
     #04.11.22
@@ -183,51 +150,6 @@ def taxonomy_lineage(array,trennzeichen):
         return str(string)
     except:
         return "NoTaxonomy"
-
-
-
-
-
-
-
-
-
-
-
-
-def print_start():
-    print("HMSSS v 1.0.0")
-    print(20*"-")
-    #print("2022 by Tomohisa Sebastian Tanabe")
-    
-
-    
-
-
-
-"""
-allFiles = getAllFiles("ttest",".faa.gz")
-missingGff = compareFileLists("ttest",".faa.gz",".gff.gz")
-#for all missing files try to do prodigal
-
-for File in allFiles:
-    unpackedFile = unpackgz(File)
-    filename = removeExtension(unpackedFile)
-    print(filename)
-
-    filename += ".gff.gz"
-    print(filename)
-    unpackedGffFile= unpackgz(filename)    
-    unlink(unpackedFile)
-    unlink(unpackedGffFile)
-"""
-
-
-
-
-
-
-
 
 
 

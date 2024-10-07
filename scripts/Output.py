@@ -797,8 +797,8 @@ def singletons(directory,filepaths):
 
         doublicate = set([x for x in genome_list if genome_list.count(x) > 1])
         
-        path = myUtil.removeExtension(filepath)
-        name = myUtil.getFileName(path)
+        path = os.path.splitext(filepath)[0] 
+        name = os.path.basename(path)
         single = open(directory+f"/{name}_singleton.faa","w")
         double = open(directory+f"/{name}_doublicate.faa","w")
         
