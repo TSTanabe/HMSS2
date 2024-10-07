@@ -53,7 +53,7 @@ def compare_with_existing_database(options,genomeIDs):
         genomeIDs = Database.fetch_genomeIDs(options.database_directory)
         for genomeID in genomeIDs:
             if genomeID in options.faa_files.keys():
-                print(f"\tFound assembly {genomeID} in database leaving out {myUtil.getFileName(options.faa_files[genomeID])}")
+                print(f"\tFound assembly {genomeID} in database leaving out {options.faa_files[genomeID]}")
                 del options.faa_files[genomeID]
                 del options.gff_files[genomeID]
                 options.queued_genomes.remove(genomeID)
