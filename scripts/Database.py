@@ -239,6 +239,8 @@ def insert_database_genomeIDs(database, genomeIDs):
     with sqlite3.connect(database) as con:
         cur = con.cursor()
         cur.execute("""PRAGMA foreign_keys = ON;""")
+        cur.execute("""PRAGMA synchronous = OFF;""")
+        cur.execute("""PRAGMA journal_mode = OFF;""")
         # Prepare a list of tuples, each containing one genomeID
         genomeID_tuples = [(genomeID,) for genomeID in genomeIDs]
         # Use executemany to insert all genomeIDs in a single batch
@@ -247,49 +249,6 @@ def insert_database_genomeIDs(database, genomeIDs):
     con.close()
     return
     
-def insert_database_protein_deprecated(database,genomeID,protein_dict):
-    """
-    1.10.22
-        Args:
-            protein_dict    dictionary with protein objects
-            
-    """
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        cur.execute("""PRAGMA foreign_keys = ON;""")
-        
-        
-        protein_list = sorted(protein_dict, key=lambda x: \
-        (protein_dict[x].gene_contig, protein_dict[x].gene_start)) 
-            
-        for key in protein_list:
-            protein = protein_dict.get(key)
-            proteinID = protein.proteinID
-            proteinID = f"{genomeID}-{proteinID}"   #genomeID added to proteinID to deal with the multispecies information
-            domains = protein.get_domains_dict()
-            
-            
-            #print(proteinID, genomeID, protein.get_gene_locustag(), protein.get_gene_contig(), protein.get_gene_start(), protein.get_gene_end(), protein.get_gene_strand(), protein.get_domain_count(), protein.get_sequence())    
-            cur.execute('''INSERT OR IGNORE INTO Proteins
-            (proteinID,genomeID,locustag,contig,start,end,strand,dom_count,sequence)
-            VALUES (?,?,?,?,?,?,?,?,?) ''',\
-            (proteinID, genomeID, protein.gene_locustag, protein.gene_contig,\
-             protein.gene_start, protein.gene_end, protein.gene_strand,\
-             protein.get_domain_count(), protein.get_sequence())\
-             )
-            
-            for domain_index in domains:
-                domain = domains.get(domain_index)
-                cur.execute(""" INSERT OR IGNORE INTO Domains 
-                                (proteinID,domain,domStart,domEnd,score) 
-                                VALUES (?,?,?,?,?)""",\
-                                (proteinID,domain.get_HMM(),domain.get_start(),\
-                                domain.get_end(),domain.get_score())\
-                                )
-            
-    con.commit()
-    con.close()
-    return
     
 def insert_database_protein(database, genomeID, protein_dict):
     """
@@ -359,6 +318,8 @@ def insert_database_proteins(database, protein_dict):
         try:
             cur = con.cursor()
             cur.execute("""PRAGMA foreign_keys = ON;""")
+            cur.execute("""PRAGMA synchronous = OFF;""")
+            cur.execute("""PRAGMA journal_mode = OFF;""")
             
             protein_list = sorted(protein_dict.values(), key=lambda x: (x.gene_contig, x.gene_start))
             #protein_list = protein_dict.values()
@@ -499,6 +460,8 @@ def insert_database_clusters(database, cluster_dict):
         with sqlite3.connect(database) as con:
             cur = con.cursor()
             cur.execute("""PRAGMA foreign_keys = ON;""")
+            cur.execute("""PRAGMA synchronous = OFF;""")
+            cur.execute("""PRAGMA journal_mode = OFF;""")
 
             cluster_inserts = []
             protein_updates = []
