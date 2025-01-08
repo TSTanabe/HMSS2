@@ -26,7 +26,6 @@ from . import Processing
 #for the output module report 
 #TODO fc option sollte auch die patterns adden, die über den pattern file eingetragen werden
 #TODO print a database description file from database (otherwise it is too complex for a short task) should include the 
-#TODO print the hit tables per genome
 #TODO syntenycompletion is not properly working
 
 
@@ -96,7 +95,7 @@ def parse_arguments(arguments):
     
     parser = argparse.ArgumentParser(formatter_class=formatter, description = description, epilog = epilog, usage = usage)
     parser.add_argument('-f', dest= 'fasta_file_directory', type=myUtil.dir_path, default = None, metavar='<directory>', help='Directory to be searched')
-    parser.add_argument('-glob_report', dest='glob_report', type=myUtil.dir_path, metavar='<directory>', help = 'Directory with multipliple hmmreports from a search of concatenated genomes. Only one HMM per result file.')
+    parser.add_argument('-glob_report', dest='glob_report', type=myUtil.dir_path, metavar='<directory>', help = 'Directory with hmmreports. Each report with one HMM queried against the concatenated genomes.')
     parser.add_argument('-r', dest='result_files_directory', type=myUtil.dir_path, metavar='<directory>', default = __location__+"/results", help='Directory for the result files')
     parser.add_argument('-n', dest='name', type=str, default="project", metavar='<string>', help='Name new project')
     parser.add_argument('-s', dest='stage', type=int, default = 0, choices= [0,1,2,3,4,5,6,7,8,9],help='Start at stage')
