@@ -1,6 +1,5 @@
 #!/usr/bin/python
 from Bio import SearchIO
-from Bio import SeqIO
 import traceback
 import subprocess
 from . import Database
@@ -364,25 +363,58 @@ def parseGFFfile(Filepath, protein_dict):
 
 def getProteinSequence(Filepath, protein_dict):
     """
-    3.9.22
-    Adds the protein Sequence to the Protein Objects in a dictionary. ProteinIDs of the dictionary have
-    to match the header of the .faa file
-    
+    Fügt die Proteinsequenz zu den Proteinobjekten in einem Dictionary hinzu. Die Protein-IDs im Dictionary
+    müssen mit den Headern der .faa-Datei übereinstimmen.
+
     Args:
-        Filepath - fasta formatted amino acid sequence containing file
-        protein_dict - Dictionary with key proteinID and value Protein Objects
+        Filepath: Pfad zur Datei im FASTA-Format mit Aminosäuresequenzen
+        protein_dict: Dictionary mit Protein-ID als Schlüssel und Protein-Objekten als Werte
     Return:
-        protein_dict (even though possibly not necessary)    
+        protein_dict (obwohl möglicherweise nicht notwendig)
     """
+    
     reader = None
     try:
         reader = open(Filepath, "r")
-        for record in SeqIO.parse(reader, "fasta"):
-            if record.id in protein_dict:
-                protein = protein_dict[record.id]
-                protein.protein_sequence = str(record.seq)
+        sequence = ""
+        header = None
+        save_sequence = False  # Indikator, ob die Sequenz gespeichert werden muss
+        
+        for line in reader:
+            line = line.strip()
+            
+            if line.startswith(">"):
+                # Speichere die bisherige Sequenz, falls notwendig
+                if header and save_sequence and sequence:
+                    protein = protein_dict[header]
+                    protein.protein_sequence = sequence
+
+                # Extrahiere die Protein-ID aus dem Header (bis zum ersten Leerzeichen)
+                header = line[1:].split()[0]
+                
+                # Prüfe, ob diese Protein-ID im Dictionary ist
+                if header in protein_dict:
+                    save_sequence = True  # Nur dann sammeln wir die Sequenz
+                    sequence = ""  # Setze die Sequenz zurück für das neue Protein
+                else:
+                    save_sequence = False  # Ignoriere Sequenzen, die nicht im Dictionary sind
+
+            elif save_sequence:
+                # Füge die Sequenzzeile nur hinzu, wenn die ID im Dictionary ist
+                sequence += line
+        
+        # Verarbeite die letzte Sequenz, falls nötig
+        if header and save_sequence and sequence:
+            protein = protein_dict[header]
+            protein.protein_sequence = sequence
+    
+    except IOError:
+        print(f"Error: File {Filepath} could not be opened.")
+    
     finally:
-        reader.close()
+        if reader is not None:
+            reader.close()  # Datei explizit schließen
+    
     return protein_dict
 
 def grapProteinSequence(filepath, protein_dict):
