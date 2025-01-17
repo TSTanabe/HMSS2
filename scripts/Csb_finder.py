@@ -345,7 +345,7 @@ def name_syntenicblocks(patterns,pattern_names,clusterID_dict,min_completeness=0
             pattern_set = set(pattern)
             difference = pattern_set.difference(set(protein_type_set))
             completeness = (len(pattern_set)-len(difference))/len(pattern_set)
-            if min_completeness < completeness:
+            if min_completeness <= completeness:
                 
                 """
                 Collinearity check:
