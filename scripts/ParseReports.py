@@ -322,7 +322,7 @@ def parseGFFfile(Filepath, protein_dict):
         protein_dict (even though possibly not necessary)
     """
     locustag_pattern = re.compile(r'locus_tag=(\S*?)[\n;]')
-    geneID_pattern = re.compile(r'ID=(cds-)?(\S+?)(?:[;\s]|$')
+    geneID_pattern = re.compile(r'ID=(cds-)?(\S+?)(?:[;\s]|$)')
     
     grep_pattern = "|".join(protein_dict.keys())
     
@@ -416,33 +416,6 @@ def getProteinSequence(Filepath, protein_dict):
             reader.close()  # Datei explizit schließen
     
     return protein_dict
-
-def grapProteinSequence(filepath, protein_dict):
-    """
-    Adds the protein sequence to the Protein Objects in a dictionary.
-    ProteinIDs of the dictionary have to match the header of the .faa file.
-    
-    Args:
-        filepath - fasta formatted amino acid sequence containing file
-        protein_dict - Dictionary with key proteinID and value Protein Objects
-    Return:
-        protein_dict (even though possibly not necessary)    
-    """
-    for protein_id in protein_dict.keys():
-        # Use awk to get the sequence until the next '>'
-        awk_command = f"awk '/>{protein_id}/ {{flag=1; next}} /^>/ {{flag=0}} flag {{print}}' {filepath}"
-        result = subprocess.run(awk_command, shell=True, capture_output=True, text=True)
-        
-        if result.returncode == 0:
-            output = result.stdout
-            # Remove all whitespace characters
-            sequence = ''.join(output.split())
-            protein_dict[protein_id].protein_sequence = sequence
-        else:
-            print(f"Protein ID {protein_id} not found in {filepath}")
-    
-    return protein_dict
-        
 
 def getLocustag(locustag_pattern,string):
     match = locustag_pattern.search(string)

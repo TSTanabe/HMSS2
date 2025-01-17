@@ -266,10 +266,7 @@ def initial_search(options):
     if options.glob_report:
         BulkSearch.initial_bulk_reports(options)
     
-    elif options.cores <= 2:
-        ParallelSearch.initial_search(options)
-    
-    elif options.cores >= 3:
+    else:
         ParallelSearch.multi_search_process(options)
 
 
