@@ -3,24 +3,29 @@ import os
 
 
 
-def makeThresholdDict(File,threshold_type=1):
+def makeThresholdDict(File, threshold_type=1, default_score=10):
     """
         30.3.23
         Threshold_type 1 => optimized
         Threshold_type 2 => noise cutoff
         Threshold_type 3 => trusted_cutoff
+        If the threshold type does not exist, use the default score.
     """
     Thresholds = {}
     with open(File, "r") as reader:
         for line in reader.readlines():
-            #print(line)
-            #lines = "key1=value1;key2=value2;key3=value3"
             l = line.split("\t")
 
             try:
-                Thresholds[l[0]] = float(l[threshold_type])
-            except:
-                print("Error in cutoff line: "+line)
+                # Check if the index for threshold_type exists
+                if len(l) > threshold_type:
+                    Thresholds[l[0]] = float(l[threshold_type])
+                else:
+                    Thresholds[l[0]] = default_score
+            except ValueError:
+                print("Error parsing line: " + line)
+            except Exception as e:
+                print(f"Unexpected error in line: {line}, error: {e}")
     return Thresholds
 
 def get_HMMreport_file(path):

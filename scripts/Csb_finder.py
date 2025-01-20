@@ -37,9 +37,16 @@ class Cluster:
             self.cluster_end = end
 
         
-    def add_keyword(self,keyword,completeness=0,csb="."):
+    def add_keyword_deprecated(self, keyword, completeness=0, csb=".", missing=[]):
         #self.keywords.append(Keyword(keyword,completeness,csb))
-        self.keywords_dict[keyword] = Keyword(keyword,completeness,csb)
+        self.keywords_dict[keyword] = Keyword(keyword,completeness,csb,missing)
+    
+    def add_keyword(self, keyword, completeness=0, csb=".", missing=[], keyword_id="."):
+        #self.keywords.append(Keyword(keyword,completeness,csb))
+        if keyword_id == ".":
+            keyword_id = keyword
+        print(f"Keyword_id: {keyword_id}; keyword: {keyword}")
+        self.keywords_dict[keyword_id] = Keyword(keyword,completeness,csb,missing, keyword_id)
     	
     def get_keywords(self):
         listing = []
@@ -124,19 +131,22 @@ class Cluster:
             csb_string += str(element.get_csb())
         #print([keywords_string,completeness_string,csb_string])
         return [self.get_clusterID(),keywords_string] # all keys (compl,csb) in einem string. ,completeness_string,csb_string
-	                                       # keys mit i =1 etc.
+        # keys mit i =1 etc.
 	
 class Keyword:
     """
         3.9.22
         Holds the information about a single keyword its completeness and if it is a csb
+        Keyword(keyword,completeness,csb,missing, keyword_name)
     """
     
-    def __init__(self,keyword,completeness=0,csb="."):
+    def __init__(self, keyword, completeness=0, csb=".", missing=[], keyword_id=0):
         self.keyword = str(keyword)
         self.csb = csb
         self.completeness = completeness
-        
+        self.missing_domains = missing
+        self.keyword_id = keyword_id
+    
     def get_keyword(self):
         return self.keyword        
         
@@ -154,6 +164,7 @@ class Keyword:
         
     def set_completeness(self,completeness):
         self.completeness = completeness
+    #TODO if missing domains are added the completeness is not adjusted
         
 def check_order(test_list):
     #3.9.22
@@ -164,32 +175,48 @@ def check_order(test_list):
     else:
         return 0
 
-def makePatternDict(Filepath):
-    #Patterns can have the same name
+def makePatternDict(filepath):
+    """
+    Reads a file containing patterns and their names, returning two dictionaries:
+    - pattern: {id => pattern_list}
+    - pattern_names: {id => name}
+
+    Parameters:
+        filepath (str): Path to the input file.
+
+    Returns:
+        tuple: (pattern, pattern_names) where:
+               - pattern (dict): Maps an ID to a list of patterns.
+               - pattern_names (dict): Maps an ID to a pattern name.
+    """
     pattern = {}        # id => pattern
     pattern_names = {}  # id => name
     i = 1
-    with open(Filepath, "r") as reader:
-        for line in reader.readlines():
-            #print(line)
-            #lines = "key1=value1;key2=value2;key3=value3"
-            line = line.replace("\n","")
-            line = line.replace(" ","")
-            if line.strip() == "":
-                continue
-                
-            l = line.split("\t")
 
-            try:
-                name = l.pop(0)
-                pattern_names[i] = name
-                pattern[i] = l
-                i = i + 1
-            except:
-                print(f"\tWARNING: Pattern was not recognized \""+line+"\"")
-        #for k, v in pattern.items():
-        #   print(k, v)
-    return pattern,pattern_names
+    try:
+        with open(filepath, "r") as reader:
+            for line_num, line in enumerate(reader, start=1):  # Enumerate for better error messages
+                line = line.strip()  # Remove leading and trailing whitespace
+                if not line:  # Skip empty lines
+                    continue
+
+                try:
+                    # Split by tab and parse the name and patterns
+                    parts = line.split("\t")
+                    name = parts.pop(0)  # First part is the name
+                    pattern_names[i] = name.strip()
+                    pattern[i] = [item.strip() for item in parts if item.strip()]  # Sanitize pattern items
+                    i += 1
+                except IndexError:
+                    # Handle lines that cannot be processed correctly
+                    print(f"WARNING: Skipping unrecognized pattern on line {line_num}: {line}")
+    except FileNotFoundError:
+        print(f"ERROR: File not found: {filepath}")
+        return {}, {}
+    except IOError as e:
+        print(f"ERROR: Unable to read file: {filepath}. {e}")
+
+    return pattern, pattern_names
 
 def find_syntenicblocks(genomeID, protein_dict, distance=3500):
     """
@@ -258,70 +285,6 @@ def find_syntenicblocks(genomeID, protein_dict, distance=3500):
 
 
 
-def find_syntenicblocks_bulk_deprecated(protein_dict, distance=3500):
-    """
-    3.9.22
-    Gets a dictionary with protein objects from one genome. Creates a cluster object and adds proteinID belonging to this genetic cluster forming a syntenic block.
-    Order of addition to the syntenic block follows the contig and start order. Two different contigs cannot exist inside a syntenic block. Returns a list of cluster objects
-    for the cluster analysis.
-    
-    Args:
-        protein_dict - dictionary with key:proteinID and value:proteinObject
-        distance - integer of maximal nucleotides distance between genes to consider in synteny
-    Return:
-        dictionary of cluster objects
-    """
-    # Sort by genomeID, then contig, and then by start position
-    proteinID_list = sorted(protein_dict, key=lambda x: (protein_dict[x].genomeID, protein_dict[x].gene_contig, protein_dict[x].gene_start))
-    
-    clusterID_number = 1
-    new_sb = 1  # new syntenic block flag
-    clusterID_dict = {}  # key:clusterID value:clusterObject
-    cluster = None
-    previous_genomeID = None
-    
-    for index in range(1, len(proteinID_list)):
-        curr_proteinID = proteinID_list[index]
-        prev_proteinID = proteinID_list[index - 1]
-        
-        curr_protein = protein_dict[curr_proteinID]
-        prev_protein = protein_dict[prev_proteinID]
-        
-        genomeID = curr_protein.genomeID  # Retrieve genomeID from the current protein
-        clusterID_name = genomeID
-
-        if genomeID != previous_genomeID:
-            clusterID_number = 1
-            previous_genomeID = genomeID
-        
-        if cluster is None:
-            cluster = Cluster(f"{clusterID_name}_{clusterID_number}", distance)
-        
-        if prev_protein.gene_contig == curr_protein.gene_contig and curr_protein.gene_start - prev_protein.gene_end <= distance:
-            if new_sb:
-                # Add previous and current protein to new syntenic block
-                new_sb = 0
-                cluster.add_gene(prev_proteinID, prev_protein.get_domains())
-                prev_protein.clusterID = cluster.clusterID
-                cluster.add_gene(curr_proteinID, curr_protein.get_domains())
-                curr_protein.clusterID = cluster.clusterID
-            else:
-                # Add current protein to existing syntenic block
-                cluster.add_gene(curr_proteinID, curr_protein.get_domains(), curr_protein.gene_start, curr_protein.gene_end)
-                curr_protein.clusterID = cluster.clusterID
-        elif new_sb == 0:
-            # Close the current syntenic block and start a new one
-            new_sb = 1
-            cluster.genomeID = genomeID
-            clusterID_dict[f"{clusterID_name}_{clusterID_number}"] = cluster
-            clusterID_number += 1
-            cluster = Cluster(f"{clusterID_name}_{clusterID_number}", distance)
-    
-    # Handle the last cluster if not added
-    if cluster and not new_sb:
-        cluster.genomeID = prev_genomeID
-        clusterID_dict[f"{clusterID_name}_{clusterID_number}"] = cluster
-    return clusterID_dict
 
 def name_syntenicblocks(patterns,pattern_names,clusterID_dict,min_completeness=0.5,collinearity_check=1):
     """
@@ -338,13 +301,12 @@ def name_syntenicblocks(patterns,pattern_names,clusterID_dict,min_completeness=0
     if not type(patterns) is dict:
         patterns = makePatternDict(patterns)
     for cluster in clusterID_dict.values():
-        protein_type_set = cluster.get_domain_ends_list()	#Domänen im cluster geordnet wird nachgeordnet zum set umgewandelt
-        #print(protein_type_set)
-        for key,pattern in patterns.items():
-            keyword = pattern_names[key]
+        protein_type_list = cluster.get_domain_ends_list()	#Domänen im cluster geordnet wird nachgeordnet zum set umgewandelt
+        for patternID, pattern in patterns.items():
+            keyword = pattern_names[patternID]
             pattern_set = set(pattern)
-            difference = pattern_set.difference(set(protein_type_set))
-            completeness = (len(pattern_set)-len(difference))/len(pattern_set)
+            missing_elements = pattern_set.difference(set(protein_type_list))
+            completeness = (len(pattern_set)-len(missing_elements))/len(pattern_set)
             if min_completeness <= completeness:
                 
                 """
@@ -356,35 +318,73 @@ def name_syntenicblocks(patterns,pattern_names,clusterID_dict,min_completeness=0
                 	index of the corresponding pattern element in the syntenic block. Then check
                 	for completely ascending or descending index order.
                 """
-                if collinearity_check:
-                    collinearity_pattern = pattern.copy()
-                    for item in difference:
-                        collinearity_pattern.remove(item)
+                collinearity_pattern = [item for item in pattern if item not in missing_elements]
                     
-                    protein_type_list = protein_type_set
-                    indices = []
-                    for item in collinearity_pattern:
-                        index = protein_type_list.index(item)
-                        indices.append(index)
+                indices = [
+                    protein_type_list.index(item)
+                    for item in collinearity_pattern
+                    if item in protein_type_list
+                
+                ]
                         
-                    if check_order(indices):
-                        cluster.add_keyword(keyword,completeness,"1")
-                        #print(f"Added {keyword}")
-                    else:
-                        cluster.add_keyword(keyword,completeness,"0")
+                if check_order(indices):
+                    cluster.add_keyword(keyword,completeness, "1", missing_elements,patternID)
                         #print(f"Added {keyword}")
                 else:
-                    cluster.add_keyword(keyword,completeness)
-                    #print(f"Added {keyword}")
+                    cluster.add_keyword(keyword,completeness,"0", missing_elements,patternID)
+                        #print(f"Added {keyword}")
             #else:
             #    print(f"Not added because {min_completeness} < {completeness} for pattern ")
             #    print(pattern)
             #    print("and gene cluster")
-            #    print(protein_type_set)
     return clusterID_dict
 
-   
+  
 
+def extract_missing_domains_and_coordinates(cluster_dict):
+    """
+    Extrahiert für jedes Keyword in jedem Cluster die fehlenden Domains und die Start-/End-Koordinaten.
+    Keywords mit leeren "missing_domains" werden nicht aufgenommen.
+
+    Args:
+        cluster_dict (dict): Dictionary mit Cluster-Objekten als Values.
+
+    Returns:
+        dict: Dictionary mit folgendem Format:
+              {
+                  cluster_id: {
+                      keyword_name: {
+                          "missing_domains": [...],
+                          "start": cluster_start,
+                          "end": cluster_end
+                      }
+                  }
+              }
+    """
+    result = {}
+
+    for cluster_id, cluster in cluster_dict.items():
+        cluster_data = {}
+        cluster_start = cluster.get_cluster_start()
+        cluster_end = cluster.get_cluster_end()
+        
+        for keyword_obj in cluster.get_keywords():
+            keyword_id = keyword_obj.keyword_id
+            missing_domains = keyword_obj.missing_domains
+
+            # Nur Einträge hinzufügen, wenn "missing_domains" nicht leer ist
+            if missing_domains:
+                cluster_data[keyword_id] = {
+                    "missing_domains": missing_domains,
+                    "start": cluster_start,
+                    "end": cluster_end,
+                }
+        
+        # Nur Cluster hinzufügen, die relevante Keywords enthalten
+        if cluster_data:
+            result[cluster_id] = cluster_data
+
+    return result
 
 
 def find_csb_pattern_difference(patterns,pattern_names,cluster_dict,min_pattern_length=4):
