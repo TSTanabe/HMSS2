@@ -45,7 +45,6 @@ class Cluster:
         #self.keywords.append(Keyword(keyword,completeness,csb))
         if keyword_id == ".":
             keyword_id = keyword
-        print(f"Keyword_id: {keyword_id}; keyword: {keyword}")
         self.keywords_dict[keyword_id] = Keyword(keyword,completeness,csb,missing, keyword_id)
     	
     def get_keywords(self):

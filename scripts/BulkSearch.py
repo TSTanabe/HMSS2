@@ -2,6 +2,7 @@
 import os
 import traceback
 import subprocess
+import pprint
 
 import multiprocessing
 from multiprocessing import Manager, Pool
@@ -27,13 +28,26 @@ def initial_bulk_reports(options):
     global global_score_threshold_dict
     global global_csb_patterns_dict
     global global_csb_pattern_names
+    global global_deconcat_domains_report_dict
+
+    #Make the noise cutoff files for the synteny completion
+    score_threshold_dict = Search.makeThresholdDict(options.score_threshold_file, 3, options.thrs_score)
+    hmmreport_tsv = get_hmmreport_tsv(options, score_threshold_dict, "concat.noise_report")
+    separate_domain_report_dict = deconcat_hmmreport_to_combined(hmmreport_tsv)
     
-    score_threshold_dict = Search.makeThresholdDict(options.score_threshold_file, options.threshold_type)
-    hmmreport_tsv = get_hmmreport_tsv(options, score_threshold_dict)
+    #remove the .hmmreport.filtered_report files from options.glob_report
+    [os.remove(os.path.join(options.glob_report, f)) for f in os.listdir(options.glob_report) if f.endswith('.hmmreport.filtered_report')]
+    
+    #Make the concat file for the grep of hits
+    score_threshold_dict = Search.makeThresholdDict(options.score_threshold_file, options.threshold_type, options.thrs_score)
+    print(f"Cutoffs:\n{score_threshold_dict}")
+    hmmreport_tsv = get_hmmreport_tsv(options, score_threshold_dict, "concat.report")
+    
     
     global_hmmreport_tsv = hmmreport_tsv
     global_score_threshold_dict = score_threshold_dict
     global_csb_patterns_dict, global_csb_pattern_names = Csb_finder.makePatternDict(options.patterns_file)
+    global_deconcat_domains_report_dict = separate_domain_report_dict
     
     ### Collect and insert genome identifiers
     genomeIDs_set = collect_genomeIDs(hmmreport_tsv, options) #returns a set of all genomeIDs
@@ -62,25 +76,25 @@ def initial_bulk_reports(options):
 
     
 ##################### Routines for tsv file preparation ###################
-def get_hmmreport_tsv(options, score_threshold_dict):
+def get_hmmreport_tsv(options, score_threshold_dict, output_name="concat.report"):
     if os.path.isdir(options.glob_report):
-        output_filepath = os.path.join(options.glob_report, 'concat.hmmreport')
+        output_filepath = os.path.join(options.glob_report, output_name)
         if os.path.isfile(output_filepath):
             print(f"Found existing report {output_filepath}. Using this to spare time.")
             return output_filepath
         else:
-            return prepare_hmmreports(options.glob_report, score_threshold_dict, options.cores)
+            return prepare_hmmreports(options.glob_report, score_threshold_dict, options.cores, output_name)
     else:
         raise ValueError("Invalid directory for .hmmreport files.")
 
-def prepare_hmmreports(directory, thresholds, cores):
+def prepare_hmmreports(directory, thresholds, cores, output_name):
     report_files = myUtil.getAllFiles(directory, "hmmreport")
     args_list = [(file, get_query_from_line(file), thresholds.get(get_query_from_line(file), 10)) for file in report_files]
 
     with Pool(processes=cores) as pool:
         pool.map(write_filtered_report, args_list)
 
-    output_filepath = os.path.join(directory, 'concat.hmmreport')
+    output_filepath = os.path.join(directory, output_name)
     subprocess.run(f"cat {directory}/*.filtered_report > {output_filepath}", shell=True, check=True)
 
     return output_filepath
@@ -248,6 +262,48 @@ def parse_domain_table(file_path, gene_dict):
 
     return gene_dict
 
+def deconcat_hmmreport_to_combined(concat_filepath):
+    """
+    Deconcatenates a concatenated .hmmreport file into subfiles based on domain type,
+    writing output files to the same directory as the input file.
+    
+    Args:
+        concat_filepath (str): Path to the concatenated .hmmreport file.
+    
+    Returns:
+        dict: A dictionary where keys are domain types and values are file paths.
+    """
+    # Determine the directory of the input file
+    output_dir = os.path.dirname(concat_filepath)
+    
+    # Dictionary to store file handles for each domain
+    domain_files = {}
+
+    try:
+        # Process the file line by line
+        with open(concat_filepath, 'r') as file:
+            for line in file:
+                columns = line.strip().split('\t')
+                if len(columns) < 2:
+                    continue  # Skip malformed lines
+                
+                domain_type = columns[1]
+                if domain_type not in domain_files:
+                    # Open a new file for this domain if it doesn't exist
+                    domain_filename = os.path.join(output_dir, f"combined_{domain_type}.noise_report")
+                    domain_files[domain_type] = open(domain_filename, 'a')
+                
+                # Write the line to the corresponding file
+                domain_files[domain_type].write(line)
+        
+    finally:
+        # Ensure all file handles are closed
+        for f in domain_files.values():
+            f.close()
+
+    # Return the mapping of domain types to file paths
+    return {domain: handle.name for domain, handle in domain_files.items()}
+
 
 ############################ Collect genomeIDs ###################################
 
@@ -295,61 +351,89 @@ def process_genome(data_queue, genome_id, options):
         faa_file = myUtil.unpackgz(options.faa_files[genome_id])
         gff_file = myUtil.unpackgz(options.gff_files[genome_id])
 
-        protein_dict = parse_bulk_HMMreport_genomize(genome_id, global_hmmreport_tsv, global_score_threshold_dict)
+        protein_dict = parse_bulk_HMMreport_genomize(genome_id, global_hmmreport_tsv, global_score_threshold_dict, options.thrs_score)
         ParseReports.parseGFFfile(gff_file, protein_dict)
         ParseReports.getProteinSequence(faa_file, protein_dict)
 
         cluster_dict = Csb_finder.find_syntenicblocks(genome_id, protein_dict, options.nucleotide_range)
         Csb_finder.name_syntenicblocks(global_csb_patterns_dict,global_csb_pattern_names,cluster_dict,options.min_completeness)
 
+        #synteny completion with provided patterns
+        missing_domains = Csb_finder.extract_missing_domains_and_coordinates(cluster_dict) #e.g. structure {'SPIREOTU_00146859_4': {'oxDsrMK': {'missing_domains': {'oxDsrO', 'oxDsrP'}, 'start': 1362, 'end': 7719}}}
+        
+        synteny_completion_candidate_dict = process_missing_domains(genome_id, missing_domains, gff_file, faa_file, options.nucleotide_range)
+        
+        #Add the candidate proteins to the submitting protein_dict and cluster_dict
+        #Add candidate to protein_dict if key is not already present int he protein dict
+        for proteinID, protein in synteny_completion_candidate_dict.items():
+            if proteinID not in protein_dict:
+                protein_dict[proteinID] = protein
+                cluster = cluster_dict[protein.clusterID]
+                cluster.add_gene(proteinID, protein.get_domains(), protein.gene_start, protein.gene_end)
+        
         data_queue.put((protein_dict, cluster_dict))
     except Exception as e:
         error_message = f"\nError: occurred: {str(e)}"
         traceback_details = traceback.format_exc()
         print(f"\tWARNING: Skipped {faa_file} due to an error - {error_message}")
         print(f"\tTraceback details:\n{traceback_details}")
-              
-def deprectaed_process_parallel_bulk_parse(args_tuple):
-    #TODO fill the syntenic block support to the newer routine process_genomes
-    data_queue,genomeID,options,hmmreport_tsv,score_threshold_diction, csb_patterns_diction,csb_pattern_names,counter = args_tuple
+
+def process_missing_domains(genomeID, missing_domains, gff_file, faa_file, nt_range=3500):
+    """
+    Process missing domains by identifying candidate proteins, parsing their features,
+    and checking if they can complete the gene clusters.
+
+    Args:
+        missing_domains (dict): Dictionary of missing domains for gene clusters.
+        gff_file (str): Path to the GFF file.
+        global_deconcat_domains_report_dict (dict): Dictionary mapping domain names to report file paths.
+
+    Returns:
+        dict: Updated missing_domains with candidate proteins that complete the clusters.
+    """
+    # Step 1: Prepare a dictionary for protein information based on missing domains
+    candidate_protein_dict = {}
+    insert_protein_dict = {}
+    for csb_id, csb_data in missing_domains.items():
+        for domain, domain_data in csb_data.items():
+            if 'missing_domains' not in domain_data:
+                continue
+            for missing_domain in domain_data['missing_domains']: #For each missing domain get all distant hits from the concatenated report for this domain
+                if missing_domain in global_deconcat_domains_report_dict:
+                    domain_report_file = global_deconcat_domains_report_dict[missing_domain]
+                    candidate_protein_dict = parse_bulk_HMMreport_genomize(genomeID,domain_report_file,{},10,candidate_protein_dict) # search for can. proteins that might fill the missing one
+
+    # Step 2: Add features to proteins
+    ParseReports.parseGFFfile(gff_file, candidate_protein_dict)
+
     
-    #counter.value +=1
-    #print(f"Processed {counter.value} genomes by worker", end="\r")#
-    protein_dict = dict()
-    cluster_dict = dict()
-    try:
-        faa_file = myUtil.unpackgz(options.faa_files[genomeID])
-        gff_file = myUtil.unpackgz(options.gff_files[genomeID])
-        
-        #Parse the hits
-        protein_dict = parse_bulk_HMMreport_genomize(genomeID,hmmreport_tsv,score_threshold_diction,options.thrs_score)
-        #Complete the hit information
-        ParseReports.parseGFFfile(gff_file,protein_dict)
-        ParseReports.getProteinSequence(faa_file,protein_dict)
-        
-        #Find the syntenic regions and insert to database
-        #If search is redone do not calculate csb, but do it separately with redo csb after all
-        if not options.redo_search:
-            cluster_dict = Csb_finder.find_syntenicblocks(genomeID,protein_dict,options.nucleotide_range)
-            Csb_finder.name_syntenicblocks(csb_patterns_diction,csb_pattern_names,cluster_dict,options.min_completeness)
+    # Step 3: Filter candidates and assign to clusters
+    # only take candidates that are within range of the gencluster with the pattern that misses something
+    #e.g. structure {'SPIREOTU_00146859_4': {'oxDsrMK': {'missing_domains': {'oxDsrO', 'oxDsrP'}, 'start': 1362, 'end': 7719}}}
+    for csb_id, csb_data in missing_domains.items():
+        for keyword_values in csb_data.values():
+            cluster_start = keyword_values.get('start')
+            cluster_end = keyword_values.get('end')
+            missing_types = keyword_values.get('missing_domains')
+            for protein_id, protein_info in candidate_protein_dict.items():
+                gene_start = protein_info.gene_start
+                gene_end = protein_info.gene_end
 
+                # Check if the protein falls within the range or 3500 nt outside of the gene cluster
+                if (cluster_start - nt_range <= gene_start <= cluster_end + nt_range) or \
+                   (cluster_start - nt_range <= gene_end <= cluster_end + nt_range):
+                    for domain in protein_info.get_domain_set():
+                        if domain in missing_types:
+                            # Update protein dictionary data with this protein
+                            protein_info.clusterID = csb_id # assign clusterID to the protein
+                            insert_protein_dict[protein_id] = protein_info
 
-            if options.synthenic_block_support_detection:
-                missing_protein_types, missing_proteins_list_dict = Csb_finder.find_csb_pattern_difference(csb_patterns_diction,csb_pattern_names,cluster_dict,3)
-                candidate_proteins_dict = ParseReports.parseHMMreport_below_cutoff_hits(missing_protein_types,hmm_report,score_threshold_diction,options.cut_score)
-                Csb_finder.synteny_completion(gff_file,protein_dict,cluster_dict,candidate_proteins_dict,missing_proteins_list_dict,options.nucleotide_range)
-        data_queue.put((protein_dict,cluster_dict))
-    except Exception as e:
-        error_message = f"\nError: occurred: {str(e)}"
-        traceback_details = traceback.format_exc()
-        print(f"\tWARNING: Skipped {faa_file} due to an error - {error_message}")
-        print(f"\tTraceback details:\n{traceback_details}")
-        return
+    # Step 4: Add sequences to the insertion candidates
+    ParseReports.getProteinSequence(faa_file, candidate_protein_dict)
     
-    return
-
-            
-                    
+    return insert_protein_dict
+    
+                  
 def process_writer(queue, options, counter):
     # This routine handles the output of the search and writes it into the database
     # It gets input from multiple workers as the database connection to sqlite is unique
@@ -416,7 +500,7 @@ def submit_batches(protein_batch, cluster_batch, options):
 
 
 
-def parse_bulk_HMMreport_genomize(genomeID,Filepath,Thresholds,cut_score=10):
+def parse_bulk_HMMreport_genomize(genomeID,Filepath,Thresholds,cut_score=10, protein_dict=None):
     """
     1.9.22 
     Required input are a path to a Hmmreport File from HMMER3 and a thresholds dictionary with threshold scores for each HMM
@@ -428,8 +512,8 @@ def parse_bulk_HMMreport_genomize(genomeID,Filepath,Thresholds,cut_score=10):
     Return
         -list of Protein objects
     """
-
-    protein_dict = {}
+    if protein_dict is None:
+        protein_dict = {}
 
     result = subprocess.run(['grep', genomeID, Filepath], stdout=subprocess.PIPE, text=True)
     
