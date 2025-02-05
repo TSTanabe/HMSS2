@@ -647,7 +647,7 @@ def generate_fetch_query(genomes, proteins, keywords, taxon_dict):
 
     if keywords:
         conditions.append("(" + " OR ".join(["Keywords.keyword LIKE ?"] * len(keywords)) + ")")
-        args.extend([f"%{keyword}%" for keyword in keywords])
+        args.extend([f"{keyword}" for keyword in keywords])
     
     if taxon_dict:
         conditions.append("Genomes.genomeID IN (" + ",".join("?" * len(taxon_dict)) + ")") #Only exact matches
