@@ -31,6 +31,8 @@ def print_fasta_and_hit_table(directory,options):
         csb_listing = find_csbs_with_proteins(options.csb_output_file, options.fetch_csbs)
         print(csb_listing)
         print(f"Found {len(csb_listing)} types of gene clusters containing one the genes for {options.fetch_csbs}")
+        if len(csb_listing) == 0:
+            sys.exit()
         options.fetch_keywords.extend(csb_listing)
     
 
@@ -513,6 +515,9 @@ def fetch_bulk_data(database, genomes, proteins, keywords, taxon_dict=dict(), mi
     with sqlite3.connect(database) as con:
         cur = con.cursor()
         cur.execute("PRAGMA foreign_keys = ON;")
+        cur.execute("PRAGMA cache_size = 100000;")  # Increase cache size
+        cur.execute("PRAGMA synchronous = OFF;")    # Reduce sync frequency
+        cur.execute("PRAGMA temp_store = MEMORY;")  # Store temporary data in memory
         query, args = generate_fetch_query(genomes, proteins, keywords, taxon_dict) # inner connection is or connection between prot, key and tax is and
         cur.execute(query, args)
         # Fetched only proteins with doms in keywords and genomeID in taxon dict, if taxon dict is present
