@@ -784,13 +784,14 @@ def fetch_cluster_dict(database, genomeID):
         
         # Loop through the rows returned by the query
         for count, row in enumerate(cur):
-            print(f"\tSelected proteins {count}", end="\r")
+            #print(f"\tSelected proteins {count}", end="\r")
             clusterID, proteinID, domain, start, end = row
             
             # Get or create the Cluster object for the current clusterID
             cluster = cluster_dict.get(clusterID)
             if cluster is None:
                 cluster = Csb_finder.Cluster(clusterID)
+                cluster.genomeID = genomeID
                 cluster_dict[clusterID] = cluster
             
             # Add the gene (proteinID, domain, start, end) to the cluster

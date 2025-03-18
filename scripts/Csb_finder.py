@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 import re
+from . import Database
+from multiprocessing import Manager, Pool, Value
 
 class Cluster:
     """
@@ -338,8 +340,98 @@ def name_syntenicblocks(patterns,pattern_names,clusterID_dict,min_completeness=0
             #    print("and gene cluster")
     return clusterID_dict
 
-  
+def parallel_name_syntenic_blocks(options, genomeIDs):
+    """
+    Parallelized CSB naming process
+    """
+    global csb_patterns_diction, csb_pattern_names
+    
+    # Initialize pattern dictionaries
+    csb_patterns_diction, csb_pattern_names = makePatternDict(options.patterns_file)
 
+    # Setup multiprocessing resources
+    manager = Manager()
+    data_queue = manager.Queue()
+    counter = manager.Value('i', 0)
+   
+    # Create process pool
+    with Pool(processes=options.cores) as pool:
+        # Start the writer process asynchronously
+        p_writer = pool.apply_async(csb_renaming_writer, (data_queue, options)) 
+
+        # Create tasks for parallel execution
+        tasks = ((data_queue, genomeID, options, counter) for genomeID in genomeIDs)
+        
+        # Execute tasks in parallel
+        pool.map(process_parallel_naming, tasks)
+
+        # Signal the end of data to the writer process
+        for _ in range(options.cores):
+            data_queue.put(None)
+
+        # Wait for the writer process to finish
+        p_writer.get()
+
+    print("\nFinished processing all genomes.")
+
+def process_parallel_naming(args_tuple):
+    """
+    Process a single genome in parallel.
+    """
+    global csb_patterns_diction, csb_pattern_names
+    
+    # Unpack the arguments
+    queue, genomeID, options, counter = args_tuple
+
+    # Increment counter (shared among processes)
+    counter.value += 1
+    print(f"Searching assembly {counter.value}", end="\r")
+
+    # Fetch and process cluster dictionary
+    cluster_diction = Database.fetch_cluster_dict(options.database_directory, genomeID)
+    name_syntenicblocks(csb_patterns_diction, csb_pattern_names, cluster_diction, options.min_completeness)
+
+    # Add the result to the queue
+    queue.put((genomeID, cluster_diction))
+
+def csb_renaming_writer(queue, options):
+    """
+    Writes processed results to the database.
+    """
+    while True:
+        tup = queue.get()
+        if tup is None:
+            break
+
+        # Unpack and write the result to the database
+        genomeID, cluster_dict = tup
+        Database.insert_database_clusters(options.database_directory, cluster_dict)
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+			
 def extract_missing_domains_and_coordinates(cluster_dict):
     """
     Extrahiert für jedes Keyword in jedem Cluster die fehlenden Domains und die Start-/End-Koordinaten.

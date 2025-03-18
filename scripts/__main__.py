@@ -125,7 +125,7 @@ def parse_arguments(arguments):
     
     # Parameters
     parameters = parser.add_argument_group("Search parameters")
-    parameters.add_argument('-mc', dest= 'min_completeness', type=int, default = 0.5, metavar='<int>', help='Minimal fraction of predefined csb to be recognized')
+    parameters.add_argument('-mc', dest= 'min_completeness', type=int, default = 0.7, metavar='<int>', help='Minimal fraction of predefined csb to be recognized')
     #parameters.add_argument('-sbs', dest= 'synthenic_block_support_detection', action='store_true', help='Use synthenic block support for detection') TODO this has to be added again but only for predefined patterns
     parameters.add_argument('-cut_type', dest='threshold_type', type=int, default = 1, metavar='<int>', choices = [1,2,3], help='Choice of cutoff: 1 optimized; 2 trusted; 3 noise; Default: 1')
     parameters.add_argument('-cut_score', dest='thrs_score', type=int, default = 10, metavar='<int>', help='Default cutoff score. Default: 10')
@@ -141,7 +141,7 @@ def parse_arguments(arguments):
     #Flow regulators
     flow = parser.add_argument_group("Work step regulation")
     flow.add_argument('-redo_csb', dest= 'redo_csb', action='store_true', help='Redo the collinear synthenic block prediction *. Default:False')
-    flow.add_argument('-redo_csb_naming', dest= 'redo_csb_naming', action='store_true', help='Redo pattern matching for collinear synthenic blocks *. Default: False')
+    flow.add_argument('-add_csb_naming', dest= 'redo_csb_naming', action='store_true', help='Redo pattern matching for collinear synthenic blocks *. Default: False')
     flow.add_argument('-redo_search', dest= 'redo_search', action='store_true', help='Do not exclude genomes already stored in the database for the hmmsearch *. Default: False')
     flow.add_argument('-redo_taxonomy', dest = 'redo_taxonomy', action='store_true', help='Redo the taxonomy assignment*. Default: False')
     
@@ -302,6 +302,7 @@ def redo_csb_names(options):
             options object
         Return:
             nothing
+        Das sollte schneller gehen wenn man es parallelisiert ablaufen lässt
     """
     
     myUtil.print_header(f"\nRedo collinear syntenic block assignment")
@@ -309,14 +310,18 @@ def redo_csb_names(options):
     csb_patterns_diction,csb_pattern_names = Csb_finder.makePatternDict(options.patterns_file)
     print("Collecting genomeIDs")
     genomeIDs = Database.fetch_genomeIDs(options.database_directory)
-    lim = str(len(genomeIDs))
-    print(f"Reiterate pattern naming for {lim} genomes")
-    for index,genomeID in enumerate(genomeIDs):
-        print(f"Genome number {index+1} of {lim}")
-        cluster_diction = Database.fetch_cluster_dict(options.database_directory,genomeID)
-        Csb_finder.name_syntenicblocks(csb_patterns_diction,csb_pattern_names,cluster_diction,options.min_completeness)
-        Database.insert_database_cluster(options.database_directory,genomeID,cluster_diction)
-    print("\nFinished csb naming")    
+    
+    Csb_finder.parallel_name_syntenic_blocks(options, genomeIDs)
+    print("\nFinished csb naming") 
+    return
+    #lim = str(len(genomeIDs))
+    #print(f"Reiterate pattern naming for {lim} genomes")
+    #for index,genomeID in enumerate(genomeIDs):
+    #    print(f"Genome number {index+1} of {lim}")
+    #    cluster_diction = Database.fetch_cluster_dict(options.database_directory,genomeID)
+    #    Csb_finder.name_syntenicblocks(csb_patterns_diction,csb_pattern_names,cluster_diction,options.min_completeness)
+    #    Database.insert_database_cluster(options.database_directory,genomeID,cluster_diction)
+   
     
 def collect_taxonomy_information(options):
     myUtil.print_header(f"\nTaxonomy assignment")
