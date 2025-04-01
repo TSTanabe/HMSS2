@@ -30,10 +30,14 @@ def initial_bulk_reports(options):
     global global_csb_pattern_names
     global global_deconcat_domains_report_dict
 
-    #Make the noise cutoff files for the synteny completion
+    # Make the noise cutoff files for the synteny completion
     score_threshold_dict = Search.makeThresholdDict(options.score_threshold_file, 3, options.thrs_score)
     hmmreport_tsv = get_hmmreport_tsv(options, score_threshold_dict, "concat.noise_report")
-    separate_domain_report_dict = deconcat_hmmreport_to_combined(hmmreport_tsv)
+    
+    # Remove the hits above trusted cutoff first, because they are always found by the HMM
+    score_threshold_dict = Search.makeThresholdDict(options.score_threshold_file, 2, options.thrs_score)
+    hmmreport_tsv = remove_trusted_hits(score_threshold_dict,hmmreport_tsv)
+    separate_domain_report_dict = deconcat_hmmreport_to_per_domain_noise_cutoff_report(hmmreport_tsv)
     
     #remove the .hmmreport.filtered_report files from options.glob_report
     [os.remove(os.path.join(options.glob_report, f)) for f in os.listdir(options.glob_report) if f.endswith('.hmmreport.filtered_report')]
@@ -262,7 +266,7 @@ def parse_domain_table(file_path, gene_dict):
 
     return gene_dict
 
-def deconcat_hmmreport_to_combined(concat_filepath):
+def deconcat_hmmreport_to_per_domain_noise_cutoff_report(concat_filepath):
     """
     Deconcatenates a concatenated .hmmreport file into subfiles based on domain type,
     writing output files to the same directory as the input file.
@@ -290,7 +294,7 @@ def deconcat_hmmreport_to_combined(concat_filepath):
                 domain_type = columns[1]
                 if domain_type not in domain_files:
                     # Open a new file for this domain if it doesn't exist
-                    domain_filename = os.path.join(output_dir, f"combined_{domain_type}.noise_report")
+                    domain_filename = os.path.join(output_dir, f"combined_{domain_type}.cleaned_report")
                     domain_files[domain_type] = open(domain_filename, 'a')
                 
                 # Write the line to the corresponding file
@@ -304,7 +308,36 @@ def deconcat_hmmreport_to_combined(concat_filepath):
     # Return the mapping of domain types to file paths
     return {domain: handle.name for domain, handle in domain_files.items()}
 
-
+def remove_trusted_hits(score_threshold_dict, hmmreport_tsv):
+    """
+    Entfernt Treffer aus der HMM-Report-Tabelle, deren Score über dem definierten Cutoff-Wert liegt.
+    
+    Parameters:
+    - score_threshold_dict (dict): Ein Dictionary mit {domain: cutoff_score}.
+    - hmmreport_tsv (str): Der Dateipfad zur TSV-Datei.
+    
+    Returns:
+    - str: Pfad zur gefilterten Datei.
+    """
+    output_path = hmmreport_tsv.replace(".noise_report", ".cleaned_report")
+    
+    with open(hmmreport_tsv, 'r') as infile, open(output_path, 'w') as outfile:
+        for line in infile:
+            columns = line.strip().split('\t')
+            if len(columns) < 4:
+                continue  # Zeilen ignorieren, die nicht genügend Spalten haben
+            
+            domain = columns[1]
+            try:
+                score = float(columns[3])
+            except ValueError:
+                continue  # Überspringen, falls der Score nicht konvertierbar ist
+            
+            if score < score_threshold_dict.get(domain, float('inf')):
+                outfile.write(line)
+    
+    return output_path
+    
 ############################ Collect genomeIDs ###################################
 
 def collect_genomeIDs(report_path, options, div='___'):
