@@ -532,7 +532,7 @@ def promote_by_cutoff(options, directory, processes=4, hmm_ids=[]):
         ]
 
     optimized_dict = make_threshold_dict(
-        options.score_threshold_file, 1, options.thrs_score
+        options.score_threshold_file, options.threshold_type, options.thrs_score
     )
     
     
