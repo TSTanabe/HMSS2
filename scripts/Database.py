@@ -57,11 +57,11 @@ def create_database(database):
         );''')
         
         cur.execute('''CREATE TABLE Keywords (
-        ID          integer         PRIMARY KEY     AUTOINCREMENT,
         clusterID   varchar(32)                     NOT NULL,
         keyword     varchar(32)                     NOT NULL,
         completeness    varchar(32)                 DEFAULT NULL,
         collinearity    varchar(32)                 DEFAULT NULL,
+        PRIMARY KEY (clusterID, keyword),
         CONSTRAINT fk_clusterID FOREIGN KEY (clusterID) REFERENCES Clusters(clusterID) ON DELETE CASCADE ON UPDATE CASCADE
         );''')
         
@@ -82,12 +82,12 @@ def create_database(database):
         );''')
         
         cur.execute('''CREATE TABLE Domains (
-        ID          integer         PRIMARY KEY     AUTOINCREMENT,
-        proteinID   varchar(32)                     NOT NULL,
+        proteinID   varchar(128)                     NOT NULL,
         domain      varchar(32)                     DEFAULT NULL,
         score       smallint(6)                     DEFAULT NULL,
         domStart    int(11)                             DEFAULT NULL,
         domEnd      int(11)                             DEFAULT NULL,
+        PRIMARY KEY (proteinID, domain, domStart, domEnd),
         CONSTRAINT fk_proteinID FOREIGN KEY (proteinID) REFERENCES Proteins(proteinID) ON DELETE CASCADE ON UPDATE CASCADE
         );''')
         
@@ -211,23 +211,6 @@ def drop_specified_indices(database):
 
 
     
-def insert_database_genomeID(database,genomeID):
-    """
-    11.9.22
-        Args: 
-            Database    Name of the database to be appended
-            GenomeID    genomeID to be added to the Genomes table
-            
-        
-    """
-    with sqlite3.connect(database) as con:
-        
-        cur = con.cursor()
-        cur.execute("""PRAGMA foreign_keys = ON;""")
-        cur.execute(''' INSERT OR IGNORE INTO Genomes (genomeID) VALUES (?) ON CONFLICT(genomeID) DO NOTHING;''',[genomeID])
-    con.commit()
-    con.close()
-    return
 
 def insert_database_genomeIDs(database, genomeIDs):
     """
@@ -250,63 +233,6 @@ def insert_database_genomeIDs(database, genomeIDs):
     return
     
     
-def insert_database_protein(database, genomeID, protein_dict):
-    """
-    1.10.22
-    Inserts protein data into the database, including associated domains.
-    
-    Args:
-        database: Path to the SQLite database.
-        genomeID: The ID of the genome to which the proteins belong.
-        protein_dict: Dictionary containing protein objects.
-    """
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        cur.execute("""PRAGMA foreign_keys = ON;""")
-        
-        # Sort the proteins by contig and start position
-        protein_list = sorted(protein_dict, key=lambda x: 
-                              (protein_dict[x].gene_contig, protein_dict[x].gene_start))
-        
-        # Lists to store batch insert data
-        protein_data = []
-        domain_data = []
-        
-        for key in protein_list:
-            protein = protein_dict[key]
-            proteinID = f"{genomeID}-{protein.proteinID}"  # Add genomeID to proteinID
-            
-            # Cache frequently accessed attributes to minimize redundant lookups
-            gene_locustag = protein.gene_locustag
-            gene_contig = protein.gene_contig
-            gene_start = protein.gene_start
-            gene_end = protein.gene_end
-            gene_strand = protein.gene_strand
-            dom_count = protein.get_domain_count()
-            sequence = protein.get_sequence()
-            domains = protein.get_domains_dict()
-            
-            # Append protein data to batch list
-            protein_data.append((proteinID, genomeID, gene_locustag, gene_contig,
-                                 gene_start, gene_end, gene_strand, dom_count, sequence))
-            
-            # Append domain data to batch list
-            for domain_index in domains:
-                domain = domains[domain_index]
-                domain_data.append((proteinID, domain.get_HMM(), domain.get_start(),
-                                    domain.get_end(), domain.get_score()))
-        
-        # Perform batch inserts for proteins and domains
-        cur.executemany('''INSERT OR IGNORE INTO Proteins
-                           (proteinID, genomeID, locustag, contig, start, end, strand, dom_count, sequence)
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', protein_data)
-        
-        cur.executemany('''INSERT OR IGNORE INTO Domains
-                           (proteinID, domain, domStart, domEnd, score)
-                           VALUES (?, ?, ?, ?, ?)''', domain_data)
-        
-        # Commit all changes at once
-        con.commit()
         
 def insert_database_proteins(database, protein_dict):
     """
@@ -395,58 +321,6 @@ def update_protein_sequences(database, protein_dict):
         con.commit()
 
     con.close()
-    
-    
-def insert_database_cluster(database, genomeID, cluster_dict):
-    """
-    Inserts cluster data into the database, including associated proteins and keywords.
-
-    Args:
-        database: Path to the SQLite database.
-        genomeID: The ID of the genome to which the clusters belong.
-        cluster_dict: Dictionary containing cluster objects.
-    """
-    # TODO: Behavior -> Do not delete old entries on rename, only handle duplicates.
-    # TODO: Add keyword selection behavior: if found, do nothing; otherwise, insert.
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        cur.execute("""PRAGMA foreign_keys = ON;""")
-
-
-        # Prepare lists for batch operations
-        cluster_data = []
-        protein_update_data = []
-        keyword_data = []
-
-        for cluster_index, cluster in cluster_dict.items():
-            clusterID = cluster.clusterID
-            if clusterID is None:
-                continue
-
-            # Insert cluster data
-            cluster_data.append((clusterID, genomeID))
-
-            # Update protein data with the clusterID
-            cluster_proteins = cluster.get_genes()
-            protein_update_data.extend([(clusterID, f"{genomeID}-{proteinID}") for proteinID in cluster_proteins])
-
-            # Insert or update keyword data
-            for Keyword in cluster.get_keywords():
-                keyword_data.append((clusterID, Keyword.get_keyword(), Keyword.get_completeness(), Keyword.get_csb()))
-
-        # Perform batch insert for Clusters
-        cur.executemany("""INSERT OR IGNORE INTO Clusters (clusterID, genomeID) VALUES (?, ?)""", cluster_data)
-
-        # Perform batch update for Proteins
-        cur.executemany("""UPDATE Proteins SET clusterID = ? WHERE proteinID = ?""", protein_update_data)
-
-        # Perform batch insert or replace for Keywords
-        cur.executemany("""INSERT OR REPLACE INTO Keywords (clusterID, keyword, completeness, collinearity) 
-                           VALUES (?, ?, ?, ?)""", keyword_data)
-
-
-        # Commit all changes once after all operations
-        con.commit()
 
 
 def insert_database_clusters(database, cluster_dict):
@@ -906,7 +780,7 @@ def update_keywords(database, keyword_dict):
     if keyword_dict:
         with sqlite3.connect(database) as con:
             cur = con.cursor()
-            query = """INSERT INTO Keywords (clusterID, keyword) VALUES (?, ?)"""
+            query = """INSERT OR IGNORE INTO Keywords (clusterID, keyword) VALUES (?, ?)"""
             for new_keyword,clusterIDs in keyword_dict.items():
                 for clusterID in clusterIDs:
                     cur.execute(query, (clusterID, new_keyword))
@@ -964,6 +838,25 @@ def fetch_genomeIDs(database):
     with sqlite3.connect(database) as con:
         cur = con.cursor()
         cur.execute("SELECT DISTINCT genomeID FROM Genomes")
+        
+        # Use set comprehension to create the set of genomeIDs
+        genomeIDs = {row[0] for row in cur.fetchall()}
+    
+    return genomeIDs
+
+def fetch_genomeIDs_from_proteins(database):
+    """
+    Fetches the distinct genomeIDs from the Genomes table in the SQLite database.
+    
+    Args:
+        database: Path to the SQLite database.
+    
+    Returns:
+        A set of distinct genomeIDs.
+    """
+    with sqlite3.connect(database) as con:
+        cur = con.cursor()
+        cur.execute("SELECT DISTINCT genomeID FROM Proteins")
         
         # Use set comprehension to create the set of genomeIDs
         genomeIDs = {row[0] for row in cur.fetchall()}

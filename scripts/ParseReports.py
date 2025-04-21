@@ -1,8 +1,13 @@
 #!/usr/bin/python
 from Bio import SearchIO
+import os
 import traceback
 import subprocess
 from . import Database
+from . import Csb_finder
+from . import myUtil
+from . import Output
+from multiprocessing import Pool, Manager
 #import multiprocessing
 #from multiprocessing import Process, Manager, Pool, Semaphore
 import re
@@ -204,76 +209,11 @@ class Domain:
         return self.end
     def get_score(self):
         return self.score
-    
-#   Parsing subroutines
-#------------------------------------------------------------
+#########################################
+########   Parsing subroutines ##########
+#########################################
 
 
-def parseHMMreport(Filepath, Thresholds, cut_score=10):
-    protein_dict = {}
-    
-    try:
-        protein_dict = parseHMMreport_hmmer3_format(Filepath, Thresholds, cut_score)
-    except Exception as e:  # Catch all exceptions
-        print(f"Error occurred while processing the file: {Filepath}")
-        traceback.print_exc()  # This prints the complete traceback of the error
-        
-
-    return protein_dict
-    
-    
-def parseHMMreport_hmmer3_format(Filepath,Thresholds,cut_score=10):
-    """
-    1.9.22 
-    Required input are a path to a Hmmreport File from HMMER3 and a thresholds dictionary with threshold scores for each HMM
-    Returns a list of protein objects for further utilization
-    Args
-        -Inputfile Report from HMMER3
-        -Dictionary Thresholds for HMMs
-        
-    Return
-        -list of Protein objects
-    """
-
-    
-    protein_dict = {}
-
-
-    for hmmer_qresult in SearchIO.parse(Filepath,"hmmer3-text"):
-        query = hmmer_qresult.id    # Name of HMM without description
-        hit_proteinID = ""
-        hit_bitscore = 0
-        hit_bias = 0
-        hit_evalue = 1
-        threshold = cut_score
-        if query in Thresholds:
-            threshold = Thresholds[query] # specific threshold
-        
-        
-        for hit in hmmer_qresult:
-            if threshold<hit.bitscore:
-                hit_proteinID = hit.id
-                hit_bitscore = hit.bitscore
-                hit_bias = hit.bias
-                hit_evalue = hit.evalue	
-                hsp_bitscore = 0
-                hsp_start = 0
-                hsp_end = 0
-                for hsp in hit:
-                    #take highest scoring domain as coordinates
-                    if hsp_bitscore < hsp.bitscore:
-                        hsp_start = hsp.hit_start
-                        hsp_end = hsp.hit_end
-                        hsp_bitscore = hsp.bitscore
-                        
-                #print (f"HMM: {query} ProteinID:{hit_proteinID} Hitscore:{hit_bitscore} Bias:{hit_bias} HspScore:{hsp_bitscore} Start:{hsp_start} End:{hsp_end}") Debugging Zeile
-                if hit_proteinID in protein_dict:
-                    protein = protein_dict[hit_proteinID]
-                    
-                    protein.add_domain(query,hsp_start,hsp_end,hit_bitscore)
-                else:
-                    protein_dict[hit_proteinID] = Protein(hit_proteinID,query,hsp_start,hsp_end,hit_bitscore)
-    return protein_dict
 
 
 
@@ -394,93 +334,333 @@ def getLocustag(locustag_pattern,string):
         return ""
 
 
+###############################################################################################################
+###############################################################################################################
+###############################################################################################################
 
 
 
-
-################################### Synteny completion routines ###################################
-
-
-def parseHMMreport_below_cutoff_hits(protein_types,Filepath,Thresholds,cut_score=10):
+def process_missing_domains(genomeID, missing_domains_dict, candidate_hit_files_dict, gff_file, faa_file, nt_range=3500):
     """
-    11.04.2023
-    Routine shall find hits that are below the  threshold but that are still significant
-    candidate hits are returned in a dictionary with proteinID as key and list as value
+    Process missing domains by identifying candidate proteins, parsing their features,
+    and checking if they can complete the gene clusters.
+
+    Args:
+        missing_domains (dict): Dictionary of missing domains for gene clusters.
+        gff_file (str): Path to the GFF file.
+        global_deconcat_domains_report_dict (dict): Dictionary mapping domain names to report file paths.
+
+    Returns:
+        dict: Updated missing_domains with candidate proteins that complete the clusters.
     """
-    candidate_dict = {}
-    for hmmer_qresults in SearchIO.parse(Filepath,"hmmer3-text"):
-        query = hmmer_qresults.id
-        if query in protein_types:
-            hit_proteinID = ""
-            hit_bitscore = 0
-            hit_bias = 0
-            hit_evalue = 1
-            threshold = 10
-            if query in Thresholds:
-                threshold = Thresholds[query] #Upper limit
-                cutoff = threshold * 0.1 # Lower limit
+    # Step 1: Prepare a dictionary for protein information based on missing domains
+    candidate_protein_dict = {}
+    insert_protein_dict = {}
+    for domain, csb_data in missing_domains_dict.items():
+        if domain in candidate_hit_files_dict:
+            grep_process = subprocess.Popen(
+                ['grep', genomeID, candidate_hit_files_dict[domain]],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            stdout, stderr = grep_process.communicate()
+            if stderr:
+                print("Error for fetching candidate hits:", stderr.decode('utf-8'))
+                return
+
+            lines = stdout.decode('utf-8').split('\n')
+            for line in lines:
+                if line.strip():
+                    columns = line.strip().split('\t')
+                    key = columns[0]
+                    genomeID, hit_proteinID = key.split('___',1)
+                    query = columns[3]
+                    hit_bitscore = int(float(columns[7]))
+                    hsp_start = int(float(columns[17]))
+                    hsp_end = int(float(columns[18]))
+                    candidate_protein_dict[hit_proteinID] = Protein(hit_proteinID,query,hsp_start,hsp_end,hit_bitscore,genomeID)
+
+            
+    # Step 2: Add features to proteins
+    parseGFFfile(gff_file, candidate_protein_dict)
+
+    
+    # Step 3: Filter candidates and assign to clusters
+    # only take candidates that are within range of the gencluster with the pattern that misses something
+    #e.g. structure {'redDsrD': [('GCF_000266945', 'GCF_000266945_6', 'GCF_000266945_000000000001', 1853338, 1859499)], 'TmcA': [('GCF_000266945', 'GCF_000266945_12', 'GCF_000266945_000000000001', 6138287, 6145798)]}}
+    for domain, csb_data in missing_domains_dict.items():
+        for data in csb_data:
+            genome_id, clusterID, contig, cluster_start, cluster_end = data # for the clusterID we are looking for some protein that lays between these coordinates
+            
+            for proteinID, protein_info in candidate_protein_dict.items():
+                if domain in protein_info.get_domain_set():
+                    gene_start = protein_info.gene_start
+                    gene_end = protein_info.gene_end
+
+                    # Check if the protein falls within the range or 3500 nt outside of the gene cluster
+                    if (cluster_start - nt_range <= gene_start <= cluster_end + nt_range) or \
+                       (cluster_start - nt_range <= gene_end <= cluster_end + nt_range):
+                        protein_info.clusterID = clusterID
+                        insert_protein_dict[proteinID] = protein_info # Update dict for the main routine
+            
+    # Step 4: Add sequences to the insertion candidates
+    getProteinSequence(faa_file, insert_protein_dict)
+    
+    return insert_protein_dict
+
+###############################################################################################################
+###############################################################################################################
+###############################################################################################################
+
+# Writer for hit reports
+
+def submit_batches(protein_batch, cluster_batch, options):
+
+    # Insert into the database
+    Database.insert_database_proteins(options.database_directory, protein_batch)
+    Database.insert_database_clusters(options.database_directory, cluster_batch)
+
+    # Append to the gene clusters file
+    with open(options.gene_clusters_file, "a") as file:
+        for clusterID, cluster in cluster_batch.items():
+            domains = cluster.get_domains()
+            file.write(clusterID + '\t' + '\t'.join(domains) + '\n')
+    print(f"Submitted batch written to db and gene cluster file")
+
+
+
+def process_writer(queue, options):
+    # This routine handles the output of the search and writes it into the database
+    # It gets input from multiple workers as the database connection to sqlite is unique
+    
+    protein_batch = {}
+    cluster_batch = {}
+    batch_size = options.glob_chunks
+    batch_counter = 0
+
+    while True:
+        tup = queue.get()
+        if tup is None: 
+            break
+        
+        else:
+            batch_counter += 1
+            print(f"Processed {batch_counter} genomes ", end="\r")#
+        
+        protein_dict, cluster_dict = tup
+
+        # Concatenate the data
+        protein_batch.update(protein_dict)
+        cluster_batch.update(cluster_dict)
+        batch_counter += 1
+        
+        # Print text reports if desired
+        if options.individual_reports:
+            if protein_dict:  # Check if protein_dict is not empty
+                first_protein_key = next(iter(protein_dict))  # Get the first key
+                genomeID = protein_dict[first_protein_key].genomeID
+                filepath = os.path.join(options.fasta_initial_hit_directory, str(genomeID)+".hit_table_txt")
+                Output.output_genome_report(filepath, protein_dict, cluster_dict)
+        
+        # If batch size is reached, process the batch
+        if batch_counter >= batch_size:
+            submit_batches(protein_batch, cluster_batch, options)
+            protein_batch = {}
+            cluster_batch = {}
+            batch_counter = 0
+
+    #Submit the remaining and file reports
+    if protein_batch or cluster_batch:
+        submit_batches(protein_batch, cluster_batch, options)
+        if options.individual_reports:
+            first_protein_key = next(iter(protein_dict))  # Get the first key
+            genomeID = protein_dict[first_protein_key].genomeID
+            filepath = os.path.join(options.fasta_initial_hit_directory, str(genomeID)+".hit_table_txt")
+            Output.output_genome_report(filepath, protein_dict, cluster_dict)
+    return
+    
+    
+#########################################################################################
+################ Processing routines for parsing genome hits ############################
+#########################################################################################
+
+def split_into_batches(data_list, num_batches):
+    batch_size = len(data_list) // num_batches
+    return [data_list[i * batch_size:(i + 1) * batch_size] for i in range(num_batches)]
+
+def parse_bulk_HMMreport_genomize(genomeID,Filepath,protein_dict=None):
+    """
+ 
+    """
+    if protein_dict is None:
+        protein_dict = {}
+
+    result = subprocess.run(['grep', genomeID, Filepath], stdout=subprocess.PIPE, text=True)
+    
+    lines = result.stdout.splitlines()  # Split output into lines
+
+    for line in lines:
+        columns = line.split('\t')  # Assuming columns are space-separated
+        if columns:
+            try:
+                key = columns[0]
+                genomeID, hit_proteinID = key.split('___',1)
+                query = columns[3]
+                hit_bitscore = int(float(columns[7]))
+                hsp_start = int(float(columns[17]))
+                hsp_end = int(float(columns[18]))
                 
-                for hit in hmmer_qresults:
-                    if hit.bitscore<threshold and hit.bitscore > cutoff:
-                        hit_proteinID = hit.id
-                        hit_bitscore = hit.bitscore
-                        hit_bias = hit.bias
-                        hit_evalue = hit.evalue
-                        hsp_bitscore = 0
-                        hsp_start = 0
-                        hsp_end = 0
-                        for hsp in hit:#take highest scoring domain as coordinates
-                            if hsp_bitscore < hsp.bitscore:
-                                hsp_start = hsp.hit_start
-                                hsp_end = hsp.hit_end
-                                hsp_bitscore = hsp.bitscore
-                        candidate_dict[hit_proteinID] = [query,hsp_start,hsp_end,hsp_bitscore]
-    
-    return candidate_dict
-
-def parseHMMreport_tsv_below_cutoff_hits(protein_types,Filepath,Thresholds,cut_score=10):
-    """
-    11.04.2023
-    Routine shall find hits that are below the  threshold but that are still significant
-    candidate hits are returned in a dictionary with proteinID as key and list as value
-    """
-    candidate_dict = {}
-    for hmmer_qresults in SearchIO.parse(Filepath,"hmmer3-text"):
-        query = hmmer_qresults.id
-        if query in protein_types:
-            hit_proteinID = ""
-            hit_bitscore = 0
-            hit_bias = 0
-            hit_evalue = 1
-            threshold = 10
-            if query in Thresholds:
-                threshold = Thresholds[query] #Upper limit
-                cutoff = threshold * 0.1 # Lower limit
+                if hit_proteinID in protein_dict:
+                    protein = protein_dict[hit_proteinID]
+                    protein.add_domain(query,hsp_start,hsp_end,hit_bitscore)
+                else:
+                    protein_dict[hit_proteinID] = Protein(hit_proteinID,query,hsp_start,hsp_end,hit_bitscore,genomeID)
+            except Exception as e:
+                error_message = f"\nError occurred: {str(e)}"
+                traceback_details = traceback.format_exc()
+                print(f"\tWARNING: Skipped {Filepath} due to an error - {error_message}")
+                print(f"\tTraceback details:\n{traceback_details}")
+                continue
                 
-                for hit in hmmer_qresults:
-                    if hit.bitscore<threshold and hit.bitscore > cutoff:
-                        hit_proteinID = hit.id
-                        hit_bitscore = hit.bitscore
-                        hit_bias = hit.bias
-                        hit_evalue = hit.evalue
-                        hsp_bitscore = 0
-                        hsp_start = 0
-                        hsp_end = 0
-                        for hsp in hit:#take highest scoring domain as coordinates
-                            if hsp_bitscore < hsp.bitscore:
-                                hsp_start = hsp.hit_start
-                                hsp_end = hsp.hit_end
-                                hsp_bitscore = hsp.bitscore
-                        candidate_dict[hit_proteinID] = [query,hsp_start,hsp_end,hsp_bitscore]
+    return protein_dict
+        
+
+
+def process_genome(
+    data_queue, genome_id, faa_path, gff_path, hmmreport_path,
+    nucleotide_range, min_completeness, intermediate_hit_dict,
+    pattern_dict, pattern_names
+):
+    try:
+        faa_file = myUtil.unpackgz(faa_path)
+        gff_file = myUtil.unpackgz(gff_path)
+        
+        # Get the initial hit information
+        protein_dict = parse_bulk_HMMreport_genomize(genome_id, hmmreport_path)
+        parseGFFfile(gff_file, protein_dict)
+        getProteinSequence(faa_file, protein_dict)
+
+        # Recognition of gene clusters
+        cluster_dict = Csb_finder.find_syntenicblocks(genome_id, protein_dict, nucleotide_range)
+        Csb_finder.name_syntenicblocks(pattern_dict, pattern_names, cluster_dict, min_completeness)
+
+        # Synteny completion mechanism for named gene clusters
+        missing = Csb_finder.extract_missing_domain_targets(cluster_dict)
+        new_proteins = process_missing_domains(genome_id, missing,intermediate_hit_dict, gff_file, faa_file, nucleotide_range)
+        for pid, prot in new_proteins.items():
+            if pid not in protein_dict:
+                protein_dict[pid] = prot
+                cluster_dict[prot.clusterID].add_gene(pid, prot.get_domains(), prot.gene_start, prot.gene_end)
+
+        data_queue.put((protein_dict, cluster_dict))
+
+    except Exception as e:
+
+        print(f"Error for {genome_id}: {e}")
+        print(traceback.format_exc())
+
+
+
+def process_batch(
+    data_queue, genome_ids, faa_files, gff_files, hmmreport_path,
+    nucleotide_range, min_completeness, intermediate_hit_dict,
+    pattern_dict, pattern_names
+):
+    for genome_id in genome_ids:
+        try:
+            process_genome(
+                data_queue, genome_id,
+                faa_files[genome_id], gff_files[genome_id], hmmreport_path,
+                nucleotide_range, min_completeness, intermediate_hit_dict,
+                pattern_dict, pattern_names
+            )
+        except Exception as e:
+            print(f"Warning: Failed to process genome '{genome_id}' — {str(e)}")
+            continue
+
+
+def main_parse_summary_hmmreport(options):
+
+
+    genome_ids = list(options.queued_genomes)
+    genomeID_batches = split_into_batches(genome_ids, options.cores - 1)
+
+    # Lade Patterns nur 1x im Hauptprozess
+    csb_patterns, csb_names = Csb_finder.makePatternDict(options.patterns_file)
     
-    return candidate_dict
+    # Load intermediate hit file
+    intermediate_hit_dict = {os.path.splitext(f)[0]: os.path.join(options.Cross_check_directory, f) for f in os.listdir(options.Cross_check_directory) if f.endswith('.intermediate_hits')}
+
     
-    
-#print("MAKE THRESHOLDS")
-#thrs = makeThresholdDict('ttest/Thresholds.txt')
-#print("PARSE HMM REPORTS")
-#diction = parseHMMreport("ptest/GCA_000006985.1_ASM698v1_genomic.HmmReport",thrs);
-#print("PARSE GFF FILE")
-#parseGFFfile("ptest/GCA_000006985.1_ASM698v1_genomic.gff",diction)
-#print("PARSE AA SEQUENCE")
-#getProteinSequence("ptest/GCA_000006985.1_ASM698v1_genomic.faa",diction)
+    # Insert genomeIDs in DB
+    Database.insert_database_genomeIDs(options.database_directory, set(genome_ids))
+
+    with Manager() as manager:
+        data_queue = manager.Queue()
+
+        with Pool(processes=options.cores) as pool:
+            # Start writer
+            p_writer = pool.apply_async(process_writer, (data_queue, options))
+
+            args = [
+                (
+                    data_queue,
+                    batch,
+                    options.faa_files,
+                    options.gff_files,
+                    options.summary_hmmreport,
+                    options.nucleotide_range,
+                    options.min_completeness,
+                    intermediate_hit_dict,
+                    csb_patterns,
+                    csb_names
+                )
+                for batch in genomeID_batches
+            ]
+
+            # Start readers
+            pool.starmap(process_batch, args)
+
+            # End writer
+            for _ in range(options.cores):
+                data_queue.put(None)
+
+            p_writer.get()
+    print("Finished parsing of search results")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+

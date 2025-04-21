@@ -17,6 +17,7 @@ class Cluster:
     def __init__(self,clusterID,distance = 3500):
         self.clusterID = clusterID
         self.genomeID = ""
+        self.contig = ""
         self.distance = distance
         self.genes = [] #holds the proteinIDs
         self.types = [] #holds the types, defined as domains of each protein
@@ -262,6 +263,7 @@ def find_syntenicblocks(genomeID, protein_dict, distance=3500):
                     cluster.add_gene(prev_el_proteinID, prev_protein.get_domains(), prev_protein.gene_start, prev_protein.gene_end)
                     prev_protein.clusterID = cluster.clusterID
                     cluster.add_gene(curr_el_proteinID, curr_protein.get_domains(), curr_protein.gene_start, curr_protein.gene_end)
+                    cluster.contig = prev_protein.gene_contig
                     curr_protein.clusterID = cluster.clusterID
                 else:
                     # add current protein to current syntenic block
@@ -432,50 +434,36 @@ def csb_renaming_writer(queue, options):
 	
 	
 			
-def extract_missing_domains_and_coordinates(cluster_dict):
+def extract_missing_domain_targets(cluster_dict):
     """
-    Extrahiert für jedes Keyword in jedem Cluster die fehlenden Domains und die Start-/End-Koordinaten.
-    Keywords mit leeren "missing_domains" werden nicht aufgenommen.
-
-    Args:
-        cluster_dict (dict): Dictionary mit Cluster-Objekten als Values.
-
-    Returns:
-        dict: Dictionary mit folgendem Format:
-              {
-                  cluster_id: {
-                      keyword_name: {
-                          "missing_domains": [...],
-                          "start": cluster_start,
-                          "end": cluster_end
-                      }
-                  }
-              }
+    Creates a domain-centric view of all missing domains across all clusters.
+    
+    Returns a dictionary:
+        {
+            domain_name: [
+                (genomeID, contig, start, end),
+                ...
+            ]
+        }
     """
     result = {}
 
-    for cluster_id, cluster in cluster_dict.items():
-        cluster_data = {}
-        cluster_start = cluster.get_cluster_start()
-        cluster_end = cluster.get_cluster_end()
-        
-        for keyword_obj in cluster.get_keywords():
-            keyword_id = keyword_obj.keyword_id
-            missing_domains = keyword_obj.missing_domains
+    for cluster in cluster_dict.values():
 
-            # Nur Einträge hinzufügen, wenn "missing_domains" nicht leer ist
-            if missing_domains:
-                cluster_data[keyword_id] = {
-                    "missing_domains": missing_domains,
-                    "start": cluster_start,
-                    "end": cluster_end,
-                }
-        
-        # Nur Cluster hinzufügen, die relevante Keywords enthalten
-        if cluster_data:
-            result[cluster_id] = cluster_data
+        genomeID = cluster.genomeID
+        clusterID = cluster.clusterID
+        contig = cluster.contig
+        start = cluster.get_cluster_start()
+        end = cluster.get_cluster_end()
+
+        for keyword in cluster.get_keywords():
+            for missing_domain in keyword.missing_domains:
+                if missing_domain not in result:
+                    result[missing_domain] = []
+                result[missing_domain].append((genomeID, clusterID, contig, start, end))
 
     return result
+
 
 
 def find_csb_pattern_difference(patterns,pattern_names,cluster_dict,min_pattern_length=4):
