@@ -40,7 +40,7 @@ def prepare_result_space(options,project="project"):
         options.fasta_initial_hit_directory = options.result_files_directory+"/Hit_list"
         options.fasta_output_directory = options.result_files_directory+"/Sequences"
         options.Csb_directory = options.result_files_directory+"/Collinear_syntenic_blocks"
-        
+        options.Cross_check_directory = options.result_files_directory+"/Filtered_hits"
         
         #Define files from the existing project
         options.divergent_output_file = options.result_files_directory+"/div_output_file.faa"
@@ -75,7 +75,8 @@ def prepare_result_space(options,project="project"):
         os.mkdir(options.fasta_output_directory)
         options.Csb_directory = options.result_files_directory+"/Collinear_syntenic_blocks"
         os.mkdir(options.Csb_directory)
-        
+        options.Cross_check_directory = options.result_files_directory+"/Filtered_hits"
+        os.mkdir(options.Cross_check_directory)
         
         options.divergent_output_file = options.result_files_directory+"/div_output_file.faa"
         options.csb_output_file = options.Csb_directory+"/Csb_output.txt"

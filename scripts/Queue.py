@@ -44,23 +44,17 @@ def queue_files(options):
 
 def compare_with_existing_database(options,genomeIDs):
     
-    #compare with database leaving out all genomes already searched previously
-    if options.redo_search: #redo the search for all
-        options.finished_genomes = {}
-        for genomeID in genomeIDs:
-            options.finished_genomes[genomeID] = 1 #required for extending the protein dict in csb assignment with all old results
-    else: #leave out all genomeIDs in the database
-        genomeIDs = Database.fetch_genomeIDs(options.database_directory)
-        for genomeID in genomeIDs:
-            if genomeID in options.faa_files.keys():
-                print(f"\tFound assembly {genomeID} in database leaving out {options.faa_files[genomeID]}")
-                del options.faa_files[genomeID]
-                del options.gff_files[genomeID]
-                options.queued_genomes.remove(genomeID)
+    genomeIDs = Database.fetch_genomeIDs_from_proteins(options.database_directory)
+    for genomeID in genomeIDs:
+        if genomeID in options.faa_files.keys():
+            print(f"\tFound assembly {genomeID} in database leaving out {options.faa_files[genomeID]}")
+            del options.faa_files[genomeID]
+            del options.gff_files[genomeID]
+            options.queued_genomes.remove(genomeID)
     
     print(f"Queued {len(options.queued_genomes)} for processing")
     if len(options.queued_genomes) == 0:
-        print("There were 0 genomes queued. Use -redo_search option if genomes are already present in database")
+        print("There were 0 genomes queued, as all were already present in the local result database")
     
     return
     
