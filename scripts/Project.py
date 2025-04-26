@@ -85,14 +85,16 @@ def prepare_result_space(options,project="project"):
         
 
 
-def create_project(directory,projectname="project"):
+def create_project(directory, projectname="project"):
     now = datetime.now()
-    timestamp = datetime.timestamp(now)
-    directory = directory + "/" + str(timestamp) + "_" + projectname
+    timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")  # z. B. "2025-04-16_14-53-21"
+    directory = os.path.join(directory, f"{timestamp}_{projectname}")
+    
     try:
         os.mkdir(directory)
-    except:
-        raise Exception(f"\nERROR: No writing rights.")
+    except Exception:
+        raise Exception("\nERROR: No writing rights.")
+    
     return directory
     
 
