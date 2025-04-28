@@ -1,5 +1,4 @@
 #!/usr/bin/python
-from Bio import SearchIO
 import os
 import traceback
 import subprocess
@@ -453,7 +452,7 @@ def process_writer(queue, options):
         protein_batch.update(protein_dict)
         cluster_batch.update(cluster_dict)
         batch_counter += 1
-        
+
         # Print text reports if desired
         if options.individual_reports:
             if protein_dict:  # Check if protein_dict is not empty
@@ -473,10 +472,12 @@ def process_writer(queue, options):
     if protein_batch or cluster_batch:
         submit_batches(protein_batch, cluster_batch, options)
         if options.individual_reports:
-            first_protein_key = next(iter(protein_dict))  # Get the first key
-            genomeID = protein_dict[first_protein_key].genomeID
-            filepath = os.path.join(options.fasta_initial_hit_directory, str(genomeID)+".hit_table_txt")
-            Output.output_genome_report(filepath, protein_dict, cluster_dict)
+            if protein_dict:
+                first_protein_key = next(iter(protein_dict))  # Get the first key
+                genomeID = protein_dict[first_protein_key].genomeID
+                filepath = os.path.join(options.fasta_initial_hit_directory, str(genomeID)+".hit_table_txt")
+
+                Output.output_genome_report(filepath, protein_dict, cluster_dict)
     return
     
     
@@ -485,9 +486,17 @@ def process_writer(queue, options):
 #########################################################################################
 
 def split_into_batches(data_list, num_batches):
-    batch_size = len(data_list) // num_batches
-    return [data_list[i * batch_size:(i + 1) * batch_size] for i in range(num_batches)]
-
+    if num_batches <= 0:
+        raise ValueError("Number of batches must be > 0.")
+    if len(data_list) == 0:
+        return [[] for _ in range(num_batches)]
+    
+    batches = [[] for _ in range(num_batches)]
+    for idx, item in enumerate(data_list):
+        batches[idx % num_batches].append(item)
+    return batches
+    
+    
 def parse_bulk_HMMreport_genomize(genomeID,Filepath,protein_dict=None):
     """
  
@@ -505,7 +514,7 @@ def parse_bulk_HMMreport_genomize(genomeID,Filepath,protein_dict=None):
             try:
                 key = columns[0]
                 genomeID, hit_proteinID = key.split('___',1)
-                query = columns[3]
+                query = columns[3].split('_')[-1]
                 hit_bitscore = int(float(columns[7]))
                 hsp_start = int(float(columns[17]))
                 hsp_end = int(float(columns[18]))
@@ -523,11 +532,33 @@ def parse_bulk_HMMreport_genomize(genomeID,Filepath,protein_dict=None):
                 continue
                 
     return protein_dict
+
         
+def remove_unassigned_intermediate_proteins(combined_protein_dict, protein_dict, intermediate_protein_dict, cluster_dict):
+    """
+    Removes proteins that came from the intermediate hits and are not part of any named cluster.
+    
+    Parameters:
+        protein_dict (dict): All protein objects.
+        intermediate_protein_dict (dict): Proteins originally from the intermediate HMM search.
+        cluster_dict (dict): Dictionary of cluster objects after naming.
+    """
+    # IDs von Proteinen, die in benannten CSBs vorkommen
+    proteins_in_named_clusters = set()
 
+    for cluster in cluster_dict.values():
+        if cluster.get_keywords():  # Nur Cluster mit Keywords berücksichtigen
+            proteins_in_named_clusters.update(cluster.get_genes())
 
+    # Jetzt alle Intermediate-Proteine durchgehen
+    for protein_id in list(intermediate_protein_dict.keys()):
+        if protein_id not in protein_dict and protein_id not in proteins_in_named_clusters:
+            del combined_protein_dict[protein_id]
+
+    return combined_protein_dict    
+    
 def process_genome(
-    data_queue, genome_id, faa_path, gff_path, hmmreport_path,
+    data_queue, genome_id, faa_path, gff_path, hmmreport_path, intermediate_hmmreport,
     nucleotide_range, min_completeness, intermediate_hit_dict,
     pattern_dict, pattern_names
 ):
@@ -535,14 +566,24 @@ def process_genome(
         faa_file = myUtil.unpackgz(faa_path)
         gff_file = myUtil.unpackgz(gff_path)
         
+        # Get the intermediate hits
+        intermediate_protein_dict = parse_bulk_HMMreport_genomize(genome_id, intermediate_hmmreport)
+        parseGFFfile(gff_file, intermediate_protein_dict)
+                
         # Get the initial hit information
         protein_dict = parse_bulk_HMMreport_genomize(genome_id, hmmreport_path)
         parseGFFfile(gff_file, protein_dict)
-        getProteinSequence(faa_file, protein_dict)
-
-        # Recognition of gene clusters
-        cluster_dict = Csb_finder.find_syntenicblocks(genome_id, protein_dict, nucleotide_range)
+        
+        # Recognition of named gene clusters
+        combined_protein_dict = {**intermediate_protein_dict,**protein_dict}
+        cluster_dict = Csb_finder.find_syntenicblocks(genome_id, combined_protein_dict, nucleotide_range)
         Csb_finder.name_syntenicblocks(pattern_dict, pattern_names, cluster_dict, min_completeness)
+
+        # Add proteinID with named syntenic blocks to the proteinID
+        remove_unassigned_intermediate_proteins(combined_protein_dict, protein_dict, intermediate_protein_dict, cluster_dict)
+
+        # Add the protein sequences
+        getProteinSequence(faa_file, combined_protein_dict)
 
         # Synteny completion mechanism for named gene clusters
         missing = Csb_finder.extract_missing_domain_targets(cluster_dict)
@@ -552,17 +593,17 @@ def process_genome(
                 protein_dict[pid] = prot
                 cluster_dict[prot.clusterID].add_gene(pid, prot.get_domains(), prot.gene_start, prot.gene_end)
 
-        data_queue.put((protein_dict, cluster_dict))
+        data_queue.put((combined_protein_dict, cluster_dict))
 
     except Exception as e:
 
-        print(f"Error for {genome_id}: {e}")
+        print(f"Error: {genome_id} -> {e}")
         print(traceback.format_exc())
 
 
 
 def process_batch(
-    data_queue, genome_ids, faa_files, gff_files, hmmreport_path,
+    data_queue, genome_ids, faa_files, gff_files, hmmreport_path, intermediate_hmmreport,
     nucleotide_range, min_completeness, intermediate_hit_dict,
     pattern_dict, pattern_names
 ):
@@ -570,7 +611,7 @@ def process_batch(
         try:
             process_genome(
                 data_queue, genome_id,
-                faa_files[genome_id], gff_files[genome_id], hmmreport_path,
+                faa_files[genome_id], gff_files[genome_id], hmmreport_path, intermediate_hmmreport,
                 nucleotide_range, min_completeness, intermediate_hit_dict,
                 pattern_dict, pattern_names
             )
@@ -589,7 +630,7 @@ def main_parse_summary_hmmreport(options):
     csb_patterns, csb_names = Csb_finder.makePatternDict(options.patterns_file)
     
     # Load intermediate hit file
-    intermediate_hit_dict = {os.path.splitext(f)[0]: os.path.join(options.Cross_check_directory, f) for f in os.listdir(options.Cross_check_directory) if f.endswith('.intermediate_hits')}
+    intermediate_hit_dict = {os.path.splitext(f)[0]: os.path.join(options.Cross_check_directory, f) for f in os.listdir(options.Cross_check_directory) if f.endswith('.trusted_hits')}
 
     
     # Insert genomeIDs in DB
@@ -601,7 +642,6 @@ def main_parse_summary_hmmreport(options):
         with Pool(processes=options.cores) as pool:
             # Start writer
             p_writer = pool.apply_async(process_writer, (data_queue, options))
-
             args = [
                 (
                     data_queue,
@@ -609,6 +649,7 @@ def main_parse_summary_hmmreport(options):
                     options.faa_files,
                     options.gff_files,
                     options.summary_hmmreport,
+                    options.intermediate_hmmreport,
                     options.nucleotide_range,
                     options.min_completeness,
                     intermediate_hit_dict,

@@ -11,6 +11,10 @@ from collections import defaultdict
 
 # For the clustering of csbs by jaccard and agglomerativeClustering
 def csb_prediction(options):
+
+    if not os.path.isfile(options.gene_clusters_file):
+        return    
+    
     #Finds collinear syntenic blocks with the csb finder algorithm using a printed representation of the clusters.
     options.redundant,options.non_redundant = dereplicate(options.gene_clusters_file) #returns two filepaths, dereplicates identical gene clusters
     
@@ -24,6 +28,10 @@ def csb_prediction(options):
     
 
 def csb_jaccard(options):
+    
+    if not options.computed_Instances_dict:
+        return {}
+    
     #convert the keys in computed_instances_dict into a list   #GCA_030823955_1 was not recognized use as example for debugging
     computed_Instances_key_list = csb_Instance_key_list(options.computed_Instances_dict, options.min_csb_size)
     cluster_dict = dict()
