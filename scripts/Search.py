@@ -369,23 +369,32 @@ def extract_fasta_per_hitfile_parallel(options, intermediate_hit_dir, processes=
 ##########################################################################################################################################################
  
 
+def find_file_in_prefixed_subdirs(base_dir, filename, dir_prefix):
+    for root, dirs, files in os.walk(base_dir):
+        # Nur Verzeichnisse mit dem gewünschten Prefix betreten
+        if not os.path.basename(root).startswith(dir_prefix):
+            continue
 
+        if filename in files:
+            return os.path.join(root, filename)
+
+    return None  # nicht gefunden
 
 def cross_check_candidates_with_reference_seqs(options):
-    refseq_dir = options.execute_location+"/src/RefSeqs"
+    refseq_dir = os.path.join(options.execute_location, "src", "RefSeqs")
     cross_check_dir = options.Cross_check_directory
 
-    refseq_unavailable_list = []
+    refseq_unavailable = []
 
-    intermediate_files = glob.glob(os.path.join(cross_check_dir, "*.intermediate_hits_faa"))
-    for inter_file in intermediate_files:
-        hmm_id = os.path.basename(inter_file).replace(".intermediate_hits_faa", "")
-        db_path = os.path.join(refseq_dir, f"{hmm_id}.dmnd")
+    for inter_file in glob.glob(os.path.join(cross_check_dir, "*.intermediate_hits_faa")):
+        hmm_id = os.path.splitext(os.path.basename(inter_file))[0].replace(".intermediate_hits_faa", "")
+        db_file = f"{hmm_id}.dmnd"
+        db_path = find_file_in_prefixed_subdirs(refseq_dir, db_file, dir_prefix)
+
 
         if not os.path.isfile(db_path):
-            print(f"Warning: Skipping {hmm_id}: DB file not found: {db_path}")
-            refseq_unavailable_list.append(hmm_id)
-            continue
+            print(f"Warning: Skipping {hmm_id} – missing DB file: {db_path}")
+            refseq_unavailable.append(hmm_id)
 
         output_file = os.path.join(cross_check_dir, f"{hmm_id}.crosschecked.tsv")
         diamond = myUtil.find_executable("diamond")
