@@ -72,7 +72,7 @@ class HMSSS:
         self.csb_name_suffix = "_" #suffix of clusterIDs determined by csb finder algorithm
         
         self.genomeID_divider = '___' #dividing sign between genomeID and proteinID, first part will be taken as genomeID
-        
+        self.refseq_identity = 95
         
 def parse_arguments(arguments):
     """
@@ -288,13 +288,13 @@ def initial_search(options):
         Search.promote_by_cutoff(options, options.Cross_check_directory,options.cores, refseq_unavailable_list)
     else:
     	#if cross check is not wanted use the optimized cutoff to promote sequences
-        Search.promote_by_cutoff(options, options.Cross_check_directory,options.cores)
+        Search.promote_by_cutoff(options, options.Cross_check_directory,options.cores,"all")
     	
     	
     ### Summarize the trusted hits
     # Summarize the trusted hits, either with or without cross checking
-    options.summary_hmmreport = Search.summarize_trusted_hits(options.result_files_directory, options.Cross_check_directory)
-    
+    options.summary_hmmreport = Search.summarize_trusted_hits(options.result_files_directory, options.Cross_check_directory, "global_trusted_hits_summary.hmmreport")
+    options.intermediate_hmmreport = Search.summarize_trusted_hits(options.result_files_directory, options.Cross_check_directory, "global_intermediate_hits_summary.hmmreport", "intermediate_hits")
     # Parse hits from summary hmmreport to database
     ParseReports.main_parse_summary_hmmreport(options)
 

@@ -1,11 +1,17 @@
 #!/usr/bin/python
 import os
 import subprocess
-from multiprocessing import Pool
+from multiprocessing import Pool,Value, Lock
 from collections import defaultdict
+
+
 
 from . import myUtil
 import glob
+
+# Global shared variables
+current_counter = None
+counter_lock = None
 
 
 ########################################################################################################
@@ -20,23 +26,27 @@ def HMMsearch(path,query_db,score,clean_reports=False, redo_search=False, cores 
         os.system(f'hmmsearch -T {score} --domT {score} --cpu {str(cores)} --noali --domtblout {output} {query_db} {path} > /dev/null 2>&1')
     return output
 
-def prefix_domtblout_hits(domtblout_path, genome_id, separator="___", suffix=".hmmreport"):
+def init_globals(counter, lock):
+    global current_counter
+    global counter_lock
+    current_counter = counter
+    counter_lock = lock
+
+
+
+def prefix_domtblout_hits(domtblout_path, total, separator="___", suffix=".hmmreport"):
     """
-    Schreibt eine neue domtblout-Datei, in der Spalte 4 (HMM-ID) mit genomeID prefixiert wird.
-    Nutzt einfaches .split() (kein Whitespace-Erhalt).
-    
-    Parameters:
-        domtblout_path (str): Pfad zur Original-domtblout-Datei
-        genome_id (str): Der Prefix, der der Hit-ID vorangestellt wird
-        separator (str): Trennzeichen (Standard: ___)
-        suffix (str): Dateiendung für die neue Datei
-    
-    Returns:
-        str: Pfad zur neuen Datei
+    Schreibt eine neue domtblout-Datei, in der Spalte 1 (Hit-ID) mit dem Dateinamen prefixiert wird.
+    Nutzt shared counter nur für Fortschrittsanzeige.
     """
-    #TODO auch das hit HMM so verändern, dass am _ gesplittet wird, damit man auch TIGR HMMs nehmen kann ohne
-    #dabei die Nummern mitzunehmen, falls mehrere HMMs auf das selbe abzielen
-    print(f"Processing {genome_id}")
+    with counter_lock:
+        counter = current_counter.value + 1
+        current_counter.value = counter
+        print(f"Processing file {counter} of {total}", end="\r")
+
+    # Neuen Prefix vorbereiten (basename ohne Endung)
+    basename = os.path.splitext(os.path.basename(domtblout_path))[0]
+
     output_path = os.path.splitext(domtblout_path)[0] + suffix
     if os.path.isfile(domtblout_path):
         with open(domtblout_path, 'r') as infile, open(output_path, 'w') as outfile:
@@ -46,45 +56,46 @@ def prefix_domtblout_hits(domtblout_path, genome_id, separator="___", suffix=".h
 
                 parts = line.strip().split()
                 if len(parts) < 5:
-                    continue  # vermutlich ungültige Datenzeile
+                    continue
 
-                parts[0] = f"{genome_id}{separator}{parts[0]}"  # Spalte 4 (index 3)
+                parts[0] = f"{basename}{separator}{parts[0]}"
                 outfile.write('\t'.join(parts) + '\n')
         os.remove(domtblout_path)
         
-        
     return output_path
-    
-def run_search(faa_file, query_db, score, clean_reports, redo_search,genomeID):
-    domtblout_path = HMMsearch(faa_file, query_db, score, clean_reports, redo_search, 2) #führt HMMsearch mit 2 cores aus
-    hmmreport = prefix_domtblout_hits(domtblout_path, genomeID, separator="___", suffix=".hmmreport") #suffix muss der selbe sein wie in hmmsearch routine
-    
+
+
+
+def run_search(faa_file, query_db, score, clean_reports, redo_search, total):
+    domtblout_path = HMMsearch(faa_file, query_db, score, clean_reports, redo_search, 2)
+    hmmreport = prefix_domtblout_hits(domtblout_path, total, separator="___", suffix=".hmmreport")
     return hmmreport
 
     
 def unified_search(options, processes=4):
-    """
-    Führt HMMsearch parallel mit multiprocessing aus.
-    
-    Gibt ein dict zurück: genomeID -> domtblout-Dateipfad
-    """
+    total = len(options.queued_genomes)
+
     args = [
         (
-            options.faa_files[genomeID],   # faa_file
-            options.library,               # query_db
-            options.thrs_score,            # score
-            options.clean_reports,         # clean_reports
-            options.redo_search,           # redo_search
-            genomeID                       # genomeID
+            options.faa_files[genomeID],
+            options.library,
+            options.thrs_score,
+            options.clean_reports,
+            options.redo_search,
+            total
         )
         for genomeID in options.queued_genomes
     ]
 
+    # Shared Counter und Lock erstellen
+    counter = Value('i', 0)  # 'i' = integer
+    lock = Lock()
 
-    with Pool(processes=processes) as pool:
+    with Pool(processes=processes, initializer=init_globals, initargs=(counter, lock)) as pool:
         results = pool.starmap(run_search, args)
 
     return dict(zip(options.queued_genomes, results))
+
 
 
 
@@ -99,6 +110,9 @@ def concatenate_hmmreports_cat(report_paths, output_path="global_report.cat_hmmr
     Returns:
         str: Pfad zur globalen Datei
     """
+    
+    print("Concatenate hit reports")
+    
     # Filtere nur existierende Dateien
     valid_paths = [path for path in report_paths.values() if os.path.isfile(path)]
     if not valid_paths:
@@ -381,24 +395,39 @@ def find_file_in_prefixed_subdirs(base_dir, filename, dir_prefix):
     return None  # nicht gefunden
 
 def cross_check_candidates_with_reference_seqs(options):
+    print("Cross check hit sequences with reference sequences")
+
     refseq_dir = os.path.join(options.execute_location, "src", "RefSeqs")
     cross_check_dir = options.Cross_check_directory
+    refseq_unavailable_list = []
 
-    refseq_unavailable = []
+    intermediate_files = glob.glob(os.path.join(cross_check_dir, "*.intermediate_hits_faa"))
 
-    for inter_file in glob.glob(os.path.join(cross_check_dir, "*.intermediate_hits_faa")):
+    for inter_file in intermediate_files:
         hmm_id = os.path.splitext(os.path.basename(inter_file))[0].replace(".intermediate_hits_faa", "")
         db_file = f"{hmm_id}.dmnd"
-        db_path = find_file_in_prefixed_subdirs(refseq_dir, db_file, dir_prefix)
+        db_path = find_file_in_prefixed_subdirs(refseq_dir, db_file, dir_prefix="")
 
-
+        # Prüfen ob .dmnd existiert, sonst versuchen es zu bauen
         if not os.path.isfile(db_path):
-            print(f"Warning: Skipping {hmm_id} – missing DB file: {db_path}")
-            refseq_unavailable.append(hmm_id)
+            faa_file = f"{hmm_id}.faa"
+            faa_path = find_file_in_prefixed_subdirs(refseq_dir, faa_file, dir_prefix="")
+
+            if os.path.isfile(faa_path):
+                print(f"Info: Creating Diamond DB from {faa_path} because {db_path} was not found")
+                try:
+                    subprocess.run(["diamond", "makedb", "--in", faa_path, "-d", os.path.splitext(db_path)[0]], check=True)
+                except subprocess.CalledProcessError:
+                    print(f"Error: Failed to create Diamond database for {faa_path}")
+                    refseq_unavailable_list.append(hmm_id)
+                    continue
+            else:
+                print(f"Warning: Skipping {hmm_id}: Neither {db_path} nor {faa_path} found.")
+                refseq_unavailable_list.append(hmm_id)
+                continue
 
         output_file = os.path.join(cross_check_dir, f"{hmm_id}.crosschecked.tsv")
         diamond = myUtil.find_executable("diamond")
-        # DIAMOND search with identity filter
         cmd = [
             diamond, "blastp",
             "--query", inter_file,
@@ -406,15 +435,14 @@ def cross_check_candidates_with_reference_seqs(options):
             "--out", output_file,
             "--outfmt", "6",
             "--max-target-seqs", "1",
-            "--id", "95",
+            "--id", str(options.refseq_identity),
             "--threads", str(options.cores),
             "--quiet"
         ]
-        
+
         print(f"Verifying {hmm_id} hits with reference sequences")
-        
         result = subprocess.run(cmd)
-        
+
         if result.returncode != 0:
             print(f"Error: DIAMOND search failed for {hmm_id}")
             continue
@@ -430,9 +458,10 @@ def process_crosscheck(hmm_id, crosscheck_dir):
     intermediate_path = os.path.join(crosscheck_dir, f"{hmm_id}.intermediate_hits")
     trusted_path = os.path.join(crosscheck_dir, f"{hmm_id}.trusted_hits")
 
-    if not os.path.isfile(intermediate_path) or not os.path.isfile(trusted_path):
-        print(f"Warning: Intermediate or trusted hit file missing for {hmm_id}")
-        return
+    if not os.path.exists(crosscheck_path):
+        print(f"ERROR: Crosscheck file missing: '{crosscheck_path}'")
+    if not os.path.exists(intermediate_path):
+        print(f"ERROR: Intermediate file missing: '{intermediate_path}'")
 
     # Lade IDs aus crosscheck
     valid_hits = set()
@@ -477,8 +506,8 @@ def promote_crosschecked_hits(crosscheck_dir, processes=4):
         )
     
     
-def summarize_trusted_hits(directory, crosscheck_dir):
-    summary_path = os.path.join(directory, "global_trusted_hits_summary.hmmreport")
+def summarize_trusted_hits(directory, crosscheck_dir, name ,suffix=".trusted_hits"):
+    summary_path = os.path.join(directory, name)
     
     if os.path.isfile(summary_path) and os.path.getsize(summary_path) != 0:
     	return summary_path
@@ -486,7 +515,7 @@ def summarize_trusted_hits(directory, crosscheck_dir):
     trusted_files = [
         os.path.join(crosscheck_dir, f)
         for f in os.listdir(crosscheck_dir)
-        if f.endswith(".trusted_hits")
+        if f.endswith(suffix)
     ]
 
     exit_code = os.system(f"cat {' '.join(trusted_files)} > {summary_path}")
@@ -533,7 +562,7 @@ def promote_by_cutoff(options, directory, processes=4, hmm_ids=[]):
     """
 
     # If no hmm identifier were defined use all that are in
-    if not hmm_ids:
+    if hmm_ids=="all":
         hmm_ids = [
             f.replace(".intermediate_hits", "")
             for f in os.listdir(directory)
@@ -543,7 +572,6 @@ def promote_by_cutoff(options, directory, processes=4, hmm_ids=[]):
     optimized_dict = make_threshold_dict(
         options.score_threshold_file, 1, options.thrs_score
     )
-    
     
     with Pool(processes=processes) as pool:
         pool.starmap(
