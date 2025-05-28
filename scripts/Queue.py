@@ -123,31 +123,70 @@ def find_missing_genomes(genomeIDs, faa_file_directory):
     return missing_files
 
 
-def prepare_HMMlib(execute_location):
-
-    # Define the target location for HMMlib
+def prepare_HMMlib(execute_location, allowed_prefix, allowed_suffixes):
+    """
+    Baut die HMMlib aus den HMM-Dateien in Unterordnern von src/HMMs/, 
+    die mit 'latest_' beginnen und deren Suffix in allowed_suffixes steht.
+    """
+    hmm_root_dir = os.path.join(execute_location, "src", "HMMs")
     output_file_path = os.path.join(execute_location, "src", "HMMlib")
-    
-    # Ensure the directory for HMMlib exists
+
+    # Sicherstellen, dass Zielverzeichnis existiert
     os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
-    
-    if not os.path.isfile(execute_location+"/src/HMMlib"):
+
+    if not os.path.isfile(output_file_path):
         print("Preparing HMMlib from source")
-        # Library does not exists, then find all .hmm files in the directory and concat to build the library
+
         hmm_files = []
-        for root, _, files in os.walk(execute_location+"/src/HMMs"):
-            for file in files:
-                if file.endswith(".hmm"):
-                    hmm_files.append(os.path.join(root, file))
-        
-        # Concatenate all .hmm files using the cat command
-        if hmm_files:  # Check if there are .hmm files to concatenate
+
+        for entry in os.listdir(hmm_root_dir):
+            entry_path = os.path.join(hmm_root_dir, entry)
+            if os.path.isdir(entry_path) and entry.startswith(allowed_prefix):
+                suffix = entry.replace(allowed_prefix, "", 1)
+                if suffix in allowed_suffixes:
+                    # Rekursiv nach .hmm Dateien in diesem Unterordner suchen
+                    for root, _, files in os.walk(entry_path):
+                        for file in files:
+                            if file.endswith(".hmm"):
+                                hmm_files.append(os.path.join(root, file))
+
+        if hmm_files:
+            print(f"Found {len(hmm_files)} HMM files to concatenate")
             cat_command = f"cat {' '.join(hmm_files)} > {output_file_path}"
             os.system(cat_command)
+        else:
+            print("No matching HMM files found.")
 
-
-#def create_database_readme(options):
     
+def concatenate_threshold_files(execute_location, allowed_prefix, allowed_suffixes, output_filename="thresholds_all.txt"):
+    """
+    Findet alle thresholds.txt-Dateien in den latest_* Unterverzeichnissen unter src/HMMs/,
+    deren Suffix in allowed_suffixes liegt, und schreibt sie gesammelt in eine Datei.
+    """
+    hmm_root_dir = os.path.join(execute_location, "src", "HMMs")
+    output_file_path = os.path.join(execute_location, "src", output_filename)
+
+    threshold_files = []
+
+    for entry in os.listdir(hmm_root_dir):
+        entry_path = os.path.join(hmm_root_dir, entry)
+        if os.path.isdir(entry_path) and entry.startswith(allowed_prefix):
+            suffix = entry.replace(allowed_prefix, "", 1)
+            if suffix in allowed_suffixes:
+                candidate = os.path.join(entry_path, "_thresholds.txt")
+                if os.path.isfile(candidate):
+                    threshold_files.append(candidate)
+
+    if threshold_files:
+        print(f"Concatenating {len(threshold_files)} thresholds.txt files into {output_file_path}")
+        with open(output_file_path, "w") as outfile:
+            for file in threshold_files:
+                with open(file, "r") as infile:
+                    outfile.write(f"# --- From {file} ---\n")
+                    outfile.write(infile.read())
+                    outfile.write("\n")
+    else:
+        print("No matching thresholds.txt files found.")
 
 
 

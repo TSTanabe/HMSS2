@@ -436,8 +436,8 @@ def process_operator(options):
 
 
 def main(args=None):
-    
-    Queue.prepare_HMMlib(__location__)
+
+    #Queue.prepare_HMMlib(__location__)
 
     options = parse_arguments(args)
     if options.stat_keywords:
