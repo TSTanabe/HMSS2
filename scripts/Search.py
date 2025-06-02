@@ -418,8 +418,12 @@ def process_single_hmm(
                     continue
 
                 try:
-                    # Bit score is in column 7 (0-based index)
-                    score = float(parts[7])
+                    if int(parts[10]) > 1:
+                        # Domain Bit score is in column 13
+                        score = float(parts[13])
+                    else:
+                        # Full Bit score is in column 7 (0-based index)
+                        score = float(parts[7])
                 except ValueError:
                     continue
 
@@ -721,7 +725,7 @@ def promote_crosschecked_hits(crosscheck_dir: str, processes: int = 4) -> None:
     Raises:
         OSError: If `crosscheck_dir` does not exist or cannot be listed.
     """
-    print(f"\n\n[INFO] Analyzing cross reference hits between trusted and noise cutoff")
+    print(f"\n[INFO] Analyzing cross reference hits between trusted and noise cutoff")
     
     if not os.path.isdir(crosscheck_dir):
         raise OSError(f"Directory not found: {crosscheck_dir}")
@@ -892,7 +896,7 @@ def process_optimized_cutoff(
         return
 
     promoted_count = 0
-
+    print(f"Promoting {hmm_id}")
     try:
         with open(intermediate_path, "r") as interm_in, open(trusted_path, "a") as trusted_out:
             for raw_line in interm_in:
@@ -936,11 +940,11 @@ def promote_by_cutoff(options, directory, processes: int = 4, hmm_ids: Optional[
             for f in os.listdir(directory)
             if f.endswith(".intermediate_hits")
         ]
-
+    print(f"{hmm_ids}")
     optimized_dict = make_threshold_dict(
         options.score_threshold_file, 1, options.thrs_score
     )
-    
+    print(optimized_dict)
     with Pool(processes=processes) as pool:
         pool.starmap(
             process_optimized_cutoff,
