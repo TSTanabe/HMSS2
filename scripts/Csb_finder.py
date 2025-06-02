@@ -40,9 +40,6 @@ class Cluster:
             self.cluster_end = end
 
         
-    def add_keyword_deprecated(self, keyword, completeness=0, csb=".", missing=[]):
-        #self.keywords.append(Keyword(keyword,completeness,csb))
-        self.keywords_dict[keyword] = Keyword(keyword,completeness,csb,missing)
     
     def add_keyword(self, keyword, completeness=0, csb=".", missing=[], keyword_id="."):
         #self.keywords.append(Keyword(keyword,completeness,csb))
@@ -57,13 +54,6 @@ class Cluster:
         
         return listing #returns list of keyword objects
 
-    def get_cluster_start(self):
-        return self.cluster_start
-
-    def get_cluster_end(self):
-        return self.cluster_end
-
-       
     def get_clusterID(self):
         return self.clusterID
     
@@ -93,19 +83,6 @@ class Cluster:
         tmp = '-'.join(self.types)
         s = tmp.split('-')
         return s    #domain list
-        
-    def get_distance(self):
-        return self.distance
-        
-    def get_keywords_string_obj(self):
-        #better formated for database entry
-        listing = [self.clusterID]
-        for keyword in self.keywords:
-            a = keyword.get_keyword()
-            b = keyword.get_completeness()
-            c = keyword.get_csb()
-            listing.append(f"{a} {b} {c}")
-        return listing
         
     def get_cluster_list(self,separator):
         """
@@ -157,16 +134,6 @@ class Keyword:
         
     def get_completeness(self):
         return self.completeness
-        
-    def set_keyword(self,keyword):
-        self.keyword = keyword
-        
-    def set_csb(self,csb):
-        self.csb = csb
-        
-    def set_completeness(self,completeness):
-        self.completeness = completeness
-    #TODO if missing domains are added the completeness is not adjusted
         
 def check_order(test_list):
     #3.9.22
@@ -342,74 +309,7 @@ def name_syntenicblocks(patterns,pattern_names,clusterID_dict,min_completeness=0
             #    print("and gene cluster")
     return clusterID_dict
 
-def parallel_name_syntenic_blocks(options, genomeIDs):
-    """
-    Parallelized CSB naming process
-    """
-    global csb_patterns_diction, csb_pattern_names
-    
-    # Initialize pattern dictionaries
-    csb_patterns_diction, csb_pattern_names = makePatternDict(options.patterns_file)
 
-    # Setup multiprocessing resources
-    manager = Manager()
-    data_queue = manager.Queue()
-    counter = manager.Value('i', 0)
-   
-    # Create process pool
-    with Pool(processes=options.cores) as pool:
-        # Start the writer process asynchronously
-        p_writer = pool.apply_async(csb_renaming_writer, (data_queue, options)) 
-
-        # Create tasks for parallel execution
-        tasks = ((data_queue, genomeID, options, counter) for genomeID in genomeIDs)
-        
-        # Execute tasks in parallel
-        pool.map(process_parallel_naming, tasks)
-
-        # Signal the end of data to the writer process
-        for _ in range(options.cores):
-            data_queue.put(None)
-
-        # Wait for the writer process to finish
-        p_writer.get()
-
-    print("\nFinished processing all genomes.")
-
-def process_parallel_naming(args_tuple):
-    """
-    Process a single genome in parallel.
-    """
-    global csb_patterns_diction, csb_pattern_names
-    
-    # Unpack the arguments
-    queue, genomeID, options, counter = args_tuple
-
-    # Increment counter (shared among processes)
-    counter.value += 1
-    print(f"Searching assembly {counter.value}", end="\r")
-
-    # Fetch and process cluster dictionary
-    cluster_diction = Database.fetch_cluster_dict(options.database_directory, genomeID)
-    name_syntenicblocks(csb_patterns_diction, csb_pattern_names, cluster_diction, options.min_completeness)
-
-    # Add the result to the queue
-    queue.put((genomeID, cluster_diction))
-
-def csb_renaming_writer(queue, options):
-    """
-    Writes processed results to the database.
-    """
-    while True:
-        tup = queue.get()
-        if tup is None:
-            break
-
-        # Unpack and write the result to the database
-        genomeID, cluster_dict = tup
-        Database.insert_database_clusters(options.database_directory, cluster_dict)
-
-	
 	
 	
 	
@@ -434,104 +334,7 @@ def csb_renaming_writer(queue, options):
 	
 	
 			
-def extract_missing_domain_targets(cluster_dict):
-    """
-    Creates a domain-centric view of all missing domains across all clusters.
-    
-    Returns a dictionary:
-        {
-            domain_name: [
-                (genomeID, contig, start, end),
-                ...
-            ]
-        }
-    """
-    result = {}
-
-    for cluster in cluster_dict.values():
-
-        genomeID = cluster.genomeID
-        clusterID = cluster.clusterID
-        contig = cluster.contig
-        start = cluster.get_cluster_start()
-        end = cluster.get_cluster_end()
-
-        for keyword in cluster.get_keywords():
-            for missing_domain in keyword.missing_domains:
-                if missing_domain not in result:
-                    result[missing_domain] = []
-                result[missing_domain].append((genomeID, clusterID, contig, start, end))
-
-    return result
 
 
 
-def find_csb_pattern_difference(patterns,pattern_names,cluster_dict,min_pattern_length=4):
-    #11.04.23
-    #part of the synteny supported correction of hits below cutoff
-    missing_proteins_list_dict = {} #list of types missing per cluster
-    for clusterID,cluster in cluster_dict.items():
-        protein_type_list = cluster.get_domain_ends_list() #set of proteins in the cluster
-        keywords = cluster.get_keywords() #keywords assigned to the cluster
-        missing_proteins = set()
-        for keyword in keywords:
-            if keyword.get_completeness() < 1: # iterates all incomplete keyword patterns
-
-                name = keyword.keyword
-                pattern_id_list = [k for k, v in pattern_names.items() if v == name] #key is the ID, value is the keyword/the name of the pattern. Saves all ID that have the keyword assigned. Can be multiple because different patterns may have the same keyword
-                for ID in pattern_id_list:
-                    difference = set(patterns[ID]) - set(protein_type_list)
-                    missing_proteins.update(difference)
-                    
-        if missing_proteins: #if not empty there are proteins missing
-            missing_proteins_list_dict[cluster.clusterID] = missing_proteins
-
-    
-    missing_protein_types = set() #from all clusters these types are missing
-    for protein_types in missing_proteins_list_dict.values():
-        missing_protein_types.update(protein_types)
-
-    return  missing_protein_types, missing_proteins_list_dict
-
-
-def synteny_completion(gff3_file,protein_dict,cluster_dict,candidate_protein_dict,missing_proteins_list_dict,difference = 3500):
-    #11.04.23
-    #part of the synteny supported correction of hits below cutoff
-    
-    with open(gff3_file,"r") as reader:
-        for line in reader.readlines():
-            if line.startswith("#"):
-                continue
-            match = re.search('ID=(cds-){0,1}(\S+?)\W{0,1};',line)
-            proteinID = match.group(2) #using the match as proteinID in the redo_csb routine possible?
-            if proteinID in candidate_protein_dict.keys():
-                
-                gff = line.split("\t")
-                start = gff[3]
-                end = gff[4]
-                
-                for clusterID,cluster_list in missing_proteins_list_dict.items():
-                    
-                    if candidate_protein_dict[proteinID][0] in cluster_list: #if proteintype in clusterlist of missing proteins then continue testing
-                        cluster = cluster_dict[clusterID]
-                        
-                        if cluster.cluster_start-difference < int(start) < cluster.cluster_end+difference or cluster.cluster_start-difference < int(end) < cluster.cluster_end+difference:
-                            
-                        #if yes then the below threshold hit has the correct type and is part of the cluster
-                            if proteinID in protein_dict:
-                                protein = protein_dict[proteinID]
-                                protein.add_domain(candidate_protein_dict[proteinID][0],candidate_protein_dict[proteinID][1],candidate_protein_dict[proteinID][2],candidate_protein_dict[proteinID][3])
-                            else:
-                                protein_dict[proteinID] = ParseReports.Protein(proteinID,candidate_protein_dict[proteinID][0],candidate_protein_dict[proteinID][1],candidate_protein_dict[proteinID][2],candidate_protein_dict[proteinID][3])
-                                protein = protein_dict[proteinID]
-                                protein.gene_contig = gff[0]
-                                protein.gene_start = gff[3]
-                                protein.gene_end = gff[4]
-                                protein.gene_strand = gff[6]
-                                locustag = ParseReports.getLocustag(line)
-                                protein.gene_locustag = locustag
-                                protein.clusterID = cluster.clusterID
-
-                                cluster.add_gene(proteinID,candidate_protein_dict[proteinID][0],int(start),int(end)) #this cluster should run again trough the naming routine
-                                
 

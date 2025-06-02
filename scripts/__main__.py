@@ -6,7 +6,6 @@ from datetime import datetime
 
 from . import Csb_finder
 from . import Csb_Mp_Algorithm
-from . import Csb_redo
 from . import Csb_cluster
 from . import Database
 from . import Datasets
@@ -24,8 +23,6 @@ from . import Queue
 # _ sollen namentrennungen sein, bzw indices
 #get location of script or executable
 #for the output module report 
-#TODO fc option sollte auch die patterns adden, die über den pattern file eingetragen werden
-#TODO print a database description file from database (otherwise it is too complex for a short task) should include the 
 
 
 if getattr(sys, 'frozen', False):
@@ -45,7 +42,6 @@ class HMSSS:
         self.execute_location = __location__
         
         #queue functional dictionaries
-        self.finished_genomes = {}
         self.queued_genomes = {}
         self.faa_files = {}
         self.gff_files = {}
@@ -66,7 +62,6 @@ class HMSSS:
         self.process = False
         
         self.project_name = "project"
-        self.index_db = False
         
         self.csb_name_prefix = "csb-" #prefix of clusterIDs determined by csb finder algorithm
         self.csb_name_suffix = "_" #suffix of clusterIDs determined by csb finder algorithm
@@ -81,6 +76,7 @@ def parse_arguments(arguments):
        Also this includes some useful operators for processing the default output files
        regarding taxonomy and sequence sorting/merging and concatenation
     """
+    #TODO diese argparse formatter weiter bearbeiten, ebenso epilog und description. default werte in argparse printer integrieren
     options = HMSSS()
     
     #Define the Argpase headers and footers
@@ -99,34 +95,34 @@ def parse_arguments(arguments):
     parameters = parser.add_argument_group("Search options")
     parameters.add_argument('-t', dest= 'score_threshold_file', type=myUtil.file_path, default=__location__+"/src/Thresholds", metavar='<filepath>', help='Filepath to threshold file')
     parameters.add_argument('-cut_type', dest='threshold_type', type=int, default = 1, metavar='<int>', choices = [1,2,3], help='Choice of cutoff: 1 optimized; 2 trusted; 3 noise; Default: 1')
-    parameters.add_argument('-cut_score', dest='thrs_score', type=int, default = 50, metavar='<int>', help='Default cutoff score. Default: 50')
+    parameters.add_argument('-cut_score', dest='thrs_score', type=int, default = 50, metavar='<int>', help='Default cutoff score.')
     parameters.add_argument('-taxonomy_info', dest='taxonomy_file', type=myUtil.file_path, metavar='<filepath>', help ='Filepath to taxonomy tsv file')
-    parameters.add_argument('-refseq_ident', dest='refseq_identity', type=int, default = 95, metavar='<int>', help='Minimal percent identity to reference sequence set. Default: 95')
+    parameters.add_argument('-refseq_ident', dest='refseq_identity', type=int, default = 95, metavar='<int>', help='Minimal percent identity to reference sequence set.')
     parameters.add_argument('-n', dest='name', type=str, default="project", metavar='<string>', help='Name new project')
     parameters.add_argument('-s', dest='stage', type=int, default = 0, choices= [0,1,2,3,4,5,6,7,8,9],help='Start at stage')
 
     # Resources HMM_sets
     resources = parser.add_argument_group("Search library resources")
     resources.add_argument('-l', dest= 'library', type=myUtil.file_path, default=__location__+"/src/HMMlib", metavar='<filepath>', help='Path to custom HMM library')
-    resources.add_argument('-hmms', nargs='+', dest='HMM_sets', type=str, default=[], metavar='<list>', help='Limit to HMM sets (whitespace separated)')
-    resources.add_argument('-r', dest='result_files_directory', type=myUtil.dir_path, metavar='<directory>', default = __location__+"/results", help='Directory for the result files')
-    resources.add_argument('-db',dest='database_directory', type=myUtil.file_path, metavar='<filepath>', help='Filepath to existing sqlite database')
-    resources.add_argument('-clean', dest='clean_reports', action='store_true', help = 'Clean up any pre-existing HMMreport file')
-    resources.add_argument('-no_reports', dest='individual_reports', action='store_false', help = 'Do not write individual files per genome')
-    resources.add_argument('-no_cross_check', dest='bool_cross_check', action='store_false', help = 'No cross check with reference sequences via Diamond')
+    resources.add_argument('-hmms', nargs='+', dest='HMM_sets', type=str, default=[], metavar='<list>', help='Limit to HMM sets (whitespace separated).')
+    resources.add_argument('-r', dest='result_files_directory', type=myUtil.dir_path, metavar='<directory>', default = __location__+"/results", help='Directory for the result files.')
+    resources.add_argument('-db',dest='database_directory', type=myUtil.file_path, metavar='<filepath>', help='Filepath to existing sqlite database.')
+    resources.add_argument('-clean', dest='clean_reports', action='store_true', help = 'Clean up any pre-existing HMMreport file.')
+    resources.add_argument('-no_reports', dest='individual_reports', action='store_false', help = 'Do not write individual files per genome.')
+    resources.add_argument('-no_cross_check', dest='bool_cross_check', action='store_false', help = 'No cross check with reference sequences via Diamond.')
 
 
     # Parameters
-    synteny = parser.add_argument_group("Synteny options")
-    synteny.add_argument('-p', dest= 'patterns_file' , type=myUtil.file_path, default=__location__+"/src/Patterns", metavar='<filepath>', help='Filepath to patterns file')
-    synteny.add_argument('-mc', dest= 'min_completeness', type=int, default = 0.7, metavar='<int>', help='Minimal fraction of predefined csb to be recognized')
-    synteny.add_argument('-chunks', dest='glob_chunks', type=int, default=5000, metavar='<int>', help='Chunk size for parsing results from glob before entering into database')        
- 
+    synteny = parser.add_argument_group("Gene cluster recognition parameters")
+    synteny.add_argument('-p', dest= 'patterns_file' , type=myUtil.file_path, default=__location__+"/src/Patterns", metavar='<filepath>', help='Filepath to patterns file.')
+    synteny.add_argument('-mc', dest= 'min_completeness', type=int, default = 1.0, metavar='<int>', help='Minimal fraction of predefined csb to be recognized.')
+    synteny.add_argument('-synteny_completion_off', dest='synteny_support', action='store_false', help = 'Defined patterns for synteny completion.')
+    synteny.add_argument('-chunks', dest='glob_chunks', type=int, default=5000, metavar='<int>', help='Chunk size for parsing results from glob before entering into database.')        
+
 
 
     # Informations
     information = parser.add_argument_group("Information on resources")
-    #information.add_argument('-index_db', action='store_true',help='Create index table for database') #moved the index database routine into the output routine as default
     information.add_argument('-stat_keywords', action='store_true', help='Print patterns for keyword naming')
     information.add_argument('-stat_csb', action='store_true', help='Print automatically found csbs')
     information.add_argument('-stat_genomes', action='store_true', help='Print taxonomy information from database')
@@ -134,17 +130,15 @@ def parse_arguments(arguments):
 
     # Result space
     csb = parser.add_argument_group("Collinear syntenic block prediction")
-    csb.add_argument('-nt', dest= 'nucleotide_range', type=int, default = 3500, metavar='<int>', help='Max. nucleotide distance to be considered synthenic genes. Default: 3500')    
+    csb.add_argument('-nt', dest= 'nucleotide_range', type=int, default = 3500, metavar='<int>', help='Max. nucleotide distance to be considered synthenic genes.')    
     csb.add_argument('-insertions', dest='insertions', type=int,default = 1, metavar='<int>', help='Max. insertions in a csb. Default: 1')
-    csb.add_argument('-occurence', dest='occurence', type=int,default = 2, metavar='<int>', help='Min. number occurences to be recognized as csb. Default: 2')
-    csb.add_argument('-min_csb_size', dest='min_csb_size', type=int,default = 4, metavar='<int>', help='Min. number of genes in a csb before recognized. Default: 4')
-    csb.add_argument('-jaccard', dest='jaccard', type=float,default = 0.0, metavar='<float>', help='Acceptable dissimilarity in jaccard clustering [0-1]. Default: 0.0') #. 0.2 means that 80 percent have to be the same genes
+    csb.add_argument('-occurence', dest='occurence', type=int,default = 2, metavar='<int>', help='Min. number occurences to be recognized as csb.')
+    csb.add_argument('-min_csb_size', dest='min_csb_size', type=int,default = 4, metavar='<int>', help='Min. number of genes in a csb before recognized.')
+    csb.add_argument('-jaccard', dest='jaccard', type=float,default = 0.0, metavar='<float>', help='Acceptable dissimilarity in jaccard clustering [0-1]. ') #. 0.2 means that 80 percent have to be the same genes
     
     #Flow regulators
     flow = parser.add_argument_group("Work step regulation")
-    flow.add_argument('-redo_csb', dest= 'redo_csb', action='store_true', help='Redo the collinear synthenic block prediction *. Default:False')
-    flow.add_argument('-redo_search', dest= 'redo_search', action='store_true', help='Overwrite existing hmmsearch reports. Default:False')
-    flow.add_argument('-add_csb_naming', dest= 'redo_csb_naming', action='store_true', help='Redo pattern matching for collinear synthenic blocks *. Default: False')
+    flow.add_argument('-redo_search', dest = 'redo_search', action='store_true', help='Remove existing HMMreports. Default: False')
     flow.add_argument('-redo_taxonomy', dest = 'redo_taxonomy', action='store_true', help='Redo the taxonomy assignment*. Default: False')
     
     
@@ -158,7 +152,7 @@ def parse_arguments(arguments):
     limiter.add_argument('-dlp',dest='dataset_limit_proteins', type=str, default = 0, metavar='<list>', help='Limit fetch to genomes with <protein>')
     limiter.add_argument('-dlk',dest='dataset_limit_keywords', type=str, default = 0, metavar='<list>', help='Limit fetch to genomes with <keyword>')
 
-    limiter.add_argument('-dtd',dest='dataset_divide_sign', default = '.', type=str, metavar='<string>', help='Separator for taxonomy information. The characters ";" ":" and "," cause strange behavior') #TODimplement this in fetch_bulk and all other dataset routines
+    limiter.add_argument('-dtd',dest='dataset_divide_sign', default = '.', type=str, metavar='<string>', help='Separator for taxonomy information. The characters ";" ":" and "," cause strange behavior')
     
     #Fetch operator
     operators = parser.add_argument_group("Output sequences with these conditions *")
@@ -185,7 +179,6 @@ def parse_arguments(arguments):
     
     
     #### Parse the arguments
-    options.reference_seq_dir = __location__+"/src/RefSeqs"
     if len(sys.argv) == 1: # Check if no arguments were provided and exit
         parser.print_help()
         sys.exit(1)
@@ -213,10 +206,6 @@ def parse_arguments(arguments):
             options.stage = 5 # direct the stage to taxonomy addition
         else:
             sys.exit("Please use the -db argument to provide a valid database and -tax argument to provide a taxonomy table")
-    if options.redo_csb_naming:
-    	options.stage = 4
-    if options.redo_csb:
-        options.stage = 3
     
  #####Processes are at stage 100
     if process_args:
@@ -252,52 +241,85 @@ def parse_arguments(arguments):
   
             
 def initial_search(options):
-    
-    
-    ### Prepare Database and queue files
-    
-    Queue.queue_files(options) #looks for .faa.gz and .gff.gz file pairs and queues them
-    
-    #Create database if not exist
+    """
+    Performs the initial HMM search:
+
+    1. Prepares the database and queue files.
+    2. If no global HMM report exists, starts the HMM search.
+    3. Filters trusted and noise hits.
+    4. Optionally performs a cross-check against reference sequences.
+    5. Summarizes the trusted hits and writes them into the database.
+
+    Args:
+        options: Object containing script options. Expected attributes include:
+            - database_directory (str)
+            - result_files_directory (str)
+            - glob_report (str or None)
+            - cores (int)
+            - bool_cross_check (bool)
+            - Cross_check_directory (str)
+    """
+    # 1. Prepare database and queue files
+    Queue.queue_files(options)  # looks for .faa.gz/.gff.gz pairs and enqueues them
+
     if os.path.isfile(options.database_directory):
-        genomeIDs = Database.fetch_genomeIDs(options.database_directory)
-        Queue.compare_with_existing_database(options,genomeIDs)
+        genome_ids = Database.fetch_genomeIDs(options.database_directory)
+        Queue.compare_with_existing_database(options, genome_ids)
         Database.drop_specified_indices(options.database_directory)
     else:
-        print(f"[INFO] Saving results to local sqlite database: {options.database_directory}")
+        print(f"[INFO] Saving results to local SQLite database: {options.database_directory}")
         Database.create_database(options.database_directory)
-    
-    
-    ### Search the filespace
-    
-    if not options.glob_report:
-        if not os.path.isfile(options.result_files_directory +"/global_report.cat_hmmreport"): #Skip the search if global report already exists
-            diction = Search.unified_search(options,int(options.cores/2)) # dict: Mapping from genome ID to the corresponding '.hmmreport' file path, where domain hit IDs have been prefixed
-            options.glob_report = os.path.join(options.result_files_directory, "global_report.cat_hmmreport")
-            Search.concatenate_hmmreports_cat(diction,options.glob_report)
-    
-    # Now the glob_report exists with names for proteins with genomeID___proteinID
-    Search.filter_trusted_and_noise_hits(options,options.cores) # Sort by TC, above NC and below NC
 
-    ### Search the reference sequence space
-    if not os.path.isfile(options.result_files_directory+"/global_trusted_hits_summary.hmmreport") and options.bool_cross_check:
-        #if cross check wanted do it
-        print("Crosscheck dir")
-        print(options.Cross_check_directory)
-        Search.generate_faa_per_hitfile_parallel(options, options.Cross_check_directory, options.cores) # create the .faa fasta files from the intermediate hit lists
-        refseq_unavailable_list = Search.cross_check_candidates_with_reference_seqs(options) # Cross check the with diamond against reference sequences
-        Search.promote_crosschecked_hits(options.Cross_check_directory, options.cores) # Promote hits related to ref seqs to trusted_hit list
-        Search.promote_by_cutoff(options, options.Cross_check_directory, options.cores, refseq_unavailable_list)
+    # 2. Start HMM search if no global report exists
+    global_report_path = os.path.join(
+        options.result_files_directory, "global_report.cat_hmmreport"
+    )
+
+    if not options.glob_report:
+        if not os.path.isfile(global_report_path):
+            # unified_search returns a dict: genome_id → .hmmreport file path
+            report_dict = Search.unified_search(options, int(options.cores / 2))
+            options.glob_report = global_report_path
+            Search.concatenate_hmmreports(report_dict, options.glob_report)
+
+    # 3. Filter trusted and noise hits
+    Search.filter_trusted_and_noise_hits(options, options.cores)
+
+    # 4. Optional cross-check against reference sequences
+    trusted_summary_path = os.path.join(
+        options.result_files_directory, "global_trusted_hits_summary.hmmreport"
+    )
+
+    if not os.path.isfile(trusted_summary_path) and options.bool_cross_check:
+        print("[INFO] Performing cross-check with reference sequences in:", options.cross_check_directory)
+        Search.generate_faa_per_hitfile_parallel(
+            options, options.cross_check_directory, options.cores
+        )
+        refseq_unavailable_list = Search.cross_check_candidates_with_reference_seqs(options)
+        Search.promote_crosschecked_hits(options.cross_check_directory, options.cores)
+        Search.promote_by_cutoff(
+            options,
+            options.cross_check_directory,
+            options.cores,
+            refseq_unavailable_list,
+        )
     else:
-    	#if cross check is not wanted use the optimized cutoff to promote sequences
-        Search.promote_by_cutoff(options, options.Cross_check_directory,options.cores,"all")
-    	
-    	
-    ### Summarize the trusted hits
-    # Summarize the trusted hits, either with or without cross checking
-    options.summary_hmmreport = Search.summarize_trusted_hits(options.result_files_directory, options.Cross_check_directory, "global_trusted_hits_summary.hmmreport")
-    options.intermediate_hmmreport = Search.summarize_trusted_hits(options.result_files_directory, options.Cross_check_directory, "global_intermediate_hits_summary.hmmreport", "intermediate_hits")
-    # Parse hits from summary hmmreport to database
+        Search.promote_by_cutoff(
+            options, options.cross_check_directory, options.cores, "all"
+        )
+
+    # 5. Summarize trusted hits and write to the database
+    options.summary_hmmreport = Search.summarize_trusted_hits(
+        options.result_files_directory,
+        options.cross_check_directory,
+        "global_trusted_hits_summary.hmmreport",
+    )
+    options.intermediate_hmmreport = Search.summarize_trusted_hits(
+        options.result_files_directory,
+        options.cross_check_directory,
+        "global_intermediate_hits_summary.hmmreport",
+        "intermediate_hits",
+    )
     ParseReports.main_parse_summary_hmmreport(options)
 
 
@@ -312,49 +334,20 @@ def csb_finder(options):
 
 
 
-def redo_block_assignment(options):
-    """
-        This routine has to be modified to run more efficiently and print the results out to the gene_cluster_file for further processing
-        Parallelization is possible with a detached writing process
-    """
-    
-    Database.light_index_database(options.database_directory) #make it light: for proteinIDs and genomeIDs only, not cluster
-    Csb_redo.redo_csb_reports(options)
-    Csb_cluster.csb_prediction(options)
-    csb_gene_cluster_dict = Csb_cluster.csb_jaccard(options)
-    Database.delete_keywords_from_csb(options.database_directory, options) #remove keys with options.csb_name_prefix options.csb_name_suffix to avoid old keyword interference
-    Database.update_keywords(options.database_directory,csb_gene_cluster_dict) #assigns the names of the keywords to the clusters
-
-
-def redo_csb_names(options):
-    """
-        09.11.22
-        Args:
-            options object
-        Return:
-            nothing
-        Das sollte schneller gehen wenn man es parallelisiert ablaufen lässt
-    """
-    
-    myUtil.print_header(f"\nRedo collinear syntenic block assignment")
-    print("Reading pattern")
-    csb_patterns_diction,csb_pattern_names = Csb_finder.makePatternDict(options.patterns_file)
-    print("Collecting genomeIDs")
-    genomeIDs = Database.fetch_genomeIDs(options.database_directory)
-    
-    Csb_finder.parallel_name_syntenic_blocks(options, genomeIDs)
-    print("\nFinished csb naming") 
-    return
-   
-    
 def collect_taxonomy_information(options):
     myUtil.print_header(f"\nTaxonomy assignment")
-    
-    if os.path.isfile(options.taxonomy_file):
-        print("Writing taxonomy to file")
-        Database.insert_taxonomy_data(options.database_directory, options.taxonomy_file)
-    else:
-        print("Taxonomy file was not provided")
+    tax_file = options.taxonomy_file
+    if not tax_file:
+        print("[WARN] Taxonomy file was not provided")
+    try:
+        if os.path.isfile(tax_file):
+            print("[INFO] Writing taxonomy to file")
+            Database.insert_taxonomy_data(options.database_directory, tax_file)
+        else:
+            print(f"[WARN] Taxonomy file not found: {tax_file}")
+    except TypeError:
+        # In case tax_file is not a string or PathLike
+        print("[INFO] Taxonomy was not added")
 
 def output_operator(options):
     """
@@ -450,7 +443,6 @@ def main(args=None):
         sys.exit()
 
             
-    #print(f"Start at stage {options.stage}")    
     myUtil.print_header("\nInitilizing result file directory")
     
     Project.prepare_result_space(options,options.name)
@@ -472,18 +464,11 @@ def main(args=None):
         initial_search(options)
         options.stage = 2
         
-    if options.redo_csb:
-        myUtil.print_header(f"\nRedo collinear syntenic block assignment")
-        redo_block_assignment(options)
-        options.stage = 5
 
     if options.stage <= 3:
         myUtil.print_header("\nSearching for collinear syntenic blocks")
         csb_finder(options)
    
-    if options.redo_csb_naming:
-        redo_csb_names(options)
-
     if options.stage <= 5:
         collect_taxonomy_information(options)
             

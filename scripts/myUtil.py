@@ -40,7 +40,7 @@ def dir_path(string):
         else:
             return string
     else:
-        sys.exit(f"\nERROR: {string} is not a valid directory")
+        sys.exit(f"[ERROR] {string} is not a valid directory in the argument list")
         #raise Exception(f"\nERROR: {string} is not a valid directory")
 
 def file_path(string):
@@ -48,7 +48,7 @@ def file_path(string):
     if os.path.isfile(string):
         return string
     else:
-        sys.exit(f"\nERROR: {string} is not a valid file")
+        sys.exit(f"[ERROR] {string} is not a valid file in the argument list")
         #raise Exception(f"\nERROR: {string} is not a valid directory")
 
 

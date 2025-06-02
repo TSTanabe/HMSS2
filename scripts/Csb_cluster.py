@@ -15,7 +15,6 @@ from collections import defaultdict
 
             
             
-# For the clustering of csbs by jaccard and agglomerativeClustering
 def csb_prediction(options):
 
     options.gene_clusters_file = sort_file_by_first_column_external(options.gene_clusters_file, options.glob_chunks)
@@ -26,7 +25,8 @@ def csb_prediction(options):
     gene_clusters = create_gene_cluster_hash(options.non_redundant)
     extend_redundancy_hash(options.non_redundant,options.redundancy_hash) # for all which do not have a redundant gene cluster
     #modified CsbfinderS algorithm
-    computed_Instances_dict = Csb_Mp_Algorithm.csb_finderS_matchpoint_algorithm(options.redundancy_hash,gene_clusters,options.insertions,options.occurence) #k insertions und q occurences müssen über die optionen festgelegt werden
+    #k insertions und q occurences müssen über die optionen festgelegt werden
+    computed_Instances_dict = Csb_Mp_Algorithm.csb_finderS_matchpoint_algorithm(options.redundancy_hash,gene_clusters,options.insertions,options.occurence) 
 
     # Combine reverse csbs
     reverse_pairs = find_reverse_pairs(computed_Instances_dict)
@@ -38,9 +38,6 @@ def csb_prediction(options):
     # Reduce redundancy in the keys
     options.computed_Instances_dict = csb_collapse_to_longest_pattern(computed_Instances_dict)
     
-    #options.computed_Instances_dict = computed_Instances_dict #replaced by the csb_collapse
-
-
 
 
     

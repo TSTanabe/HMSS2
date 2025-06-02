@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import sys
 import os
 from . import Database
 from . import myUtil
@@ -8,55 +9,80 @@ from . import myUtil
 
 def queue_files(options):
     """
+    Populate the queue with paired .faa and .gff files, extracting genome IDs.
+
     Args:
-        directory   directory for the result files to be stored
-        finished    set with genome identifiers already processed
-        options     current options object
+        options: Object containing script options. Expected attributes:
+            - fasta_file_directory (str): Directory to search for .faa/.gff files.
     Operation:
-        collect all zip protein fasta files and unzipped protein fasta files
-        collect all corresponding gff files and check for existence of this file
-        if both files present
-        get the genome identifiers
+        1. Find matching .faa/.gff pairs.
+        2. Extract genome IDs from the .faa filenames.
+        3. Track missing genomes (if a pair is incomplete).
+        4. Store results in options.queued_genomes, options.faa_files, options.gff_files.
     """
-    print("\nFilling the queue with faa files --", end="\r")
-    genomeID_queue = set()
-    faa_files = {}
-    gff_files = {}
+    print("\n[INFO] Filling the queue with faa files --", end="\r")
 
+    genome_id_queue = set()
+    faa_files_map = {}
+    gff_files_map = {}
+
+    # find_faa_gff_pairs returns an iterable of (faa_path, gff_path) tuples
     pairs = find_faa_gff_pairs(options.fasta_file_directory)
-    
-    for faa_file,gff_file in pairs:
-        genomeID = myUtil.getGenomeID(faa_file)
-        genomeID_queue.add(genomeID)
-        faa_files[genomeID] = faa_file
-        gff_files[genomeID] = gff_file
-        
-    # compare two sets
-    find_missing_genomes(genomeID_queue, options.fasta_file_directory)
-    
-    options.queued_genomes = genomeID_queue
-    options.faa_files = faa_files
-    options.gff_files = gff_files
-    print("Filling the queue with faa files -- ok")
-    print(f"Queued {len(options.queued_genomes)} faa/gff pairs")
-    return
+
+    for faa_path, gff_path in pairs:
+        genome_id = myUtil.getGenomeID(faa_path)
+        genome_id_queue.add(genome_id)
+        faa_files_map[genome_id] = faa_path
+        gff_files_map[genome_id] = gff_path
+
+    # Compare sets to report any missing genomes (i.e., unmatched files)
+    find_missing_genomes(genome_id_queue, options.fasta_file_directory)
+
+    options.queued_genomes = genome_id_queue
+    options.faa_files = faa_files_map
+    options.gff_files = gff_files_map
+
+    print("[INFO] Filling the queue with faa files -- ok")
+    print(f"[INFO] Queued {len(options.queued_genomes)} faa/gff pairs")
     
 
-def compare_with_existing_database(options,genomeIDs):
-    
-    genomeIDs = Database.fetch_genomeIDs_from_proteins(options.database_directory)
-    for genomeID in genomeIDs:
-        if genomeID in options.faa_files.keys():
-            print(f"\tFound assembly {genomeID} in database leaving out {options.faa_files[genomeID]}")
-            del options.faa_files[genomeID]
-            del options.gff_files[genomeID]
-            options.queued_genomes.remove(genomeID)
-    
-    print(f"Queued {len(options.queued_genomes)} for processing")
-    if len(options.queued_genomes) == 0:
-        print("There were 0 genomes queued, as all were already present in the local result database")
-    
-    return
+def compare_with_existing_database(options, genome_ids):
+    """
+    Remove already-processed genomes from the queue based on the database contents.
+
+    Args:
+        options: Object containing script options. Expected attributes:
+            - database_directory (str): Path to the existing database.
+            - faa_files (dict): Mapping genome_id → path to .faa file.
+            - gff_files (dict): Mapping genome_id → path to .gff file.
+            - queued_genomes (set): Set of genome IDs currently queued.
+        genome_ids: (Ignored) Placeholder to match signature; actual IDs are fetched from the database.
+
+    Operation:
+        1. Fetch all genome IDs already present in the database (based on protein entries).
+        2. For each genome ID found in both the database and the current queue:
+           a. Print a message indicating it will be skipped.
+           b. Remove it from options.faa_files, options.gff_files, and options.queued_genomes.
+        3. Print the final count of genomes still queued.
+        4. If no genomes remain, print an informational message.
+    """
+    # Fetch genome IDs present in the database (based on protein entries)
+    existing_ids = Database.fetch_genomeIDs_from_proteins(options.database_directory)
+
+    for genome_id in existing_ids:
+        if genome_id in options.faa_files:
+            print(f"\tFound assembly {genome_id} in database; skipping {options.faa_files[genome_id]}")
+            # Remove from FAA/GFF maps and queued set
+            options.faa_files.pop(genome_id, None)
+            options.gff_files.pop(genome_id, None)
+            options.queued_genomes.discard(genome_id)
+
+    remaining = len(options.queued_genomes)
+    print(f"Queued {remaining} genome(s) for processing")
+
+    if remaining == 0:
+        print("No genomes queued; all were already present in the local result database")
+
     
 
 def find_faa_gff_pairs(directory):
@@ -126,72 +152,72 @@ def find_missing_genomes(genomeIDs, faa_file_directory):
 def prepare_HMMlib(options, execute_location, allowed_prefixes=None):
     """
     Prepares the HMM library by concatenating .hmm files from subdirectories
-    with specified prefixes inside src/HMMs.
+    inside src/HMMs, optionally filtering by given folder-name prefixes.
 
     Args:
-        options: Argument container with script options.
+        options: Argument container with script options (unused here but kept for signature).
         execute_location (str): Path to the base execution directory.
-        allowed_prefixes (set or list, optional): Folder name prefixes to include 
-                                                  (e.g., {"grp0", "grp1"}). 
-                                                  If empty or None, all prefixes are used.
+        allowed_prefixes (set or list, optional): If provided, only subdirectories
+            whose names start with one of these prefixes will be included. If None or
+            empty, all subdirectories are used.
     """
-    output_file_path = os.path.join(execute_location, "src", "HMMlib")
+    # Define paths
     hmm_base_dir = os.path.join(execute_location, "src", "HMMs")
+    output_file_path = os.path.join(execute_location, "src", "HMMlib")
+
+    # Ensure the output directory exists
     os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
 
-    if not os.path.isfile(output_file_path):
-        print("Preparing HMMlib from source")
+    print("[INFO] Preparing HMMlib from source")
 
-        hmm_files = []
+    # If allowed_prefixes is provided, ensure it's a set for fast lookup
+    if allowed_prefixes:
+        allowed_prefixes = set(allowed_prefixes)
+    else:
+        allowed_prefixes = None
 
-        for entry in os.listdir(hmm_root_dir):
-            entry_path = os.path.join(hmm_root_dir, entry)
-            if os.path.isdir(entry_path) and entry.startswith(allowed_prefix):
-                suffix = entry.replace(allowed_prefix, "", 1)
-                if suffix in allowed_suffixes:
-                    # Rekursiv nach .hmm Dateien in diesem Unterordner suchen
-                    for root, _, files in os.walk(entry_path):
-                        for file in files:
-                            if file.endswith(".hmm"):
-                                hmm_files.append(os.path.join(root, file))
+    # Collect all .hmm files
+    hmm_files = []
 
-        if hmm_files:
-            print(f"Found {len(hmm_files)} HMM files to concatenate")
-            cat_command = f"cat {' '.join(hmm_files)} > {output_file_path}"
-            os.system(cat_command)
-        else:
-            print("No matching HMM files found.")
+    if not os.path.isdir(hmm_base_dir):
+        print(f"[ERROR] HMM base directory does not exist: {hmm_base_dir}")
+        return
+
+    for entry in os.listdir(hmm_base_dir):
+        entry_path = os.path.join(hmm_base_dir, entry)
+
+        # Only consider directories
+        if not os.path.isdir(entry_path):
+            continue
+
+        # If prefixes are specified, skip directories that don't start with any prefix
+        if allowed_prefixes:
+            if not any(entry.startswith(prefix) for prefix in allowed_prefixes):
+                continue
+
+        # Recursively find all .hmm files under this subdirectory
+        for root, _, files in os.walk(entry_path):
+            for fname in files:
+                if fname.endswith(".hmm"):
+                    hmm_files.append(os.path.join(root, fname))
+
+    if not hmm_files:
+        print("[INFO] No HMM files found to concatenate.")
+        return
+
+    print(f"[INFO] Found {len(hmm_files)} HMM file(s) to concatenate.")
+
+    # Concatenate them into the output file
+    try:
+        with open(output_file_path, "wb") as outfile:
+            for file_path in hmm_files:
+                with open(file_path, "rb") as infile:
+                    outfile.write(infile.read())
+        print(f"[INFO] Successfully wrote concatenated HMMs to {output_file_path}")
+    except OSError as e:
+        print(f"[ERROR] Failed to write HMMlib: {e}")
 
     
-def concatenate_threshold_files(execute_location, allowed_prefix, allowed_suffixes, output_filename="thresholds_all.txt"):
-    """
-    Findet alle thresholds.txt-Dateien in den latest_* Unterverzeichnissen unter src/HMMs/,
-    deren Suffix in allowed_suffixes liegt, und schreibt sie gesammelt in eine Datei.
-    """
-    hmm_root_dir = os.path.join(execute_location, "src", "HMMs")
-    output_file_path = os.path.join(execute_location, "src", output_filename)
-
-    threshold_files = []
-
-    for entry in os.listdir(hmm_root_dir):
-        entry_path = os.path.join(hmm_root_dir, entry)
-        if os.path.isdir(entry_path) and entry.startswith(allowed_prefix):
-            suffix = entry.replace(allowed_prefix, "", 1)
-            if suffix in allowed_suffixes:
-                candidate = os.path.join(entry_path, "_thresholds.txt")
-                if os.path.isfile(candidate):
-                    threshold_files.append(candidate)
-
-    if threshold_files:
-        print(f"Concatenating {len(threshold_files)} thresholds.txt files into {output_file_path}")
-        with open(output_file_path, "w") as outfile:
-            for file in threshold_files:
-                with open(file, "r") as infile:
-                    outfile.write(f"# --- From {file} ---\n")
-                    outfile.write(infile.read())
-                    outfile.write("\n")
-    else:
-        print("No matching thresholds.txt files found.")
 
 
 
