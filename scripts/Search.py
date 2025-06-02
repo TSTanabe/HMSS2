@@ -269,6 +269,8 @@ def make_threshold_dict(
     thresholds = {}
     with open(file_path, "r") as file:
         for line_number, line in enumerate(file, start=1):
+            if line.startswith('#'):
+                continue
             parts = line.strip().split("\t")
             key = parts[0] if parts else None
             score = default_score
@@ -624,61 +626,93 @@ def cross_check_candidates_with_reference_seqs(options: Any) -> List[str]:
     """
     Cross-checks intermediate hit FASTA files against reference sequence databases using DIAMOND.
 
-    For each '<hmm_id>.intermediate_hits_faa' in the Cross_check_directory:
-      1. Attempts to locate an existing Diamond database '<hmm_id>.dmnd' under 'src/RefSeqs'.
-      2. If not found, tries to locate '<hmm_id>.faa' under 'src/RefSeqs' and build a Diamond DB.
-      3. Runs 'diamond blastp' using the intermediate FASTA as query against the Diamond DB.
-      4. Writes the BLASTP output to '<hmm_id>.crosschecked.tsv' in Cross_check_directory.
-      5. If the output file is empty, deletes it.
+    For each '<hmm_id>.intermediate_hits_faa' (searched recursively in Cross_check_directory):
+      1. Recursively searches for an existing Diamond DB '<hmm_id>.dmnd' under 'src/RefSeqs'.
+         If not found, recursively searches for '<prefix>_<hmm_id>.dmnd'.
+      2. If no DB is found, recursively searches for '<hmm_id>.faa' or '<prefix>_<hmm_id>.faa' 
+         under 'src/RefSeqs' and builds a DB from the first match.
+      3. Runs 'diamond blastp', using the intermediate FASTA as query against the found or newly built DB.
+      4. Writes the BLASTP output to '<hmm_id>.crosschecked.tsv' in Cross_check_directory (same path as the input FASTA).
+      5. If the output file is empty, it is deleted.
 
     Args:
         options: An object with at least these attributes:
             - execute_location (str): Base directory for 'src/RefSeqs'.
-            - Cross_check_directory (str): Directory containing intermediate FASTA files.
-            - refseq_identity (float): Minimum percent identity for Diamond search.
-            - cores (int): Number of threads for Diamond.
+            - cross_check_directory (str): Root directory (with subdirectories) for the intermediate FASTA files.
+            - refseq_identity (float): Minimum identity for the DIAMOND search.
+            - cores (int): Number of threads for DIAMOND.
     
     Returns:
-        A list of HMM IDs (strings) for which no valid reference sequence DB or FASTA was found.
+        A list of HMM IDs (strings) for which no valid reference DB or FASTA was found.
     """
     print("\n\n[INFO] Cross-checking hit sequences with reference sequences\n")
 
     refseq_root = os.path.join(options.execute_location, "src", "RefSeqs")
     unavailable_hmms: List[str] = []
-    cross_check_dir = options.cross_check_directory
+    cross_check_root = options.cross_check_directory
 
-    # Collect all intermediate_hits_faa files
-    intermediate_patterns = os.path.join(cross_check_dir, "*.intermediate_hits_faa")
-    intermediate_files = glob.glob(intermediate_patterns)
+    # 1) Collect all intermediate FASTA files recursively
+    intermediate_pattern = os.path.join(cross_check_root, "**", "*.intermediate_hits_faa")
+    intermediate_files = glob.glob(intermediate_pattern, recursive=True)
 
     for inter_faa_path in intermediate_files:
         basename = os.path.basename(inter_faa_path)
         hmm_id = basename.replace(".intermediate_hits_faa", "")
-        diamond_db_basename = os.path.join(refseq_root, hmm_id)
-        diamond_db_path = f"{diamond_db_basename}.dmnd"
+        diamond_db_path = None
 
-        # If Diamond DB doesn't exist, try to build it from a .faa under RefSeqs
-        if not os.path.isfile(diamond_db_path):
-            query_faa_basename = os.path.join(refseq_root, f"{hmm_id}.faa")
-            if os.path.isfile(query_faa_basename):
-                print(f"[INFO] Creating Diamond DB from '{query_faa_basename}' for HMM '{hmm_id}'")
+        # 2) Try to find '<hmm_id>.dmnd' recursively under refseq_root
+        exact_db_pattern = os.path.join(refseq_root, "**", f"{hmm_id}.dmnd")
+        exact_db_matches = glob.glob(exact_db_pattern, recursive=True)
+        if exact_db_matches:
+            diamond_db_path = exact_db_matches[0]
+            print(f"[INFO] Found Diamond DB for '{hmm_id}': '{os.path.relpath(diamond_db_path, refseq_root)}'")
+        else:
+            # 3) If no exact DB, search recursively for '<prefix>_<hmm_id>.dmnd'
+            prefix_db_pattern = os.path.join(refseq_root, "**", f"*_{hmm_id}.dmnd")
+            prefix_db_matches = glob.glob(prefix_db_pattern, recursive=True)
+            if prefix_db_matches:
+                diamond_db_path = prefix_db_matches[0]
+                print(f"[INFO] Found Diamond DB with prefix for '{hmm_id}': '{os.path.relpath(diamond_db_path, refseq_root)}'")
+
+        # 4) If still no .dmnd found, attempt to find '<hmm_id>.faa' or '<prefix>_<hmm_id>.faa' recursively under refseq_root
+        if diamond_db_path is None:
+            # First, try exact FASTA
+            exact_faa_pattern = os.path.join(refseq_root, "**", f"{hmm_id}.faa")
+            exact_faa_matches = glob.glob(exact_faa_pattern, recursive=True)
+
+            # If no exact FASTA, try prefix_<hmm_id>.faa
+            if exact_faa_matches:
+                fasta_to_use = exact_faa_matches[0]
+            else:
+                prefix_faa_pattern = os.path.join(refseq_root, "**", f"*_{hmm_id}.faa")
+                prefix_faa_matches = glob.glob(prefix_faa_pattern, recursive=True)
+                fasta_to_use = prefix_faa_matches[0] if prefix_faa_matches else None
+
+            if fasta_to_use:
+                db_dir = os.path.dirname(fasta_to_use)
+                db_basename = os.path.join(db_dir, hmm_id)
+                print(f"[INFO] Creating Diamond DB from '{fasta_to_use}' for HMM '{hmm_id}'")
                 try:
                     subprocess.run(
-                        ["diamond", "makedb", "--in", query_faa_basename, "-d", diamond_db_basename],
-                        check=True
+                        ["diamond", "makedb", "--in", fasta_to_use, "-d", db_basename],
+                        check=True,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL
                     )
-                    diamond_db_path = f"{diamond_db_basename}.dmnd"
+                    diamond_db_path = f"{db_basename}.dmnd"
                 except subprocess.CalledProcessError:
-                    print(f"[ERROR] Failed to create Diamond DB for '{query_faa_basename}'")
+                    print(f"[ERROR] Failed to create Diamond DB for '{fasta_to_use}'")
                     unavailable_hmms.append(hmm_id)
                     continue
             else:
-                print(f"[WARN] Skipping HMM ID '{hmm_id}': No '.dmnd' or '.faa' found under '{refseq_root}'")
+                print(f"[WARN] No Diamond DB or FASTA found for '{hmm_id}' under '{refseq_root}' (recursive search).")
                 unavailable_hmms.append(hmm_id)
                 continue
 
-        # Prepare output TSV path
-        output_tsv = os.path.join(cross_check_dir, f"{hmm_id}.crosschecked.tsv")
+        # 5) Prepare the path for the output TSV (in the same directory as the input FASTA)
+        inter_dir = os.path.dirname(inter_faa_path)
+        output_tsv = os.path.join(inter_dir, f"{hmm_id}.crosschecked.tsv")
+
         diamond_exe = myUtil.find_executable("diamond")
         cmd = [
             diamond_exe,
@@ -693,17 +727,16 @@ def cross_check_candidates_with_reference_seqs(options: Any) -> List[str]:
             "--quiet"
         ]
 
-        print(f"[INFO] Verifying hits for HMM ID '{hmm_id}' against reference DB")
+        print(f"[INFO] Verifying hits for HMM '{hmm_id}' against DB '{os.path.basename(diamond_db_path)}'")
         result = subprocess.run(cmd)
         if result.returncode != 0:
             print(f"[ERROR] DIAMOND search failed for '{hmm_id}'")
             continue
 
-        # If output exists but is empty, remove it
+        # 6) If the output file exists but is empty, delete it
         if os.path.isfile(output_tsv) and os.path.getsize(output_tsv) == 0:
             os.remove(output_tsv)
 
-    # returns a list of hmms where no .dmnd for cross check was available
     return unavailable_hmms
     
     
@@ -940,11 +973,15 @@ def promote_by_cutoff(options, directory, processes: int = 4, hmm_ids: Optional[
             for f in os.listdir(directory)
             if f.endswith(".intermediate_hits")
         ]
-    print(f"{hmm_ids}")
+    
+    if not hmm_ids:
+        print("[INFO] No proteins provided or found.")
+        return
+    
     optimized_dict = make_threshold_dict(
         options.score_threshold_file, 1, options.thrs_score
     )
-    print(optimized_dict)
+    
     with Pool(processes=processes) as pool:
         pool.starmap(
             process_optimized_cutoff,

@@ -24,6 +24,7 @@ from . import Queue
 #get location of script or executable
 #for the output module report 
 
+# TODO wegen der synteny completion sollte noch ausgegeben werden im hit report ob es sich um einen trusted cutoff optimized cutoff oder noise cutoff hit handelt
 
 if getattr(sys, 'frozen', False):
     __location__ = os.path.split(sys.executable)[0]
@@ -103,7 +104,7 @@ def parse_arguments(arguments):
 
     # Resources HMM_sets
     resources = parser.add_argument_group("Search library resources")
-    resources.add_argument('-l', dest= 'library', type=myUtil.file_path, default=__location__+"/src/HMMlib", metavar='<filepath>', help='Path to custom HMM library')
+    resources.add_argument('-l', dest= 'library', type=str, default=__location__+"/src/HMMlib", metavar='<filepath>', help='Path to custom HMM library')
     resources.add_argument('-hmms', nargs='+', dest='HMM_sets', type=str, default=[], metavar='<list>', help='Limit to HMM sets (whitespace separated).')
     resources.add_argument('-r', dest='result_files_directory', type=myUtil.dir_path, metavar='<directory>', default = __location__+"/results", help='Directory for the result files.')
     resources.add_argument('-db',dest='database_directory', type=myUtil.file_path, metavar='<filepath>', help='Filepath to existing sqlite database.')

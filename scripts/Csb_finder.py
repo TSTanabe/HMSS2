@@ -147,8 +147,15 @@ def check_order(test_list):
 def makePatternDict(filepath):
     """
     Reads a file containing patterns and their names, returning two dictionaries:
-    - pattern: {id => pattern_list}
+    - pattern: {id => list_of_patterns}
     - pattern_names: {id => name}
+
+    Lines starting with '#' or empty lines are skipped.
+    For lines with exactly two tab-separated columns, the second column is checked
+    for whitespace-separated patterns. If there is at least one space, it is split
+    on whitespace and used as the list of patterns; the first column becomes the name.
+    Lines with more than two columns are handled as before (first column = name,
+    remaining columns = individual pattern items). All other lines are ignored.
 
     Parameters:
         filepath (str): Path to the input file.
@@ -158,34 +165,61 @@ def makePatternDict(filepath):
                - pattern (dict): Maps an ID to a list of patterns.
                - pattern_names (dict): Maps an ID to a pattern name.
     """
-    pattern = {}        # id => pattern
+    pattern = {}        # id => list of patterns
     pattern_names = {}  # id => name
     i = 1
 
     try:
-        with open(filepath, "r") as reader:
-            for line_num, line in enumerate(reader, start=1):  # Enumerate for better error messages
-                line = line.strip()  # Remove leading and trailing whitespace
-                if not line:  # Skip empty lines
+        with open(filepath, "r", encoding="utf-8") as reader:
+            for line_num, line in enumerate(reader, start=1):
+                line = line.strip()
+                # Skip empty lines and comment lines starting with '#'
+                if not line or line.startswith("#"):
                     continue
 
-                try:
-                    # Split by tab and parse the name and patterns
-                    parts = line.split("\t")
-                    name = parts.pop(0)  # First part is the name
-                    pattern_names[i] = name.strip()
-                    pattern[i] = [item.strip() for item in parts if item.strip()]  # Sanitize pattern items
-                    i += 1
-                except IndexError:
-                    # Handle lines that cannot be processed correctly
-                    print(f"WARNING: Skipping unrecognized pattern on line {line_num}: {line}")
+                parts = line.split("\t")
+                
+                # Case A: exactly two columns
+                if len(parts) == 2:
+                    name = parts[0].strip()
+                    second = parts[1].strip()
+                    # Check if the second column contains at least one space
+                    if " " in second:
+                        # Split on whitespace to get individual pattern tokens
+                        items = [tok.strip() for tok in second.split() if tok.strip()]
+                        if items:
+                            pattern_names[i] = name
+                            pattern[i] = items
+                            i += 1
+                        # If no valid tokens remain after splitting, skip this line
+                    else:
+                        # No space in second column → skip
+                        continue
+
+                # Case B: more than two columns
+                elif len(parts) > 2:
+                    name = parts[0].strip()
+                    # Remaining columns are individual pattern items
+                    items = [item.strip() for item in parts[1:] if item.strip()]
+                    if items:
+                        pattern_names[i] = name
+                        pattern[i] = items
+                        i += 1
+                    # If all items are empty, skip
+
+                # Case C: fewer than two columns → skip
+                else:
+                    continue
+
     except FileNotFoundError:
         print(f"ERROR: File not found: {filepath}")
         return {}, {}
     except IOError as e:
         print(f"ERROR: Unable to read file: {filepath}. {e}")
+        return {}, {}
 
     return pattern, pattern_names
+
 
 def find_syntenicblocks(genomeID, protein_dict, distance=3500):
     """
