@@ -138,7 +138,7 @@ def concatenate_hmmreports_cat(report_paths, output_path="global_report.cat_hmmr
     # Filtere nur existierende Dateien
     valid_paths = [path for path in report_paths.values() if os.path.isfile(path)]
     if not valid_paths:
-        raise FileNotFoundError("No valid hmmreport files found.")
+        raise FileNotFoundError(f"No valid hmmreport files found in directory {report_paths}.")
 
     # Führe das cat-Kommando aus
     cmd = ["cat"] + valid_paths
@@ -407,9 +407,20 @@ def generate_faa_per_hitfile_parallel(options, intermediate_hit_dir, processes=4
 ##########################################################################################################################################################
 #################### Cross check hits with reference sequences and add the hmmreport lines to the trusted cutoff hmmreport ###############################
 ##########################################################################################################################################################
- 
+
+def find_refseq_file(base_dir, filename):
+    """
+    Sucht rekursiv in base_dir nach genau einer Datei mit dem gegebenen Dateinamen.
+    Gibt den vollständigen Pfad zurück, wenn gefunden, sonst None.
+    """
+    for root, _, files in os.walk(base_dir):
+        if filename in files:
+            return os.path.join(root, filename)
+    return None
+
+
 def cross_check_candidates_with_reference_seqs(options):
-    print("Cross check hit sequences with reference sequences")
+    print("Cross check hit sequences with reference sequences")    
 
     refseq_dir = os.path.join(options.execute_location, "src", "RefSeqs")
     refseq_unavailable_list = []
@@ -431,14 +442,16 @@ def cross_check_candidates_with_reference_seqs(options):
 
             if os.path.isfile(faa_path):
                 print(f"Info: Creating Diamond DB from {faa_path} because {db_path} was not found")
+
                 try:
-                    subprocess.run(["diamond", "makedb", "--in", faa_path, "-d", os.path.splitext(db_path)[0]], check=True)
+                    subprocess.run(["diamond", "makedb", "--in", faa_path, "-d", db_base], check=True)
+                    db_path = db_base + ".dmnd"
                 except subprocess.CalledProcessError:
                     print(f"Error: Failed to create Diamond database for {faa_path}")
                     refseq_unavailable_list.append(hmm_id)
                     continue
             else:
-                print(f"Warning: Skipping {hmm_id}: Neither {db_path} nor {faa_path} found.")
+                print(f"Warning: Skipping {hmm_id}: Neither .dmnd nor .faa file found recursively.")
                 refseq_unavailable_list.append(hmm_id)
                 continue
 

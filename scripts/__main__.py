@@ -440,7 +440,7 @@ def process_operator(options):
 
 
 def main(args=None):
-    
+
     options = parse_arguments(args)
     
     Queue.prepare_HMMlib(options, __location__, allowed_prefixes=options.HMM_sets)

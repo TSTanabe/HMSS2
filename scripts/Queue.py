@@ -141,31 +141,57 @@ def prepare_HMMlib(options, execute_location, allowed_prefixes=None):
 
     if not os.path.isfile(output_file_path):
         print("Preparing HMMlib from source")
+
         hmm_files = []
 
-        for root, _, files in os.walk(hmm_base_dir):
-            relative_dir = os.path.relpath(root, hmm_base_dir)
-
-            # Filter by prefix if prefixes are given and non-empty
-            if allowed_prefixes:
-                if not any(relative_dir.startswith(prefix) for prefix in allowed_prefixes):
-                    continue
-
-            for file in files:
-                if file.endswith(".hmm"):
-                    hmm_files.append(os.path.join(root, file))
+        for entry in os.listdir(hmm_root_dir):
+            entry_path = os.path.join(hmm_root_dir, entry)
+            if os.path.isdir(entry_path) and entry.startswith(allowed_prefix):
+                suffix = entry.replace(allowed_prefix, "", 1)
+                if suffix in allowed_suffixes:
+                    # Rekursiv nach .hmm Dateien in diesem Unterordner suchen
+                    for root, _, files in os.walk(entry_path):
+                        for file in files:
+                            if file.endswith(".hmm"):
+                                hmm_files.append(os.path.join(root, file))
 
         if hmm_files:
+            print(f"Found {len(hmm_files)} HMM files to concatenate")
             cat_command = f"cat {' '.join(hmm_files)} > {output_file_path}"
             os.system(cat_command)
-            print(f"HMMlib created with {len(hmm_files)} .hmm files.")
         else:
-            print("No .hmm files found for the given prefixes.")
+            print("No matching HMM files found.")
 
-
-
-#def create_database_readme(options):
     
+def concatenate_threshold_files(execute_location, allowed_prefix, allowed_suffixes, output_filename="thresholds_all.txt"):
+    """
+    Findet alle thresholds.txt-Dateien in den latest_* Unterverzeichnissen unter src/HMMs/,
+    deren Suffix in allowed_suffixes liegt, und schreibt sie gesammelt in eine Datei.
+    """
+    hmm_root_dir = os.path.join(execute_location, "src", "HMMs")
+    output_file_path = os.path.join(execute_location, "src", output_filename)
+
+    threshold_files = []
+
+    for entry in os.listdir(hmm_root_dir):
+        entry_path = os.path.join(hmm_root_dir, entry)
+        if os.path.isdir(entry_path) and entry.startswith(allowed_prefix):
+            suffix = entry.replace(allowed_prefix, "", 1)
+            if suffix in allowed_suffixes:
+                candidate = os.path.join(entry_path, "_thresholds.txt")
+                if os.path.isfile(candidate):
+                    threshold_files.append(candidate)
+
+    if threshold_files:
+        print(f"Concatenating {len(threshold_files)} thresholds.txt files into {output_file_path}")
+        with open(output_file_path, "w") as outfile:
+            for file in threshold_files:
+                with open(file, "r") as infile:
+                    outfile.write(f"# --- From {file} ---\n")
+                    outfile.write(infile.read())
+                    outfile.write("\n")
+    else:
+        print("No matching thresholds.txt files found.")
 
 
 
