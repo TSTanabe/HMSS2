@@ -123,27 +123,45 @@ def find_missing_genomes(genomeIDs, faa_file_directory):
     return missing_files
 
 
-def prepare_HMMlib(execute_location):
+def prepare_HMMlib(options, execute_location, allowed_prefixes=None):
+    """
+    Prepares the HMM library by concatenating .hmm files from subdirectories
+    with specified prefixes inside src/HMMs.
 
-    # Define the target location for HMMlib
+    Args:
+        options: Argument container with script options.
+        execute_location (str): Path to the base execution directory.
+        allowed_prefixes (set or list, optional): Folder name prefixes to include 
+                                                  (e.g., {"grp0", "grp1"}). 
+                                                  If empty or None, all prefixes are used.
+    """
     output_file_path = os.path.join(execute_location, "src", "HMMlib")
-    
-    # Ensure the directory for HMMlib exists
+    hmm_base_dir = os.path.join(execute_location, "src", "HMMs")
     os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
-    
-    if not os.path.isfile(execute_location+"/src/HMMlib"):
+
+    if not os.path.isfile(output_file_path):
         print("Preparing HMMlib from source")
-        # Library does not exists, then find all .hmm files in the directory and concat to build the library
         hmm_files = []
-        for root, _, files in os.walk(execute_location+"/src/HMMs"):
+
+        for root, _, files in os.walk(hmm_base_dir):
+            relative_dir = os.path.relpath(root, hmm_base_dir)
+
+            # Filter by prefix if prefixes are given and non-empty
+            if allowed_prefixes:
+                if not any(relative_dir.startswith(prefix) for prefix in allowed_prefixes):
+                    continue
+
             for file in files:
                 if file.endswith(".hmm"):
                     hmm_files.append(os.path.join(root, file))
-        
-        # Concatenate all .hmm files using the cat command
-        if hmm_files:  # Check if there are .hmm files to concatenate
+
+        if hmm_files:
             cat_command = f"cat {' '.join(hmm_files)} > {output_file_path}"
             os.system(cat_command)
+            print(f"HMMlib created with {len(hmm_files)} .hmm files.")
+        else:
+            print("No .hmm files found for the given prefixes.")
+
 
 
 #def create_database_readme(options):

@@ -18,61 +18,28 @@ counter_lock = None
 #################### HMMsearch routines for individual file input ######################################
 ########################################################################################################
 
-def HMMsearch(path,query_db,score,clean_reports=False, redo_search=False, cores = 1):
-
-    output = os.path.splitext(path)[0] + '.domtblout'
-    hmmreport = os.path.splitext(path)[0] + '.hmmreport'
-    if not os.path.isfile(hmmreport) or clean_reports or redo_search:
-        os.system(f'hmmsearch -T {score} --domT {score} --cpu {str(cores)} --noali --domtblout {output} {query_db} {path} > /dev/null 2>&1')
-    return output
-
-def init_globals(counter, lock):
-    global current_counter
-    global counter_lock
-    current_counter = counter
-    counter_lock = lock
-
-
-
-def prefix_domtblout_hits(domtblout_path, total, separator="___", suffix=".hmmreport"):
-    """
-    Schreibt eine neue domtblout-Datei, in der Spalte 1 (Hit-ID) mit dem Dateinamen prefixiert wird.
-    Nutzt shared counter nur für Fortschrittsanzeige.
-    """
-    with counter_lock:
-        counter = current_counter.value + 1
-        current_counter.value = counter
-        print(f"Processing file {counter} of {total}", end="\r")
-
-    # Neuen Prefix vorbereiten (basename ohne Endung)
-    basename = os.path.splitext(os.path.basename(domtblout_path))[0]
-
-    output_path = os.path.splitext(domtblout_path)[0] + suffix
-    if os.path.isfile(domtblout_path):
-        with open(domtblout_path, 'r') as infile, open(output_path, 'w') as outfile:
-            for line in infile:
-                if line.startswith('#'):
-                    continue
-
-                parts = line.strip().split()
-                if len(parts) < 5:
-                    continue
-
-                parts[0] = f"{basename}{separator}{parts[0]}"
-                outfile.write('\t'.join(parts) + '\n')
-        os.remove(domtblout_path)
-        
-    return output_path
-
-
-
-def run_search(faa_file, query_db, score, clean_reports, redo_search, total):
-    domtblout_path = HMMsearch(faa_file, query_db, score, clean_reports, redo_search, 2)
-    hmmreport = prefix_domtblout_hits(domtblout_path, total, separator="___", suffix=".hmmreport")
-    return hmmreport
-
-    
 def unified_search(options, processes=4):
+    """
+    Executes a parallelized HMM search across multiple genome protein files and processes the results.
+
+    This routine performs the following steps for each genome in `options.queued_genomes`:
+    1. Runs an HMMER search (HMMsearch) against the specified HMM library using the genome's .faa protein file.
+    2. Prefixes each domain hit ID in the resulting domtblout file with the genome-specific filename, making all hits uniquely traceable across genomes.
+    3. Tracks and prints the progress of processing using a shared counter across worker processes.
+
+    Parameters:
+    - options: A configuration object containing:
+        - queued_genomes (list of str): Genome IDs to be processed.
+        - faa_files (dict): Mapping from genome IDs to paths of .faa files.
+        - library (str): Path to the HMM database.
+        - thrs_score (float): Minimum score threshold for accepting hits.
+        - clean_reports (bool): Whether to delete old report files before search.
+        - redo_search (bool): Whether to force re-running existing searches.
+    - processes (int): Number of parallel worker processes to use.
+
+    Returns:
+    - dict: Mapping from genome ID to the corresponding '.hmmreport' file path, where domain hit IDs have been prefixed.
+    """
     total = len(options.queued_genomes)
 
     args = [
@@ -95,8 +62,63 @@ def unified_search(options, processes=4):
         results = pool.starmap(run_search, args)
 
     return dict(zip(options.queued_genomes, results))
+    
+    
+    
+def init_globals(counter, lock):
+    global current_counter
+    global counter_lock
+    current_counter = counter
+    counter_lock = lock
 
 
+
+def run_search(faa_file, query_db, score, clean_reports, redo_search, total):
+
+    with counter_lock:
+        counter = current_counter.value + 1
+        current_counter.value = counter
+        print(f"Processing file {counter} of {total}", end="\r")
+        
+    domtblout_path = HMMsearch(faa_file, query_db, score, clean_reports, redo_search, 2)
+    hmmreport = prefix_domtblout_hits(domtblout_path, separator="___", suffix=".hmmreport")
+    return hmmreport
+    
+    
+def HMMsearch(path,query_db,score,clean_reports=False, redo_search=False, cores = 1):
+
+    output = os.path.splitext(path)[0] + '.domtblout'
+    hmmreport = os.path.splitext(path)[0] + '.hmmreport'
+    if not os.path.isfile(hmmreport) or clean_reports or redo_search:
+        os.system(f'hmmsearch -T {score} --domT {score} --cpu {str(cores)} --noali --domtblout {output} {query_db} {path} > /dev/null 2>&1')
+    return output
+
+
+def prefix_domtblout_hits(domtblout_path, separator="___", suffix=".hmmreport"):
+    """
+    Schreibt eine neue domtblout-Datei, in der Spalte 1 (Hit-ID) mit dem Dateinamen prefixiert wird.
+    Nutzt shared counter nur für Fortschrittsanzeige.
+    """
+
+    # Neuen Prefix vorbereiten (basename ohne Endung)
+    basename = os.path.splitext(os.path.basename(domtblout_path))[0]
+
+    output_path = os.path.splitext(domtblout_path)[0] + suffix
+    if os.path.isfile(domtblout_path):
+        with open(domtblout_path, 'r') as infile, open(output_path, 'w') as outfile:
+            for line in infile:
+                if line.startswith('#'):
+                    continue
+
+                parts = line.strip().split()
+                if len(parts) < 5:
+                    continue
+
+                parts[0] = f"{basename}{separator}{parts[0]}"
+                outfile.write('\t'.join(parts) + '\n')
+        os.remove(domtblout_path)
+        
+    return output_path
 
 
 def concatenate_hmmreports_cat(report_paths, output_path="global_report.cat_hmmreport"):
@@ -104,7 +126,7 @@ def concatenate_hmmreports_cat(report_paths, output_path="global_report.cat_hmmr
     Verwendet das UNIX 'cat'-Kommando, um .hmmreport-Dateien zu einer globalen Datei zusammenzuführen.
 
     Parameters:
-        report_paths (list): Liste von Pfaden zu .hmmreport-Dateien
+        report_paths (dict): Liste von Pfaden zu .hmmreport-Dateien
         output_path (str): Pfad zur Ausgabedatei
     
     Returns:
@@ -163,6 +185,8 @@ def make_threshold_dict(file_path, threshold_type=1, default_score=50.0):
 
 
 def process_single_hmm(hmm_id, glob_report, trusted_cutoff, noise_cutoff, output_dir):
+
+    # Define output list for trusted and intermediate hits
     trusted_path = os.path.join(output_dir, f"{hmm_id}.trusted_hits")
     intermediate_path = os.path.join(output_dir, f"{hmm_id}.intermediate_hits")
     
@@ -183,13 +207,15 @@ def process_single_hmm(hmm_id, glob_report, trusted_cutoff, noise_cutoff, output
 
             target = parts[0]
             hit_hmm = parts[3]
+
+            if hit_hmm != hmm_id:
+                continue
+
             try:
                 score = float(parts[7])  # Bit-Score
             except ValueError:
                 continue
 
-            if hit_hmm != hmm_id:
-                continue
 
             if score >= trusted_cutoff:
                 trusted_out.write(line)
@@ -363,7 +389,7 @@ def process_hitfile(hitfile_path, intermediate_hit_dir, faa_files):
                         out.write(line)
 
 
-def extract_fasta_per_hitfile_parallel(options, intermediate_hit_dir, processes=4):
+def generate_faa_per_hitfile_parallel(options, intermediate_hit_dir, processes=4):
     output_dir = intermediate_hit_dir  # same dir for output
     faa_files = options.faa_files      # dict: genome_id → path
 
@@ -382,33 +408,23 @@ def extract_fasta_per_hitfile_parallel(options, intermediate_hit_dir, processes=
 #################### Cross check hits with reference sequences and add the hmmreport lines to the trusted cutoff hmmreport ###############################
 ##########################################################################################################################################################
  
-
-def find_file_in_prefixed_subdirs(base_dir, filename, dir_prefix):
-    for root, dirs, files in os.walk(base_dir):
-        # Nur Verzeichnisse mit dem gewünschten Prefix betreten
-        if not os.path.basename(root).startswith(dir_prefix):
-            continue
-
-        if filename in files:
-            return os.path.join(root, filename)
-
-    return None  # nicht gefunden
-
 def cross_check_candidates_with_reference_seqs(options):
     print("Cross check hit sequences with reference sequences")
 
     refseq_dir = os.path.join(options.execute_location, "src", "RefSeqs")
-    cross_check_dir = options.Cross_check_directory
     refseq_unavailable_list = []
+    
+    cross_check_dir = options.Cross_check_directory # directoy with the intermediate hit fasta faa files
 
     intermediate_files = glob.glob(os.path.join(cross_check_dir, "*.intermediate_hits_faa"))
 
+    # Iterate the intermediate faa files
     for inter_file in intermediate_files:
         hmm_id = os.path.splitext(os.path.basename(inter_file))[0].replace(".intermediate_hits_faa", "")
         db_file = f"{hmm_id}.dmnd"
-        db_path = find_file_in_prefixed_subdirs(refseq_dir, db_file, dir_prefix="")
+        db_path = find_file_in_prefixed_subdirs(refseq_dir, db_file, dir_prefix="") #dir_prefix is for version control, possibly uneccessary
 
-        # Prüfen ob .dmnd existiert, sonst versuchen es zu bauen
+        # Prüfen ob .dmnd existiert, sonst erstellen
         if not os.path.isfile(db_path):
             faa_file = f"{hmm_id}.faa"
             faa_path = find_file_in_prefixed_subdirs(refseq_dir, faa_file, dir_prefix="")
@@ -450,7 +466,18 @@ def cross_check_candidates_with_reference_seqs(options):
             os.remove(output_file)
 
     return refseq_unavailable_list
+    
+    
+def find_file_in_prefixed_subdirs(base_dir, filename, dir_prefix):
+    for root, dirs, files in os.walk(base_dir):
+        # Nur Verzeichnisse mit dem gewünschten Prefix betreten
+        if not os.path.basename(root).startswith(dir_prefix):
+            continue
 
+        if filename in files:
+            return os.path.join(root, filename)
+
+    return ""  # nicht gefunden
 
 
 def process_crosscheck(hmm_id, crosscheck_dir):
@@ -570,7 +597,7 @@ def promote_by_cutoff(options, directory, processes=4, hmm_ids=[]):
         ]
 
     optimized_dict = make_threshold_dict(
-        options.score_threshold_file, 1, options.thrs_score
+        options.score_threshold_file, options.threshold_type, options.thrs_score
     )
     
     with Pool(processes=processes) as pool:

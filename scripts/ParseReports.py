@@ -579,7 +579,7 @@ def process_genome(
         cluster_dict = Csb_finder.find_syntenicblocks(genome_id, combined_protein_dict, nucleotide_range)
         Csb_finder.name_syntenicblocks(pattern_dict, pattern_names, cluster_dict, min_completeness)
 
-        # Add proteinID with named syntenic blocks to the proteinID
+        # Remove intermediate hits that are not part of a named gene cluster
         remove_unassigned_intermediate_proteins(combined_protein_dict, protein_dict, intermediate_protein_dict, cluster_dict)
 
         # Add the protein sequences
