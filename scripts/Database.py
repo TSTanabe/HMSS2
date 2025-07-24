@@ -1,22 +1,21 @@
 #!/usr/bin/python
 import sqlite3
 import os
+import sys
 import re
 import traceback
-
+import time
+from typing import List, Dict, Set, Any, Optional
 
 from . import myUtil
 from . import ParseReports
 from . import Csb_finder
 
-"""
-This module keeps all routines for database input and working routines on the database
-if looking for output routines invoked by the user got to Output.py module
-"""
+logger = myUtil.logger
 
 ########## Write output to Database Routines ##########
 
-def create_database(database):
+def create_database(database: str) -> None:
     """
     11.9.22
     Creating a database file for midterm storage of results
@@ -57,11 +56,11 @@ def create_database(database):
         );''')
         
         cur.execute('''CREATE TABLE Keywords (
+        ID          integer         PRIMARY KEY     AUTOINCREMENT,
         clusterID   varchar(32)                     NOT NULL,
         keyword     varchar(32)                     NOT NULL,
         completeness    varchar(32)                 DEFAULT NULL,
         collinearity    varchar(32)                 DEFAULT NULL,
-        PRIMARY KEY (clusterID, keyword),
         CONSTRAINT fk_clusterID FOREIGN KEY (clusterID) REFERENCES Clusters(clusterID) ON DELETE CASCADE ON UPDATE CASCADE
         );''')
         
@@ -82,21 +81,20 @@ def create_database(database):
         );''')
         
         cur.execute('''CREATE TABLE Domains (
-        proteinID   varchar(128)                     NOT NULL,
+        ID          integer         PRIMARY KEY     AUTOINCREMENT,
+        proteinID   varchar(32)                     NOT NULL,
         domain      varchar(32)                     DEFAULT NULL,
         score       smallint(6)                     DEFAULT NULL,
+        blast_score_ratio       smallint(6)                     DEFAULT NULL,
+        identity       smallint(6)                     DEFAULT NULL,
         domStart    int(11)                             DEFAULT NULL,
         domEnd      int(11)                             DEFAULT NULL,
-        PRIMARY KEY (proteinID, domain, domStart, domEnd),
         CONSTRAINT fk_proteinID FOREIGN KEY (proteinID) REFERENCES Proteins(proteinID) ON DELETE CASCADE ON UPDATE CASCADE
         );''')
         
               
     con.commit()
     con.close()
-        #res = cur.execute("Select name from sqlite_master")
-        #print(res.fetchall())
-    
         
     return 
     
@@ -106,7 +104,7 @@ def index_database(database):
     Indexes the relevant columns in the database to improve search and join performance.
     This is especially important for large databases (> 3000 genomes).
     """
-    print(f"Indexing database {database}")
+    logger.info(f"Indexing database {database}")
     
     # List of indexes to create, each represented as a tuple (index_name, create_statement)
     indexes = [
@@ -130,89 +128,13 @@ def index_database(database):
                     cur.execute(create_stmt)
                 
     except sqlite3.Error as e:
-        print(f"An error occurred while indexing the database: {e}")
+        logger.error(f"Error while indexing the database: {e}")
+        sys.exit(1)
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        logger.error(f"Unexpected error during indexing: {e}")
+        sys.exit(1)
 
-    print("Indexing complete.")
-
-def light_index_database(database):
-    """
-    12.11.22
-    Indexes the relevant columns in the database to improve search and join performance.
-    This is especially important for large databases (> 3000 genomes).
-    """
-    
-    # List of indexes to create, each represented as a tuple (index_name, create_statement)
-    indexes = [
-        ("tab_dom_pid_index", "CREATE INDEX IF NOT EXISTS tab_dom_pid_index ON Domains(proteinID)"),
-        ("tab_prot_gid_index", "CREATE INDEX IF NOT EXISTS tab_prot_gid_index ON Proteins(genomeID)"),
-        ("tab_clus_gid_index", "CREATE INDEX IF NOT EXISTS tab_clus_gid_index ON Clusters(genomeID)")
-    ]
-    
-    try:
-        with sqlite3.connect(database) as con:
-            cur = con.cursor()
-            cur.execute("""PRAGMA foreign_keys = ON;""")
-            
-            # Start a transaction for batch index creation
-            with con:
-                for index_name, create_stmt in indexes:
-                    cur.execute(create_stmt)
-                
-    except sqlite3.Error as e:
-        print(f"An error occurred while indexing the database: {e}")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-
-def drop_specified_indices(database):
-    """
-    Drops specified indices from the SQLite database if they exist and are not associated with UNIQUE or PRIMARY KEY constraints.
-
-    Args:
-        database (str): Path to the SQLite database file.
-        indices_to_drop (list): List of index names that should be dropped.
-    """
-    indices_to_drop = [
-    "tab_dom_pid_index",
-    "tab_prot_gid_index",
-    "tab_prot_cid_index",
-    "tab_key_cid_index",
-    "tab_clus_gid_index",
-    "tab_dom_did_index",
-    "tab_key_kid_index"
-    ]
-    try:
-        with sqlite3.connect(database) as con:
-            cur = con.cursor()
-            
-            # Query to get information about the specified indices
-            cur.execute(f"""
-            SELECT name, sql 
-            FROM sqlite_master 
-            WHERE type = 'index' 
-            AND name IN ({','.join('?' for _ in indices_to_drop)});
-            """, indices_to_drop)
-            
-            indices = cur.fetchall()
-            
-            for index_name, index_sql in indices:
-                # Check if the index is associated with UNIQUE or PRIMARY KEY constraints
-                if "UNIQUE" in index_sql or "PRIMARY KEY" in index_sql:
-                    print(f"Skipping index '{index_name}' (associated with UNIQUE or PRIMARY KEY constraint)")
-                else:
-                    #print(f"Dropping index: {index_name}")
-                    cur.execute(f"DROP INDEX IF EXISTS {index_name};")
-            
-            print("Finished dropping specified indices.")
-
-    except sqlite3.Error as e:
-        print(f"An error occurred while dropping indices: {e}")
-
-
-    
-
-def insert_database_genomeIDs(database, genomeIDs):
+def insert_database_genomeIDs(database: str, genomeIDs: List[str]) -> None:
     """
     22.6.24
         Args: 
@@ -223,42 +145,44 @@ def insert_database_genomeIDs(database, genomeIDs):
         cur = con.cursor()
         cur.execute("""PRAGMA foreign_keys = ON;""")
         cur.execute("""PRAGMA synchronous = OFF;""")
-        cur.execute("""PRAGMA journal_mode = OFF;""")
+        cur.execute("""PRAGMA journal_mode = OFF;""")        
         # Prepare a list of tuples, each containing one genomeID
         genomeID_tuples = [(genomeID,) for genomeID in genomeIDs]
         # Use executemany to insert all genomeIDs in a single batch
         cur.executemany('''INSERT OR IGNORE INTO Genomes (genomeID) VALUES (?)''', genomeID_tuples)
         con.commit()
     con.close()
-    return
-    
-    
+    return    
         
-def insert_database_proteins(database, protein_dict):
+
+def insert_database_proteins(database: str, protein_dict: Dict[str, Any]) -> None:
     """
-        Inserts for concated glob hmmsearches. GenomeId must be defined within the protein object
-        Args:
-            protein_dict    dictionary with protein objects
+    Inserts for concated glob hmmsearches. GenomeId must be defined within the protein object
+    Args:
+        database (str): Path to database file.
+        protein_dict (dict): Dictionary of protein objects. proteinID => obj
     """
-    with sqlite3.connect(database) as con:
-        try:
+    
+    try:
+        with sqlite3.connect(database) as con:
+            # Inside 'with con', if an exception occurs, it will rollback automatically
             cur = con.cursor()
             cur.execute("""PRAGMA foreign_keys = ON;""")
             cur.execute("""PRAGMA synchronous = OFF;""")
             cur.execute("""PRAGMA journal_mode = OFF;""")
             
             protein_list = sorted(protein_dict.values(), key=lambda x: (x.gene_contig, x.gene_start))
-            #protein_list = protein_dict.values()
             protein_records = []
             domain_records = []
 
-            for protein in protein_list: #protein_dict.values()
+            for protein in protein_list:
                 genomeID = protein.genomeID
                 proteinID = f"{genomeID}-{protein.proteinID}"
                 domains = protein.domains
                 if not genomeID or not proteinID:
-                    print(f"Warning error annotated protein {protein.proteinID}")
+                    print(f"[WARN] Undefined error for {protein.proteinID}")
                     continue
+
                 # Prepare the protein record
                 protein_record = (
                     proteinID, genomeID, protein.gene_locustag, protein.gene_contig,
@@ -266,13 +190,14 @@ def insert_database_proteins(database, protein_dict):
                     len(domains), protein.get_sequence()
                 )
                 protein_records.append(protein_record)
+
                 # Prepare domain records
                 for domain in domains.values():
                     domain_record = (
-                        proteinID, domain.HMM, domain.start, domain.end, domain.score
+                        proteinID, domain.HMM, domain.start, domain.end, domain.score, domain.identity, domain.bsr
                     )
                     domain_records.append(domain_record)
-            
+
             # Batch insert for proteins
             cur.executemany('''INSERT OR IGNORE INTO Proteins
                 (proteinID, genomeID, locustag, contig, start, end, strand, dom_count, sequence)
@@ -280,62 +205,33 @@ def insert_database_proteins(database, protein_dict):
             
             # Batch insert for domains
             cur.executemany('''INSERT OR IGNORE INTO Domains
-                (proteinID, domain, domStart, domEnd, score)
-                VALUES (?, ?, ?, ?, ?)''', domain_records)
-            
-            con.commit()
-        except Exception as e:
-                error_message = f"\nError occurred: {str(e)}"
-                traceback_details = traceback.format_exc()
-                print(f"\tWARNING: Due to an error - {error_message}")
-                print(f"\tTraceback details:\n{traceback_details}")
-                
+                (proteinID, domain, domStart, domEnd, score, identity, blast_score_ratio)
+                VALUES (?, ?, ?, ?, ?, ?, ?)''', domain_records)
+
+            # No need to manually call con.commit() — 'with' will handle it
+
+    except Exception as e:
+        logger.warning(f"Proteins were not inserted for {genomeID}.\nError: - {str(e)}\nTraceback: {traceback.format_exc()}")
+
     return
     
-def update_protein_sequences(database, protein_dict):
+    
+
+def insert_database_clusters(database: str, cluster_dict: Dict[str, Any]) -> None:
     """
-    Updates all protein sequences in the database from the protein objects in the hash.
+    Inserts clusters and associated proteins/keywords.
 
     Args:
-        database (str): Path to the database file.
-        protein_dict (dict): Dictionary with protein objects.
+        database (str): Path to database file.
+        cluster_dict (dict): Cluster objects.
     """
-    update_data = []
-
-    for proteinID, protein in protein_dict.items():
-        sequence = protein.protein_sequence
-        genomeID = protein.genomeID
-        update_data.append((sequence, f"{genomeID}-{proteinID}"))
-
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        cur.execute("""PRAGMA foreign_keys = ON;""")
-        
-        # Batch update protein sequences
-        cur.executemany("""
-            UPDATE Proteins
-            SET sequence = ?
-            WHERE proteinID = ?;
-        """, update_data)
-
-        con.commit()
-
-    con.close()
-
-
-def insert_database_clusters(database, cluster_dict):
-    """
-    22.06.2024
-        Args:
-            database - path to the database file
-            cluster_dict - dictionary with cluster objects
-    """
+    
     try:
         with sqlite3.connect(database) as con:
             cur = con.cursor()
             cur.execute("""PRAGMA foreign_keys = ON;""")
             cur.execute("""PRAGMA synchronous = OFF;""")
-            cur.execute("""PRAGMA journal_mode = OFF;""")
+            cur.execute("""PRAGMA journal_mode = OFF;""") 
 
             cluster_inserts = []
             protein_updates = []
@@ -364,101 +260,26 @@ def insert_database_clusters(database, cluster_dict):
             # Batch insert or replace keywords
             cur.executemany("""INSERT OR REPLACE INTO Keywords (clusterID, keyword, completeness, collinearity) VALUES (?, ?, ?, ?)""", keyword_inserts)
     except Exception as e:
-        error_message = f"\nError occurred: {str(e)}"
-        traceback_details = traceback.format_exc()
-        print(f"\tWARNING: Due to an error - {error_message}")
-        print(f"\tTraceback details:\n{traceback_details}")
- 
+        logger.warning(f"Due to an error - {str(e)}\nTraceback: {traceback.format_exc()}")
+
 
     return
 
   
-    
-        
-def extend_database_protein(database,genomeID,protein_dict):
-    """
-    18.2.23
-        Args:
-            protein_dict    dictionary with possibly incomplete protein objects may be incomplete due to new protein domains
-            
-        Routine should extend proteins by domains and add new proteins to an existing proteins table
-        Currently also overwrites data already existing. This is possibly more natural since the new HMM might be the only correct one
-    """
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        cur.execute("""PRAGMA foreign_keys = ON;""")
-        
-        for key in protein_dict.keys():
-            protein = protein_dict.get(key)
-            proteinID = protein.get_proteinID()
-            proteinID = f"{genomeID}-{proteinID}"   #genomeID added to proteinID to deal with the multispecies information
-            domains = protein.get_domains_dict()
-            new_domains_list = protein.get_domain_listing()
-            cur.execute('SELECT EXISTS(SELECT 1 FROM Proteins WHERE proteinID = ?)', (proteinID,))
-            result = cur.fetchone()[0]
-            
-            if result == 1:
-                #'The value exists in the Proteins table' therefore add domain if possible
-                #wiederherstellen des domain table aus datenbank
-                #check if insert is possible, if yes insert into db else do nothing, but maybe an alert or protocol output
-                cur.execute('SELECT domain,domStart,domEnd,score,ID FROM Domains WHERE proteinID = ?', (proteinID,))
-                db_domains = cur.fetchall()
-                
-                IDs = []
-                for db_domain in db_domains:
-                    protein.add_domain(db_domain[0],db_domain[1],db_domain[2],db_domain[3])
-                    IDs.append(db_domain[4])
-                    
-                annotated_domains = protein.get_domain_listing()
-                if set(annotated_domains).intersection(set(new_domains_list)): # returns the new domains which are compatible
-                    
-                    domains = protein.get_domains_dict()
-                    for domain_index in domains:
-                        domain = domains.get(domain_index)
-                        cur.execute(""" INSERT OR IGNORE INTO Domains 
-                                    (proteinID,domain,domStart,domEnd,score) 
-                                    VALUES (?,?,?,?,?)""",\
-                                    (proteinID,domain.get_HMM(),domain.get_start(),\
-                                    domain.get_end(),domain.get_score())\
-                                    )
-                    for ID in IDs:
-                        cur.execute('DELETE FROM Domains WHERE ID = ?', (ID,))
 
-                
-            else:
-                #'The value does not exist in the Proteins table' new protein found, add to the existing table
-                cur.execute('''INSERT OR IGNORE INTO Proteins
-                (proteinID,genomeID,locustag,contig,start,end,strand,dom_count,sequence)
-                VALUES (?,?,?,?,?,?,?,?,?) ''',\
-                (proteinID, genomeID, protein.gene_locustag, protein.gene_contig,\
-                 protein.get_gene_start, protein.gene_end, protein.gene_strand,\
-                 protein.get_domain_count(), protein.get_sequence())\
-                 )
-                
-                for domain_index in domains:
-                    domain = domains.get(domain_index)
-                    cur.execute(""" INSERT OR IGNORE INTO Domains 
-                                    (proteinID,domain,domStart,domEnd,score) 
-                                    VALUES (?,?,?,?,?)""",\
-                                    (proteinID,domain.get_HMM(),domain.get_start(),\
-                                    domain.get_end(),domain.get_score())\
-                                    )
-
-
-
-
-def insert_taxonomy_data(database, taxonomy_file):
+def insert_taxonomy_data(database: str, taxonomy_file: str) -> None:
     """
     Insert taxonomy data from a file into the Genomes table of the database.
 
     Args:
-        database: Path to the SQLite database file.
-        taxonomy_file: Path to the parsed taxonomy file (tab-separated).
+        database (str): Path to SQLite database.
+        taxonomy_file (str): Path to the parsed taxonomy file (tab-separated).
     """
     try:
         # Check if the database file path is valid
         if not os.path.exists(os.path.dirname(database)):
-            raise FileNotFoundError(f"Directory for database does not exist: {os.path.dirname(database)}")
+            logger.error(f"Directory for database does not exist: {os.path.dirname(database)}")
+            return
 
         # Connect to the SQLite database
         with sqlite3.connect(database) as con:
@@ -474,8 +295,8 @@ def insert_taxonomy_data(database, taxonomy_file):
                     fields = line.strip().split('\t')
                    
                     if len(fields) < 8:
-                        print(f"Skipping line due to insufficient columns: {line}")
-                        continue                
+                        logger.warning(f"Line has insufficient columns: {line}")
+                        continue              
                    
                     # Prepare the data for insertion
                     genome_id = fields[0]
@@ -506,16 +327,15 @@ def insert_taxonomy_data(database, taxonomy_file):
             # Commit the transaction
             con.commit()
     
+        logger.info("Inserted taxonomy data from %s", taxonomy_file)
     except sqlite3.OperationalError as e:
-        print(f"SQLite Operational Error: {e}")
-        print(f"Database path: {database}")
-        print(f"Ensure the file exists and you have read/write permissions.")
+        logger.error(f"SQLite Operational Error: {e}\nDatabase path: {database}")
     except sqlite3.Error as e:
-        print(f"SQLite Error: {e}")
+        logger.error(f"SQLite Error: {e}")
     except FileNotFoundError as e:
-        print(f"File Not Found Error: {e}")
+        logger.error(f"File Not Found Error: {e}")
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        logger.error(f"Unexpected error: {e}")
         
         
         
@@ -523,7 +343,7 @@ def insert_taxonomy_data(database, taxonomy_file):
 ########## Alter information from database routines ##########
 ##############################################################
 
-def update_domain(database, protein_diction, old_tag, new_tag):
+def update_domain(database: str, protein_diction: Dict[str, Any], old_tag: str, new_tag: str) -> None:
     """
     18.11.22
         Args:
@@ -532,182 +352,151 @@ def update_domain(database, protein_diction, old_tag, new_tag):
            old_tag     The old domain tag that needs to be updated
            new_tag     The new domain tag that will replace the old tag
     """
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        query = """UPDATE Domains SET domain = ? WHERE proteinID = ? AND domain = ?"""
-        
-        # Prepare the data for bulk update
-        data = [(new_tag, proteinID, old_tag) for proteinID in protein_diction]
-        
-        # Use executemany for batch processing
-        cur.executemany(query, data)
-        
-        # Commit the transaction (optional, as it is done automatically with 'with' context)
-        con.commit()
-
+    try:
+        with sqlite3.connect(database) as con:
+            cur = con.cursor()
+            query = """UPDATE Domains SET domain = ? WHERE proteinID = ? AND domain = ?"""
+            data = [(new_tag, proteinID, old_tag) for proteinID in protein_diction]
+            cur.executemany(query, data)
+        logger.info(f"Updated {len(protein_diction)} domains from {old_tag} to {new_tag}")
+    except Exception as e:
+        logger.error(f"Error updating domains: {e}")
     return
 
 ##############################################################
 ########## Fetch information from database routines ##########
 ##############################################################
 
-def fetch_genomes_dict(database):
+def update_keywords(database: str, keyword_dict: Dict[str, List[str]], batch_size: int = 400) -> None:
     """
-    10.11.22
-        Args:
-           database     Name of the database to be worked on
-        Return:
-           dictionary genomeID => proteinID list
+    Update keywords in the database in batches.
+    
+    Args:
+        database: Name of the database to be worked on.
+        keyword_dict: Dictionary containing the new keywords and associated clusterIDs.
+        batch_size: Number of (clusterID, keyword) pairs per batch insert.
     """
-    genome_dict = {}
-    with sqlite3.connect(database) as con:
-        cur=con.cursor()
-        cur.execute("""SELECT proteinID,genomeID FROM Proteins;""")
-        
-        for count,c in enumerate(cur):
-            print(f"\tSelected entries {count}",end="\r")
-            if c[1] in genome_dict.keys():
-                genome_dict[c[1]].append(c[0])
-            else:
-                genome_dict[c[1]] = [c[0]]
-        
-    return genome_dict
+    if keyword_dict:
+        try:
+            with sqlite3.connect(database) as con:
+                cur = con.cursor()
+                query = """INSERT INTO Keywords (clusterID, keyword) VALUES (?, ?)"""
+                inserts = []
+                for new_keyword, clusterIDs in keyword_dict.items():
+                    for clusterID in clusterIDs:
+                        inserts.append((clusterID, new_keyword))
+                for i in range(0, len(inserts), batch_size):
+                    batch = inserts[i:i+batch_size]
+                    cur.executemany(query, batch)
+            logger.info(f"Updated keywords with {len(inserts)} entries.")
+        except Exception as e:
+            logger.error(f"Error updating keywords: {e}")
+    return
 
-def fetch_genomeID_list(database):
+
+
+def delete_keywords_from_csb(database: str, options: Any) -> None:
     """
-    10.11.22
-        Args:
-           database     Name of the database to be worked on
-        Return:
-           dictionary genomeID => 1
+    Remove keywords from the database that match the pattern options.csb_name_prefix + a number + options.csb_name_suffix.
+
+    Args:
+        database: Name of the database to be worked on.
+        options: An object containing csb_name_prefix and csb_name_suffix attributes.
     """
-    genomeIDs = []
     with sqlite3.connect(database) as con:
-        cur=con.cursor()
-        cur.execute("""SELECT genomeID FROM Genomes;""")
+        cur = con.cursor()
         
-        for count,c in enumerate(cur):
-            print(f"\tSelected genomeIDs {count}",end="\r")
-            genomeIDs.append(c[0])
-        print(f"\tSelected genomeIDs {count} for csb finder")
+        # Construct the pattern
+        pattern = f"{options.csb_name_prefix}%{options.csb_name_suffix}"
+        
+        # SQL query to delete matching keywords
+        delete_query = "DELETE FROM Keywords WHERE keyword LIKE ?"
+        
+        try:
+            cur.execute(delete_query, (pattern,))
+            con.commit()
+        except sqlite3.Error as e:
+            print("[ERROR] SQLite error:", e)
+            raise
+
+    return
+
+
+def fetch_genomeIDs(database: str) -> Set[str]:
+    """
+    Fetches the distinct genomeIDs from the Genomes table in the SQLite database.
+    
+    Args:
+        database: Path to the SQLite database.
+    
+    Returns:
+        A set of distinct genomeIDs.
+    """
+    with sqlite3.connect(database) as con:
+        cur = con.cursor()
+        cur.execute("SELECT DISTINCT genomeID FROM Genomes")
+        
+        # Use set comprehension to create the set of genomeIDs
+        genomeIDs = {row[0] for row in cur.fetchall()}
+    
     return genomeIDs
 
 
-def fetch_protein_dict(database,genomeID,protein_dict={}):
+def clean_database_locks(database_path, wait_seconds=10):
     """
-    1.10.22
-        Args:
-           database     Name of the database to be worked on
-           genomeID     List of genomeIDs to be retrieved 
-        Return:
-            protein dictionary with key:proteinID => value:protein object for a single genome
-    22.02.23
-    	removed the Distinct and order by contig,start,end statement in the query because it is
-    	possibly unnecessary        
-    """
-    with sqlite3.connect(database) as con:
-        cur=con.cursor()
-        cur.execute("""PRAGMA foreign_keys = ON;""")
-        cur.execute("""SELECT Proteins.proteinID, Proteins.genomeID, Proteins.contig, Domains.domStart, Domains.domEnd, Proteins.strand, Proteins.sequence, Domains.domain, Domains.score from Proteins JOIN Domains ON Proteins.proteinID = Domains.proteinID WHERE genomeID = ? ;""",[genomeID])
-        for row in cur:
-            #print(row)
-            # 0 => proteinID, 1 => genomeID, 2 => clusterID, 3 => locustag, 4 => contig,
-            # 5 => start, 6 => end, 7 => strand, 8 => domain_count, 9 => sequence,
-            #10 => id, 11 => proteinID, 12 => HMM, 13 => dom_start, 14 => dom_end, 15 => score
-            proteinID, genomeID, contig, start, end, strand, sequence, domain, score = row
-            if proteinID in protein_dict:
-                protein = protein_dict[proteinID]
-                protein.add_domain(domain, int(start), int(end), score)
+    Ensure the database is unlocked and all pending writes are flushed.
 
+    Args:
+        database_path: Path to the SQLite .db file
+        wait_seconds: How long to wait if database is busy (default 10 seconds)
+    """
+    wal_path = database_path + "-wal"
+    shm_path = database_path + "-shm"
+
+    print(f"[INFO] Checking database for locks: {database_path}")
+
+    # Step 1: Check if WAL and SHM files exist
+    wal_exists = os.path.exists(wal_path)
+    shm_exists = os.path.exists(shm_path)
+
+    if wal_exists or shm_exists:
+        print(f"[INFO] Found WAL/SHM files. WAL: {wal_exists}, SHM: {shm_exists}")
+    else:
+        print("[INFO] No WAL/SHM files found. Database seems clean.")
+
+    # Step 2: Try to connect and perform a WAL checkpoint
+    print("[INFO] Attempting to checkpoint database")
+    success = False
+    start_time = time.time()
+
+    while not success and (time.time() - start_time) < wait_seconds:
+        try:
+            with sqlite3.connect(database_path, timeout=5) as con:
+                # Force complete WAL checkpoint
+                con.execute("PRAGMA wal_checkpoint(FULL);")
+                con.commit()
+                success = True
+                print("[INFO] Checkpoint successful. Database flushed.")
+        except sqlite3.OperationalError as e:
+            if "database is locked" in str(e):
+                print("[WARN] Database is locked. Waiting a bit...")
+                time.sleep(1)
             else:
-                protein = ParseReports.Protein(proteinID, domain, int(start), int(end), score)
-                protein.genomeID = genomeID
-                protein.gene_contig = contig
-                protein.gene_start = int(start)
-                protein.gene_end = int(end)
-                protein.gene_strand = strand
-                protein.protein_sequence = sequence
-                protein_dict[proteinID] = protein
-    con.commit()
-    con.close()    
-    return protein_dict
+                print(f"Unexpected SQLite error: {e}")
+                raise
 
-def fetch_cluster_dict(database, genomeID):
-    """
-    Fetches cluster data from the database for a specific genomeID.
-    
-    Args:
-        database (str): Path to the SQLite database file.
-        genomeID (str): The genomeID to retrieve data for.
-    
-    Returns:
-        dict: A dictionary with clusterID as keys and Cluster objects as values.
-    """
-    cluster_dict = {}  # clusterID => cluster obj
-    
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        # Query to fetch cluster and protein data for the given genomeID
-        query = """
-        SELECT DISTINCT Proteins.clusterID, Proteins.proteinID, Domains.domain, Proteins.start, Proteins.end
-        FROM Proteins
-        JOIN Domains ON Proteins.proteinID = Domains.proteinID
-        WHERE Proteins.genomeID = ?;
-        """
-        cur.execute(query, (genomeID,))
-        
-        # Loop through the rows returned by the query
-        for count, row in enumerate(cur):
-            #print(f"\tSelected proteins {count}", end="\r")
-            clusterID, proteinID, domain, start, end = row
-            
-            # Get or create the Cluster object for the current clusterID
-            cluster = cluster_dict.get(clusterID)
-            if cluster is None:
-                cluster = Csb_finder.Cluster(clusterID)
-                cluster.genomeID = genomeID
-                cluster_dict[clusterID] = cluster
-            
-            # Add the gene (proteinID, domain, start, end) to the cluster
-            cluster.add_gene(proteinID, domain, int(start), int(end))
-    
-    return cluster_dict
+    if not success:
+        raise RuntimeError(f"Could not unlock the database after {wait_seconds} seconds.")
 
+    # Step 3: Check again if WAL and SHM still exist
+    wal_exists = os.path.exists(wal_path)
+    shm_exists = os.path.exists(shm_path)
 
-def delete_database_clusters_by_genomeID(database, genome_ids_to_delete):
-    """
-    Deletes clusters from the database based on the genomeID provided in the cluster_batch.
-
-    Args:
-        database (str): Path to the SQLite database file.
-        cluster_batch (dict): Dictionary where values are cluster objects with a genomeID attribute.
-    """
-    try:
-        # Collect all unique genomeIDs from the cluster_batch
-        
-        if not genome_ids_to_delete:
-            return
-        
-        with sqlite3.connect(database) as con:
-            cur = con.cursor()
-
-            # Start a single transaction for all deletions
-            con.execute("BEGIN TRANSACTION")
-
-            # Prepare the SQL statement to delete clusters by genomeID
-            placeholders = ', '.join('?' for _ in genome_ids_to_delete)
-            sql_delete = f"DELETE FROM Clusters WHERE genomeID IN ({placeholders})"
-
-            # Execute the delete statement with all genomeIDs
-            cur.execute(sql_delete, list(genome_ids_to_delete))
-
-            # Commit the transaction after all deletions are done
-            con.commit()
-
-    except sqlite3.Error as e:
-        print(f"An error occurred while deleting clusters: {e}")
-
-
+    if not wal_exists and not shm_exists:
+        logger.info("WAL/SHM files cleaned up successfully.")
+    else:
+        logger.warning("WAL/SHM files still exist. Database might have unclean shutdown earlier.")
+    logger.info("Database cleaning routine finished.")
 
 def fetch_genome_statistic(database):
     """
@@ -755,203 +544,3 @@ def fetch_genome_statistic(database):
         
     writer.close()    
     con.close()
-    
-    
-
-
-def delete_database_all_keywords(database):
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        cur.execute("PRAGMA foreign_keys = ON;")
-        cur.execute("DELETE FROM Keywords WHERE keyword LIKE 'csb*%';")
-        con.commit()
-
-    return
-
-
-def update_keywords(database, keyword_dict):
-    """
-    Update keywords in the database.
-
-    Args:
-        database: Name of the database to be worked on.
-        keyword_dict: Dictionary containing the clusterID as key and the new keyword as value.
-    """
-    if keyword_dict:
-        with sqlite3.connect(database) as con:
-            cur = con.cursor()
-            query = """INSERT OR IGNORE INTO Keywords (clusterID, keyword) VALUES (?, ?)"""
-            for new_keyword,clusterIDs in keyword_dict.items():
-                for clusterID in clusterIDs:
-                    cur.execute(query, (clusterID, new_keyword))
-
-    return
-
-
-
-
-def delete_keywords_from_csb(database, options):
-    """
-    Remove keywords from the database that match the pattern options.csb_name_prefix + a number + options.csb_name_suffix.
-
-    Args:
-        database: Name of the database to be worked on.
-        options: An object containing csb_name_prefix and csb_name_suffix attributes.
-    """
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        
-        # Construct the pattern
-        pattern = f"{options.csb_name_prefix}%{options.csb_name_suffix}"
-        
-        # SQL query to delete matching keywords
-        delete_query = "DELETE FROM Keywords WHERE keyword LIKE ?"
-        
-        try:
-            cur.execute(delete_query, (pattern,))
-            con.commit()
-        except sqlite3.Error as e:
-            print("SQLite error:", e)
-            raise
-
-    return
-
-
-
-
-
-
-
-
-
-
-def fetch_genomeIDs(database):
-    """
-    Fetches the distinct genomeIDs from the Genomes table in the SQLite database.
-    
-    Args:
-        database: Path to the SQLite database.
-    
-    Returns:
-        A set of distinct genomeIDs.
-    """
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        cur.execute("SELECT DISTINCT genomeID FROM Genomes")
-        
-        # Use set comprehension to create the set of genomeIDs
-        genomeIDs = {row[0] for row in cur.fetchall()}
-    
-    return genomeIDs
-
-def fetch_genomeIDs_from_proteins(database):
-    """
-    Fetches the distinct genomeIDs from the Genomes table in the SQLite database.
-    
-    Args:
-        database: Path to the SQLite database.
-    
-    Returns:
-        A set of distinct genomeIDs.
-    """
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        cur.execute("SELECT DISTINCT genomeID FROM Proteins")
-        
-        # Use set comprehension to create the set of genomeIDs
-        genomeIDs = {row[0] for row in cur.fetchall()}
-    
-    return genomeIDs
-
-def delete_database_genomeID(database,genomeID):
-    """
-    2.10.22
-        Args: genomeID to be deleted.
-        
-        Will delete a complete genome with all constrains on protein and cluster table
-    """
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        cur.execute("""PRAGMA foreign_keys = ON;""")
-        cur.execute(""" Delete FROM Genomes WHERE genomeID = ?; """,[genomeID])
-        con.commit()
-    
-    return
-    
-def delete_database_proteins_genomeID(database,genomeID):
-    """
-    2.10.22
-        Args: genomeID to be deleted.
-        
-        Will delete a complete genome with all constrains on protein and cluster table
-    """
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        cur.execute("""PRAGMA foreign_keys = ON;""")
-        cur.execute(""" Delete FROM Proteins WHERE genomeID = ?; """,[genomeID])
-        con.commit()
-    
-    return  
-      
-def delete_database_proteinID(database,proteinID):
-    """
-    2.10.22
-        Args: proteinID to be deleted.
-        
-        Will delete a protein with all constrains on protein and domain table
-    """
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        cur.execute("""PRAGMA foreign_keys = ON;""")
-        cur.execute(""" Delete FROM Proteins WHERE proteinID = ?; """,[proteinID])
-        con.commit()
-    
-    return
-            
-def fetch_database_all(database):
-    """
-    1.10.22
-        Args:
-            ONLY FOR DEBUGGING
-    """
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        cur.execute("""PRAGMA foreign_keys = ON;""")
-        cur.execute(""" SELECT Proteins.proteinID,domain,clusterID FROM Proteins LEFT JOIN Domains ON Proteins.proteinID = Domains.proteinID WHERE genomeID =  "GB_GCA_000016605" """)
-        con.commit()
-        print("----------Proteins--------------")
-        print(cur.fetchall())
-        # WHERE genomeID = GB_GCA_000016605
-        cur = con.cursor()
-        cur.execute(""" SELECT * FROM Clusters WHERE genomeID = "GB_GCA_000016605" """)
-        con.commit()
-        print("----------Clusters--------------")
-        print(cur.fetchall())
-
-
-        cur = con.cursor()
-        cur.execute(""" SELECT * FROM Keywords  LEFT JOIN Clusters ON Keywords.clusterID = Clusters.clusterID WHERE genomeID = "GB_GCA_000016605" """)
-        con.commit()
-        print("----------Keywords--------------")
-        print(cur.fetchall())
-        
-        cur = con.cursor()
-        cur.execute(""" SELECT * FROM Genomes LIMIT 10 """)
-        con.commit()
-        print("----------Genomes--------------")
-        #print(cur.fetchall())
-        cur.execute("""PRAGMA foreign_keys = ON;""")
-        cur.execute(""" SELECT DISTINCT Genomes.genomeID,Superkingdom,Clade,Phylum,Class,Ordnung,Family,Genus,Species from Proteins LEFT JOIN Domains ON Proteins.proteinID = Domains.proteinID LEFT JOIN Genomes ON Proteins.genomeID = Genomes.genomeID LEFT JOIN Keywords ON Proteins.clusterID = Keywords.clusterID LIMIT 100 """)
-        con.commit()
-        print("----------Proteins--------------")
-        #print(cur.fetchall())
-    return
-
-
-
-
-#fetch_genome_statistic("results/Database2")
-#fetch_bulk_data("results/Database2","Phylum","Proteobacteria","Hdr","hdr2")
-#fetch_database_all("/home/tomohisa/BioprojectGTDB/Archaea_gtdb/database.db" )
-
-

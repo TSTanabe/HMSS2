@@ -1,24 +1,37 @@
 #!/usr/bin/python
 
 import os
+from typing import List, Tuple, Set
+
 from . import Database
 from . import myUtil
 
      
+logger = myUtil.logger
 
-def queue_files(options):
+     
+
+def queue_files(options) -> None:
     """
+    Fills the options object with genome IDs, .faa and .gff file mappings.
+    
     Args:
-        directory   directory for the result files to be stored
-        finished    set with genome identifiers already processed
-        options     current options object
+        options: options object with at least .fasta_file_directory, will be filled with:
+            .queued_genomes (set[str])
+            .faa_files (dict[str, str])
+            .gff_files (dict[str, str])
+        
     Operation:
-        collect all zip protein fasta files and unzipped protein fasta files
-        collect all corresponding gff files and check for existence of this file
-        if both files present
-        get the genome identifiers
+        - Collect all zipped/unzipped protein fasta files and corresponding gff files.
+        - Queue only if both files present, by genome identifier.
+        
+    Output Example:
+        options.queued_genomes = {'GCF_000001405.39', ...}
+        options.faa_files = {'GCF_000001405.39': '/dir/xxx.faa', ...}
+        options.gff_files = {'GCF_000001405.39': '/dir/xxx.gff', ...}
     """
-    print("\nFilling the queue with faa files --", end="\r")
+    
+    logger.info("Filling the queue with faa files to be processed")
     genomeID_queue = set()
     faa_files = {}
     gff_files = {}
@@ -31,14 +44,15 @@ def queue_files(options):
         faa_files[genomeID] = faa_file
         gff_files[genomeID] = gff_file
         
-    # compare two sets
+    # compare two sets (find missing)
     find_missing_genomes(genomeID_queue, options.fasta_file_directory)
     
     options.queued_genomes = genomeID_queue
     options.faa_files = faa_files
     options.gff_files = gff_files
-    print("Filling the queue with faa files -- ok")
-    print(f"Queued {len(options.queued_genomes)} faa/gff pairs")
+    
+    logger.info(f"Queued {len(options.queued_genomes)} faa/gff pairs")
+    
     return
     
 
@@ -59,7 +73,7 @@ def compare_with_existing_database(options,genomeIDs):
     return
     
 
-def find_faa_gff_pairs(directory):
+def find_faa_gff_pairs(directory: str) -> List[Tuple[str, str]]:
     """
     Find pairs of files with the same name but different extensions (.faa/.faa.gz and .gff/.gff.gz)
     in the given directory and its subdirectories.
@@ -68,8 +82,12 @@ def find_faa_gff_pairs(directory):
         directory (str): The directory to search for file pairs.
 
     Returns:
-        list: A list of tuples, each containing the paths to a paired .faa and .gff file.
+        list of tuple: Each containing the paths to a paired .faa and .gff file.
+
+    Output Example:
+        [('/path/xxx.faa', '/path/xxx.gff'), ...]
     """
+    
     # Dictionary to store files with the same basename
     files_dict = {}
 
@@ -79,14 +97,14 @@ def find_faa_gff_pairs(directory):
             file_path = os.path.join(root, file)
             
             # Check for .faa or .faa.gz files
-            if file.endswith('.faa') or file.endswith('.faa.gz'):
+            if file.endswith('.faa'): #or file.endswith('.faa.gz'):
                 basename = file.replace('.faa', '').replace('.gz', '')
                 if basename not in files_dict:
                     files_dict[basename] = {}
                 files_dict[basename]['faa'] = file_path
             
             # Check for .gff or .gff.gz files
-            elif file.endswith('.gff') or file.endswith('.gff.gz'):
+            elif file.endswith('.gff'): # or file.endswith('.gff.gz'):
                 basename = file.replace('.gff', '').replace('.gz', '')
                 if basename not in files_dict:
                     files_dict[basename] = {}
@@ -101,9 +119,21 @@ def find_faa_gff_pairs(directory):
 
 
 
-def find_missing_genomes(genomeIDs, faa_file_directory):
-    """Find .faa and .faa.gz files in the directory whose genome IDs are not in the provided list."""
-    
+def find_missing_genomes(genomeIDs: Set[str], faa_file_directory: str) -> List[str]:
+    """
+    Find .faa files in the directory whose genome IDs are not in the provided list.
+
+    Args:
+        genomeIDs (set): Set of genome IDs
+        faa_file_directory (str): Directory to search
+
+    Returns:
+        List of missing .faa file names (not present in genomeIDs)
+
+    Output Example:
+        ['GCF_000001405.39.faa', ...]
+    """
+        
     def list_faa_files(directory):
         """List all .faa and .faa.gz files in the directory."""
         return [f for f in os.listdir(directory) if f.endswith('.faa') or f.endswith('.faa.gz')]

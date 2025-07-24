@@ -1,50 +1,67 @@
 #!/usr/bin/python
 import os
-import traceback
+import re
 import subprocess
+import traceback
+
 from . import Database
 from . import Csb_finder
 from . import myUtil
 from . import Output
-from multiprocessing import Pool, Manager
-#import multiprocessing
-#from multiprocessing import Process, Manager, Pool, Semaphore
-import re
 
+from multiprocessing import Pool, Manager
+from typing import Dict, Optional
+
+logger = myUtil.logger
 
 class Protein:
     """
     The class Protein organizes protein domains. When constructed the firt domain has to be added and assigned to a proteinID. The proteinID and the list of domains are accessible from outside. Also the coordinates, scores and HMM names are accessible as strings separated by "-". When a domain is added after the construction it is checked for overlapping sequence coordinates. If coordinates overlap in any way the novel domain has to have a higher score than all overlapped domains. If new domain has a lower score than any previously added domain new domain is not added.
     This follows the assumption that the HMM with highest domain is normally assigned to the protein. Here the additional information of other domains is added if it does not interfere with this assumption
     
+    Organizes protein domains and related attributes for a protein. 
+    New domains are only added if they do not overlap with higher-scoring existing domains.
+    All coordinates, scores, and HMM names are accessible as dash-separated strings.
+
     Args:
-        protein_ID - unique string as identifier
-        HMM - protein type designation
-        start - start coordinate of the protein type in the AA sequence
-        end - end coordinate of the protein type in the AA sequence
-        score - bitscore, propability of the dignated protein type
+        proteinID (str): Unique identifier.
+        HMM (str): Domain name.
+        start (int): Start coordinate.
+        end (int): End coordinate.
+        score (float): Domain bitscore.
+        genomeID (str): Genome identifier (optional).
+        ident (int): Percent identity (default: 25).
+        bsr (float): Blast score ratio (default: 1.0).
+
+    Example:
+        p = Protein("Prot1", "HMM_A", 10, 120, 40)
+        p.add_domain("HMM_B", 130, 200, 30)
     """
 
 
-    def __init__(self,proteinID,HMM,start=0,end=0,score=1,genomeID=""): 
-        #Protein attributes
-        self.proteinID = proteinID
-        self.genomeID = genomeID
-        self.protein_sequence = ""
-        
-        #Gene attributes
-        self.gene_contig = ""
-        self.gene_start = 0
-        self.gene_end = 0
-        self.gene_strand = "."
-        self.gene_locustag = ""
-        
-        #Cluster attributes
-        self.clusterID = "" #reziprok mit Cluster class
-        self.keywords = {} #reziprok mit Cluster class
-        
-        self.domains = {}   # dictionary start coordinate => Domain object
-        self.add_domain(HMM,start,end,score)
+    def __init__(
+        self,
+        proteinID: str,
+        HMM: str,
+        start: int = 0,
+        end: int = 0,
+        score: float = 1,
+        genomeID: str = "",
+        ident: int = 25,
+        bsr: float = 1.0
+    ):
+        self.proteinID: str = proteinID
+        self.genomeID: str = genomeID
+        self.protein_sequence: str = ""
+        self.gene_contig: str = ""
+        self.gene_start: int = 0
+        self.gene_end: int = 0
+        self.gene_strand: str = "."
+        self.gene_locustag: str = ""
+        self.clusterID: str = ""
+        self.keywords: Dict = {}
+        self.domains: Dict[int, Domain] = {}  # start coordinate → Domain object
+        self.add_domain(HMM, start, end, score, ident, bsr)
         
 
     ##### Getter ####
@@ -147,21 +164,22 @@ class Protein:
         return None
         
 
-    def add_domain(self,HMM,start,end,score):
+    def add_domain(
+        self,
+        HMM: str,
+        start: int,
+        end: int,
+        score: float,
+        ident: int = 25,
+        bsr: float = 1.0
+    ) -> int:
         """
-        2.9.22
-        Adds a domain to an existing protein. Only if there is no overlap with a 
-        currently existing domain or of the overlapping domain scores higher than
-        any existing overlapped domain. Overlapped domains with minor scores are deleted
-        
-        Args:
-            HMM - protein type designation
-            start - start coordinate of the protein type in the AA sequence
-            end - end coordinate of the protein type in the AA sequence
-            score - bitscore, propability of the dignated protein type
-        Return: 
-            0 - no domain was added
-            1 - domain was added
+        Adds a domain to the protein only if it does not overlap
+        with a higher-scoring existing domain. If overlap exists with lower-scoring
+        domain, that domain is removed.
+
+        Returns:
+            int: 1 if domain added, 0 if not added.
         """
 
         del_domains = [] # start coordinates/keys of domains to be replace
@@ -176,7 +194,7 @@ class Protein:
         
         for key in del_domains:
             self.domains.pop(key)
-        self.domains.update({start:Domain(HMM,start,end,score)}) # if loop complete
+        self.domains.update({start:Domain(HMM,start,end,score,ident,bsr)}) # if loop complete
         
         return 1
         
@@ -186,11 +204,24 @@ class Protein:
 
 class Domain:
 #2.9.22
-    def __init__(self,HMM,start,end,score):
-        self.HMM = HMM
-        self.start = int(start)
-        self.end = int(end)
-        self.score = int(score)
+    """
+    Stores domain information (HMM name, coordinates, score, identity, bsr).
+
+    Args:
+        HMM (str): Domain name.
+        start (int): Start coord.
+        end (int): End coord.
+        score (float): Bitscore.
+        ident (int): Percent identity.
+        bsr (float): Blast score ratio.
+    """
+    def __init__(self, HMM: str, start: int, end: int, score: float, ident: int = 1, bsr: float = 1.0):
+        self.HMM: str = HMM
+        self.start: int = int(start)
+        self.end: int = int(end)
+        self.score: float = float(score)
+        self.identity: int = int(ident)
+        self.bsr: float = float(bsr)
     
     def __hash__(self):
         return hash((self.HMM, self.start, self.end, self.score))
@@ -208,38 +239,38 @@ class Domain:
         return self.end
     def get_score(self):
         return self.score
+
+
+
 #########################################
 ########   Parsing subroutines ##########
 #########################################
 
 
-
-
-
-
-def parseGFFfile(Filepath, protein_dict):
+def parseGFFfile(
+    filepath: str, protein_dict: Dict[str, Protein]
+) -> Dict[str, Protein]:
     """
     3.9.22
-    
-    Adds the general genomic features to Protein Objects in a dictionary
-    
+    Adds GFF attributes to each Protein object in the dictionary.
+
     Args:
-        Filepath - GFF3 formatted file
-        protein_dict - Dictionary with key proteinID and value Protein Objects
-    Return:
-        protein_dict (even though possibly not necessary)
+        filepath (str): Path to GFF3 file.
+        protein_dict (dict): {proteinID: Protein object}
+
+    Returns:
+        dict: Updated protein_dict.
     """
-    locustag_pattern = re.compile(r'locus_tag=(\S*?)[\n;]')
+    locustag_pattern = re.compile(r'locus_tag=(\S*?)(?:[;\s]|$)')
     geneID_pattern = re.compile(r'ID=(cds-)?(\S+?)(?:[;\s]|$)')
     
     grep_pattern = "|".join(protein_dict.keys())
-    
     try:
-        grep_process = subprocess.Popen(['grep', '-E', grep_pattern, Filepath], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        grep_process = subprocess.Popen(['grep', '-E', grep_pattern, filepath], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = grep_process.communicate()
 
         if stderr:
-            print("Error in grep process:", stderr)
+            logger.error("Grep process:", stderr)
             return protein_dict
         
         for line in stdout.decode('utf-8').split('\n'):
@@ -261,76 +292,91 @@ def parseGFFfile(Filepath, protein_dict):
                 locustag = getLocustag(locustag_pattern, line)
                 protein.gene_locustag = str(locustag)
     except Exception as e:
-        error_message = f"\nError occurred: {str(e)}"
-        print(f"\tWARNING: Skipped {faa_file} due to an error - {error_message}")
+        logger.warning(f"Error occurred while parsing GFF: {str(e)}")
         return protein_dict
     return protein_dict
 
 
 
 
-def getProteinSequence(Filepath, protein_dict):
-    """
-    Fügt die Proteinsequenz zu den Proteinobjekten in einem Dictionary hinzu. Die Protein-IDs im Dictionary
-    müssen mit den Headern der .faa-Datei übereinstimmen.
 
-    Args:
-        Filepath: Pfad zur Datei im FASTA-Format mit Aminosäuresequenzen
-        protein_dict: Dictionary mit Protein-ID als Schlüssel und Protein-Objekten als Werte
-    Return:
-        protein_dict (obwohl möglicherweise nicht notwendig)
+def get_protein_sequence(filepath, protein_dict):
     """
-    
+    Add protein sequences from a FASTA file to Protein objects in a dictionary.
+
+    Iterates through a FASTA file of amino acid sequences and sets the `.protein_sequence`
+    attribute for each Protein object in `protein_dict`, keyed by their protein ID (header).
+    Only protein IDs present in `protein_dict` are processed.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the FASTA file containing amino acid sequences.
+    protein_dict : dict
+        Dictionary with protein IDs as keys and Protein objects as values.
+
+    Returns
+    -------
+    dict
+        The updated protein_dict with sequences added to the Protein objects.
+
+    Examples
+    --------
+    >>> protein_dict = {'WP_0001': Protein(...), 'WP_0002': Protein(...)}
+    >>> get_protein_sequence('proteins.faa', protein_dict)
+    {'WP_0001': <Protein with sequence>, 'WP_0002': <Protein with sequence>}
+    """
     reader = None
     try:
-        reader = open(Filepath, "r")
+        reader = open(filepath, "r")
         sequence = ""
         header = None
-        save_sequence = False  # Indikator, ob die Sequenz gespeichert werden muss
-        
+        save_sequence = False
+
         for line in reader:
             line = line.strip()
-            
             if line.startswith(">"):
-                # Speichere die bisherige Sequenz, falls notwendig
                 if header and save_sequence and sequence:
+                    # Save sequence for previous protein
                     protein = protein_dict[header]
                     protein.protein_sequence = sequence
-
-                # Extrahiere die Protein-ID aus dem Header (bis zum ersten Leerzeichen)
+                # Parse header up to first whitespace
                 header = line[1:].split()[0]
-                
-                # Prüfe, ob diese Protein-ID im Dictionary ist
                 if header in protein_dict:
-                    save_sequence = True  # Nur dann sammeln wir die Sequenz
-                    sequence = ""  # Setze die Sequenz zurück für das neue Protein
+                    save_sequence = True
+                    sequence = ""
                 else:
-                    save_sequence = False  # Ignoriere Sequenzen, die nicht im Dictionary sind
-
+                    save_sequence = False
             elif save_sequence:
-                # Füge die Sequenzzeile nur hinzu, wenn die ID im Dictionary ist
                 sequence += line
-        
-        # Verarbeite die letzte Sequenz, falls nötig
+
+        # Handle the last protein
         if header and save_sequence and sequence:
             protein = protein_dict[header]
             protein.protein_sequence = sequence
-    
-    except IOError:
-        print(f"Error: File {Filepath} could not be opened.")
-    
+
+    except IOError as e:
+        logger.error(f"Cannot open {filepath}: {e}")
     finally:
         if reader is not None:
-            reader.close()  # Datei explizit schließen
-    
+            reader.close()
+
     return protein_dict
 
-def getLocustag(locustag_pattern,string):
+
+def getLocustag(locustag_pattern: re.Pattern, string: str) -> str:
+    """
+    Extracts locus_tag from a string using a regex pattern.
+
+    Args:
+        locustag_pattern (re.Pattern): Regex pattern for locus_tag.
+        string (str): Line to search.
+
+    Returns:
+        str: locus_tag or empty string if not found.
+    """
     match = locustag_pattern.search(string)
-    if match:
-        return match.group(1)
-    else:
-        return ""
+    return match.group(1) if match else ""
 
 
 ###############################################################################################################
@@ -403,7 +449,7 @@ def process_missing_domains(genomeID, missing_domains_dict, candidate_hit_files_
                         insert_protein_dict[proteinID] = protein_info # Update dict for the main routine
             
     # Step 4: Add sequences to the insertion candidates
-    getProteinSequence(faa_file, insert_protein_dict)
+    get_protein_sequence(faa_file, insert_protein_dict)
     
     return insert_protein_dict
 
@@ -424,7 +470,6 @@ def submit_batches(protein_batch, cluster_batch, options):
         for clusterID, cluster in cluster_batch.items():
             domains = cluster.get_domains()
             file.write(clusterID + '\t' + '\t'.join(domains) + '\n')
-    print(f"Submitted batch written to db and gene cluster file")
 
 
 
@@ -485,141 +530,6 @@ def process_writer(queue, options):
 ################ Processing routines for parsing genome hits ############################
 #########################################################################################
 
-def split_into_batches(data_list, num_batches):
-    if num_batches <= 0:
-        raise ValueError("Number of batches must be > 0.")
-    if len(data_list) == 0:
-        return [[] for _ in range(num_batches)]
-    
-    batches = [[] for _ in range(num_batches)]
-    for idx, item in enumerate(data_list):
-        batches[idx % num_batches].append(item)
-    return batches
-    
-    
-def parse_bulk_HMMreport_genomize(genomeID,Filepath,protein_dict=None):
-    """
- 
-    """
-    if protein_dict is None:
-        protein_dict = {}
-
-    result = subprocess.run(['grep', genomeID, Filepath], stdout=subprocess.PIPE, text=True)
-    
-    lines = result.stdout.splitlines()  # Split output into lines
-
-    for line in lines:
-        columns = line.split('\t')  # Assuming columns are space-separated
-        if columns:
-            try:
-                key = columns[0]
-                genomeID, hit_proteinID = key.split('___',1)
-                query = columns[3].split('_')[-1]
-                hit_bitscore = int(float(columns[7]))
-                hsp_start = int(float(columns[17]))
-                hsp_end = int(float(columns[18]))
-                
-                if hit_proteinID in protein_dict:
-                    protein = protein_dict[hit_proteinID]
-                    protein.add_domain(query,hsp_start,hsp_end,hit_bitscore)
-                else:
-                    protein_dict[hit_proteinID] = Protein(hit_proteinID,query,hsp_start,hsp_end,hit_bitscore,genomeID)
-            except Exception as e:
-                error_message = f"\nError occurred: {str(e)}"
-                traceback_details = traceback.format_exc()
-                print(f"\tWARNING: Skipped {Filepath} due to an error - {error_message}")
-                print(f"\tTraceback details:\n{traceback_details}")
-                continue
-                
-    return protein_dict
-
-        
-def remove_unassigned_intermediate_proteins(combined_protein_dict, protein_dict, intermediate_protein_dict, cluster_dict):
-    """
-    Removes proteins that came from the intermediate hits and are not part of any named cluster.
-    
-    Parameters:
-        protein_dict (dict): All protein objects.
-        intermediate_protein_dict (dict): Proteins originally from the intermediate HMM search.
-        cluster_dict (dict): Dictionary of cluster objects after naming.
-    """
-    # IDs von Proteinen, die in benannten CSBs vorkommen
-    proteins_in_named_clusters = set()
-
-    for cluster in cluster_dict.values():
-        if cluster.get_keywords():  # Nur Cluster mit Keywords berücksichtigen
-            proteins_in_named_clusters.update(cluster.get_genes())
-
-    # Jetzt alle Intermediate-Proteine durchgehen
-    for protein_id in list(intermediate_protein_dict.keys()):
-        if protein_id not in protein_dict and protein_id not in proteins_in_named_clusters:
-            del combined_protein_dict[protein_id]
-
-    return combined_protein_dict    
-    
-def process_genome(
-    data_queue, genome_id, faa_path, gff_path, hmmreport_path, intermediate_hmmreport,
-    nucleotide_range, min_completeness, intermediate_hit_dict,
-    pattern_dict, pattern_names
-):
-    try:
-        faa_file = myUtil.unpackgz(faa_path)
-        gff_file = myUtil.unpackgz(gff_path)
-        
-        # Get the intermediate hits
-        intermediate_protein_dict = parse_bulk_HMMreport_genomize(genome_id, intermediate_hmmreport)
-        parseGFFfile(gff_file, intermediate_protein_dict)
-                
-        # Get the initial hit information
-        protein_dict = parse_bulk_HMMreport_genomize(genome_id, hmmreport_path)
-        parseGFFfile(gff_file, protein_dict)
-        
-        # Recognition of named gene clusters
-        combined_protein_dict = {**intermediate_protein_dict,**protein_dict}
-        cluster_dict = Csb_finder.find_syntenicblocks(genome_id, combined_protein_dict, nucleotide_range)
-        Csb_finder.name_syntenicblocks(pattern_dict, pattern_names, cluster_dict, min_completeness)
-
-        # Remove intermediate hits that are not part of a named gene cluster
-        remove_unassigned_intermediate_proteins(combined_protein_dict, protein_dict, intermediate_protein_dict, cluster_dict)
-
-        # Add the protein sequences
-        getProteinSequence(faa_file, combined_protein_dict)
-
-        # Synteny completion mechanism for named gene clusters
-        missing = Csb_finder.extract_missing_domain_targets(cluster_dict)
-        new_proteins = process_missing_domains(genome_id, missing,intermediate_hit_dict, gff_file, faa_file, nucleotide_range)
-        for pid, prot in new_proteins.items():
-            if pid not in protein_dict:
-                protein_dict[pid] = prot
-                cluster_dict[prot.clusterID].add_gene(pid, prot.get_domains(), prot.gene_start, prot.gene_end)
-
-        data_queue.put((combined_protein_dict, cluster_dict))
-
-    except Exception as e:
-
-        print(f"Error: {genome_id} -> {e}")
-        print(traceback.format_exc())
-
-
-
-def process_batch(
-    data_queue, genome_ids, faa_files, gff_files, hmmreport_path, intermediate_hmmreport,
-    nucleotide_range, min_completeness, intermediate_hit_dict,
-    pattern_dict, pattern_names
-):
-    for genome_id in genome_ids:
-        try:
-            process_genome(
-                data_queue, genome_id,
-                faa_files[genome_id], gff_files[genome_id], hmmreport_path, intermediate_hmmreport,
-                nucleotide_range, min_completeness, intermediate_hit_dict,
-                pattern_dict, pattern_names
-            )
-        except Exception as e:
-            print(f"Warning: Failed to process genome '{genome_id}' — {str(e)}")
-            continue
-
-
 def main_parse_summary_hmmreport(options):
 
 
@@ -667,7 +577,148 @@ def main_parse_summary_hmmreport(options):
                 data_queue.put(None)
 
             p_writer.get()
-    print("Finished parsing of search results")
+    logger.info("Finished parsing of search results and writing to local database")
+
+
+def split_into_batches(data_list, num_batches):
+    if num_batches <= 0:
+        raise ValueError("Number of batches must be > 0.")
+    if len(data_list) == 0:
+        return [[] for _ in range(num_batches)]
+    
+    batches = [[] for _ in range(num_batches)]
+    for idx, item in enumerate(data_list):
+        batches[idx % num_batches].append(item)
+    return batches
+
+
+def process_batch(
+    data_queue, genome_ids, faa_files, gff_files, hmmreport_path, intermediate_hmmreport,
+    nucleotide_range, min_completeness, intermediate_hit_dict,
+    pattern_dict, pattern_names
+):
+    for genome_id in genome_ids:
+        try:
+            process_genome(
+                data_queue, genome_id,
+                faa_files[genome_id], gff_files[genome_id], hmmreport_path, intermediate_hmmreport,
+                nucleotide_range, min_completeness, intermediate_hit_dict,
+                pattern_dict, pattern_names
+            )
+        except Exception as e:
+            print(f"Warning: Failed to process genome '{genome_id}' — {str(e)}")
+            continue
+    
+    
+        
+   
+    
+def process_genome(
+    data_queue, genome_id, faa_path, gff_path, hmmreport_path, intermediate_hmmreport,
+    nucleotide_range, min_completeness, intermediate_hit_dict,
+    pattern_dict, pattern_names
+):
+    try:
+        faa_file = myUtil.unpackgz(faa_path)
+        gff_file = myUtil.unpackgz(gff_path)
+        
+        # Get the intermediate hits
+        intermediate_protein_dict = parse_bulk_HMMreport_genomize(genome_id, intermediate_hmmreport)
+        parseGFFfile(gff_file, intermediate_protein_dict)
+                
+        # Get the initial hit information
+        protein_dict = parse_bulk_HMMreport_genomize(genome_id, hmmreport_path)
+        parseGFFfile(gff_file, protein_dict)
+        
+        # Recognition of named gene clusters
+        combined_protein_dict = {**intermediate_protein_dict,**protein_dict}
+        cluster_dict = Csb_finder.find_syntenicblocks(genome_id, combined_protein_dict, nucleotide_range)
+        
+        # Name syntenic blocks with known patterns
+        Csb_finder.name_syntenicblocks(pattern_dict, pattern_names, cluster_dict, min_completeness)
+
+        # Remove intermediate hits that are not part of a named gene cluster
+        remove_unassigned_intermediate_proteins(combined_protein_dict, protein_dict, intermediate_protein_dict, cluster_dict)
+
+        # Add the protein sequences
+        get_protein_sequence(faa_file, combined_protein_dict)
+
+        # Synteny completion mechanism for named gene clusters
+        #missing = Csb_finder.extract_missing_domain_targets(cluster_dict)
+        #new_proteins = process_missing_domains(genome_id, missing,intermediate_hit_dict, gff_file, faa_file, nucleotide_range)
+        #for pid, prot in new_proteins.items():
+        #    if pid not in protein_dict:
+        #        protein_dict[pid] = prot
+        #        cluster_dict[prot.clusterID].add_gene(pid, prot.get_domains(), prot.gene_start, prot.gene_end)
+
+        data_queue.put((combined_protein_dict, cluster_dict))
+
+    except Exception as e:
+
+        print(f"Error: {genome_id} -> {e}")
+        print(traceback.format_exc())
+
+
+def remove_unassigned_intermediate_proteins(combined_protein_dict, protein_dict, intermediate_protein_dict, cluster_dict):
+    """
+    Removes proteins that came from the intermediate hits and are not part of any named cluster.
+    
+    Parameters:
+        protein_dict (dict): All protein objects.
+        intermediate_protein_dict (dict): Proteins originally from the intermediate HMM search.
+        cluster_dict (dict): Dictionary of cluster objects after naming.
+    """
+    # IDs von Proteinen, die in benannten CSBs vorkommen
+    proteins_in_named_clusters = set()
+
+    for cluster in cluster_dict.values():
+        if cluster.get_keywords():  # Nur Cluster mit Keywords berücksichtigen
+            proteins_in_named_clusters.update(cluster.get_genes())
+
+    # Jetzt alle Intermediate-Proteine durchgehen
+    for protein_id in list(intermediate_protein_dict.keys()):
+        if protein_id not in protein_dict and protein_id not in proteins_in_named_clusters:
+            del combined_protein_dict[protein_id]
+
+    return combined_protein_dict 
+    
+    
+def parse_bulk_HMMreport_genomize(genomeID,Filepath,protein_dict=None):
+    """
+ 
+    """
+    if protein_dict is None:
+        protein_dict = {}
+
+    result = subprocess.run(['grep', genomeID, Filepath], stdout=subprocess.PIPE, text=True)
+    
+    lines = result.stdout.splitlines()  # Split output into lines
+
+    for line in lines:
+        columns = line.split('\t')  # Assuming columns are space-separated
+        if columns:
+            try:
+                key = columns[0]
+                genomeID, hit_proteinID = key.split('___',1)
+                query = columns[3].split('_')[-1]
+                hit_bitscore = int(float(columns[7]))
+                hsp_start = int(float(columns[17]))
+                hsp_end = int(float(columns[18]))
+                
+                if hit_proteinID in protein_dict:
+                    protein = protein_dict[hit_proteinID]
+                    protein.add_domain(query,hsp_start,hsp_end,hit_bitscore)
+                else:
+                    protein_dict[hit_proteinID] = Protein(hit_proteinID,query,hsp_start,hsp_end,hit_bitscore,genomeID)
+            except Exception as e:
+                error_message = f"\nError occurred: {str(e)}"
+                traceback_details = traceback.format_exc()
+                print(f"\tWARNING: Skipped {Filepath} due to an error - {error_message}")
+                print(f"\tTraceback details:\n{traceback_details}")
+                continue
+                
+    return protein_dict
+
 
 
 
