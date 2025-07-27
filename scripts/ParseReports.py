@@ -10,7 +10,7 @@ from . import myUtil
 from . import Output
 
 from multiprocessing import Pool, Manager
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 logger = myUtil.logger
 
@@ -537,7 +537,7 @@ def main_parse_summary_hmmreport(options):
     genomeID_batches = split_into_batches(genome_ids, options.cores - 1)
 
     # Lade Patterns nur 1x im Hauptprozess
-    csb_patterns, csb_names = Csb_finder.makePatternDict(options.patterns_file)
+    csb_patterns, csb_names = Csb_finder.make_pattern_dict(options.patterns_file)
     
     # Insert genomeIDs in DB
     Database.insert_database_genomeIDs(options.database_directory, set(genome_ids))
@@ -624,10 +624,10 @@ def process_genome(
         
         # Recognition of named gene clusters
         combined_protein_dict = {**intermediate_protein_dict,**protein_dict}
-        cluster_dict = Csb_finder.find_syntenicblocks(genome_id, combined_protein_dict, nucleotide_range)
+        cluster_dict = Csb_finder.find_syntenic_blocks(genome_id, combined_protein_dict, nucleotide_range)
         
         # Name syntenic blocks with known patterns
-        cluster_dict = Csb_finder.name_syntenicblocks(pattern_dict, pattern_names, cluster_dict, min_completeness)
+        cluster_dict = Csb_finder.name_syntenic_blocks(pattern_dict, pattern_names, cluster_dict, min_completeness)
 
         # Remove intermediate hits that are not part of a named gene cluster pattern
         combined_protein_dict = remove_unassigned_intermediate_proteins(combined_protein_dict, protein_dict, cluster_dict)
