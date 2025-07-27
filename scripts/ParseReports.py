@@ -539,10 +539,6 @@ def main_parse_summary_hmmreport(options):
     # Lade Patterns nur 1x im Hauptprozess
     csb_patterns, csb_names = Csb_finder.makePatternDict(options.patterns_file)
     
-    # Load intermediate hit file
-    intermediate_hit_dict = {os.path.splitext(f)[0]: os.path.join(options.Cross_check_directory, f) for f in os.listdir(options.Cross_check_directory) if f.endswith('.trusted_hits')}
-
-    
     # Insert genomeIDs in DB
     Database.insert_database_genomeIDs(options.database_directory, set(genome_ids))
 
@@ -562,7 +558,6 @@ def main_parse_summary_hmmreport(options):
                     options.intermediate_hmmreport,
                     options.nucleotide_range,
                     options.min_completeness,
-                    intermediate_hit_dict,
                     csb_patterns,
                     csb_names
                 )
@@ -594,16 +589,14 @@ def split_into_batches(data_list, num_batches):
 
 def process_batch(
     data_queue, genome_ids, faa_files, gff_files, hmmreport_path, intermediate_hmmreport,
-    nucleotide_range, min_completeness, intermediate_hit_dict,
-    pattern_dict, pattern_names
+    nucleotide_range, min_completeness, pattern_dict, pattern_names
 ):
     for genome_id in genome_ids:
         try:
             process_genome(
                 data_queue, genome_id,
                 faa_files[genome_id], gff_files[genome_id], hmmreport_path, intermediate_hmmreport,
-                nucleotide_range, min_completeness, intermediate_hit_dict,
-                pattern_dict, pattern_names
+                nucleotide_range, min_completeness, pattern_dict, pattern_names
             )
         except Exception as e:
             print(f"Warning: Failed to process genome '{genome_id}' — {str(e)}")
@@ -615,8 +608,7 @@ def process_batch(
     
 def process_genome(
     data_queue, genome_id, faa_path, gff_path, hmmreport_path, intermediate_hmmreport,
-    nucleotide_range, min_completeness, intermediate_hit_dict,
-    pattern_dict, pattern_names
+    nucleotide_range, min_completeness, pattern_dict, pattern_names
 ):
     try:
         faa_file = myUtil.unpackgz(faa_path)
@@ -635,52 +627,58 @@ def process_genome(
         cluster_dict = Csb_finder.find_syntenicblocks(genome_id, combined_protein_dict, nucleotide_range)
         
         # Name syntenic blocks with known patterns
-        Csb_finder.name_syntenicblocks(pattern_dict, pattern_names, cluster_dict, min_completeness)
+        cluster_dict = Csb_finder.name_syntenicblocks(pattern_dict, pattern_names, cluster_dict, min_completeness)
 
-        # Remove intermediate hits that are not part of a named gene cluster
-        remove_unassigned_intermediate_proteins(combined_protein_dict, protein_dict, intermediate_protein_dict, cluster_dict)
+        # Remove intermediate hits that are not part of a named gene cluster pattern
+        combined_protein_dict = remove_unassigned_intermediate_proteins(combined_protein_dict, protein_dict, cluster_dict)
 
         # Add the protein sequences
         get_protein_sequence(faa_file, combined_protein_dict)
-
-        # Synteny completion mechanism for named gene clusters
-        #missing = Csb_finder.extract_missing_domain_targets(cluster_dict)
-        #new_proteins = process_missing_domains(genome_id, missing,intermediate_hit_dict, gff_file, faa_file, nucleotide_range)
-        #for pid, prot in new_proteins.items():
-        #    if pid not in protein_dict:
-        #        protein_dict[pid] = prot
-        #        cluster_dict[prot.clusterID].add_gene(pid, prot.get_domains(), prot.gene_start, prot.gene_end)
 
         data_queue.put((combined_protein_dict, cluster_dict))
 
     except Exception as e:
 
-        print(f"Error: {genome_id} -> {e}")
-        print(traceback.format_exc())
+        logger.error(f"Error: {genome_id} -> {e}")
+        logger.error(traceback.format_exc())
 
 
-def remove_unassigned_intermediate_proteins(combined_protein_dict, protein_dict, intermediate_protein_dict, cluster_dict):
+def remove_unassigned_intermediate_proteins(
+    combined_protein_dict: Dict[str, Any],
+    protein_dict: Dict[str, Any],
+    cluster_dict: Dict[str, Any]
+) -> Dict[str, Any]:
     """
-    Removes proteins that came from the intermediate hits and are not part of any named cluster.
-    
-    Parameters:
-        protein_dict (dict): All protein objects.
-        intermediate_protein_dict (dict): Proteins originally from the intermediate HMM search.
-        cluster_dict (dict): Dictionary of cluster objects after naming.
-    """
-    # IDs von Proteinen, die in benannten CSBs vorkommen
-    proteins_in_named_clusters = set()
+    Remove proteins from combined_protein_dict that are not present in protein_dict
+    or in the set of covered_protein_ids from any cluster.
 
+    Parameters
+    combined_protein_dict : dict
+        All protein objects (combined sources; may contain intermediate-only proteins).
+    protein_dict : dict
+        All primary protein objects from main search.
+    cluster_dict : dict
+        Dictionary of cluster objects after naming. Each cluster should have a
+        .covered_protein_ids attribute containing recognized protein IDs.
+
+    Returns
+    dict
+        Filtered combined_protein_dict with only protein IDs that are present in the
+        primary protein set or are covered by a recognized pattern in any cluster.
+    """
+
+    proteinIDs = set(protein_dict.keys())
     for cluster in cluster_dict.values():
-        if cluster.get_keywords():  # Nur Cluster mit Keywords berücksichtigen
-            proteins_in_named_clusters.update(cluster.get_genes())
+        # covered proteinID includes the proteinIDs that are part of a recognized pattern
+        proteinIDs.update(getattr(cluster, 'covered_protein_ids', set()))
 
-    # Jetzt alle Intermediate-Proteine durchgehen
-    for protein_id in list(intermediate_protein_dict.keys()):
-        if protein_id not in protein_dict and protein_id not in proteins_in_named_clusters:
+    # Remove any protein in combined_protein_dict that is not in proteinIDs
+    for protein_id in list(combined_protein_dict.keys()):
+        if protein_id not in proteinIDs:
             del combined_protein_dict[protein_id]
 
-    return combined_protein_dict 
+    return combined_protein_dict
+
     
     
 def parse_bulk_HMMreport_genomize(genomeID,Filepath,protein_dict=None):
