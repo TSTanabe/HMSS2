@@ -369,6 +369,13 @@ def process_single_hmm(
 
             try:
                 score = float(parts[7])  # Bit-Score
+                if int(parts[10]) > 1:
+                # Domain Bit score is in column 13
+                    score = float(parts[13])
+                else:
+                # Full Bit score is in column 7 (0-based index)
+                    score = float(parts[7])
+
             except ValueError:
                 continue
 
