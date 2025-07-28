@@ -740,7 +740,6 @@ def main(args=None):
     Queue.concatenate_files_shell(__location__ + "/src", 'grp', '.hmm', options.library)
     Queue.concatenate_files_shell(__location__ + "/src", 'cutoffs', '.txt', options.score_threshold_file)
     Queue.concatenate_files_shell(__location__ + "/src", 'patterns', '.txt', options.patterns_file)
-    sys.exit()
         
         
     if options.stage <= 1:
