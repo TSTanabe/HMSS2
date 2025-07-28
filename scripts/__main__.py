@@ -96,12 +96,12 @@ def parse_arguments(arguments: list):
         )
         inputdef.add_argument(
             '-t', dest='score_threshold_file', type=myUtil.file_path,
-            default=__location__ + "/src/Thresholds", metavar='<filepath>',
+            default=None, metavar='<filepath>',
             help='Filepath to tab separated threshold file with optimized, trusted and noise cutoff' if show_advanced else argparse.SUPPRESS
         )
         inputdef.add_argument(
             '-l', dest='library', type=myUtil.file_path,
-            default=__location__ + "/src/HMMlib", metavar='<filepath>',
+            default=None, metavar='<filepath>',
             help='Filepath to a custom HMM library for the hmmsearch' if show_advanced else argparse.SUPPRESS
         )
         inputdef.add_argument(
@@ -183,7 +183,7 @@ def parse_arguments(arguments: list):
         synteny = parser.add_argument_group("Synteny options")
         synteny.add_argument(
             '-p', dest='patterns_file', type=myUtil.file_path,
-            default=__location__ + "/src/Patterns", metavar='<filepath>',
+            default=None, metavar='<filepath>',
             help='Filepath to patterns file' if show_advanced else argparse.SUPPRESS
         )
         synteny.add_argument(
@@ -373,10 +373,21 @@ def parse_arguments(arguments: list):
     
     options = HMSSS()
     parser.parse_args(namespace=options)
-      
-    #### Parse the arguments
-    options.reference_seq_dir = __location__+"/src/RefSeqs"    
+    
+    # Set the locations of src directory and major src files
     options.location = __location__
+    
+    options.reference_seq_dir = __location__+"/src/RefSeqs"    
+
+    if options.score_threshold_file is None:
+        options.score_threshold_file = __location__ + "/src/Thresholds"
+    
+    if options.library is None:
+        options.library = __location__ + "/src/HMMlib"
+    
+    if options.patterns_file is None:
+        options.patterns_file = __location__ + "/src/Patterns"
+    
     
     # Check if results dir is default location
     if options.result_files_directory == __location__+'/results':
@@ -725,8 +736,12 @@ def main(args=None):
     log_file = os.path.join(options.result_files_directory, "execution_logfile.txt")    
     myUtil.setup_logging(getattr(options, 'verbose', 0), log_file)  
     
-    Queue.prepare_HMMlib(options, __location__, allowed_prefixes=options.HMM_sets)
-    
+    Queue.prepare_HMMlib_shell(options, __location__, allowed_prefixes=options.HMM_sets)
+    Queue.concatenate_files_shell(__location__ + "/src", 'grp', '.hmm', options.library)
+    Queue.concatenate_files_shell(__location__ + "/src", 'cutoffs', '.txt', options.score_threshold_file)
+    Queue.concatenate_files_shell(__location__ + "/src", 'patterns', '.txt', options.patterns_file)
+    sys.exit()
+        
         
     if options.stage <= 1:
         #ignored if bulk is used because nobody should want to translate a glob via prodigal

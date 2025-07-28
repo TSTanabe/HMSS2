@@ -1,11 +1,10 @@
 #!/usr/bin/python
 
 import os
-from typing import List, Tuple, Set
+from typing import List, Tuple, Set, Optional, Any
 
 from . import Database
 from . import myUtil
-
      
 logger = myUtil.logger
 
@@ -153,76 +152,86 @@ def find_missing_genomes(genomeIDs: Set[str], faa_file_directory: str) -> List[s
     return missing_files
 
 
-def prepare_HMMlib(options, execute_location, allowed_prefixes=None):
+def prepare_HMMlib_shell(
+    options: Any,
+    execute_location: str,
+    allowed_prefixes: Optional[Set[str]] = None
+) -> None:
     """
-    Prepares the HMM library by concatenating .hmm files from subdirectories
-    with specified prefixes inside src/HMMs.
+    Uses 'cat' to concatenate all .hmm files from subdirectories with allowed prefixes
+    inside src/HMMs into a single HMMlib file.
 
-    Args:
-        options: Argument container with script options.
-        execute_location (str): Path to the base execution directory.
-        allowed_prefixes (set or list, optional): Folder name prefixes to include 
-                                                  (e.g., {"grp0", "grp1"}). 
-                                                  If empty or None, all prefixes are used.
+    Parameters
+    ----------
+    options : Any
+        Argument container with script options (unused here, but kept for compatibility).
+    execute_location : str
+        Path to the base execution directory.
+    allowed_prefixes : set or list of str, optional
+        Folder name prefixes to include (e.g., {"grp0", "grp1"}).
+        If None or empty, all subdirectories are included.
     """
     output_file_path = os.path.join(execute_location, "src", "HMMlib")
     hmm_base_dir = os.path.join(execute_location, "src", "HMMs")
     os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
 
-    if not os.path.isfile(output_file_path):
-        print("Preparing HMMlib from source")
+    hmm_files = []
 
-        hmm_files = []
+    for entry in os.listdir(hmm_base_dir):
+        entry_path = os.path.join(hmm_base_dir, entry)
+        if os.path.isdir(entry_path):
+            if allowed_prefixes:
+                if not any(entry.startswith(prefix) for prefix in allowed_prefixes):
+                    continue
+            # Recursively collect .hmm files
+            for root, _, files in os.walk(entry_path):
+                for file in files:
+                    if file.endswith(".hmm"):
+                        hmm_files.append(os.path.join(root, file))
 
-        for entry in os.listdir(hmm_root_dir):
-            entry_path = os.path.join(hmm_root_dir, entry)
-            if os.path.isdir(entry_path) and entry.startswith(allowed_prefix):
-                suffix = entry.replace(allowed_prefix, "", 1)
-                if suffix in allowed_suffixes:
-                    # Rekursiv nach .hmm Dateien in diesem Unterordner suchen
-                    for root, _, files in os.walk(entry_path):
-                        for file in files:
-                            if file.endswith(".hmm"):
-                                hmm_files.append(os.path.join(root, file))
+    if hmm_files:
+        cat_command = f"cat {' '.join(map(str, hmm_files))} > {output_file_path}"
+        logger.debug(f"Running: {cat_command}")
+        os.system(cat_command)
+        logger.debug(f"All HMM files concatenated into {output_file_path}")
+    else:
+        logger.error(f"No matching HMM files found in directory {hmm_base_dir}.")
 
-        if hmm_files:
-            print(f"Found {len(hmm_files)} HMM files to concatenate")
-            cat_command = f"cat {' '.join(hmm_files)} > {output_file_path}"
-            os.system(cat_command)
-        else:
-            print("No matching HMM files found.")
 
     
-def concatenate_threshold_files(execute_location, allowed_prefix, allowed_suffixes, output_filename="thresholds_all.txt"):
+def concatenate_files_shell(
+    search_directory: str,
+    allowed_prefix: str,
+    allowed_suffix: str,
+    output_file_path: str
+) -> None:
     """
-    Findet alle thresholds.txt-Dateien in den latest_* Unterverzeichnissen unter src/HMMs/,
-    deren Suffix in allowed_suffixes liegt, und schreibt sie gesammelt in eine Datei.
+    Rekursiv alle Files suchen, die mit allowed_prefix beginnen und allowed_suffix enden.
+    Diese zusammenführen und als output_file_path speichern.
     """
-    hmm_root_dir = os.path.join(execute_location, "src", "HMMs")
-    output_file_path = os.path.join(execute_location, "src", output_filename)
+    matched_files = []
+    for root, _, files in os.walk(search_directory):
+        for fname in files:
+            if fname.startswith(allowed_prefix) and fname.endswith(allowed_suffix):
+                matched_files.append(os.path.join(root, fname))
 
-    threshold_files = []
-
-    for entry in os.listdir(hmm_root_dir):
-        entry_path = os.path.join(hmm_root_dir, entry)
-        if os.path.isdir(entry_path) and entry.startswith(allowed_prefix):
-            suffix = entry.replace(allowed_prefix, "", 1)
-            if suffix in allowed_suffixes:
-                candidate = os.path.join(entry_path, "_thresholds.txt")
-                if os.path.isfile(candidate):
-                    threshold_files.append(candidate)
-
-    if threshold_files:
-        print(f"Concatenating {len(threshold_files)} thresholds.txt files into {output_file_path}")
-        with open(output_file_path, "w") as outfile:
-            for file in threshold_files:
-                with open(file, "r") as infile:
-                    outfile.write(f"# --- From {file} ---\n")
-                    outfile.write(infile.read())
-                    outfile.write("\n")
+    if matched_files:
+        os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
+        cat_command = 'cat ' + ' '.join(f'"{f}"' for f in matched_files) + f' > "{output_file_path}"'
+        logger.debug(f"Running: {cat_command}")
+        os.system(cat_command)
+        logger.debug(f"Concatenated {len(matched_files)} files into {output_file_path}")
     else:
-        print("No matching thresholds.txt files found.")
+        logger.error(f"No matching files found for concatenation in {search_directory}.")
 
+
+def format_pattern_files(input_file, output_file):
+
+    with open(input_file, "r") as fin, open(output_file, "w") as fout:
+        for i, line in enumerate(fin, 1):
+            new_line = f"einwort{i} {line.rstrip()}"   # erst Zeilennummer davor
+            new_line = new_line.replace(" ", "\t")     # dann alle Leerzeichen zu Tabs
+            fout.write(new_line + "\n")
 
 
 
