@@ -155,10 +155,14 @@ def parse_arguments(arguments: list):
         )
         parameters.add_argument(
             '-s', dest='stage', type=int, default=0,
-            choices=[0, 1, 2, 3],
-            help='Start at stage' if show_advanced else argparse.SUPPRESS
+            choices=[0, 1, 2, 3, 4, 5],
+            help='Start at step' if show_advanced else argparse.SUPPRESS
         )
-
+        parameters.add_argument(
+            '-x', dest='exit', type=int, default=10,
+            choices=[0, 1, 2, 3, 4, 5],
+            help='Exit at step' if show_advanced else argparse.SUPPRESS
+        )
         # Search library resources
         resources = parser.add_argument_group("Search library resources")
 
@@ -175,8 +179,16 @@ def parse_arguments(arguments: list):
             help='Do not write individual files per genome' if show_advanced else argparse.SUPPRESS
         )
         resources.add_argument(
+            '-max_seq_per_genome', dest='max_seqs_per_genome', type=int, default=4,
+            help='Max. number of sequences per protein per genome for cross check via Diamond' if show_advanced else argparse.SUPPRESS
+        )
+        resources.add_argument(
             '-no_cross_check', dest='bool_cross_check', action='store_false',
             help='No cross check with reference sequences via Diamond' if show_advanced else argparse.SUPPRESS
+        )
+        resources.add_argument(
+            '-optimized_cutoff_cross_check', dest='optimized_cutoff_cross_check', action='store_false',
+            help='Use optimized cutoff instead of cross check with Diamond' if show_advanced else argparse.SUPPRESS
         )
 
         # Synteny options
@@ -393,7 +405,10 @@ def parse_arguments(arguments: list):
     if options.result_files_directory == __location__+'/results':
         # default location is never an existing project
         options.new_project = True
-    
+    else:
+        options.new_project = False
+
+
     # Get default values dynamically from the parser
     default_values = {action.dest: action.default for action in parser._actions if action.dest != 'help'}
     # Filter out default values only for the limiters fetch operators and process operators
@@ -442,7 +457,26 @@ def parse_arguments(arguments: list):
 #############
 ####   Subroutines for preparation of the result folder
 #############
-
+def ressource_preparation(options: HMSSS) -> None:
+    """
+        Prepares the cutoffs, patterns, and HMMs
+        For HMMs and cutoffs these are concatenated
+        For patterns, whitespaces are replaced with tabs and 
+        numerical pattern names are given
+    """
+    
+    if not os.path.isfile(options.library):
+        Queue.concatenate_files_shell(__location__ + "/src", 'grp', '.hmm', options.library)
+    
+    if not os.path.isfile(options.score_threshold_file):
+        Queue.concatenate_files_shell(__location__ + "/src", 'cutoffs', '.txt', options.score_threshold_file)
+    
+    if not os.path.isfile(options.patterns_file):
+        Queue.concatenate_files_shell(__location__ + "/src", 'patterns', '.txt', options.patterns_file)
+        Queue.format_pattern_files_inplace(options.patterns_file,"dsb-",options.csb_name_suffix) # dsb- is the defined collinear syntenic block
+    
+    return
+    
 def fasta_preparation(options: HMSSS) -> None:
     """
     Prepares/queues genome fasta files for analysis, supports concatenation and deconcatenation.
@@ -462,22 +496,7 @@ def fasta_preparation(options: HMSSS) -> None:
     # Unpacks and translates fasta
     Translation.parallel_translation(options.fasta_file_directory, options.cores)
     Translation.parallel_transcription(options.fasta_file_directory, options.cores)
-    Queue.queue_files(options)
 
-
-    ## There is no use for concatenating the files here because a concat globDB search agains a HMM library is 
-    ## not efficient and not chunked, therefore needs high resources
-    
-    #if not options.glob_search:
-    #    logger.info("Queue individual protein fasta files")
-    #    return
-    #elif options.glob_report:
-    #    logger.info("Found predefined concatenated hmmsearch report")
-    #    return
-    #else:
-    #    logger.info("Concatenate individual protein fasta files to speed up hmmsearch")
-    #    Translation.create_glob_file(options)
-    
     return
     
   
@@ -514,26 +533,21 @@ def initial_search(options: object) -> None:
     # Create a glob report or use the provided glob report
     if options.glob_report and os.path.isfile(options.glob_report):
         logger.info("Glob report %s was provided, hmmsearch will be omitted", options.glob_report)
-        #TODO if a directory with hmm reports is provided concatenate these and
-        # check for correct sequence identifier format, similar to HAMSTER glob reports
     else:
         logger.info("Running unified hmmsearch")
         genome_to_hmmreport_dict = Search.unified_search(options, int(options.cores / 2))
         logger.info("Concatenating hmmsearch results")
-        Search.concatenate_hmmreports_cat(genome_to_hmmreport_dict, options.glob_report)
-
+        options.glob_report = Search.concatenate_hmmreports_cat(genome_to_hmmreport_dict, options.glob_report)
     
     # Now the glob_report exists with names for proteins with genomeID___proteinID
-    logger.info("Filtering hits into trusted, noise, and intermediate")
-    Search.filter_trusted_and_noise_hits(options, options.glob_report, options.cores) # Sort by TC, above NC and below NC
+    logger.info("Filtering hits into trusted, noise, and intermediate hit category")
+    Search.filter_trusted_and_noise_hits(options, options.glob_report, options.cores) # Sort by TC, above NC and below NC into Cross check directory
+
+def reference_sequence_check(options: object) -> None:
 
     ### Test hits NC < score < TC with reference sequences
-    if not options.bool_cross_check:
-        # Perform inclusion of hits above chosen cutoff in options
-        Search.promote_by_cutoff(options, options.Cross_check_directory,options.cores,"all")
-    
-    elif not os.path.isfile(options.glob_trusted_hitreport):
-        # create the .faa fasta files from the intermediate hit lists
+    if options.bool_cross_check and not os.path.isfile(options.glob_trusted_hitreport):
+        # Create the .faa fasta files from the intermediate hit lists
         # Promote hits related to ref seqs to trusted_hit list
         logger.info("Initializing testing hits NC < score < TC with reference sequences")
         Search.generate_faa_per_hitfile_parallel(options, options.Cross_check_directory, options.cores)
@@ -543,22 +557,35 @@ def initial_search(options: object) -> None:
         logger.info("Testing hits NC < score < TC with reference sequences")
         refseq_unavailable_list = Search.cross_check_candidates_with_reference_seqs(options) # Cross check the with diamond against reference sequences
         Search.promote_by_cutoff(options, options.Cross_check_directory, options.cores, refseq_unavailable_list)
+    
+    
+    
+    elif options.optimized_cutoff_cross_check:
+    
+        # Perform inclusion of hits above chosen cutoff in options
+        logger.info("Using optimized cutoff instead of trusted cutoff or cross referencing")
+        Search.promote_by_cutoff(options, options.Cross_check_directory,options.cores,"all")
+    
+    
     	
     	
     ### Summarize the trusted hits
     logger.info("Summarizing trusted and intermediate hit reports")
-    options.summary_hmmreport = Search.summarize_trusted_hits(
+    options.glob_trusted_hitreport = Search.summarize_trusted_hits(
         options.result_files_directory,
         options.Cross_check_directory,
-        options.glob_trusted_hitreport
+        "global_trusted_hits_summary.hmmreport",
+        ".trusted_hits"
     )
-    options.intermediate_hmmreport = Search.summarize_trusted_hits(
+    options.glob_intermediate_hitreport = Search.summarize_trusted_hits(
         options.result_files_directory,
         options.Cross_check_directory,
-        options.glob_intermediate_hitreport,
+        "global_intermediate_hits_summary.hmmreport",
         "intermediate_hits"
     )
+    return
     
+def parse_reports_to_database(options: object) -> None:
     logger.info("Parsing summary report into database")
     ParseReports.main_parse_summary_hmmreport(options)
 
@@ -736,29 +763,39 @@ def main(args=None):
     log_file = os.path.join(options.result_files_directory, "execution_logfile.txt")    
     myUtil.setup_logging(getattr(options, 'verbose', 0), log_file)  
     
-    Queue.prepare_HMMlib_shell(options, __location__, allowed_prefixes=options.HMM_sets)
-    Queue.concatenate_files_shell(__location__ + "/src", 'grp', '.hmm', options.library)
-    Queue.concatenate_files_shell(__location__ + "/src", 'cutoffs', '.txt', options.score_threshold_file)
-    Queue.concatenate_files_shell(__location__ + "/src", 'patterns', '.txt', options.patterns_file)
-        
-        
-    if options.stage <= 1:
+    # Set up library, pattern and cutoff files
+    ressource_preparation(options)
+
+    if options.stage <= 1 and options.exit >= 1:
         #ignored if bulk is used because nobody should want to translate a glob via prodigal
         myUtil.print_header("\nProkaryotic gene recognition and translation via prodigal")
         fasta_preparation(options)
     
-    if options.stage <= 2:
+    # Queue the .faa/.gff file pairs
+    Queue.queue_files(options)
+    
+    if options.stage <= 2 and options.exit >= 2:
         myUtil.print_header("\nSearching for homologoues sequences")
         initial_search(options)
         options.stage = 2
-        
-    if options.stage <= 3:
+
+    if options.stage <= 3 and options.exit >= 3:
+        myUtil.print_header("\nCross check with reference sequences")
+        reference_sequence_check(options)
+        options.stage = 3
+
+    if options.stage <= 4 and options.exit >= 4:
+        myUtil.print_header("\nParse trusted hits and recognized gene clusters")
+        parse_reports_to_database(options)
+        options.stage = 4
+                        
+    if options.stage <= 5 and options.exit >= 5:
         myUtil.print_header("\nSearching for collinear syntenic blocks")
         csb_finder(options)
    
 
     if options.stage <= 4:
-        myUtil.print_header(f"\nTaxonomy assignment")
+        myUtil.print_header(f"\nAssigning taxonomy information")
         collect_taxonomy_information(options)
             
 

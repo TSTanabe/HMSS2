@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 import os
+import shutil
+import tempfile
 from typing import List, Tuple, Set, Optional, Any
 
 from . import Database
@@ -218,20 +220,21 @@ def concatenate_files_shell(
     if matched_files:
         os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
         cat_command = 'cat ' + ' '.join(f'"{f}"' for f in matched_files) + f' > "{output_file_path}"'
-        logger.debug(f"Running: {cat_command}")
+        #logger.debug(f"Running: {cat_command}")
         os.system(cat_command)
         logger.debug(f"Concatenated {len(matched_files)} files into {output_file_path}")
     else:
         logger.error(f"No matching files found for concatenation in {search_directory}.")
 
 
-def format_pattern_files(input_file, output_file):
-
-    with open(input_file, "r") as fin, open(output_file, "w") as fout:
+def format_pattern_files_inplace(filename: str, prefix: str, suffix: str):
+    tmpfile = tempfile.NamedTemporaryFile("w", delete=False)
+    with open(filename, "r") as fin, tmpfile:
         for i, line in enumerate(fin, 1):
-            new_line = f"einwort{i} {line.rstrip()}"   # erst Zeilennummer davor
-            new_line = new_line.replace(" ", "\t")     # dann alle Leerzeichen zu Tabs
-            fout.write(new_line + "\n")
+            new_line = f"{prefix}{i}{suffix} {line.rstrip()}"
+            new_line = new_line.replace(" ", "\t")
+            tmpfile.write(new_line + "\n")
+    shutil.move(tmpfile.name, filename)
 
 
 

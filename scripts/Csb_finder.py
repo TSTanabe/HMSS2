@@ -24,8 +24,8 @@ class Cluster:
     """
     
     def __init__(self, cluster_id: str, distance: int = 3500) -> None:
-        self.cluster_id: str = cluster_id
-        self.genome_id: str = ""
+        self.clusterID: str = cluster_id
+        self.genomeID: str = ""
         self.contig: str = ""
         self.distance: int = distance
         self.genes: List[str] = []
@@ -104,7 +104,7 @@ class Cluster:
             keywords_string += separator + str(element.get_keyword())
             completeness_string += separator + str(element.get_completeness())
             csb_string += separator + str(element.get_csb())
-        return [self.get_cluster_id(), keywords_string]
+        return [self.get_clusterID(), keywords_string]
 	
 class Keyword:
     """
@@ -168,10 +168,13 @@ def make_pattern_dict(filepath: str) -> Tuple[Dict[int, List[str]], Dict[int, st
                     parts = line.split("\t")
                     name = parts.pop(0)
                     pattern_names[i] = name.strip()
-                    pattern[i] = [item.strip() for item in parts if item.strip()]
-                    i += 1
+                    patlist = [item.strip() for item in parts if item.strip()]
+                    if patlist:
+                        pattern[i] = patlist
+                        pattern_names[i] = name.strip()
+                        i += 1
                 except IndexError:
-                    logger.error(f"WARNING: Skipping unrecognized pattern on line {line_num}: {line}")
+                    logger.warn(f"Skipping unrecognized pattern on line {line_num}: {line}")
     except FileNotFoundError:
         logger.error(f"File not found: {filepath}")
         return {}, {}
@@ -203,7 +206,7 @@ def find_syntenic_blocks(
     protein_id_list = sorted(protein_dict, key=lambda x: (protein_dict[x].gene_contig, protein_dict[x].gene_start))
     cluster_id_number = 1
     cluster = Cluster(f"{genome_id}_{cluster_id_number}", distance)
-    cluster.genome_id = genome_id
+    cluster.genomeID = genome_id
 
     for index, elem in enumerate(protein_id_list):
         if index - 1 >= 0:
@@ -219,18 +222,18 @@ def find_syntenic_blocks(
                 if new_sb:
                     new_sb = 0
                     cluster.add_gene(prev_el_protein_id, prev_protein.get_domains(), prev_protein.gene_start, prev_protein.gene_end)
-                    prev_protein.cluster_id = cluster.cluster_id
+                    prev_protein.clusterID = cluster.clusterID
                     cluster.add_gene(curr_el_protein_id, curr_protein.get_domains(), curr_protein.gene_start, curr_protein.gene_end)
                     cluster.contig = prev_protein.gene_contig
-                    curr_protein.cluster_id = cluster.cluster_id
+                    curr_protein.clusterID = cluster.clusterID
                 else:
                     cluster.add_gene(curr_el_protein_id, curr_protein.get_domains(), curr_protein.gene_start, curr_protein.gene_end)
-                    curr_protein.cluster_id = cluster.cluster_id
+                    curr_protein.clusterID = cluster.clusterID
             elif new_sb == 0:
                 cluster_id_dict[f"{genome_id}_{cluster_id_number}"] = cluster
                 cluster_id_number += 1
                 cluster = Cluster(f"{genome_id}_{cluster_id_number}", distance)
-                cluster.genome_id = genome_id
+                cluster.genomeID = genome_id
                 new_sb = 1
 
     if not new_sb:

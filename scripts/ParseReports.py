@@ -379,79 +379,7 @@ def getLocustag(locustag_pattern: re.Pattern, string: str) -> str:
     return match.group(1) if match else ""
 
 
-###############################################################################################################
-###############################################################################################################
-###############################################################################################################
 
-
-
-def process_missing_domains(genomeID, missing_domains_dict, candidate_hit_files_dict, gff_file, faa_file, nt_range=3500):
-    """
-    Process missing domains by identifying candidate proteins, parsing their features,
-    and checking if they can complete the gene clusters.
-
-    Args:
-        missing_domains (dict): Dictionary of missing domains for gene clusters.
-        gff_file (str): Path to the GFF file.
-        global_deconcat_domains_report_dict (dict): Dictionary mapping domain names to report file paths.
-
-    Returns:
-        dict: Updated missing_domains with candidate proteins that complete the clusters.
-    """
-    # Step 1: Prepare a dictionary for protein information based on missing domains
-    candidate_protein_dict = {}
-    insert_protein_dict = {}
-    for domain, csb_data in missing_domains_dict.items():
-        if domain in candidate_hit_files_dict:
-            grep_process = subprocess.Popen(
-                ['grep', genomeID, candidate_hit_files_dict[domain]],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-            stdout, stderr = grep_process.communicate()
-            if stderr:
-                print("Error for fetching candidate hits:", stderr.decode('utf-8'))
-                return
-
-            lines = stdout.decode('utf-8').split('\n')
-            for line in lines:
-                if line.strip():
-                    columns = line.strip().split('\t')
-                    key = columns[0]
-                    genomeID, hit_proteinID = key.split('___',1)
-                    query = columns[3]
-                    hit_bitscore = int(float(columns[7]))
-                    hsp_start = int(float(columns[17]))
-                    hsp_end = int(float(columns[18]))
-                    candidate_protein_dict[hit_proteinID] = Protein(hit_proteinID,query,hsp_start,hsp_end,hit_bitscore,genomeID)
-
-            
-    # Step 2: Add features to proteins
-    parseGFFfile(gff_file, candidate_protein_dict)
-
-    
-    # Step 3: Filter candidates and assign to clusters
-    # only take candidates that are within range of the gencluster with the pattern that misses something
-    #e.g. structure {'redDsrD': [('GCF_000266945', 'GCF_000266945_6', 'GCF_000266945_000000000001', 1853338, 1859499)], 'TmcA': [('GCF_000266945', 'GCF_000266945_12', 'GCF_000266945_000000000001', 6138287, 6145798)]}}
-    for domain, csb_data in missing_domains_dict.items():
-        for data in csb_data:
-            genome_id, clusterID, contig, cluster_start, cluster_end = data # for the clusterID we are looking for some protein that lays between these coordinates
-            
-            for proteinID, protein_info in candidate_protein_dict.items():
-                if domain in protein_info.get_domain_set():
-                    gene_start = protein_info.gene_start
-                    gene_end = protein_info.gene_end
-
-                    # Check if the protein falls within the range or 3500 nt outside of the gene cluster
-                    if (cluster_start - nt_range <= gene_start <= cluster_end + nt_range) or \
-                       (cluster_start - nt_range <= gene_end <= cluster_end + nt_range):
-                        protein_info.clusterID = clusterID
-                        insert_protein_dict[proteinID] = protein_info # Update dict for the main routine
-            
-    # Step 4: Add sequences to the insertion candidates
-    get_protein_sequence(faa_file, insert_protein_dict)
-    
-    return insert_protein_dict
 
 ###############################################################################################################
 ###############################################################################################################
@@ -554,8 +482,8 @@ def main_parse_summary_hmmreport(options):
                     batch,
                     options.faa_files,
                     options.gff_files,
-                    options.summary_hmmreport,
-                    options.intermediate_hmmreport,
+                    options.glob_trusted_hitreport,
+                    options.glob_intermediate_hitreport,
                     options.nucleotide_range,
                     options.min_completeness,
                     csb_patterns,
@@ -599,7 +527,7 @@ def process_batch(
                 nucleotide_range, min_completeness, pattern_dict, pattern_names
             )
         except Exception as e:
-            print(f"Warning: Failed to process genome '{genome_id}' — {str(e)}")
+            logger.warn(f"Failed to process genome '{genome_id}' — {str(e)}")
             continue
     
     
@@ -628,7 +556,7 @@ def process_genome(
         
         # Name syntenic blocks with known patterns
         cluster_dict = Csb_finder.name_syntenic_blocks(pattern_dict, pattern_names, cluster_dict, min_completeness)
-
+	
         # Remove intermediate hits that are not part of a named gene cluster pattern
         combined_protein_dict = remove_unassigned_intermediate_proteins(combined_protein_dict, protein_dict, cluster_dict)
 

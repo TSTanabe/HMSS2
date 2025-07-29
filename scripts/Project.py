@@ -150,7 +150,6 @@ def isProjectFolder(options) -> bool:
             "Sequences",
             "Filtered_hits",
             "Hit_list",
-            "Hidden_markov_models",
             "Collinear_syntenic_blocks"
         ]
 
@@ -169,10 +168,10 @@ def isProjectFolder(options) -> bool:
 
 
         # Find blast table if not already defined
-        if options.glob_table is None:
+        if options.glob_report is None:
             for file_name in os.listdir(options.result_files_directory):
-                if file_name.startswith("filtered_"):
-                    options.glob_table = os.path.join(options.result_files_directory, file_name)
+                if file_name.startswith("global_report.cat_hmmreport"):
+                    options.glob_report = os.path.join(options.result_files_directory, file_name)
                     break
 
     except Exception as e:

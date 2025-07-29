@@ -1799,3 +1799,18 @@ sHdrA sHdrB1 sHdrC1 sHdrC2 sHdrH
 sHdrA sHdrB1 sHdrC1 sHdrC2 sHdrH sLplAB
 sHdrA sHdrB1 sHdrC1 sHdrH sLplAB
 sHdrA sHdrB2 sHdrC2 sHdrH sHdrI
+CstA CstB SqrI TauE
+CstA CstB SqrII TauE
+CstA CstB SqrIII TauE
+CstA CstB SqrIV TauE
+CstA CstB SqrV TauE
+CstA CstB SqrVI TauE
+CstA CstB TauE
+HmcA HmcB HmcC HmcD HmcE HmcF
+HmcA HmcB HmcC HmcE
+HmcA HmcB HmcC HmcE HmcF
+ShyA ShyB ShyC
+ShyA ShyB ShyC ShyD
+ShyA ShyC ShyD
+TmcA TmcB TmcC
+TmcA TmcB TmcC TmcD

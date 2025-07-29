@@ -502,24 +502,17 @@ def extract_fasta_per_intermediate_hitfile(
 def process_hitfile(
     hitfile_path: str,
     intermediate_hit_dir: str,
-    faa_files: Dict[str, str]
+    faa_files: Dict[str, str],
+    max_per_genome: int = 10
 ) -> None:
-    """Extracts relevant FASTA sequences for a single intermediate hitfile.
 
-    Args:
-        hitfile_path (str): Path to the .intermediate_hits file.
-        intermediate_hit_dir (str): Directory to write the output .fasta file.
-        faa_files (Dict[str, str]): Mapping from genome ID to FASTA file path.
-
-    Returns:
-        None
-
-    Example:
-        >>> process_hitfile('/tmp/xcheck/PF00001.intermediate_hits', '/tmp/xcheck', {'g1': '/tmp/g1.faa'})
-    """
-    
     hmm_id = os.path.basename(hitfile_path).replace(".intermediate_hits", "")
     output_fasta = os.path.join(intermediate_hit_dir, f"{hmm_id}.intermediate_hits_faa")
+
+    # Skip existing outputs
+    if os.path.isfile(output_fasta):
+        logger.debug(f"The above noise hit faa file already existed for {hmm_id}")
+        return
 
     genome_hits = {}
     with open(hitfile_path, 'r') as f:
@@ -540,16 +533,20 @@ def process_hitfile(
                 logger.warning(f"FASTA not found for {genome_id}")
                 continue
 
+            written = 0  # <-- pro genom zurücksetzen
             with open(faa_path, 'r') as faa:
                 write = False
                 header_id = None
 
                 for line in faa:
                     if line.startswith(">"):
+                        if max_per_genome is not None and written >= max_per_genome:
+                            break  # Stop further writing for this genome
                         header_id = line[1:].split()[0]
                         write = header_id in protein_ids
                         if write:
                             out.write(f">{genome_id}___{header_id}\n")
+                            written += 1
                     elif write:
                         out.write(line)
 
@@ -576,14 +573,15 @@ def generate_faa_per_hitfile_parallel(
     
     output_dir = intermediate_hit_dir  # same dir for output
     faa_files = options.faa_files      # dict: genome_id → path
-
+    max_seqs_per_genome = options.max_seqs_per_genome
+    
     hitfiles = [
         os.path.join(intermediate_hit_dir, f)
         for f in os.listdir(intermediate_hit_dir)
         if f.endswith(".intermediate_hits")
     ]
 
-    args = [(hitfile, output_dir, faa_files) for hitfile in hitfiles]
+    args = [(hitfile, output_dir, faa_files, max_seqs_per_genome) for hitfile in hitfiles]
 
     with Pool(processes=processes) as pool:
         pool.starmap(process_hitfile, args)
@@ -641,57 +639,67 @@ def cross_check_candidates_with_reference_seqs(options) -> List[str]:
     
     cross_check_dir = options.Cross_check_directory # directoy with the intermediate hit fasta faa files
     intermediate_files = glob.glob(os.path.join(cross_check_dir, "*.intermediate_hits_faa"))
-
+    
+    diamond = myUtil.find_executable("diamond")
+        
     # Iterate the intermediate faa files
     for inter_file in intermediate_files:
         logger.debug(f"Checking reference sequences for candidates sequences in {inter_file}")
+        
+        
         hmm_id = os.path.splitext(os.path.basename(inter_file))[0].replace(".intermediate_hits_faa", "")
+        hmm_type = hmm_id.split('_')[-1]
+        
         db_file = f"{hmm_id}.dmnd"
-        db_path = find_file_in_prefixed_subdirs(refseq_dir, db_file, dir_prefix="") #dir_prefix is for version control, possibly uneccessary
-
-        # Prüfen ob .dmnd existiert, sonst erstellen
-        if not os.path.isfile(db_path):
-            faa_file = f"{hmm_id}.faa"
-            faa_path = find_file_in_prefixed_subdirs(refseq_dir, faa_file, dir_prefix="")
-
-            if os.path.isfile(faa_path):
-                logger.debug(f"Creating Diamond DB from {faa_path} because {db_path} was not found")
-
-                try:
-                    subprocess.run(["diamond", "makedb", "--in", faa_path, "-d", db_base], check=True)
-                    db_path = db_base + ".dmnd"
-                except subprocess.CalledProcessError:
-                    logger.error(f"Failed to create Diamond database for {faa_path}")
-                    refseq_unavailable_list.append(hmm_id)
-                    continue
-            else:
-                logger.warning(f"Skipping {hmm_id}: Reference sequence file not found.")
-                refseq_unavailable_list.append(hmm_id)
-                continue
+        db_base = os.path.splitext(os.path.join(refseq_dir, hmm_id))[0] # basename without file extension
+        db_path = db_base + ".dmnd"
 
         output_file = os.path.join(cross_check_dir, f"{hmm_id}.crosschecked.tsv")
-        diamond = myUtil.find_executable("diamond")
-        cmd = [
-            diamond, "blastp",
-            "--query", inter_file,
-            "--db", db_path,
-            "--out", output_file,
-            "--outfmt", "6",
-            "--max-target-seqs", "1",
-            "--id", str(options.refseq_identity),
-            "--threads", str(options.cores),
-            "--quiet"
-        ]
-
-        logger.info(f"Verifying {hmm_id} hits with reference sequences")
-        result = subprocess.run(cmd)
-
-        if result.returncode != 0:
-            logger.error(f"DIAMOND search failed for {hmm_id}")
+        
+        if os.path.isfile(output_file):
+            logger.debug(f"Results from the comparison with reference database were already present for {hmm_id}")
             continue
-        if os.path.getsize(output_file) == 0:
-            os.remove(output_file)
+        try:
+        
+            # Prüfen ob .dmnd existiert, sonst erstellen
+            if not os.path.isfile(db_path):
+                faa_file = f"{hmm_type}.faa"
+                faa_path = find_file_in_prefixed_subdirs(refseq_dir, faa_file, dir_prefix="") # get files with the ending string of faa_file
+                
+                if os.path.isfile(faa_path) and not faa_path is None:
+                    logger.debug(f"Creating Diamond DB from {faa_path} because {db_path} was not found")
+                    subprocess.run([diamond, "makedb", "--in", faa_path, "-d", db_path, "--quiet"], check=True)
+                    db_path = db_base + ".dmnd"
+                else:
+                    logger.warning(f"Skipping {hmm_id}: Reference sequence file not found.")
+                    refseq_unavailable_list.append(hmm_id)
+                    continue
 
+            # With the created .dmnd file make the comparison blast
+
+            cmd = [
+                diamond, "blastp",
+                "--query", inter_file,
+                "--db", db_path,
+                "--out", output_file,
+                "--outfmt", "6",
+                "--max-target-seqs", "1",
+                "--id", str(options.refseq_identity),
+                "--threads", str(options.cores),
+                "--quiet"
+            ]
+
+            logger.info(f"Verifying {hmm_id} hits with reference sequences")
+            result = subprocess.run(cmd)
+
+            if os.path.getsize(output_file) == 0:
+                os.remove(output_file)
+        
+        except Exception as e: 
+            logger.error(f"Failed to compare with diamond {hmm_id}\nError: {e}")
+            refseq_unavailable_list.append(hmm_id)
+            continue
+        
     return refseq_unavailable_list
     
     
@@ -700,7 +708,7 @@ def find_file_in_prefixed_subdirs(base_dir: str, filename: str, dir_prefix: str)
 
     Args:
         base_dir (str): Root directory to search.
-        filename (str): Filename to find.
+        filename (str): Filename to find. Will match every file with this ending, not specific files
         dir_prefix (str): Subdirectory name prefix to restrict the search (empty string for all).
 
     Returns:
@@ -715,10 +723,11 @@ def find_file_in_prefixed_subdirs(base_dir: str, filename: str, dir_prefix: str)
         if not os.path.basename(root).startswith(dir_prefix):
             continue
 
-        if filename in files:
-            return os.path.join(root, filename)
+        for f in files:
+            if f.endswith(filename):
+                return os.path.join(root, f)
 
-    return ""  # nicht gefunden
+    return None  # nicht gefunden
 
 
 def process_crosscheck(hmm_id: str, crosscheck_dir: str) -> None:
