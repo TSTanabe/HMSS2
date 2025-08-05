@@ -187,7 +187,7 @@ def parse_arguments(arguments: list):
             help='No cross check with reference sequences via Diamond' if show_advanced else argparse.SUPPRESS
         )
         resources.add_argument(
-            '-optimized_cutoff_cross_check', dest='optimized_cutoff_cross_check', action='store_false',
+            '-optimized_cutoff_cross_check', dest='optimized_cutoff_cross_check', action='store_true',
             help='Use optimized cutoff instead of cross check with Diamond' if show_advanced else argparse.SUPPRESS
         )
 
@@ -199,7 +199,7 @@ def parse_arguments(arguments: list):
             help='Filepath to patterns file' if show_advanced else argparse.SUPPRESS
         )
         synteny.add_argument(
-            '-mc', dest='min_completeness', type=float, default=0.7,
+            '-mc', dest='min_completeness', type=float, default=0.5,
             metavar='<float>', help='Minimal fraction of predefined csb to be recognized' if show_advanced else argparse.SUPPRESS
         )
         synteny.add_argument(

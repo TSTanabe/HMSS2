@@ -54,10 +54,10 @@ class Cluster:
         self.type_to_proteins[types].add(protein_id)
 
 
-    def add_keyword(self, keyword: str, completeness: float = 0.0, csb: str = ".", missing: Optional[List[str]] = None, keyword_id: Any = ".") -> None:
+    def add_keyword(self, keyword: str, completeness: float = 0.0, csb: str = ".", missing: Optional[Set[str]] = None, additional_elements: Optional[Set[str]] = None, keyword_id: Any = ".") -> None:
         missing = missing or []
         keyword_id = keyword if keyword_id == "." else keyword_id
-        self.keywords_dict[keyword_id] = Keyword(keyword, completeness, csb, missing, keyword_id)
+        self.keywords_dict[keyword_id] = Keyword(keyword, completeness, csb, missing, additional_elements, keyword_id)
 
     def get_keywords(self) -> List["Keyword"]:
         return list(self.keywords_dict.values())
@@ -112,13 +112,17 @@ class Keyword:
     Holds the information about a single keyword, its completeness and if it is a csb.
     """
 
-    def __init__(self, keyword: str, completeness: float = 0.0, csb: str = ".", missing: Optional[List[str]] = None, keyword_id: Any = ".") -> None:
+    def __init__(self, keyword: str, completeness: float = 0.0, csb: str = ".", missing: Optional[Set[str]] = None, additional: Optional[Set[str]] = None, keyword_id: Any = ".") -> None:
+
         if missing is None:
-            missing = []
+            missing = set()
+        if additional is None:
+            additional = set()
         self.keyword: str = str(keyword)
-        self.csb: str = csb
+        self.csb: str = csb # Collinear to the reference pattern
         self.completeness: float = completeness
-        self.missing_domains: List[str] = missing
+        self.missing_domains: Set[str] = missing
+        self.additional_domains: Set[str] = additional
         self.keyword_id: Any = keyword_id
 
     def get_keyword(self) -> str:
@@ -129,6 +133,12 @@ class Keyword:
 
     def get_completeness(self) -> float:
         return self.completeness
+
+    def get_missing_domains(self) -> set:
+        return self.missing_domains
+    
+    def get_additional_domains(self) -> set:
+        return self.additional_domains
 
     def set_keyword(self, keyword: str) -> None:
         self.keyword = keyword
@@ -297,6 +307,8 @@ def name_syntenic_blocks(
             keyword = pattern_names[pattern_id] # Define the name of the pattern
             pattern_set = set(pattern)
             
+            additional_elements = protein_type_set.difference(pattern_set)
+            
             missing_elements = pattern_set.difference(protein_type_set)
             completeness = (len(pattern_set) - len(missing_elements)) / len(pattern_set)
             
@@ -309,8 +321,14 @@ def name_syntenic_blocks(
                     covered_protein_ids.update(cluster.type_to_proteins.get(typ, set()))
 
                 cluster.covered_protein_ids.update(covered_protein_ids)
-                cluster.add_keyword(keyword, completeness, "0", list(missing_elements), pattern_id)
-    
+                cluster.add_keyword(keyword, completeness, "0", missing_elements, additional_elements, pattern_id)
+            #else:
+            #    print("Pattern not recognized")
+            #    print(cluster.clusterID)
+            #    print(pattern_names[pattern_id])
+            #    print(completeness)
+            #    print(pattern_set)
+            #    print(missing_elements)
     return cluster_id_dict
     
     

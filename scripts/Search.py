@@ -250,7 +250,7 @@ def filter_trusted_and_noise_hits(
         '/tmp/xcheck'
     """
     trusted_dict = make_threshold_dict(
-        options.score_threshold_file, options.threshold_type, options.thrs_score
+        options.score_threshold_file, 2, options.thrs_score
     )
     noise_dict = make_threshold_dict(
         options.score_threshold_file, 3, options.thrs_score
@@ -381,8 +381,10 @@ def process_single_hmm(
 
 
             if score >= trusted_cutoff:
+                logger.debug(f"Above trusted cutoff hit {score} >= {trusted_cutoff} {parts[0]} {parts[3]}")
                 trusted_out.write(line)
             elif score > noise_cutoff:
+                logger.debug(f"Intermediate above noise cutoff hit {score} >= {trusted_cutoff} {parts[0]} {parts[3]}")
                 candidates[target] = score
     
     # remove empty trusted files 
@@ -391,27 +393,28 @@ def process_single_hmm(
     # and skip if no candidates found
     if not candidates:
         return
-
+#
+# Silenced because currently all intermediate hits shall be tested with cross check
     # Filter out candidates with better hits in other HMMs
-    with open(glob_report, 'r') as infile:
-        for line in infile:
-            if line.startswith('#') or not line.strip():
-                continue
-            parts = line.strip().split('\t')
+    #with open(glob_report, 'r') as infile:
+    #    for line in infile:
+    #        if line.startswith('#') or not line.strip():
+    #            continue
+    #        parts = line.strip().split('\t')
 
-            target = parts[0]
-            hit_hmm = parts[3]
-            try:
-                score = float(parts[2])
-            except ValueError:
-                continue
+    #        target = parts[0]
+    #        hit_hmm = parts[3]
+    #        try:
+    #            score = float(parts[2])
+    #        except ValueError:
+    #            continue
 
-            if target in candidates and hit_hmm != hmm_id and score > candidates[target]:
-                del candidates[target]
+    #        if target in candidates and hit_hmm != hmm_id and score > candidates[target]:
+    #            del candidates[target]
 
     # If not candidates left leave the routine
-    if not candidates:
-        return
+    #if not candidates:
+    #    return
 
     # Write down remaining candidates
     with open(glob_report, 'r') as infile, open(intermediate_path, 'w') as interm_out:

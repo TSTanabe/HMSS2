@@ -252,18 +252,15 @@ def insert_database_clusters(database: str, cluster_dict: Dict[str, Any]) -> Non
                     keyword_inserts.append((clusterID, Keyword.get_keyword(), Keyword.get_completeness(), Keyword.get_csb()))
 
             # Batch insert clusters
-            print("Insert clusters")
             cur.executemany("""INSERT OR IGNORE INTO Clusters (clusterID, genomeID) VALUES (?, ?)""", cluster_inserts)
 
             # Batch update proteins
-            print("Insert proteins")
             cur.executemany("""UPDATE Proteins SET clusterID = ? WHERE proteinID = ?""", protein_updates)
 
             # Batch insert or replace keywords
-            print("Insert keywords")
             cur.executemany("""INSERT OR REPLACE INTO Keywords (clusterID, keyword, completeness, collinearity) VALUES (?, ?, ?, ?)""", keyword_inserts)
     except Exception as e:
-        logger.warning(f"Due to an error - {str(e)}\n Cluster inserts {cluster_inserts}\n Protein inserts {protein_updates}\n Keyword inserts {keyword_inserts}\nTraceback: {traceback.format_exc()}")
+        logger.warning(f"Due to an error - {str(e)}\nTraceback: {traceback.format_exc()}")
 
 
     return
