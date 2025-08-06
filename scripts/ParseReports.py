@@ -6,6 +6,7 @@ import traceback
 import itertools
 import pprint
 
+from . import Search
 from . import Database
 from . import Csb_finder
 from . import myUtil
@@ -14,7 +15,7 @@ from . import Output
 import numpy as np
 
 from multiprocessing import Pool, Manager
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, List, Set
 from collections import defaultdict
 from scipy.optimize import linear_sum_assignment
 
@@ -457,6 +458,7 @@ def process_writer(queue, options):
                 filepath = os.path.join(options.fasta_initial_hit_directory, str(genomeID)+".hit_table_txt")
 
                 Output.output_genome_report(filepath, protein_dict, cluster_dict)
+    logger.info(f"Processed {batch_counter} genomes")
     return
     
     
@@ -472,6 +474,9 @@ def main_parse_summary_hmmreport(options):
 
     # Lade Patterns nur 1x im Hauptprozess
     csb_patterns, csb_names = Csb_finder.make_pattern_dict(options.patterns_file)
+    cooccurrence_pattern, cooccurence_names = Csb_finder.make_pattern_dict(options.cooccurrence_file)
+    threshold_dict = Search.make_threshold_dict(options.score_threshold_file, 3, options.thrs_score)
+    exclusion_singletons = parse_exclusion_singletons(options.exclusion_singletons)
     
     # Insert genomeIDs in DB
     Database.insert_database_genomeIDs(options.database_directory, set(genome_ids))
@@ -493,7 +498,10 @@ def main_parse_summary_hmmreport(options):
                     options.nucleotide_range,
                     options.min_completeness,
                     csb_patterns,
-                    csb_names
+                    csb_names,
+                    cooccurrence_pattern,
+                    exclusion_singletons,
+                    threshold_dict
                 )
                 for batch in genomeID_batches
             ]
@@ -519,95 +527,296 @@ def split_into_batches(data_list, num_batches):
     for idx, item in enumerate(data_list):
         batches[idx % num_batches].append(item)
     return batches
+    
+def parse_exclusion_singletons(file_path: str) -> set:
+    """
+    Parse a tab-separated file and collect all words/tokens into a single set,
+    regardless of line count or number of tokens per line.
+
+    Args:
+        file_path (str): Path to the Exclusion_singletons file.
+
+    Returns:
+        Set[str]: All unique words found in the file.
+    """
+    singleton_set = set()
+    with open(file_path, "r", encoding="utf-8") as f:
+        for line in f:
+            # Split line by tab and extend set
+            tokens = line.strip().split('\t')
+            singleton_set.update(token for token in tokens if token)
+    return singleton_set
 
 
 def process_batch(
-    data_queue, genome_ids, faa_files, gff_files, hmmreport_path, intermediate_hmmreport,
-    nucleotide_range, min_completeness, pattern_dict, pattern_names
+    data_queue,
+    genome_ids,
+    faa_files,
+    gff_files,
+    hmmreport_path,
+    intermediate_hmmreport,
+    nucleotide_range,
+    min_completeness,
+    pattern_dict,
+    pattern_names,
+    cooccurrence_pattern,
+    exclusion_singletons,
+    threshold_dict
 ):
+    """
+    Runs process_genome for each genome in the batch with all necessary arguments.
+    """
     for genome_id in genome_ids:
         try:
             process_genome(
-                data_queue, genome_id,
-                faa_files[genome_id], gff_files[genome_id], hmmreport_path, intermediate_hmmreport,
-                nucleotide_range, min_completeness, pattern_dict, pattern_names
+                data_queue=data_queue,
+                genome_id=genome_id,
+                faa_path=faa_files[genome_id],
+                gff_path=gff_files[genome_id],
+                hmmreport_path=hmmreport_path,
+                intermediate_hmmreport=intermediate_hmmreport,
+                nucleotide_range=nucleotide_range,
+                min_completeness=min_completeness,
+                pattern_dict=pattern_dict,
+                pattern_names=pattern_names,
+                cooccurrence_pattern = cooccurrence_pattern,
+                exclusion_singletons=exclusion_singletons,
+                threshold_dict=threshold_dict
             )
         except Exception as e:
-            logger.warn(f"Failed to process genome '{genome_id}' — {str(e)}")
+            logger.warning(f"Failed to process genome '{genome_id}' — {str(e)}")
             continue
+
     
     
         
    
     
+
+
 def process_genome(
-    data_queue, genome_id, faa_path, gff_path, hmmreport_path, intermediate_hmmreport,
-    nucleotide_range, min_completeness, pattern_dict, pattern_names
-):
+    data_queue: Any,
+    genome_id: str,
+    faa_path: str,
+    gff_path: str,
+    hmmreport_path: str,
+    intermediate_hmmreport: str,
+    nucleotide_range: int,
+    min_completeness: float,
+    pattern_dict: Dict[str, list],
+    pattern_names: Dict[str, Any],
+    cooccurrence_pattern: Dict[str, list],
+    exclusion_singletons: Set[str],
+    threshold_dict: Dict[str, float]
+) -> None:
+    """
+    Main pipeline to process one genome:
+    - Parses protein and cluster data
+    - Annotates clusters
+    - Removes singleton proteins with specified domains outside clusters
+    - Removes unassigned intermediate hits, keeping trusted proteins
+    - Attaches protein sequences
+    - Returns (combined_protein_dict, cluster_dict) via queue
+
+    Args:
+        data_queue: Multiprocessing queue for result transport.
+        genome_id: ID of the genome.
+        faa_path, gff_path: Paths to input files (can be .gz).
+        hmmreport_path, intermediate_hmmreport: HMM report files.
+        nucleotide_range: Nucleotide window for cluster detection.
+        min_completeness: Minimum completeness for cluster pattern assignment.
+        pattern_dict: Patterns for cluster annotation.
+        pattern_names: Names/labels for patterns.
+        exclusion_singletons: Domains for singleton exclusion.
+        threshold_dict: Score cutoffs per domain.
+    """
     try:
         faa_file = myUtil.unpackgz(faa_path)
         gff_file = myUtil.unpackgz(gff_path)
-        
-        # Get the intermediate hits
+
+        # Intermediate protein hits
         intermediate_protein_dict = parse_bulk_HMMreport_genomize(genome_id, intermediate_hmmreport)
         parseGFFfile(gff_file, intermediate_protein_dict)
-                
-        # Get the initial hit information
+
+        # Primary protein hits
         protein_dict = parse_bulk_HMMreport_genomize(genome_id, hmmreport_path)
         parseGFFfile(gff_file, protein_dict)
-        
-        # Recognition of named gene clusters
-        combined_protein_dict = {**intermediate_protein_dict,**protein_dict}
-        cluster_dict = Csb_finder.find_syntenic_blocks(genome_id, combined_protein_dict, nucleotide_range)
-        
-        # Name syntenic blocks with known patterns
-        cluster_dict = Csb_finder.name_syntenic_blocks(pattern_dict, pattern_names, cluster_dict, min_completeness)
-	
 
+        # Combine protein dictionaries
+        combined_protein_dict = {**intermediate_protein_dict, **protein_dict}
 
-        # Enhance the completeness of the dsb by swapping assignment
-        enhance_syntenic_block_completeness(cluster_dict, combined_protein_dict, intermediate_protein_dict, intermediate_hmmreport, pattern_dict)
-        
-        # Remove intermediate hits that are not part of a named gene cluster pattern
-        #TODO soll nicht removen was gerade noch geändert wurde
-        combined_protein_dict = remove_unassigned_intermediate_proteins(combined_protein_dict, protein_dict, cluster_dict)
-            # for each cluster
-            # if completeness is  0.5 <= completeness < 1, wobei 0.5 hier durch das min(0.5 oder min_completeness) ersetzt werden sollte
-            # falls es zusätzliche gibt dann schau nach
-            # ob die proteinIDs in intermediate existieren (trusted sollten nicht verändert werden)
-            # hole alle domänen einträge für diese proteinID
-            
-            # kann man eine oder mehrere in proteine umwandeln die in missing enthalten sind
-            # zähle die anzahl der wechsel
-            # a b c d e x g y 
-            # missing: f, h, additional: x, y,
-            # a b c d e x->f g y->h
-            
-            # den block mit der höchsten unvollständigen completeness nehmen, falls mehrere alle davon nehmen
-            # falls exakter match mit completeness 1 und missing 0 und additional 0 dann skip
-            # für csb(s) mit höchster completeness und gleicher anzahl an missing und additional oder möglichst gleicher anzahl
-            # zählen wieviele austausche gemacht werden können
-            
-            # kalkuliere wie wievle scorepunkte eine änderung bedeuten würde und ob man in eine der fehlenden domänen ändern könnte
-            # jetzt wird es kompliziert in der abfolge
-            # ich will wissen wieviele änderungen es braucht um den vorhandenen csb in den pattern csb zu überführen oder anzunähren (maximiere durch mögliche änderungen hin zu mehr completeness)
-            # wenn mehrere mit gleich vielen änderungen das maximum erreichen können, dann 
-        
-        
-        # Add the protein sequences
+        # Detect and annotate syntenic gene clusters
+        cluster_dict = Csb_finder.find_syntenic_blocks(
+            genome_id, combined_protein_dict, nucleotide_range
+        )
+        cluster_dict = Csb_finder.name_syntenic_blocks(
+            pattern_dict, pattern_names, cluster_dict, min_completeness
+        )
+
+        # Enhance cluster completeness if needed
+        # alters the combined_protein_dict
+        enhance_syntenic_block_completeness(
+            cluster_dict,
+            combined_protein_dict,
+            intermediate_protein_dict,
+            intermediate_hmmreport,
+            pattern_dict
+        )
+
+        # Collect trusted protein IDs: those with complete pathways and those in the main protein dict
+        singletons_with_complete_pathway_set = enhance_pathway_completeness(
+            combined_protein_dict,
+            cooccurrence_pattern,
+            threshold_dict
+        )
+        trusted_protein_ids = set(protein_dict.keys()).union(singletons_with_complete_pathway_set)
+
+        # Remove unassigned intermediate proteins, but keep trusted ones
+        combined_protein_dict = remove_unassigned_intermediate_proteins(
+            combined_protein_dict,
+            trusted_protein_ids,
+            cluster_dict
+        )
+
+        # Remove genes that should not occur as singletons
+        # alters the combined_protein_dict but ignores trusted_protein_ids
+        remove_exclusion_singletons(
+            combined_protein_dict,
+            cluster_dict,
+            exclusion_singletons,
+            singletons_with_complete_pathway_set
+        )
+
+        # Attach protein sequences
         get_protein_sequence(faa_file, combined_protein_dict)
 
         data_queue.put((combined_protein_dict, cluster_dict))
 
     except Exception as e:
-
         logger.error(f"Error: {genome_id} -> {e}")
         logger.error(traceback.format_exc())
 
 
+
+
+def enhance_pathway_completeness(
+    protein_dict: Dict[str, 'Protein'],
+    pattern_dict: Dict[str, List[str]],
+    threshold_dict: Dict[str, float]
+) -> Set[str]:
+    """
+    Identify proteins that contribute to fully complete pathway patterns.
+
+    Logic:
+    For each pattern in `pattern_dict`, this function checks:
+      1. Is there at least one protein in the genome for *each* required domain
+         that scores above or equal to the threshold for that domain?
+         - (A pattern is considered "complete" only if this is true for *every* domain.)
+      2. If so, gather *all* protein IDs that have any required domain with score >= its threshold
+         (i.e., for each domain in the pattern, collect all proteins that fulfill the score criterion).
+
+    If any required domain for a pattern has no matching protein above threshold,
+    the pattern is ignored and does not contribute to the final set.
+
+    Inputs:
+    protein_dict : Dict[str, Protein]
+        Mapping of protein IDs to Protein objects.
+        
+    pattern_dict : Dict[str, List[str]]
+        Mapping of pattern names to lists of required domain names.
+                "PatternB": ["X", "Y"]
+
+    threshold_dict : Dict[str, float]
+                "A": 40.0,
+
+    Outputs:
+    Set[str]
+        Set of all protein IDs that fulfill at least one required domain
+        (with score >= threshold) for any *fully complete* pattern.
+        Each protein ID is included at most once (set semantics).
+
+    """
+    found_protein_ids: Set[str] = set()
+    domain_to_protein: Dict[str, List[tuple[str, float]]] = {}
+
+    # Build mapping from domain name to all (protein_id, score) tuples in the genome
+    for protein_id, protein in protein_dict.items():
+        for domain in protein.get_domain_listing():
+            domain_name = domain.get_HMM()
+            score = domain.get_score()
+            domain_to_protein.setdefault(domain_name, []).append((protein_id, score))
+
+    for required_domains in pattern_dict.values():
+        domain_hits: Dict[str, Set[str]] = {}
+        all_domains_above = True
+        for domain in required_domains:
+            threshold = threshold_dict.get(domain, 0)
+            hits = {protein_id for protein_id, score in domain_to_protein.get(domain, []) if score >= threshold}
+            if not hits:
+                all_domains_above = False
+                break
+            domain_hits[domain] = hits
+
+        if all_domains_above:
+            # Format readable block
+            msg = f"Pattern complete: {', '.join(domain_hits.keys())}\n"
+            for domain in domain_hits:
+                proteins = ', '.join(sorted(domain_hits[domain]))
+                msg += f"  {domain}: {proteins}\n"
+            logger.debug(msg.rstrip())
+            for hits in domain_hits.values():
+                found_protein_ids.update(hits)
+
+    return found_protein_ids
+    
+    
+
+def remove_exclusion_singletons(
+    combined_protein_dict: Dict[str, 'Protein'],
+    cluster_dict: Dict[str, 'Cluster'],
+    exclusion_singletons: Set[str],
+    trusted_protein_ids: Set[str]
+) -> None:
+    """
+    Removes from `combined_protein_dict` all Protein objects that:
+      - are NOT present in any cluster in `cluster_dict`
+      - AND have at least one domain whose name is in `exclusion_singletons`
+      - AND are NOT present in `trusted_protein_ids`
+
+    This function modifies `combined_protein_dict` in place.
+
+    Args:
+        combined_protein_dict: Mapping of proteinID to Protein object.
+        cluster_dict: Mapping of clusterID to Cluster object.
+        exclusion_singletons: Set of domain names for exclusion.
+        trusted_protein_ids: Set of proteinIDs to protect from removal.
+    """
+    proteins_in_clusters: Set[str] = set()
+    for cluster in cluster_dict.values():
+        proteins_in_clusters.update(cluster.genes)
+
+    to_remove: Set[str] = set()
+    for protein_id, protein in combined_protein_dict.items():
+        if (
+            protein_id not in proteins_in_clusters and
+            protein_id not in trusted_protein_ids
+        ):
+            for domain in protein.get_domain_listing():
+                if domain.get_HMM() in exclusion_singletons:
+                    to_remove.add(protein_id)
+                    break
+
+    for protein_id in to_remove:
+        protein_obj = combined_protein_dict[protein_id]
+        domains = protein_obj.get_domains()  # Gibt z.B. 'HMM_A-HMM_B-HMM_C' zurück
+        logger.debug(f"Removed singleton {protein_id} with domains: {domains}")
+        del combined_protein_dict[protein_id]
+
+
+
 def remove_unassigned_intermediate_proteins(
     combined_protein_dict: Dict[str, Any],
-    protein_dict: Dict[str, Any],
+    proteinIDs: set,
     cluster_dict: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
@@ -629,7 +838,6 @@ def remove_unassigned_intermediate_proteins(
         primary protein set or are covered by a recognized pattern in any cluster.
 
     """
-    proteinIDs = set(protein_dict.keys())
     for cluster in cluster_dict.values():
         proteinIDs.update(getattr(cluster, 'covered_protein_ids', set()))
 
@@ -664,7 +872,9 @@ def remove_unassigned_intermediate_proteins(
 
     return combined_protein_dict
 
-    
+
+
+
     
 def parse_bulk_HMMreport_genomize(genomeID,Filepath,protein_dict=None):
     """
@@ -721,7 +931,6 @@ def enhance_syntenic_block_completeness(cluster_dict, combined_protein_dict, int
         # Skip clusters that have a perfectly matching pattern
         if any(kw.get_completeness() == 1 and not kw.get_additional_domains() for kw in cluster.get_keywords()):
             continue
-
         
         genes = cluster.genes
         types = cluster.types
@@ -732,7 +941,12 @@ def enhance_syntenic_block_completeness(cluster_dict, combined_protein_dict, int
         # Possible executions to increase the completeness for each keyword
         possible_optimized_executable_transitions = {}
         
-        for keyword in cluster.get_keywords():
+        # Filter keyword to longest keyword with minimal equal number of missing and additionals
+        best_keywords = select_balanced_best_keywords(cluster.get_keywords(), pattern_dict)
+        if not best_keywords:
+            continue
+            
+        for keyword in best_keywords:
             completeness = keyword.get_completeness()
             missing_domains = keyword.get_missing_domains()
             additional_domains = keyword.get_additional_domains()
@@ -744,6 +958,7 @@ def enhance_syntenic_block_completeness(cluster_dict, combined_protein_dict, int
             #print(f"Processing {keyword.keyword} {completeness}")
             #print(f"Missing {missing_domains}")
             #print(f"Additional {additional_domains}")            
+            
             if completeness >= min(0.5, min_completeness) and completeness < 1 and additional_domains:
                 # For every "additional" domain: get proteinID and possible transitions to "missing"
                 transitions = []
@@ -784,10 +999,8 @@ def enhance_syntenic_block_completeness(cluster_dict, combined_protein_dict, int
         # Keyword loop finished
         
         
-        # Now from all possible keyword completions find the optimum dictionary key (transitions, bitscore, posterior completeness) => [(proteinID to domain), (proteinID to domain), (proteinID to domain)]
-        # Highest pattern length
-        # Highest posterior completeness
-        # Minimal total score difference
+        # Now from all possible keyword completions find the optimum dictionary key 
+        # (transitions, bitscore, posterior completeness) => [(proteinID to domain), (proteinID to domain), (proteinID to domain)]
         if possible_optimized_executable_transitions:
             # Sort by: pattern_length (desc), posterior_completeness (desc), total_score_diff (asc)
             best_key = max(
@@ -796,11 +1009,11 @@ def enhance_syntenic_block_completeness(cluster_dict, combined_protein_dict, int
             )
             best_transitions = possible_optimized_executable_transitions[best_key]
 
-            logger.debug(f"For clusterID {cluster.clusterID} following conversion is done")
+            logger.debug(f"For clusterID {cluster.clusterID} with pattern length, completeness and score difference {best_key} following conversion is done")
             logger.debug(best_transitions)
 
             # For the best transition alter the proteins domain information
-            for proteinID, to_domain in best_transitions:
+            for proteinID, to_domain, _ in best_transitions:
                 if proteinID in combined_protein_dict:
                     protein = combined_protein_dict[proteinID]
                     hit_proteinID, query, hsp_start, hsp_end, hit_bitscore, genomeID = alternative_protein_type_dict.get((proteinID, to_domain)) #(hit_proteinID, query, hsp_start, hsp_end, hit_bitscore, genomeID)
@@ -813,7 +1026,42 @@ def enhance_syntenic_block_completeness(cluster_dict, combined_protein_dict, int
 
 
 
+def select_balanced_best_keywords(keywords, pattern_dict):
+    """
+    Filtere und wähle die besten Keywords aus:
+    1. Nur mit ausgeglichenem Verhältnis missing/additional (beide > 0, gleich groß)
+    2. Nur mit minimaler Anzahl missing/additional
+    3. Nur mit maximaler Pattern-Länge (ggf. mehrere)
+    Gibt Liste der besten Keyword-Objekte zurück.
+    """
+    keyword_infos = []
+    for keyword in keywords:
+        missing_domains = keyword.get_missing_domains()
+        additional_domains = keyword.get_additional_domains()
+        pattern_length = len(pattern_dict[keyword.keyword_id])
+        keyword_infos.append({
+            'keyword': keyword,
+            'n_missing': len(missing_domains),
+            'n_additional': len(additional_domains),
+            'pattern_length': pattern_length
+        })
 
+    # Filter: ausgeglichen und mindestens 1 fehlend
+    balanced = [
+        info for info in keyword_infos 
+        if info['n_missing'] == info['n_additional'] and info['n_missing'] > 0
+    ]
+    if not balanced:
+        return []
+
+    # Minimal missing/additional
+    min_missing = min(info['n_missing'] for info in balanced)
+    minimal = [info for info in balanced if info['n_missing'] == min_missing]
+
+    # Längstes Pattern
+    max_len = max(info['pattern_length'] for info in minimal)
+    best_keywords = [info['keyword'] for info in minimal if info['pattern_length'] == max_len]
+    return best_keywords
 
 
 
@@ -874,7 +1122,8 @@ def find_possible_transitions(
 
 
 
-def get_optimal_transitions(transition_dict, missing_domains, initial_completeness=0.0, total_domains=None):
+
+def get_optimal_transitions(transition_dict, missing_domains, initial_completeness=0.0, total_domains=None, logger=None):
     """
     Calculates the optimal set of transitions to cover as many missing domains as possible,
     each proteinID at most once, minimizing transitions and total score difference.
@@ -907,7 +1156,11 @@ def get_optimal_transitions(transition_dict, missing_domains, initial_completene
             cost_matrix[i, j] = diff
 
     # Hungarian assignment: minimize score difference (and thus minimize transitions)
-    row_ind, col_ind = linear_sum_assignment(cost_matrix)
+    orig_row_ind, orig_col_ind = solve_assignment(cost_matrix, logger=logger)
+
+    if orig_row_ind is None:
+        # Matching impossible, keep the cluster as assigned
+        return [], initial_completeness, 0.0
 
     chosen_transitions = []
     total_score_diff = 0
@@ -915,12 +1168,12 @@ def get_optimal_transitions(transition_dict, missing_domains, initial_completene
     used_proteins = set()
     missing_domains = list(missing_domains)
     
-    for i, j in zip(row_ind, col_ind):
+    for i, j in zip(orig_row_ind, orig_col_ind):
         cost = cost_matrix[i, j]
         if np.isfinite(cost):
             proteinID = proteins[i]
             domain = missing_domains[j]
-            chosen_transitions.append((proteinID, domain))
+            chosen_transitions.append((proteinID, domain, cost))
             total_score_diff += cost
             fulfilled_domains.add(domain)
             used_proteins.add(proteinID)
@@ -935,7 +1188,41 @@ def get_optimal_transitions(transition_dict, missing_domains, initial_completene
     return chosen_transitions, final_completeness, total_score_diff
 
 
+def solve_assignment(cost_matrix, logger=None, cluster_id=None):
+    """
+    Robustly solves an assignment problem using the Hungarian algorithm, 
+    even if some rows are infeasible (only np.inf). 
+    If no assignment is possible, returns None.
+    Debug-Ausgabe: Gibt infeasible Matrix bei Problemen als logger.debug aus.
+    """
+    orig_matrix = cost_matrix.copy()
+    n_rows, n_cols = cost_matrix.shape
 
+    valid_rows = ~np.all(np.isinf(cost_matrix), axis=1)
+    valid_cols = ~np.all(np.isinf(cost_matrix), axis=0)
+    reduced_matrix = cost_matrix[np.ix_(valid_rows, valid_cols)]
+
+    def matrix_str(matrix):
+        with np.printoptions(precision=2, suppress=True, linewidth=120, nanstr="nan", infstr="inf"):
+            return '\n' + '\n'.join(' '.join(f"{x:7}" for x in row) for row in matrix)
+
+    # Check auf infeasibility
+    if reduced_matrix.size == 0 or np.any(np.all(np.isinf(reduced_matrix), axis=1)) or np.any(np.all(np.isinf(reduced_matrix), axis=0)):
+        if logger:
+            logger.debug(f"[Assignment] Infeasible cost matrix for cluster {cluster_id or ''}:\n{matrix_str(cost_matrix)}")
+            logger.error(f"Assignment failed for cluster {cluster_id or ''}: cost matrix infeasible after row/col removal. Gencluster bleibt unverändert.")
+        return None, None
+
+    try:
+        row_ind, col_ind = linear_sum_assignment(reduced_matrix)
+        orig_row_ind = np.where(valid_rows)[0][row_ind]
+        orig_col_ind = np.where(valid_cols)[0][col_ind]
+        return orig_row_ind, orig_col_ind
+    except Exception as e:
+        if logger:
+            logger.debug(f"[Assignment] Exception on cost matrix for cluster {cluster_id or ''}:\n{matrix_str(cost_matrix)}")
+            logger.error(f"Assignment error for cluster {cluster_id or ''}: {str(e)}. Gencluster bleibt unverändert.")
+        return None, None
 
 
 

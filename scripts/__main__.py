@@ -146,7 +146,7 @@ def parse_arguments(arguments: list):
             metavar='<filepath>', help='Filepath to taxonomy tsv file' if show_advanced else argparse.SUPPRESS
         )
         parameters.add_argument(
-            '-refseq_ident', dest='refseq_identity', type=int, default=95,
+            '-refseq_ident', dest='refseq_identity', type=int, default=90,
             metavar='<int>', help='Minimal percent identity to reference sequence set' if show_advanced else argparse.SUPPRESS
         )
         parameters.add_argument(
@@ -197,6 +197,16 @@ def parse_arguments(arguments: list):
             '-p', dest='patterns_file', type=myUtil.file_path,
             default=None, metavar='<filepath>',
             help='Filepath to patterns file' if show_advanced else argparse.SUPPRESS
+        )
+        synteny.add_argument(
+            '-cooccurrence', dest='cooccurrence_file', type=myUtil.file_path,
+            default=None, metavar='<filepath>',
+            help='Filepath to co-occurrence file' if show_advanced else argparse.SUPPRESS
+        )
+        synteny.add_argument(
+            '-exclude_singletons', dest='exclusion_singletons', type=myUtil.file_path,
+            default=None, metavar='<filepath>',
+            help='Filepath to tab separated file for singletons that are excluded' if show_advanced else argparse.SUPPRESS
         )
         synteny.add_argument(
             '-mc', dest='min_completeness', type=float, default=0.5,
@@ -400,6 +410,11 @@ def parse_arguments(arguments: list):
     if options.patterns_file is None:
         options.patterns_file = __location__ + "/src/Patterns"
     
+    if options.cooccurrence_file is None:
+        options.cooccurrence_file = __location__ + "/src/Cooccurrence"
+    
+    if options.exclusion_singletons is None:
+        options.exclusion_singletons = __location__ + "/src/Exclusion_singletons"
     
     # Check if results dir is default location
     if options.result_files_directory == __location__+'/results':
@@ -470,6 +485,10 @@ def ressource_preparation(options: HMSSS) -> None:
     
     if not os.path.isfile(options.score_threshold_file):
         Queue.concatenate_files_shell(__location__ + "/src", 'cutoffs', '.txt', options.score_threshold_file)
+        
+    if not os.path.isfile(options.cooccurrence_file):
+        Queue.concatenate_files_shell(__location__ + "/src", 'cooccurrence', '.txt', options.cooccurrence_file)
+        Queue.format_pattern_files_inplace(options.cooccurrence_file,"cpb-",options.csb_name_suffix) #  cob- is the co-occurring protein block
     
     if not os.path.isfile(options.patterns_file):
         Queue.concatenate_files_shell(__location__ + "/src", 'patterns', '.txt', options.patterns_file)
@@ -588,6 +607,12 @@ def reference_sequence_check(options: object) -> None:
 def parse_reports_to_database(options: object) -> None:
     logger.info("Parsing summary report into database")
     ParseReports.main_parse_summary_hmmreport(options)
+    
+    # TODO in der main parse summary hmmreport sollte nachgeschaut werden, ob sich ein csb global vervollständigen lässt. D.h. 
+    # eine bestimmte Kombination die auch alleinstehend vorkommen kann sollte auch im intermediate bereich anerkannt werden, auch wenn sich diese nicht
+    # in einem gencluster befindet. das sollte abdecken, falls ein TC hit nicht vorhanden ist aber sein sollte
+    
+    # Umgekehrt sollten alleine liegende hits die immer in kobination vorkommen müssen gelöscht werden
 
     return
 

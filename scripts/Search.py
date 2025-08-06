@@ -393,28 +393,7 @@ def process_single_hmm(
     # and skip if no candidates found
     if not candidates:
         return
-#
-# Silenced because currently all intermediate hits shall be tested with cross check
-    # Filter out candidates with better hits in other HMMs
-    #with open(glob_report, 'r') as infile:
-    #    for line in infile:
-    #        if line.startswith('#') or not line.strip():
-    #            continue
-    #        parts = line.strip().split('\t')
 
-    #        target = parts[0]
-    #        hit_hmm = parts[3]
-    #        try:
-    #            score = float(parts[2])
-    #        except ValueError:
-    #            continue
-
-    #        if target in candidates and hit_hmm != hmm_id and score > candidates[target]:
-    #            del candidates[target]
-
-    # If not candidates left leave the routine
-    #if not candidates:
-    #    return
 
     # Write down remaining candidates
     with open(glob_report, 'r') as infile, open(intermediate_path, 'w') as interm_out:
@@ -615,71 +594,55 @@ def find_refseq_file(base_dir: str, filename: str) -> Optional[str]:
 
 
 def cross_check_candidates_with_reference_seqs(options) -> List[str]:
-    """Cross-checks candidate hit sequences with reference sequences using DIAMOND.
-
-    For each .intermediate_hits_faa file in options.Cross_check_directory, 
-    the function searches for a reference database in the RefSeqs directory. 
-    If no .dmnd database is present, it tries to create one from a .faa file.
-    Then, it runs a DIAMOND search to compare the candidates to the reference sequences.
-
-    Args:
-        options (object): Configuration object containing:
-            - execute_location (str): Root execution directory.
-            - Cross_check_directory (str): Directory containing .intermediate_hits_faa files.
-            - refseq_identity (float): Percent identity cutoff for DIAMOND.
-            - cores (int): Number of threads for DIAMOND.
-
-    Returns:
-        List[str]: List of HMM IDs where no reference sequence or db could be found.
-
-    Example:
-        >>> missing = cross_check_candidates_with_reference_seqs(options)
-    """
+    """Cross-checks candidate hit sequences with reference sequences using DIAMOND with fallback for .faa search."""
     logger.info("Cross check hit sequences with reference sequences")
 
     refseq_dir = os.path.join(options.execute_location, "src", "RefSeqs")
     refseq_unavailable_list = []
     
-    cross_check_dir = options.Cross_check_directory # directoy with the intermediate hit fasta faa files
+    cross_check_dir = options.Cross_check_directory
     intermediate_files = glob.glob(os.path.join(cross_check_dir, "*.intermediate_hits_faa"))
-    
     diamond = myUtil.find_executable("diamond")
         
-    # Iterate the intermediate faa files
     for inter_file in intermediate_files:
         logger.debug(f"Checking reference sequences for candidates sequences in {inter_file}")
-        
-        
         hmm_id = os.path.splitext(os.path.basename(inter_file))[0].replace(".intermediate_hits_faa", "")
         hmm_type = hmm_id.split('_')[-1]
-        
-        db_file = f"{hmm_id}.dmnd"
-        db_base = os.path.splitext(os.path.join(refseq_dir, hmm_id))[0] # basename without file extension
-        db_path = db_base + ".dmnd"
 
+        db_base = os.path.splitext(os.path.join(refseq_dir, hmm_id))[0]
+        db_path = db_base + ".dmnd"
         output_file = os.path.join(cross_check_dir, f"{hmm_id}.crosschecked.tsv")
-        
+
         if os.path.isfile(output_file):
-            logger.debug(f"Results from the comparison with reference database were already present for {hmm_id}")
+            logger.debug(f"Results already present for {hmm_id}")
             continue
         try:
-        
-            # Prüfen ob .dmnd existiert, sonst erstellen
+            # 1. Try exact match for .dmnd
             if not os.path.isfile(db_path):
-                faa_file = f"{hmm_type}.faa"
-                faa_path = find_file_in_prefixed_subdirs(refseq_dir, faa_file, dir_prefix="") # get files with the ending string of faa_file
-                
-                if os.path.isfile(faa_path) and not faa_path is None:
-                    logger.debug(f"Creating Diamond DB from {faa_path} because {db_path} was not found")
-                    subprocess.run([diamond, "makedb", "--in", faa_path, "-d", db_path, "--quiet"], check=True)
-                    db_path = db_base + ".dmnd"
+                # 2. Try exact match for .faa
+                exact_faa = os.path.join(refseq_dir, f"{hmm_id}.faa")
+                faa_path = None
+                if os.path.isfile(exact_faa):
+                    faa_path = exact_faa
+                    logger.debug(f"Found exact match: {exact_faa}")
                 else:
-                    logger.warning(f"Skipping {hmm_id}: Reference sequence file not found.")
-                    refseq_unavailable_list.append(hmm_id)
-                    continue
+                    # 3. Fallback: any file ending with {hmm_type}.faa
+                    logger.debug(f"Exact match for {hmm_id} was not found. Now searching for {hmm_type}.faa")
+                    pattern = os.path.join(refseq_dir, f"**/*{hmm_type}.faa")
+                    backup_faa_files = glob.glob(pattern, recursive=True)
 
-            # With the created .dmnd file make the comparison blast
+                    if backup_faa_files:
+                        faa_path = backup_faa_files[0]
+                        logger.debug(f"Using backup match: {faa_path}")
+                    else:
+                        logger.warning(f"Skipping {hmm_id}: Reference sequence file not found.")
+                        refseq_unavailable_list.append(hmm_id)
+                        continue
 
+                logger.debug(f"Creating Diamond DB from {faa_path} for {hmm_id}")
+                subprocess.run([diamond, "makedb", "--in", faa_path, "-d", db_path, "--quiet"], check=True)
+                
+            # Run DIAMOND
             cmd = [
                 diamond, "blastp",
                 "--query", inter_file,
@@ -691,7 +654,6 @@ def cross_check_candidates_with_reference_seqs(options) -> List[str]:
                 "--threads", str(options.cores),
                 "--quiet"
             ]
-
             logger.info(f"Verifying {hmm_id} hits with reference sequences")
             result = subprocess.run(cmd)
 
@@ -703,8 +665,7 @@ def cross_check_candidates_with_reference_seqs(options) -> List[str]:
             refseq_unavailable_list.append(hmm_id)
             continue
         
-    return refseq_unavailable_list
-    
+    return refseq_unavailable_list  
     
 def find_file_in_prefixed_subdirs(base_dir: str, filename: str, dir_prefix: str) -> str:
     """Recursively searches for a file in subdirectories with a specific prefix.
