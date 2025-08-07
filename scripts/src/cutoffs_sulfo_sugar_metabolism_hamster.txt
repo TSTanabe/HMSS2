@@ -28,10 +28,10 @@ grp2_SmoA	220.4	250.3	143.8
 grp2_SmoB	415.8	494.9	187.0
 grp2_SmoC	638.8	726.4	243.5
 grp2_SmoD	269.3	362.1	166.9
-grp2_Sqald	341.9	-inf	185.4
+grp2_Sgald	341.9	-inf	185.4
 grp2_SqgA	510.8	590.1	155.4
 grp2_SqiK	485.8	516.8	218.7
-grp2_Sql	323.0	-inf	194.5
+grp2_Sgl	323.0	-inf	194.5
 grp2_SqoD	487.9	528.6	392.9
 grp2_SqoL	553.6	-inf	156.5
 grp2_SqoM	405.2	-inf	213.4
@@ -45,6 +45,7 @@ grp3_SqvB	264.7	323.3	167.0
 grp3_SqwE	288.1	319.3	160.6
 grp3_SqwF	377.7	479.8	194.8
 grp3_SqwI	200.7	237.2	153.4
+grp3_SqwK	587.3	-inf	239.5
 grp3_SqwL	470.7	-inf	175.4
 grp3_YihO	414.4	614.9	279.5
 grp3_YihP	519.0	668.3	245.1

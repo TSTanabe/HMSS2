@@ -1,84 +1,84 @@
-AprM DsrE DsrE2 DsrF DsrH DsrL SoxA SoxB SoxT1 SoxV SoxW SoxY SoxZ oxAprAI oxAprBI oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP redSat
-AprM DsrE DsrE2 DsrF DsrH DsrL SoxA SoxT1 SoxZ oxAprAI oxAprBI oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP redSat
-AprM DsrE DsrF DsrH DsrL DsrR oxAprAI oxAprBI oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP redSat
-AprM DsrE DsrF DsrH DsrL SoeA SoeB SoeC SoxT1 oxAprAI oxAprBI oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP redSat
+AprM DsrE DsrE2 DsrF DsrH DsrL SoxA SoxB SoxT1 SoxV SoxW SoxY SoxZ oxAprAI oxAprBI oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP oxSat
+AprM DsrE DsrE2 DsrF DsrH DsrL SoxA SoxT1 SoxZ oxAprAI oxAprBI oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP oxSat
+AprM DsrE DsrF DsrH DsrL DsrR oxAprAI oxAprBI oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP oxSat
+AprM DsrE DsrF DsrH DsrL SoeA SoeB SoeC SoxT1 oxAprAI oxAprBI oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP oxSat
 AprM DsrE DsrF DsrH DsrL SoeA SoeB SoeC SoxT1 oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP redSat
 AprM DsrE DsrF DsrH DsrL SoxT1 oxAprAI oxAprBI oxDsrA oxDsrB oxDsrC oxDsrJ oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
 AprM DsrE DsrF DsrH DsrL SoxT1 oxAprAI oxAprBI oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
 AprM DsrE DsrF DsrH DsrL oxAprAI oxAprBI oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrO oxDsrP
 AprM DsrE DsrF DsrH DsrL oxAprAI oxAprBI oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
-AprM DsrE2 DsrL DsrR oxAprAI oxAprBI oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP redSat
-AprM DsrE2 LbpA1 LbpA2 LipS1 LipS2 LipT SoeA SoeB SoeC TusA oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sLplAB
+AprM DsrE2 DsrL DsrR oxAprAI oxAprBI oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP oxSat
+AprM DsrE2 LbpA1 LbpA2 LipS1 LipS2 LipT SoeA SoeB SoeC TusA oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sLplAB
 AprM DsrE2 LbpA1 LbpA2 LipS1 LipS2 LipT SoeA SoeB SoeC TusA oxAprAI oxAprBI sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrT
 AprM DsrE2 LbpA1 LbpA2 LipS1 LipS2 LipT SoeA SoeB SoeC TusA oxAprAI oxAprBI sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrT sLplAB
 AprM DsrE2 LbpA1 LbpA2 LipS1 LipS2 LipT oxAprAI oxAprBI sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH
 AprM DsrE2 LbpA2 LipS1 LipS2 LipT SoeA SoeB SoeC SoxT1 TusA oxAprAI oxAprBI sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrI sHdrT sLplAB
-AprM DsrE2 LbpA2 LipS1 LipS2 LipT oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
+AprM DsrE2 LbpA2 LipS1 LipS2 LipT oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
 AprM DsrE2 LbpA2 LipS1 LipS2 LipT oxAprAI oxAprBI sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
-AprM DsrE2 LbpA2 LipS1 LipS2 SorA TusA oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
-AprM DsrE2 LbpA2 LipS1 LipS2 SorA oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
-AprM DsrE2 LbpA2 LipS1 LipS2 SorA oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrI sLplAB
-AprM DsrE2 LbpA2 LipS1 LipS2 oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
-AprM DsrE2 LbpA2 LipS1 LipS2 oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrB2 sHdrC2 sHdrH sHdrI sLplAB
-AprM DsrE2 LbpA2 SoeA SoeB SoeC TusA oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
-AprM DsrE2 LbpA2 oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
+AprM DsrE2 LbpA2 LipS1 LipS2 SorA TusA oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
+AprM DsrE2 LbpA2 LipS1 LipS2 SorA oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
+AprM DsrE2 LbpA2 LipS1 LipS2 SorA oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrI sLplAB
+AprM DsrE2 LbpA2 LipS1 LipS2 oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
+AprM DsrE2 LbpA2 LipS1 LipS2 oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrB2 sHdrC2 sHdrH sHdrI sLplAB
+AprM DsrE2 LbpA2 SoeA SoeB SoeC TusA oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
+AprM DsrE2 LbpA2 oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
 AprM DsrE2 LipS1 LipS2 LipT SoeA SoeB SoeC SoxT1 oxAprAI oxAprBI sHdrT sLplAB
 AprM DsrE2 LipS1 LipS2 LipT SoeA SoeB SoeC oxAprAI oxAprBI
 AprM DsrE2 LipS1 LipS2 LipT TusA oxAprAI oxAprBI
 AprM DsrE2 LipS1 LipS2 LipT TusA sHdrA sHdrB1 sHdrC1 sHdrC2 sHdrH sHdrT
 AprM DsrE2 LipS1 LipS2 LipT TusA sHdrT
-AprM DsrE2 LipS1 LipS2 SorA oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sLplAB
-AprM DsrE2 LipS1 LipS2 SorA oxAprAI oxAprBI redSat sLplAB
+AprM DsrE2 LipS1 LipS2 SorA oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sLplAB
+AprM DsrE2 LipS1 LipS2 SorA oxAprAI oxAprBI oxSat sLplAB
 AprM DsrE2 LipS1 LipS2 SorA oxAprAI oxAprBI sHdrC1 sLplAB
-AprM DsrE2 LipS1 SorA oxAprAI oxAprBI redSat
+AprM DsrE2 LipS1 SorA oxAprAI oxAprBI oxSat
 AprM DsrE2 SoeA SoeB SoeC TusA oxAprAI oxAprBI sHdrT
-AprM DsrE2 SoeA SoeB SoeC oxAprAI oxAprBI redSat
-AprM DsrE2 SoeA SoeB SoeC oxAprAI oxAprBI redSat sHdrT
-AprM DsrE2 SoeA SoeB SoeC redSat
-AprM DsrE2 SorA oxAprAI oxAprBI redSat
-AprM DsrE2 SoxB SoxT1 TusA oxAprAI oxAprBI redSat
+AprM DsrE2 SoeA SoeB SoeC oxAprAI oxAprBI oxSat
+AprM DsrE2 SoeA SoeB SoeC oxAprAI oxAprBI oxSat sHdrT
+AprM DsrE2 SoeA SoeB SoeC oxSat
+AprM DsrE2 SorA oxAprAI oxAprBI oxSat
+AprM DsrE2 SoxB SoxT1 TusA oxAprAI oxAprBI oxSat
 AprM DsrE2 SoxT1 oxAprAI oxAprBI
 AprM DsrE2 TusA oxAprAI oxAprBI sHdrT
-AprM DsrE2 oxAprAI oxAprBI redSat
-AprM DsrE2 oxAprAI oxAprBI redSat sHdrT
-AprM DsrL SoeA SoeB SoeC oxAprAI oxAprBI oxDsrN oxDsrO oxDsrP redSat
-AprM DsrL SoeA SoeB SoeC oxDsrK oxDsrN oxDsrO oxDsrP redSat
-AprM DsrR SoeA SoeB SoeC SoxT1 oxAprAI oxAprBI redSat
+AprM DsrE2 oxAprAI oxAprBI oxSat
+AprM DsrE2 oxAprAI oxAprBI oxSat sHdrT
+AprM DsrL SoeA SoeB SoeC oxAprAI oxAprBI oxDsrN oxDsrO oxDsrP oxSat
+AprM DsrL SoeA SoeB SoeC oxDsrK oxDsrN oxDsrO oxDsrP oxSat
+AprM DsrR SoeA SoeB SoeC SoxT1 oxAprAI oxAprBI oxSat
 AprM FccA FccB oxAprAI oxAprBI
 AprM LbpA1 SoeA SoeB SoeC oxAprAI oxAprBI
-AprM LbpA1 oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sLplAB
-AprM LbpA2 LipS1 LipS2 LipT SorA SoxB SoxT1 TusA oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
-AprM LbpA2 LipS1 LipS2 LipT oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
+AprM LbpA1 oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sLplAB
+AprM LbpA2 LipS1 LipS2 LipT SorA SoxB SoxT1 TusA oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
+AprM LbpA2 LipS1 LipS2 LipT oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
 AprM LbpA2 LipS1 LipS2 LipT oxAprAI oxAprBI sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
-AprM LbpA2 oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2
-AprM LbpA2 oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI
-AprM LbpA2 redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI
-AprM LipS1 LipS2 LipT TusA oxAprAI oxAprBI redSat sLplAB
+AprM LbpA2 oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2
+AprM LbpA2 oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI
+AprM LbpA2 oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI
+AprM LipS1 LipS2 LipT TusA oxAprAI oxAprBI oxSat sLplAB
 AprM QmoA QmoB oxAprAI oxAprBI
-AprM SoeA SoeB SoeC SoxB oxAprAI oxAprBI redSat
-AprM SoeA SoeB SoeC SoxT1 oxAprAI oxAprBI oxDsrP redSat
+AprM SoeA SoeB SoeC SoxB oxAprAI oxAprBI oxSat
+AprM SoeA SoeB SoeC SoxT1 oxAprAI oxAprBI oxDsrP oxSat
 AprM SoeA SoeB SoeC TusA oxAprAI oxAprBI sHdrA sHdrB1 sHdrC1
 AprM SoeA SoeB SoeC TusA oxAprAI oxAprBI sHdrC1
 AprM SoeA SoeB SoeC oxAprAI oxAprBI
-AprM SoeA SoeB SoeC oxAprAI oxAprBI oxDsrN oxDsrO oxDsrP redSat
+AprM SoeA SoeB SoeC oxAprAI oxAprBI oxDsrN oxDsrO oxDsrP oxSat
 AprM SoeA SoeB SoeC oxAprAI oxAprBI oxSat
-AprM SoeA SoeB SoeC oxAprAI oxAprBI redSat
-AprM SoeA SoeB SoeC oxAprAI oxAprBI redSat sHdrT
-AprM SoeA SoeB SoeC redSat
-AprM SorA oxAprAI oxAprBI redSat
-AprM SoxB oxAprAI oxAprBI redSat
-AprM SoxR SoxT1 SoxV SoxZ oxAprAI oxAprBI redSat
+AprM SoeA SoeB SoeC oxAprAI oxAprBI oxSat
+AprM SoeA SoeB SoeC oxAprAI oxAprBI oxSat sHdrT
+AprM SoeA SoeB SoeC oxSat
+AprM SorA oxAprAI oxAprBI oxSat
+AprM SoxB oxAprAI oxAprBI oxSat
+AprM SoxR SoxT1 SoxV SoxZ oxAprAI oxAprBI oxSat
 AprM SoxR SoxT1 oxAprAI oxAprBI
-AprM SoxT1 oxAprAI oxAprBI redSat
-AprM SoxT2 oxAprAI oxAprBI redSat
-AprM TsdA oxAprAI oxAprBI redSat
-AprM TusA oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrC1
+AprM SoxT1 oxAprAI oxAprBI oxSat
+AprM SoxT2 oxAprAI oxAprBI oxSat
+AprM TsdA oxAprAI oxAprBI oxSat
+AprM TusA oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrC1
 AprM oxAprAI oxAprAII oxAprBI oxAprBII
-AprM oxAprAI oxAprAII oxAprBI oxAprBII redSat
+AprM oxAprAI oxAprAII oxAprBI oxAprBII oxSat
 AprM oxAprAI oxAprBI redAprA redAprB
 AprM oxAprAI oxAprBI redAprA redAprB redSat
-AprM oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH
-AprM oxAprAI oxAprBI redSat sHdrB1 sHdrC1
+AprM oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH
+AprM oxAprAI oxAprBI oxSat sHdrB1 sHdrC1
 AsrA AsrB AsrC SudA SudB
 DsrE DsrE2 DsrF DsrH DsrL DsrR SoxA TusA oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
 DsrE DsrE2 DsrF DsrH DsrL FccA FccB SoeA SoeB SoeC SoxT1 TusA oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrP
@@ -138,15 +138,15 @@ DsrE DsrF DsrH DsrL DsrR oxDsrC oxDsrJ oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
 DsrE DsrF DsrH DsrL DsrR oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
 DsrE DsrF DsrH DsrL DsrS oxDsrA oxDsrB oxDsrC oxDsrJ oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
 DsrE DsrF DsrH DsrL DsrS oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
-DsrE DsrF DsrH DsrL FccA FccB QmoA QmoB oxAprAII oxAprBII oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP qHdrB qHdrC redSat
+DsrE DsrF DsrH DsrL FccA FccB QmoA QmoB oxAprAII oxAprBII oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP qHdrB qHdrC oxSat
 DsrE DsrF DsrH DsrL FccA FccB oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
 DsrE DsrF DsrH DsrL Otr oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
 DsrE DsrF DsrH DsrL QmoA QmoB QmoC oxAprAII oxAprBII oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN
-DsrE DsrF DsrH DsrL QmoA QmoB SoeA SoeB SoeC oxAprAII oxAprBII oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP qHdrB qHdrC redSat
-DsrE DsrF DsrH DsrL QmoA QmoB oxAprAII oxAprBII oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP qHdrB qHdrC redSat
+DsrE DsrF DsrH DsrL QmoA QmoB SoeA SoeB SoeC oxAprAII oxAprBII oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP qHdrB qHdrC oxSat
+DsrE DsrF DsrH DsrL QmoA QmoB oxAprAII oxAprBII oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP qHdrB qHdrC oxSat
 DsrE DsrF DsrH DsrL QmoC oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN
 DsrE DsrF DsrH DsrL SoeA SoeB SoeC SoxT1 oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
-DsrE DsrF DsrH DsrL SoeA SoeB SoeC oxAprAII oxAprBII oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP redSat
+DsrE DsrF DsrH DsrL SoeA SoeB SoeC oxAprAII oxAprBII oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP oxSat
 DsrE DsrF DsrH DsrL SoeA SoeB SoeC oxDsrA oxDsrB oxDsrC oxDsrJ oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
 DsrE DsrF DsrH DsrL SoeA SoeB SoeC oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
 DsrE DsrF DsrH DsrL SoeA SoeB SoeC oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
@@ -164,13 +164,13 @@ DsrE DsrF DsrH DsrL SoxT1 SoxW oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO 
 DsrE DsrF DsrH DsrL SoxT1 TusA oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
 DsrE DsrF DsrH DsrL SoxT1 oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM
 DsrE DsrF DsrH DsrL SoxT1 oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
-DsrE DsrF DsrH DsrL SoxT1 oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP redSat
+DsrE DsrF DsrH DsrL SoxT1 oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP oxSat
 DsrE DsrF DsrH DsrL SoxT1 oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrO oxDsrP
 DsrE DsrF DsrH DsrL SoxW oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
 DsrE DsrF DsrH DsrL TusA oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
 DsrE DsrF DsrH DsrL TusA oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP oxSat
 DsrE DsrF DsrH DsrL oxAprAII oxAprBII oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
-DsrE DsrF DsrH DsrL oxAprAII oxAprBII oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP redSat
+DsrE DsrF DsrH DsrL oxAprAII oxAprBII oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP oxSat
 DsrE DsrF DsrH DsrL oxDsrA oxDsrB
 DsrE DsrF DsrH DsrL oxDsrA oxDsrB oxDsrC oxDsrJ oxDsrK oxDsrM
 DsrE DsrF DsrH DsrL oxDsrA oxDsrB oxDsrC oxDsrJ oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
@@ -227,7 +227,7 @@ DsrE DsrF DsrH oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP oxSat
 DsrE DsrF DsrH oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrO
 DsrE DsrF DsrH oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrO oxDsrP
 DsrE DsrF DsrH oxDsrA oxDsrB oxDsrC oxDsrM
-DsrE DsrF DsrH oxDsrA oxDsrB oxDsrC redSat
+DsrE DsrF DsrH oxDsrA oxDsrB oxDsrC oxSat
 DsrE DsrF DsrH oxDsrA oxDsrB oxDsrK oxDsrM
 DsrE DsrF DsrH oxDsrC oxDsrK
 DsrE DsrF DsrH oxDsrC oxDsrK oxDsrM
@@ -260,12 +260,13 @@ DsrE2 EMO LbpA2 LipS1 LipS2 sEtfA sEtfB sHdrA sHdrB1 sHdrB3 sHdrC1 sHdrT sLplAB
 DsrE2 EMO LbpA2 LipS1 LipS2 sEtfA sEtfB sHdrA sHdrB1 sHdrB3 sHdrC1 sLplAB
 DsrE2 EMO LbpA2 LipS1 LipS2 sEtfA sEtfB sHdrA sHdrB1 sHdrB3 sLplAB
 DsrE2 EMO LbpA2 LipS1 LipS2 sEtfA sEtfB sHdrA sHdrB3 sLplAB
-DsrE2 EMO LbpA2 QmoA QmoB oxAprAII oxAprBII redSat sEtfA sEtfB sHdrA sHdrB1 sHdrB3 sHdrC1
-DsrE2 EMO LbpA2 QmoA QmoB oxAprAII oxAprBII redSat sEtfA sEtfB sHdrA sHdrB1 sHdrB3 sHdrC1 sLplAB
+DsrE2 EMO LbpA2 QmoA QmoB oxAprAII oxAprBII oxSat sEtfA sEtfB sHdrA sHdrB1 sHdrB3 sHdrC1
+DsrE2 EMO LbpA2 QmoA QmoB oxAprAII oxAprBII oxSat sEtfA sEtfB sHdrA sHdrB1 sHdrB3 sHdrC1 sLplAB
 DsrE2 EMO LbpA2 YeeE sEtfA sEtfB sHdrA sHdrB1 sHdrB3 sHdrC1
 DsrE2 EMO LbpA2 oxDsrK sEtfA sEtfB sHdrA sHdrB1 sHdrB3 sHdrC1
 DsrE2 EMO LbpA2 sEtfA sEtfB
 DsrE2 EMO LbpA2 sEtfA sEtfB sHdrA sHdrB1 sHdrB3 sHdrC1
+DsrE2 EMO LbpA2 sEtfA sEtfB sHdrA sHdrB1 sHdrB3 sHdrC1 DsrE3A
 DsrE2 EMO LbpA2 sEtfA sEtfB sHdrA sHdrB1 sHdrB3 sHdrC1 sLplAB
 DsrE2 EMO LbpA2 sEtfA sEtfB sHdrA sHdrB3 sHdrC1 sLplAB
 DsrE2 EMO LbpA2 sEtfA sEtfB sHdrA sHdrB3 sLplAB
@@ -379,7 +380,7 @@ DsrE2 LbpA2 LipS1 LipS2 TusA sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplA
 DsrE2 LbpA2 LipS1 LipS2 TusA sHdrT sLplAB
 DsrE2 LbpA2 LipS1 LipS2 TusA sLplAB
 DsrE2 LbpA2 LipS1 LipS2 oxDsrK sLplAB
-DsrE2 LbpA2 LipS1 LipS2 redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
+DsrE2 LbpA2 LipS1 LipS2 oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
 DsrE2 LbpA2 LipS1 LipS2 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2
 DsrE2 LbpA2 LipS1 LipS2 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sHdrT sLplAB
 DsrE2 LbpA2 LipS1 LipS2 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
@@ -390,7 +391,7 @@ DsrE2 LbpA2 LipS1 LipS2 sHdrB3 sHdrC1
 DsrE2 LbpA2 LipS1 LipS2 sLplAB
 DsrE2 LbpA2 LipS1 LipT RhdI SoeA SoeB SoeC TusA sLplAB
 DsrE2 LbpA2 LipS1 LipT RhdI TusA sLplAB
-DsrE2 LbpA2 LipS1 LipT SoeA SoeB SoeC TusA redSat sLplAB
+DsrE2 LbpA2 LipS1 LipT SoeA SoeB SoeC TusA oxSat sLplAB
 DsrE2 LbpA2 LipS1 LipT SoxT1 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI
 DsrE2 LbpA2 LipS1 LipT TusA sLplAB
 DsrE2 LbpA2 LipS1 LipT sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI
@@ -424,7 +425,7 @@ DsrE2 LbpA2 SoxR sHdrB2 sHdrC2 sHdrI
 DsrE2 LbpA2 SoxT1 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI
 DsrE2 LbpA2 SoxT1 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrH sHdrI
 DsrE2 LbpA2 SoxW sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
-DsrE2 LbpA2 redSat sHdrA sHdrB2 sHdrC2 sHdrI
+DsrE2 LbpA2 oxSat sHdrA sHdrB2 sHdrC2 sHdrI
 DsrE2 LbpA2 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2
 DsrE2 LbpA2 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI
 DsrE2 LbpA2 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sHdrT
@@ -456,7 +457,7 @@ DsrE2 LipS1 LipS2 LipT sHdrA sHdrB1 sHdrC1 sHdrC2 sHdrH sLplAB
 DsrE2 LipS1 LipS2 LipT sHdrB1 sHdrC1 sLplAB
 DsrE2 LipS1 LipS2 LipT sLplAB
 DsrE2 LipS1 LipS2 SorA SoxT1 sLplAB
-DsrE2 LipS1 LipS2 SorA redSat sHdrA sHdrB1 sHdrC1 sHdrH sLplAB
+DsrE2 LipS1 LipS2 SorA oxSat sHdrA sHdrB1 sHdrC1 sHdrH sLplAB
 DsrE2 LipS1 LipS2 SorA sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
 DsrE2 LipS1 LipS2 SorA sHdrA sHdrB1 sHdrC1 sHdrC2 sHdrH sLplAB
 DsrE2 LipS1 LipS2 SorA sHdrA sHdrB1 sHdrC1 sHdrH sLplAB
@@ -464,7 +465,7 @@ DsrE2 LipS1 LipS2 SorA sHdrA sHdrB1 sHdrC1 sLplAB
 DsrE2 LipS1 LipS2 SorA sHdrB1 sHdrC1 sLplAB
 DsrE2 LipS1 LipS2 SorA sLplAB
 DsrE2 LipS1 LipS2 TusA sHdrB1 sHdrC1
-DsrE2 LipS1 LipS2 redSat sHdrC1 sLplAB
+DsrE2 LipS1 LipS2 oxSat sHdrC1 sLplAB
 DsrE2 LipS1 LipS2 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sLplAB
 DsrE2 LipS1 LipS2 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sLplAB
 DsrE2 LipS1 LipS2 sHdrA sHdrB1 sHdrC1 sHdrH sLplAB
@@ -476,7 +477,7 @@ DsrE2 LipS1 LipT TusA sHdrT
 DsrE2 LipS1 SoeA SoeB SoeC SoxT1 TusA
 DsrE2 LipS2 SorA sHdrA sHdrB1 sHdrC1 sHdrC2 sHdrH sLplAB
 DsrE2 Otr SoeA SoeB SoeC SoxT1
-DsrE2 QmoA QmoB QmoC oxAprAII oxAprBII redSat
+DsrE2 QmoA QmoB QmoC oxAprAII oxAprBII oxSat
 DsrE2 QmoA QmoB SoeA SoeB SoeC SoxT1 TusA qHdrB qHdrC sHdrT
 DsrE2 QmoA QmoB SoeA SoeB SoeC TusA
 DsrE2 QmoA QmoB SoeA SoeB SoeC TusA oxAprAII oxAprBII qHdrB qHdrC redSat
@@ -509,9 +510,9 @@ DsrE2 SoeA SoeB SoeC TusA
 DsrE2 SoeA SoeB SoeC TusA sHdrA sHdrB1 sHdrC1 sHdrC2 sHdrH
 DsrE2 SoeA SoeB SoeC TusA sHdrA sHdrB1 sHdrC1 sHdrH
 DsrE2 SoeA SoeB SoeC TusA sHdrT
-DsrE2 SoeA SoeB SoeC oxAprAII oxAprBII redSat
-DsrE2 SoeA SoeB SoeC oxAprAII oxAprBII redSat sHdrT
-DsrE2 SoeA SoeB SoeC redSat
+DsrE2 SoeA SoeB SoeC oxAprAII oxAprBII oxSat
+DsrE2 SoeA SoeB SoeC oxAprAII oxAprBII oxSat sHdrT
+DsrE2 SoeA SoeB SoeC oxSat
 DsrE2 SoxA SoxB SoxR SoxT1 SoxV
 DsrE2 SoxA SoxB SoxR SoxT1 SoxV SoxW SoxX
 DsrE2 SoxA SoxB SoxS SoxT1 SoxV SoxW SoxZ
@@ -537,7 +538,7 @@ DsrE2 TusA sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2
 DsrE2 TusA sHdrA sHdrB1 sHdrC1
 DsrE2 TusA sHdrA sHdrB1 sHdrC1 sHdrC2 sHdrH
 DsrE2 TusA sHdrA sHdrB1 sHdrC1 sHdrH
-DsrE2 oxAprAII oxAprBII redSat sHdrT
+DsrE2 oxAprAII oxAprBII oxSat sHdrT
 DsrE2 oxDsrA oxDsrB oxDsrC oxDsrN
 DsrE2 oxDsrJ oxDsrN oxDsrO oxDsrP
 DsrE2 redDsrJ redDsrK redDsrO redDsrP
@@ -601,7 +602,6 @@ DsrL DsrT oxDsrK redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO
 DsrL DsrT oxDsrK redDsrA redDsrB redDsrC redDsrM redDsrN
 DsrL DsrT oxDsrK redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
 DsrL DsrT oxDsrK redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
-DsrL DsrT oxDsrO oxDsrP redDsrA redDsrB redDsrC redDsrM redDsrN
 DsrL DsrT redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN
 DsrL DsrT redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
 DsrL DsrT redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP redSat
@@ -633,7 +633,6 @@ DsrL QmoA QmoB QmoC oxAprAII oxAprBII redDsrA redDsrB redDsrC redDsrJ redDsrK re
 DsrL QmoA QmoB QmoC oxAprAII oxAprBII redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
 DsrL QmoA QmoB QmoC oxAprAII oxAprBII redDsrC redDsrN redSat
 DsrL QmoA QmoB QmoC oxDsrK redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP redSat
-DsrL QmoA QmoB QmoC oxDsrO oxDsrP redDsrA redDsrB
 DsrL QmoA QmoB QmoC oxSat redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
 DsrL QmoA QmoB QmoC redDsrA redDsrB redDsrC redDsrM
 DsrL QmoA QmoB QmoC redDsrA redDsrB redDsrN
@@ -647,22 +646,13 @@ DsrL QmoA QmoB qHdrB qHdrC redSat
 DsrL QmoA QmoB redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
 DsrL QmoA QmoB redDsrA redDsrB redDsrC redDsrN
 DsrL QmoA QmoB redDsrA redDsrB redDsrN
-DsrL QmoC oxAprAII oxAprBII oxDsrK redDsrA redDsrB redDsrC redDsrN
-DsrL QmoC oxAprAII oxAprBII oxDsrK redDsrA redDsrB redDsrC redDsrN redSat
-DsrL QmoC oxAprAII oxAprBII redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP redSat
-DsrL QmoC oxAprAII oxAprBII redDsrA redDsrB redDsrC redDsrN
-DsrL QmoC redDsrA redDsrB redDsrC
-DsrL QmoC redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
-DsrL QmoC redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP redSat
-DsrL QmoC redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
-DsrL QmoC redDsrA redDsrB redDsrC redDsrN
 DsrL SoeA SoeB SoeC oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
 DsrL SoeA SoeB SoeC oxDsrN oxDsrO oxDsrP sHdrT
 DsrL SudA SudB oxDsrC oxDsrK oxDsrM redDsrA redDsrB redDsrN
 DsrL SudA SudB redDsrA redDsrB
 DsrL TusA oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
-DsrL oxAprAII oxAprBII oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP redSat
-DsrL oxAprAII oxAprBII oxDsrN oxDsrO oxDsrP redSat
+DsrL oxAprAII oxAprBII oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP oxSat
+DsrL oxAprAII oxAprBII oxDsrN oxDsrO oxDsrP oxSat
 DsrL oxAprAII oxAprBII redDsrA redDsrB redDsrN
 DsrL oxDsrA oxDsrB oxDsrC oxDsrJ oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
 DsrL oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM
@@ -750,8 +740,8 @@ DsrL redDsrC redDsrK redDsrM redDsrN
 DsrL redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
 DsrR DsrS oxDsrJ oxDsrN oxDsrO oxDsrP
 DsrR DsrS oxDsrN oxDsrO oxDsrP
-DsrR SoeA SoeB SoeC oxDsrN oxDsrO oxDsrP redSat
-DsrR SoxB SoxC SoxD redSat
+DsrR SoeA SoeB SoeC oxDsrN oxDsrO oxDsrP oxSat
+DsrR SoxB SoxC SoxD oxSat
 DsrR oxDsrC oxDsrK oxDsrN oxDsrO oxDsrP
 DsrR oxDsrJ oxDsrN oxDsrO oxDsrP
 DsrR oxDsrK oxDsrN oxDsrO oxDsrP
@@ -783,7 +773,7 @@ DsrT QmoA QmoB QmoC oxAprAII oxAprBII redDsrC redDsrK redDsrM redSat
 DsrT QmoA QmoB QmoC oxAprAII oxAprBII redDsrC redDsrM redSat
 DsrT QmoA QmoB QmoC oxAprAII oxAprBII redDsrJ redDsrK redDsrM redDsrO redDsrP
 DsrT QmoA QmoB QmoC oxDsrK redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
-DsrT QmoA QmoB QmoC oxSat redDsrC redDsrJ redDsrK redDsrM
+DsrT QmoA QmoB QmoC redSat redDsrC redDsrJ redDsrK redDsrM
 DsrT QmoA QmoB QmoC redAprA redAprB redDsrJ redDsrK redDsrM redDsrO redDsrP
 DsrT QmoA QmoB QmoC redDsrC redDsrK redDsrM redSat
 DsrT QmoA QmoB QmoC redDsrC redDsrM redSat
@@ -791,35 +781,28 @@ DsrT QmoA QmoB oxAprAII oxAprBII redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
 DsrT QmoA QmoB oxAprAII oxAprBII redDsrJ redDsrK redDsrM redDsrO redDsrP sHdrB3
 DsrT QmoA QmoB redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
 DsrT QmoA QmoB redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
-DsrT QmoC redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP redSat
-DsrT QmoC redDsrC redDsrJ redDsrK redDsrM redDsrO redSat
-DsrT QmoC redDsrC redDsrK redDsrM
-DsrT QmoC redDsrC redDsrK redSat
 DsrT QrcA QrcB QrcC QrcD redDsrA redDsrB redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
 DsrT QrcA QrcB QrcC QrcD redDsrJ redDsrK redDsrM redDsrO redDsrP
 DsrT QrcA QrcB QrcC QrcD redDsrJ redDsrM redDsrO redDsrP
-DsrT QrcD redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
 DsrT SudA SudB redDsrJ redDsrK redDsrM redDsrO redDsrP
 DsrT dHdrA dHdrB redDsrK redDsrM
-DsrT oxDsrC oxDsrN oxDsrO oxDsrP redDsrJ redDsrK redDsrM
-DsrT oxDsrC oxDsrO oxDsrP redDsrA redDsrB redDsrJ redDsrK redDsrM
-DsrT oxDsrC redDsrA redDsrB redDsrJ redDsrK redDsrM redDsrN
-DsrT oxDsrC redDsrA redDsrB redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
-DsrT oxDsrC redDsrA redDsrB redDsrJ redDsrK redDsrM redDsrO
-DsrT oxDsrC redDsrA redDsrB redDsrJ redDsrK redDsrM redDsrO redDsrP
-DsrT oxDsrC redDsrA redDsrB redDsrK redDsrM redDsrN
-DsrT oxDsrC redDsrA redDsrB redDsrM redDsrN
-DsrT oxDsrC redDsrA redDsrB redDsrN
-DsrT oxDsrC redDsrJ redDsrK redDsrM
-DsrT oxDsrC redDsrJ redDsrK redDsrM redDsrN
-DsrT oxDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO
-DsrT oxDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
-DsrT oxDsrC redDsrJ redDsrK redDsrM redDsrO
-DsrT oxDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
-DsrT oxDsrC redDsrJ redDsrK redDsrN redDsrO redDsrP
-DsrT oxDsrC redDsrJ redDsrM redDsrO redDsrP
-DsrT oxDsrC redDsrK redDsrM redDsrN
-DsrT oxDsrC redDsrK redDsrM redDsrO redDsrP
+DsrT redDsrC redDsrA redDsrB redDsrJ redDsrK redDsrM redDsrN
+DsrT redDsrc redDsrA redDsrB redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
+DsrT redDsrc redDsrA redDsrB redDsrJ redDsrK redDsrM redDsrO
+DsrT redDsrc redDsrA redDsrB redDsrJ redDsrK redDsrM redDsrO redDsrP
+DsrT redDsrc redDsrA redDsrB redDsrK redDsrM redDsrN
+DsrT redDsrc redDsrA redDsrB redDsrM redDsrN
+DsrT redDsrc redDsrA redDsrB redDsrN
+DsrT redDsrc redDsrJ redDsrK redDsrM
+DsrT redDsrc redDsrJ redDsrK redDsrM redDsrN
+DsrT redDsrc redDsrJ redDsrK redDsrM redDsrN redDsrO
+DsrT redDsrc redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
+DsrT redDsrc redDsrJ redDsrK redDsrM redDsrO
+DsrT redDsrc redDsrJ redDsrK redDsrM redDsrO redDsrP
+DsrT redDsrc redDsrJ redDsrK redDsrN redDsrO redDsrP
+DsrT redDsrc redDsrJ redDsrM redDsrO redDsrP
+DsrT redDsrc redDsrK redDsrM redDsrN
+DsrT redDsrc redDsrK redDsrM redDsrO redDsrP
 DsrT oxDsrK oxDsrN redDsrA redDsrB redDsrC
 DsrT oxDsrK oxDsrN redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM
 DsrT oxDsrK oxDsrN redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO
@@ -834,11 +817,10 @@ DsrT oxDsrK redDsrJ redDsrK redDsrM redDsrO
 DsrT oxDsrK redDsrJ redDsrK redDsrM redDsrO redDsrP
 DsrT oxDsrN redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
 DsrT oxDsrN redDsrA redDsrB redDsrJ redDsrK redDsrM redDsrO
-DsrT oxDsrN redDsrK redDsrM redDsrO
-DsrT oxSat redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
-DsrT oxSat redDsrC redDsrK redDsrM
-DsrT oxSat redDsrC redDsrK redDsrM redDsrO
-DsrT oxSat redDsrJ redDsrK redDsrM redDsrO redDsrP
+DsrT redSat redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
+DsrT redSat redDsrC redDsrK redDsrM
+DsrT redSat redDsrC redDsrK redDsrM redDsrO
+DsrT redSat redDsrJ redDsrK redDsrM redDsrO redDsrP
 DsrT redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO
 DsrT redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
 DsrT redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
@@ -869,7 +851,6 @@ DsrT redDsrJ redDsrK redDsrM redDsrN redDsrP
 DsrT redDsrJ redDsrK redDsrM redDsrO
 DsrT redDsrJ redDsrK redDsrM redDsrO redDsrP
 DsrT redDsrJ redDsrK redDsrM redDsrO redDsrP redSat
-DsrT redDsrJ redDsrK redDsrM redDsrO redDsrP sHdrB2
 DsrT redDsrJ redDsrK redDsrM redDsrP
 DsrT redDsrJ redDsrK redDsrM redSat
 DsrT redDsrJ redDsrK redDsrO redDsrP
@@ -927,7 +908,7 @@ EMO sEtfA sEtfB sHdrB3 sLplAB
 FccA FccB QmoA QmoB qHdrB qHdrC
 FccA FccB SoeA SoeB SoeC
 FccA FccB SoeA SoeB SoeC TusA
-FccA FccB oxAprAII oxAprBII redSat
+FccA FccB oxAprAII oxAprBII oxSat
 FccA FccB oxDsrN oxDsrO oxDsrP
 FlxA FlxB FlxC FlxD GcvH
 FlxA FlxB FlxC FlxD GcvH dHdrA dHdrB dHdrC
@@ -1040,10 +1021,10 @@ LbpA1 LbpA2 sHdrA sHdrB2 sHdrC2 sHdrH
 LbpA1 LbpA2 sHdrB2 sHdrC2 sHdrH
 LbpA1 LipS1 LipS2 LipT TusA sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sLplAB
 LbpA1 LipS1 LipS2 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sLplAB
-LbpA1 SoeA SoeB SoeC redSat
-LbpA1 oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sLplAB
+LbpA1 SoeA SoeB SoeC oxSat
+LbpA1 oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sLplAB
 LbpA1 oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sLplAB
-LbpA1 redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sLplAB
+LbpA1 oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sLplAB
 LbpA1 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sLplAB
 LbpA1 sHdrA sHdrB2 sHdrC2 sHdrH
 LbpA1 sHdrA sHdrB2 sHdrC2 sLplAB
@@ -1063,7 +1044,6 @@ LbpA2 LipS1 LipS2 LipT SoxT1 TusA sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI 
 LbpA2 LipS1 LipS2 LipT SoxT1 TusA sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrI sLplAB
 LbpA2 LipS1 LipS2 LipT SoxT1 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
 LbpA2 LipS1 LipS2 LipT SoxT1 sHdrA sHdrB1 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
-LbpA2 LipS1 LipS2 LipT TusA oxDsrK sLplAB
 LbpA2 LipS1 LipS2 LipT TusA sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
 LbpA2 LipS1 LipS2 LipT TusA sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sLplAB
 LbpA2 LipS1 LipS2 LipT TusA sHdrT sLplAB
@@ -1125,7 +1105,7 @@ LbpA2 SoxA SoxB SoxR SoxT1 SoxV sHdrI
 LbpA2 SoxA SoxB SoxT1 SoxV sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI
 LbpA2 SoxA SoxB SoxT1 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI
 LbpA2 SoxA SoxV sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI
-LbpA2 SoxB SoxT1 redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI
+LbpA2 SoxB SoxT1 oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI
 LbpA2 SoxB SoxV SoxW SoxX SoxZ sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI
 LbpA2 SoxR SoxS SoxT1 SoxW
 LbpA2 SoxT1 TusA sHdrA sHdrB2 sHdrC2 sHdrH sHdrI
@@ -1142,14 +1122,14 @@ LbpA2 SoxT1 sHdrB2 sHdrC2 sHdrI sLplAB
 LbpA2 SoxT1 sHdrB2 sHdrI sLplAB
 LbpA2 SoxX sHdrB2 sHdrC2 sHdrI
 LbpA2 TusA sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI
-LbpA2 oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sLplAB
-LbpA2 oxAprAI oxAprBI redSat sHdrA sHdrB1 sHdrC1
-LbpA2 oxAprAI oxAprBI redSat sHdrB2 sHdrC2 sLplAB
+LbpA2 oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sLplAB
+LbpA2 oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrC1
+LbpA2 oxAprAI oxAprBI oxSat sHdrB2 sHdrC2 sLplAB
 LbpA2 oxAprAI oxAprBI sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sLplAB
-LbpA2 oxAprAII oxAprBII redSat sHdrC1
+LbpA2 oxAprAII oxAprBII oxSat
 LbpA2 oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2
 LbpA2 oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sLplAB
-LbpA2 redSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2
+LbpA2 oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2
 LbpA2 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2
 LbpA2 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH
 LbpA2 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI
@@ -1179,7 +1159,7 @@ LbpA2 sHdrB1 sHdrB2 sHdrC1 sHdrH sHdrI
 LbpA2 sHdrB2 sHdrC2 sHdrH sHdrI
 LbpA2 sHdrB2 sHdrC2 sHdrH sHdrI sLplAB
 LbpA2 sHdrB2 sHdrC2 sHdrI sLplAB
-LipS1 LipS2 LipT QmoA QmoB QmoC oxAprAII oxAprBII redSat sHdrB3 sLplAB
+LipS1 LipS2 LipT QmoA QmoB QmoC oxAprAII oxAprBII oxSat sHdrB3 sLplAB
 LipS1 LipS2 LipT SoeA SoeB SoeC sLplAB
 LipS1 LipS2 LipT SoxA SoxB SoxS SoxT1 SoxV SoxW SoxX sLplAB
 LipS1 LipS2 LipT SoxA SoxB SoxS SoxT1 SoxV SoxW sLplAB
@@ -1191,7 +1171,7 @@ LipS1 LipS2 LipT SoxT1 SoxW sLplAB
 LipS1 LipS2 LipT SoxX SoxZ sHdrA sHdrB1 sHdrC1 sHdrH sLplAB
 LipS1 LipS2 LipT SoxX SoxZ sHdrC1 sLplAB
 LipS1 LipS2 LipT TusA oxDsrK sLplAB
-LipS1 LipS2 LipT TusA redSat sLplAB
+LipS1 LipS2 LipT TusA oxSat sLplAB
 LipS1 LipS2 LipT TusA sHdrA sHdrB1 sHdrC1
 LipS1 LipS2 LipT TusA sHdrA sHdrB1 sHdrC1 sHdrH
 LipS1 LipS2 LipT TusA sHdrA sHdrB1 sHdrC1 sLplAB
@@ -1243,51 +1223,31 @@ MccA MccB MccC MccD MccR
 MccA MccB MccC MccD MccR MccS
 MccA MccB MccC MccD MccS
 Otr PhsA PhsB PhsC TtrR TtrS
-Otr QmoA QmoB QmoC oxAprAII oxAprBII redSat
+Otr QmoA QmoB QmoC oxAprAII oxAprBII oxSat
 Otr QmoA QmoB QmoC redAprA redAprB redDsrC redSat
 Otr QmoA QmoB qHdrB qHdrC
 Otr QrcA QrcB QrcC QrcD
 PhsA PhsB PhsC SudA SudB
 PhsA PhsB PhsC TtrR TtrS
-QmoA QmoB QmoC SoeA SoeB SoeC oxAprAII oxAprBII redSat
-QmoA QmoB QmoC oxAprAII oxAprBII
-QmoA QmoB QmoC oxAprAII oxAprBII oxDsrK
-QmoA QmoB QmoC oxAprAII oxAprBII oxDsrK oxDsrM redDsrA redDsrB redDsrC redDsrN redSat
-QmoA QmoB QmoC oxAprAII oxAprBII oxDsrK oxDsrN oxSat redDsrA redDsrB redDsrC redDsrK redDsrM redDsrO redDsrP sHdrB3
-QmoA QmoB QmoC oxAprAII oxAprBII oxDsrK oxSat sHdrB3
-QmoA QmoB QmoC oxAprAII oxAprBII oxDsrK redDsrC redDsrK redDsrM redSat
-QmoA QmoB QmoC oxAprAII oxAprBII oxDsrK redSat
-QmoA QmoB QmoC oxAprAII oxAprBII oxDsrN
-QmoA QmoB QmoC oxAprAII oxAprBII oxDsrN oxDsrP
-QmoA QmoB QmoC oxAprAII oxAprBII oxDsrN oxSat redDsrA redDsrB sHdrB3
-QmoA QmoB QmoC oxAprAII oxAprBII oxDsrO oxDsrP
-QmoA QmoB QmoC oxAprAII oxAprBII oxSat
-QmoA QmoB QmoC oxAprAII oxAprBII oxSat redDsrA redDsrB
-QmoA QmoB QmoC oxAprAII oxAprBII oxSat redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
-QmoA QmoB QmoC oxAprAII oxAprBII oxSat redDsrC redDsrM
-QmoA QmoB QmoC oxAprAII oxAprBII oxSat sHdrB3
-QmoA QmoB QmoC oxAprAII oxAprBII oxSat sHdrT
-QmoA QmoB QmoC oxAprAII oxAprBII redDsrA redDsrB
-QmoA QmoB QmoC oxAprAII oxAprBII redDsrA redDsrB redDsrC
-QmoA QmoB QmoC oxAprAII oxAprBII redDsrA redDsrB redDsrC redDsrN redSat
-QmoA QmoB QmoC oxAprAII oxAprBII redDsrA redDsrB redDsrN redSat
-QmoA QmoB QmoC oxAprAII oxAprBII redDsrA redDsrB redSat
-QmoA QmoB QmoC oxAprAII oxAprBII redDsrC redSat
-QmoA QmoB QmoC oxAprAII oxAprBII redDsrE redDsrF redSat sLplAB
-QmoA QmoB QmoC oxAprAII oxAprBII redDsrJ redDsrK redDsrM redDsrO redDsrP redSat
-QmoA QmoB QmoC oxAprAII oxAprBII redDsrK redSat
-QmoA QmoB QmoC oxAprAII oxAprBII redSat
-QmoA QmoB QmoC oxAprAII oxAprBII redSat sLplAB
-QmoA QmoB QmoC oxAprAII oxAprBII sHdrA sHdrB1
-QmoA QmoB QmoC oxDsrK oxDsrO oxDsrP
-QmoA QmoB QmoC oxDsrK redSat sHdrT
-QmoA QmoB QmoC oxDsrO oxDsrP
-QmoA QmoB QmoC oxDsrO oxDsrP oxSat redDsrC redDsrK redDsrM
-QmoA QmoB QmoC oxDsrO oxDsrP redDsrA redDsrB
-QmoA QmoB QmoC oxDsrP redDsrO
-QmoA QmoB QmoC oxSat redAprA redAprB
-QmoA QmoB QmoC oxSat redDsrC
-QmoA QmoB QmoC oxSat redDsrC redDsrM
+QmoA QmoB QmoC SoeA SoeB SoeC oxAprAII oxAprBII oxSat
+QmoA QmoB QmoC redAprA redAprB
+QmoA QmoB QmoC redAprA redAprB oxDsrK
+QmoA QmoB QmoC redAprA redAprB oxDsrK oxDsrM redDsrA redDsrB redDsrC redDsrN redSat
+QmoA QmoB QmoC redAprA redAprB oxDsrK oxDsrN oxSat redDsrA redDsrB redDsrC redDsrK redDsrM redDsrO redDsrP sHdrB3
+QmoA QmoB QmoC redAprA redAprB oxDsrK redDsrC redDsrK redDsrM redSat
+QmoA QmoB QmoC redAprA redAprB redSat redDsrA redDsrB
+QmoA QmoB QmoC redAprA redAprB redSat redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
+QmoA QmoB QmoC redAprA redAprB redDsrA redDsrB
+QmoA QmoB QmoC redAprA redAprB redDsrA redDsrB redDsrC
+QmoA QmoB QmoC redAprA redAprB redDsrA redDsrB redDsrC redDsrN redSat
+QmoA QmoB QmoC redAprA redAprB redDsrA redDsrB redDsrN redSat
+QmoA QmoB QmoC redAprA redAprB redDsrA redDsrB redSat
+QmoA QmoB QmoC redAprA redAprB redDsrC redSat
+QmoA QmoB QmoC redAprA redAprB redDsrE redDsrF redDsrH redSat sLplAB
+QmoA QmoB QmoC redAprA redAprB redDsrJ redDsrK redDsrM redDsrO redDsrP redSat
+QmoA QmoB QmoC redSat redAprA redAprB
+QmoA QmoB QmoC redSat redDsrC
+QmoA QmoB QmoC redSat redDsrC redDsrM
 QmoA QmoB QmoC redAprA redAprB
 QmoA QmoB QmoC redAprA redAprB redDsrC redSat
 QmoA QmoB QmoC redAprA redAprB redDsrK
@@ -1300,10 +1260,10 @@ QmoA QmoB QmoC redDsrC redSat
 QmoA QmoB SoeA SoeB SoeC
 QmoA QmoB SoeA SoeB SoeC TusA qHdrB qHdrC
 QmoA QmoB SoeA SoeB SoeC TusA qHdrB qHdrC sHdrA sHdrB1 sHdrC1
-QmoA QmoB SoeA SoeB SoeC oxAprAII oxAprBII oxDsrN oxDsrO oxDsrP qHdrB qHdrC redSat
-QmoA QmoB SoeA SoeB SoeC oxAprAII oxAprBII oxSat qHdrB qHdrC
-QmoA QmoB SoeA SoeB SoeC oxAprAII oxAprBII qHdrB qHdrC
-QmoA QmoB SoeA SoeB SoeC oxAprAII oxAprBII qHdrB qHdrC redSat
+QmoA QmoB SoeA SoeB SoeC redAprA redAprB oxDsrN oxDsrO oxDsrP qHdrB qHdrC redSat
+QmoA QmoB SoeA SoeB SoeC redAprA redAprB redSat qHdrB qHdrC
+QmoA QmoB SoeA SoeB SoeC redAprA redAprB qHdrB qHdrC
+QmoA QmoB SoeA SoeB SoeC redAprA redAprB qHdrB qHdrC redSat
 QmoA QmoB SoeA SoeB SoeC qHdrB qHdrC
 QmoA QmoB SoeA SoeB SoeC qHdrB qHdrC redDsrE redDsrF redDsrH
 QmoA QmoB SoeA SoeB SoeC qHdrB qHdrC sHdrT
@@ -1312,32 +1272,26 @@ QmoA QmoB SoxT1 qHdrB qHdrC
 QmoA QmoB SoxT1 qHdrB qHdrC redAprA redAprB redSat
 QmoA QmoB TsdA TsdB qHdrB qHdrC
 QmoA QmoB TusA qHdrB qHdrC
-QmoA QmoB assAprA assAprB oxAprAII oxAprBII qHdrB qHdrC
-QmoA QmoB assAprA assAprB oxAprAII oxAprBII qHdrB qHdrC redSat
-QmoA QmoB oxAprAII oxAprBII oxDsrK oxSat sHdrB3
-QmoA QmoB oxAprAII oxAprBII oxDsrK qHdrB qHdrC redSat
-QmoA QmoB oxAprAII oxAprBII oxDsrN oxDsrP qHdrB qHdrC redSat
-QmoA QmoB oxAprAII oxAprBII oxSat
-QmoA QmoB oxAprAII oxAprBII oxSat qHdrB qHdrC
-QmoA QmoB oxAprAII oxAprBII oxSat sHdrB3
-QmoA QmoB oxAprAII oxAprBII qHdrB qHdrC
-QmoA QmoB oxAprAII oxAprBII qHdrB qHdrC redDsrC redSat
-QmoA QmoB oxAprAII oxAprBII qHdrB qHdrC redDsrE redDsrF redSat
-QmoA QmoB oxAprAII oxAprBII qHdrB qHdrC redSat
-QmoA QmoB oxAprAII oxAprBII redDsrA redDsrB
-QmoA QmoB oxAprAII oxAprBII redDsrA redDsrB redDsrC redDsrK redDsrM redDsrO redDsrP
-QmoA QmoB oxAprAII oxAprBII redDsrC redDsrN
-QmoA QmoB oxAprAII oxAprBII redDsrC redSat
-QmoA QmoB oxAprAII oxAprBII redDsrE redDsrF redSat
-QmoA QmoB oxAprAII oxAprBII redDsrJ redDsrO redDsrP redSat
-QmoA QmoB oxAprAII oxAprBII redDsrM redSat
-QmoA QmoB oxAprAII oxAprBII redDsrO redDsrP
-QmoA QmoB oxAprAII oxAprBII redSat
-QmoA QmoB oxAprAII oxAprBII redSat sHdrB3
-QmoA QmoB oxAprAII oxAprBII sHdrB3
+QmoA QmoB assAprA assAprB redAprA redAprB qHdrB qHdrC
+QmoA QmoB assAprA assAprB redAprA redAprB qHdrB qHdrC redSat
+QmoA QmoB redAprA redAprB oxDsrK redSat sHdrB3
+QmoA QmoB redAprA redAprB oxDsrK qHdrB qHdrC redSat
+QmoA QmoB redAprA redAprB oxDsrN oxDsrP qHdrB qHdrC redSat
+QmoA QmoB redAprA redAprB redSat
+QmoA QmoB redAprA redAprB redSat qHdrB qHdrC
+QmoA QmoB redAprA redAprB redSat sHdrB3
+QmoA QmoB redAprA redAprB qHdrB qHdrC
+QmoA QmoB redAprA redAprB qHdrB qHdrC redDsrC redSat
+QmoA QmoB redAprA redAprB qHdrB qHdrC redDsrE redDsrF redDsrH redSat
+QmoA QmoB redAprA redAprB qHdrB qHdrC redSat
+QmoA QmoB redAprA redAprB redDsrA redDsrB
+QmoA QmoB redAprA redAprB redDsrA redDsrB redDsrC redDsrK redDsrM redDsrO redDsrP
+QmoA QmoB redAprA redAprB redDsrC redDsrN
+QmoA QmoB redAprA redAprB redDsrC redSat
+QmoA QmoB redAprA redAprB redDsrE redDsrF redDsrH redSat
 QmoA QmoB oxDsrC qHdrB qHdrC
 QmoA QmoB oxDsrK oxDsrM redDsrA redDsrB redDsrN
-QmoA QmoB oxSat qHdrB qHdrC
+QmoA QmoB redSat qHdrB qHdrC
 QmoA QmoB qHdrB qHdrC redAprA redAprB redSat
 QmoA QmoB qHdrB qHdrC redSat
 QmoA QmoB redAprA redAprB redSat
@@ -1366,6 +1320,10 @@ ShyA1 ShyB1 ShyC1 ShyD1
 ShyA2 ShyB2 ShyC2 ShyD2 SudA SudB
 ShyA2 ShyB2 ShyC2 ShyD2
 SudA SudB
+sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH DsrE3A DsrE3B DsrE3C
+sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH DsrE3B DsrE3C
+sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH DsrE3C
+sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrR DsrE3C
 SoeA SoeB SoeC SorA SoxB SoxT1
 SoeA SoeB SoeC SorA SoxT1 TusA
 SoeA SoeB SoeC SorA redSat
@@ -1632,14 +1590,11 @@ dHdrA dHdrB dHdrC redDsrA redDsrB
 oxAprAI oxAprBI oxDsrJ oxDsrN oxDsrO oxDsrP
 oxAprAI oxAprBI oxDsrK redDsrA redDsrB redSat
 oxAprAI oxAprBI oxDsrN redDsrA redDsrB redDsrC
-oxAprAI oxAprBI redDsrA redDsrB redDsrC redDsrK
-oxAprAI oxAprBI redDsrA redDsrB redDsrC redDsrK redDsrN redSat
-oxAprAII oxAprBII oxDsrN oxDsrO oxDsrP
-oxAprAII oxAprBII oxDsrN oxDsrP redSat
-oxAprAII oxAprBII qHdrB qHdrC redSat
-oxAprAII oxAprBII redDsrA redDsrB redDsrO redDsrP
-oxAprAII oxAprBII redDsrA redDsrB redSat
-oxAprAII oxAprBII redDsrJ redDsrK redDsrO redDsrP
+redAprA redAprB redDsrA redDsrB redDsrC redDsrK
+redAprA redAprB redDsrA redDsrB redDsrC redDsrK redDsrN redSat
+redAprA redAprB redDsrA redDsrB redDsrO redDsrP
+redAprA redAprB redDsrA redDsrB redSat
+redAprA redAprB redDsrJ redDsrK redDsrO redDsrP
 oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM
 oxDsrA oxDsrB oxDsrK oxDsrN redDsrC
 oxDsrA oxDsrB oxDsrK redDsrC redDsrK redDsrN
@@ -1726,7 +1681,7 @@ oxDsrM oxDsrN redDsrA redDsrB redDsrC
 oxDsrM oxDsrN redDsrA redDsrB redDsrC redDsrK
 oxDsrM redDsrA redDsrB redDsrC redDsrN
 oxDsrM redDsrJ redDsrK redDsrO redDsrP
-oxDsrN oxSat redDsrA redDsrB redDsrC
+redDsrN redSat redDsrA redDsrB redDsrC
 oxDsrN redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
 oxDsrN redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
 oxDsrN redDsrC redDsrJ redDsrO redDsrP
@@ -1735,9 +1690,9 @@ oxDsrP redDsrC redDsrJ redDsrK redDsrM redDsrO
 oxDsrP redDsrJ redDsrK redDsrM redDsrO
 oxDsrP redDsrJ redDsrK redDsrM redDsrO sHdrB3
 oxDsrP redDsrK redDsrM redDsrO sHdrB3
-oxSat redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
-oxSat redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
-oxSat redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
+redSat redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
+redSat redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
+redSat redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
 redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM
 redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
 redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO
@@ -1788,6 +1743,7 @@ redDsrK redDsrM redDsrN redDsrO redDsrP
 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2
 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH
 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI
+sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sHdrJ
 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sHdrI sLplAB
 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH sLplAB
 sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrI
@@ -1814,3 +1770,59 @@ ShyA ShyB ShyC ShyD
 ShyA ShyC ShyD
 TmcA TmcB TmcC
 TmcA TmcB TmcC TmcD
+oxAprAI oxAprBI
+oxAprAII oxAprBII
+redAprA redAprB
+redAprA redAprB redSat
+redDsrA redDsrB
+oxDsrA oxDsrB
+SoeA SoeB SoeC
+RhdI SQRI SDOI
+RhdI SQRI SDOII
+RhdI SQRII SDOI
+RhdI SQRII SDOII
+RhdI SQRIII SDOI
+RhdI SQRIII SDOII
+RhdI SQRIV SDOI
+RhdI SQRIV SDOII
+RhdI SQRV SDOI
+RhdI SQRV SDOII
+RhdI SQRVI SDOI
+RhdI SQRVI SDOII
+Rhd442 SQRI SDOI
+Rhd442 SQRI SDOII
+Rhd442 SQRII SDOI
+Rhd442 SQRII SDOII
+Rhd442 SQRIII SDOI
+Rhd442 SQRIII SDOII
+Rhd442 SQRIV SDOI
+Rhd442 SQRIV SDOII
+Rhd442 SQRV SDOI
+Rhd442 SQRV SDOII
+Rhd442 SQRVI SDOI
+Rhd442 SQRVI SDOII
+RhdI SQRI SDOI TauE
+RhdI SQRI SDOII TauE
+RhdI SQRII SDOI TauE
+RhdI SQRII SDOII TauE
+RhdI SQRIII SDOI TauE
+RhdI SQRIII SDOII TauE
+RhdI SQRIV SDOI TauE
+RhdI SQRIV SDOII TauE
+RhdI SQRV SDOI TauE
+RhdI SQRV SDOII TauE
+RhdI SQRVI SDOI TauE
+RhdI SQRVI SDOII TauE
+Rhd442 SQRI SDOI TauE
+Rhd442 SQRI SDOII TauE
+Rhd442 SQRII SDOI TauE
+Rhd442 SQRII SDOII TauE
+Rhd442 SQRIII SDOI TauE
+Rhd442 SQRIII SDOII TauE
+Rhd442 SQRIV SDOI TauE
+Rhd442 SQRIV SDOII TauE
+Rhd442 SQRV SDOI TauE
+Rhd442 SQRV SDOII TauE
+Rhd442 SQRVI SDOI TauE
+Rhd442 SQRVI SDOII TauE
+TusB TusC TusD TusE

@@ -19,22 +19,18 @@ AlaDH BmcsB DhpA HpfX SlaB Tpa
 AlaDH ComC HpsK HpsL HpsM HpsN HpsO HpsP SuyB TauZ
 AlaDH ComC HpsN HpsO HpsP HpsU SlaB SuyA SuyB TauZ
 AlaDH ComC HpsO IseJ SlaB SuyB TauD
-AlaDH ComC HpsO SuyB TauD
-AlaDH ComC Pta SauT Xsc
 AlaDH ComC SlcC SuyA SuyB
 AlaDH ComD ComE HpsN HpsO TauA TauB TauC Tpa Xsc
 AlaDH CuyA HpsN TauK TauL TauM Tpa Xsc
 AlaDH CuyZ Pta SlaB TauE TauK TauL TauM TauR Tpa Xsc
 AlaDH CuyZ TauA TauB TauC Tpa Xsc
 AlaDH DhpA HpfY HpfZ Xsc
-AlaDH DhpA HpsU SlaB Tpa
 AlaDH DhpA IseD SlaB Tpa
 AlaDH DhpA IseU SlaB SlcC TauR Toa
 AlaDH DhpA SarD TauR Tpa
 AlaDH DhpA SlaB TauR Tpa Xsc
 AlaDH DhpA SlaB Tpa Xsc
 AlaDH DhpA TauA TauB TauC TauR Tpa Xsc
-AlaDH HpfD HpfY HpfZ IseR IseU Pta SauS SauU TauR TauZ Tpa Xsc
 AlaDH HpfD IseJ TauD Xsc
 AlaDH HpfD Pta TauR Tpa
 AlaDH HpfD TauK TauL TauM TauR Tpa Xsc
@@ -43,8 +39,6 @@ AlaDH HpfY HpfZ IseR SauS TauA TauB TauC TauR Tpa Xsc
 AlaDH HpfY HpfZ Pta SauS TauR Tpa
 AlaDH HpfY HpfZ SauS SlaB Toa
 AlaDH HpfY HpfZ SlaB Tpa
-AlaDH HpfY SauS SlaB Toa
-AlaDH HpfZ SauS SlaB Toa
 AlaDH HpsG HpsH IseD Tpa
 AlaDH HpsG HpsH SarD Tpa
 AlaDH HpsK HpsL HpsM HpsN
@@ -59,33 +53,11 @@ AlaDH HpsN Pta SlaB TauA TauB TauC TauR Tpa
 AlaDH HpsN Pta SlaB TauR
 AlaDH HpsO HpsP IseJ IseR
 AlaDH HpsO HpsP IseU SlaB TauR Toa
-AlaDH HpsO HpsP SauT SlaB
-AlaDH HpsO HpsU IseU SlaB Tpa
-AlaDH HpsO HpsU SauT SlaB
-AlaDH HpsO HpsU SlaB TauR Tpa
-AlaDH HpsO IseJ IseU SlcD
-AlaDH HpsO IseR SlaB Tpa
-AlaDH HpsO IseU SlaB SuyB
-AlaDH HpsO IseU SlaB TauR Tpa
-AlaDH HpsO IsfD IsfE TauA TauB TauC TauR Tpa
-AlaDH HpsO IsfD IsfE TauR Tpa
-AlaDH HpsO IsfD TauA TauB TauC TauR Tpa
-AlaDH HpsO SauT SlaB Tpa
-AlaDH HpsO SauT SlcC TauA TauB TauC
-AlaDH HpsO SauT TauD TauZ
-AlaDH HpsO SlaB TauR Tpa
-AlaDH HpsO SlaB TauR Tpa Xsc
-AlaDH HpsO SlaB Toa Tpa
-AlaDH HpsO SlaB Tpa Xsc
-AlaDH HpsO SlcC Toa Tpa
-AlaDH HpsO TauA TauB TauC
 AlaDH HpsU IseJ IseR TauA TauB TauC TauE TauR TauZ Tpa Xsc
 AlaDH HpsU IseJ IseR TauE TauR TauZ Tpa Xsc
 AlaDH HpsU IseR Pta SarD TauR Tpa Xsc
 AlaDH HpsU IseR SarD TauR Tpa Xsc
 AlaDH HpsU Pta TauR Tpa
-AlaDH HpsU SauT SlaB Tpa
-AlaDH HpsU SauT TauA TauB TauC
 AlaDH HpsU SlaB SlcC TauR Toa
 AlaDH HpsU SlaB TauR Toa
 AlaDH HpsU SlaB TauR Tpa
@@ -97,7 +69,6 @@ AlaDH IseJ IseK IseL IseM IseR Pta Xsc
 AlaDH IseJ IseK IseL IseM IseR TauR Xsc
 AlaDH IseJ IseK IseL IseM IseR Tpa
 AlaDH IseJ IseR TauA TauB TauC Tpa Xsc
-AlaDH IseJ IseU SauT SlaB Tpa
 AlaDH IseJ SarD SlaB TauA TauB TauC TauR Tpa Xsc
 AlaDH IseJ SarD SlaB TauR Tpa Xsc
 AlaDH IseJ SlaB TauR Tpa Xsc
@@ -109,7 +80,7 @@ AlaDH IseK IseL IseM IseR SarD
 AlaDH IseR IseU Pta SarD TauA TauB TauC TauR TauZ Tpa Xsc
 AlaDH IseR IseU Pta SarD TauR Toa Xsc
 AlaDH IseR IseU Pta SlcC TauR TauZ Tpa Xsc
-AlaDH IseR Pta SauT TauR Tpa Xsc
+AlaDH IseR Pta TauR Tpa Xsc
 AlaDH IseR Pta SlaB TauR TauZ Tpa Xsc
 AlaDH IseR Pta SlaB TauR Tpa Xsc
 AlaDH IseR Pta SlaB Tpa Xsc
@@ -159,11 +130,6 @@ AlaDH SauS SauT TauA TauB TauC Tpa Xsc
 AlaDH SauS SauT TauR Toa Xsc
 AlaDH SauS SauT TauR Xsc
 AlaDH SauS SauT Tpa Xsc
-AlaDH SauS TauA TauB TauC TauR Toa Xsc
-AlaDH SauS TauA TauB TauC Tpa Xsc
-AlaDH SauT SlaB Toa Tpa
-AlaDH SauT TauA TauB TauC
-AlaDH SauT TauA TauB TauC Tpa
 AlaDH SlaB SlcC TauR Toa
 AlaDH SlaB SlcC TauR Tpa Xsc
 AlaDH SlaB TauA TauB TauC TauR Tpa
@@ -202,14 +168,12 @@ BmcsB HpfX HpsG HpsH IseD Pta
 BmcsB HpfX HpsG HpsH Pta
 BmcsB HpfX HpsG HpsH SlaB Toa
 BmcsB HpfX HpsO HpsP SlcC
-BmcsB HpfX HpsO SauT Toa
 BmcsB HpfX HpsO SlaB Toa
 BmcsB HpfX IseD TauK TauL TauM
 ComC ComD ComE HpsK HpsL HpsM HpsN HpsO HpsP SlaB SlcD
 ComC ComD ComE HpsK HpsL HpsM HpsN HpsO HpsP SlcD
 ComC ComD ComE HpsK HpsL HpsM HpsN HpsP SlaB SlcD
 ComC CuyA HpsK HpsL HpsM HpsN HpsO HpsP SuyA SuyB
-ComC CuyA SauT SuyA SuyB
 ComC CuyA SlaB TauA TauB TauC Tpa
 ComC CuyA SuyA SuyB TauA TauB TauC TauZ
 ComC CuyA TauA TauB TauC
@@ -220,15 +184,10 @@ ComC CuyZ HpsN HpsO HpsP HpsU SauU SlaB SuyA SuyB
 ComC CuyZ HpsN HpsO HpsP HpsU SuyA SuyB
 ComC CuyZ HpsN HpsO HpsP IseJ IseK IseL IseM IseR SuyB Tpa
 ComC CuyZ HpsN HpsO HpsU SuyA SuyB
-ComC CuyZ HpsO HpsP SuyB
-ComC CuyZ HpsO SlcC SuyB
 ComC CuyZ SlaB SlcC SuyA SuyB
-ComC CuyZ SlaB SlcC SuyB
 ComC CuyZ SlaB SlcC SuyB Toa
-ComC CuyZ SlcC SuyA SuyB
 ComC CuyZ SlcC SuyA SuyB Xsc
 ComC CuyZ SuyA SuyB Xsc
-ComC DhpA HpfD SauU SlaB
 ComC DhpA HpfD SlaB SlcC SuyA SuyB
 ComC DhpA HpsK HpsL HpsM HpsN HpsO HpsP SlaB SuyB
 ComC DhpA HpsK HpsL HpsM HpsO HpsP SuyB
@@ -239,9 +198,7 @@ ComC DhpA HpsN HpsO IseU SlaB SlcC SuyB
 ComC DhpA HpsO HpsP SauU
 ComC DhpA HpsO HpsP SlcC SuyB
 ComC DhpA HpsO IseK IseL IseM SauT SuyA SuyB
-ComC DhpA HpsO SauT TauD
 ComC DhpA HpsO SlaB SlcC SuyB
-ComC DhpA HpsO SlcC SuyB
 ComC DhpA HpsP HpsU SauU
 ComC DhpA HpsP HpsU SauU SlaB SlcC SuyB
 ComC DhpA HpsP IsfD SlcC
@@ -250,9 +207,6 @@ ComC DhpA IseD SlaB Xsc
 ComC DhpA IseJ SlaB Tpa
 ComC DhpA IseU SauU SlcC SuyA SuyB
 ComC DhpA IseU SlaB SlcC SuyB TauZ
-ComC DhpA SauT SlaB SuyB
-ComC DhpA SauU SlcC SuyB
-ComC DhpA SauU SlcD SuyB
 ComC DhpA SlaB SlcC SuyB
 ComC DhpA SlaB SlcC SuyB TauZ
 ComC DhpA SlcC SuyA SuyB
@@ -272,14 +226,6 @@ ComC HpfD SauU SlaB SlcC
 ComC HpfD SlaB SlcC Xsc
 ComC HpfD SlaB Toa Tpa
 ComC HpfD SlcC SuyA SuyB
-ComC HpfY HpfZ HpsN HpsO HpsP IseR SauS SlcC SuyA SuyB TauD Xsc
-ComC HpfY HpfZ HpsO SarD
-ComC HpfY HpfZ IseR Pta SauS SlcC SuyA SuyB Xsc
-ComC HpfY HpfZ IseR SauS SlcC SuyA SuyB Xsc
-ComC HpfY HpfZ IseR SauS Xsc
-ComC HpfY HpfZ IseR SauT
-ComC HpfY HpfZ IseU SauU
-ComC HpfY HpfZ SauT SuyA SuyB
 ComC HpfY HpfZ SlaB SlcC
 ComC HpfY HpfZ SlcC SuyB
 ComC HpsK HpsL HpsM HpsN
@@ -309,13 +255,10 @@ ComC HpsK HpsL HpsM HpsN HpsP SuyB
 ComC HpsK HpsL HpsM HpsN SlcC SuyA SuyB
 ComC HpsK HpsL HpsM HpsO SlcC SuyA SuyB
 ComC HpsK HpsL HpsM SlcC SuyA SuyB
-ComC HpsK HpsL HpsM SlcC SuyB
 ComC HpsK HpsL HpsM SuyA SuyB
 ComC HpsK HpsL HpsM SuyA SuyB TauZ
-ComC HpsN HpsO HpsP HpsU
 ComC HpsN HpsO HpsP HpsU SuyA SuyB
 ComC HpsN HpsO HpsP HpsU SuyA SuyB TauZ
-ComC HpsN HpsO HpsP IseD SauT SlcC
 ComC HpsN HpsO HpsP IseJ IseK IseL IseM IseR Tpa
 ComC HpsN HpsO HpsP IseJ IseR SuyA SuyB
 ComC HpsN HpsO HpsP IseR SuyB
@@ -330,17 +273,13 @@ ComC HpsN HpsO HpsP SuyB
 ComC HpsN HpsO HpsP SuyB TauZ
 ComC HpsN HpsO HpsU SuyA SuyB
 ComC HpsN HpsO SlcC SuyA SuyB
-ComC HpsN HpsO SlcC SuyB
-ComC HpsN HpsP HpsU IseJ SlaB SuyA
 ComC HpsN HpsP SuyB TauZ
 ComC HpsN IseJ SarD SlaB
 ComC HpsN IseR SarD SlaB
-ComC HpsN SauT SuyA SuyB
 ComC HpsN SauU SlcC SuyB
 ComC HpsN SlcC SuyA SuyB
 ComC HpsN SlcC SuyB TauZ
 ComC HpsO HpsP IseJ Tpa
-ComC HpsO HpsP SauT SuyB
 ComC HpsO HpsP SauU SlaB SlcC
 ComC HpsO HpsP SauU SlcC
 ComC HpsO HpsP SlaB SuyB
@@ -350,34 +289,6 @@ ComC HpsO HpsP SlcC SuyB
 ComC HpsO HpsP SuyA SuyB
 ComC HpsO HpsP SuyB TauZ
 ComC HpsO HpsP SuyB Toa
-ComC HpsO IseR SauU SlaB
-ComC HpsO IseR SlaB Toa
-ComC HpsO SarD SauT SlaB
-ComC HpsO SarD SauU SlaB
-ComC HpsO SauT SlaB Xsc
-ComC HpsO SauT SlcC SuyA SuyB
-ComC HpsO SauT SlcC SuyB
-ComC HpsO SauT SuyA SuyB
-ComC HpsO SauT TauD Xsc
-ComC HpsO SauU SuyB TauR
-ComC HpsO SlaB SlcC SuyA SuyB TauZ Toa
-ComC HpsO SlaB SlcC SuyB
-ComC HpsO SlaB SlcC SuyB Xsc
-ComC HpsO SlaB SlcC Xsc
-ComC HpsO SlaB TauD Xsc
-ComC HpsO SlcC SuyA SuyB
-ComC HpsO SlcC SuyA SuyB TauZ
-ComC HpsO SlcC TauA TauB TauC
-ComC HpsO SuyA SuyB Toa
-ComC HpsP IseR SauU SuyB
-ComC HpsP SauU SlaB SlcC SuyB TauZ
-ComC HpsP SauU SuyB Xsc
-ComC HpsP SlaB SlcC SuyB
-ComC HpsP SlaB SlcC Xsc
-ComC HpsP SlcC SuyA SuyB
-ComC HpsP SlcC SuyA SuyB TauZ
-ComC HpsP SlcC SuyB Xsc
-ComC HpsP SuyA SuyB TauZ
 ComC HpsU SlcC SuyA SuyB
 ComC HpsU SlcC TauR Toa
 ComC IseD SarD SauU SlaB
@@ -385,8 +296,6 @@ ComC IseD SlcC SuyB TauZ
 ComC IseJ IseK IseL IseM IseR TauZ Xsc
 ComC IseJ IseK IseL IseM SarD
 ComC IseJ IseR IseU Pta TauA TauB TauC TauR TauX TauY Xsc
-ComC IseJ IseU SauT SlaB
-ComC IseJ SauT SlaB Xsc
 ComC IseJ SlaB TauD Xsc
 ComC IseJ SlaB Toa Xsc
 ComC IseJ SlcC SlcD SuyB
@@ -402,15 +311,15 @@ ComC IseR TauD TauK TauL TauM TauX TauY TauZ Xsc
 ComC Pta TauA TauB TauC
 ComC SarD SlaB SuyA SuyB
 ComC SarD SlcC SuyA SuyB
-ComC SauT SlaB TauD Xsc
-ComC SauT SlcC SuyA SuyB
-ComC SauT SlcC SuyB TauZ
-ComC SauT SlcC SuyB TauZ Xsc
-ComC SauT SsuA SsuB SsuC
-ComC SauT TauD TauR Xsc
-ComC SauU SlaB SlcC SuyB
-ComC SauU SlaB SlcC Xsc
-ComC SauU SlcC SuyA SuyB
+ComC SlaB TauD Xsc
+ComC SlcC SuyA SuyB
+ComC SlcC SuyB TauZ
+ComC SlcC SuyB TauZ Xsc
+ComC SsuA SsuB SsuC
+ComC TauD TauR Xsc
+ComC SlaB SlcC SuyB
+ComC SlaB SlcC Xsc
+ComC SlcC SuyA SuyB
 ComC SlaB SlcC SuyA SuyB
 ComC SlaB SlcC SuyA SuyB TauZ
 ComC SlaB SlcC SuyA SuyB Xsc
@@ -441,7 +350,6 @@ ComD ComE DhpA IseJ IseK IseL IseM IseR
 ComD ComE HpfD HpsK HpsL HpsM HpsN HpsO HpsP SlaB SlcD
 ComD ComE HpfD HpsN HpsO HpsP SlcD
 ComD ComE HpfD HpsN HpsP
-ComD ComE HpfY HpfZ IseJ IseR Pta SauS
 ComD ComE HpfY HpfZ SlcC SlcD
 ComD ComE HpsK HpsL HpsM HpsN
 ComD ComE HpsK HpsL HpsM HpsN HpsO HpsP
@@ -450,10 +358,10 @@ ComD ComE HpsK HpsL HpsM HpsN HpsO HpsP IseJ IseK IseL IseM IseR
 ComD ComE HpsK HpsL HpsM HpsN HpsO HpsP IseJ IseK IseL IseM IseR SlcD
 ComD ComE HpsK HpsL HpsM HpsN HpsO HpsP IseJ IseK IseL IseM IseR SlcD TauK TauL TauM TauX TauY Xsc
 ComD ComE HpsK HpsL HpsM HpsN HpsO HpsP IseJ SlcD
-ComD ComE HpsK HpsL HpsM HpsN HpsO HpsP IseR SauT SlaB SlcD Xsc
+ComD ComE HpsK HpsL HpsM HpsN HpsO HpsP IseR SlaB SlcD Xsc
 ComD ComE HpsK HpsL HpsM HpsN HpsO HpsP IseR SlcD
-ComD ComE HpsK HpsL HpsM HpsN HpsO HpsP SauT SlaB SlcD Xsc
-ComD ComE HpsK HpsL HpsM HpsN HpsO HpsP SauT SlcD Tpa
+ComD ComE HpsK HpsL HpsM HpsN HpsO HpsP SlaB SlcD Xsc
+ComD ComE HpsK HpsL HpsM HpsN HpsO HpsP SlcD Tpa
 ComD ComE HpsK HpsL HpsM HpsN HpsO HpsP SlaB SlcD
 ComD ComE HpsK HpsL HpsM HpsN HpsO HpsP SlcD
 ComD ComE HpsK HpsL HpsM HpsN HpsO HpsP SlcD SlcF SlcG SlcH
@@ -473,13 +381,13 @@ ComD ComE HpsK HpsL HpsM HpsN SlcD
 ComD ComE HpsK HpsL HpsM HpsO HpsP SlcD
 ComD ComE HpsN HpsO HpsP
 ComD ComE HpsN HpsO HpsP IseJ IseR
-ComD ComE HpsN HpsO HpsP IseJ IseR SauT SlcD
+ComD ComE HpsN HpsO HpsP IseJ IseR SlcD
 ComD ComE HpsN HpsO HpsP IseJ IseR SlcD
 ComD ComE HpsN HpsO HpsP IseK IseL IseM IseR SlcD
 ComD ComE HpsN HpsO HpsP IseK IseL IseM SlcD
 ComD ComE HpsN HpsO HpsP IseR
-ComD ComE HpsN HpsO HpsP SauT SlcC
-ComD ComE HpsN HpsO HpsP SauT SlcD
+ComD ComE HpsN HpsO HpsP SlcC
+ComD ComE HpsN HpsO HpsP SlcD
 ComD ComE HpsN HpsO HpsP SlaB
 ComD ComE HpsN HpsO HpsP SlaB SlcD
 ComD ComE HpsN HpsO HpsP SlaB Xsc
@@ -496,16 +404,13 @@ ComD ComE HpsN HpsO SlaB SlcD
 ComD ComE HpsN HpsO SlcD
 ComD ComE HpsN HpsO SlcD Xsc
 ComD ComE HpsN HpsO TauR
-ComD ComE HpsN HpsP SauT
 ComD ComE HpsN HpsP SlcD
 ComD ComE HpsN HpsP Toa
 ComD ComE HpsN HpsP Xsc
 ComD ComE HpsN IseR SlcD
-ComD ComE HpsN SauT SlaB
 ComD ComE HpsO HpsP SlcD
 ComD ComE HpsO HpsP SlcD SlcF SlcG SlcH
 ComD ComE HpsO IseJ IseR SlcD
-ComD ComE HpsO SauT SlaB
 ComD ComE HpsO SlaB SlcC
 ComD ComE HpsO SlaB SlcD
 ComD ComE HpsO SlaB Toa
@@ -518,8 +423,8 @@ ComD ComE IseJ SlaB SlcD
 ComD ComE IseJ SlaB SlcD SlcF SlcG SlcH
 ComD ComE SarD SlcC SlcD
 ComD ComE SauS SauT SlcF SlcG SlcH
-ComD ComE SauT SlaB SlcD SlcF SlcG SlcH
-ComD ComE SauT SlcF SlcG SlcH TauZ
+ComD ComE SlaB SlcD SlcF SlcG SlcH
+ComD ComE SlcF SlcG SlcH TauZ
 ComD ComE SlaB SlcC Toa
 ComD ComE SlaB SlcC Xsc
 ComD ComE SlaB SlcD SlcF SlcG SlcH
@@ -536,10 +441,6 @@ CuyA CuyZ HpsN TauA TauB TauC TauR
 CuyA CuyZ HpsN TauK TauL TauM
 CuyA DhpA HpfD HpsG HpsH HpsN SlaB SuyA SuyB TauK TauL TauM
 CuyA DhpA HpsN HpsO IseJ SlaB
-CuyA DhpA SlaB TauD Xsc
-CuyA HpfD HpsN SlaB TauK TauL TauM
-CuyA HpfD HpsN TauK TauL TauM
-CuyA HpfD HpsO HpsU SlaB
 CuyA HpfY HpfZ HpsN TauA TauB TauC TauR TauZ
 CuyA HpfY HpfZ HpsN TauA TauB TauC TauR Tpa Xsc
 CuyA HpsK HpsL HpsM HpsN HpsO HpsP SuyB
@@ -555,14 +456,11 @@ CuyA HpsN IseD IseR SarD SlaB TauK TauL TauM TauZ
 CuyA HpsN IseD TauK TauL TauM
 CuyA HpsN IseU TauA TauB TauC
 CuyA HpsN Pta TauA TauB TauC TauR Tpa Xsc
-CuyA HpsN SauT TauA TauB TauC
 CuyA HpsN SlaB TauA TauB TauC
 CuyA HpsN SlaB TauK TauL TauM
 CuyA HpsN SlaB TauK TauL TauM TauZ
 CuyA HpsN SlaB TauK TauL TauM TauZ Xsc
 CuyA HpsN SlaB TauZ Xsc
-CuyA HpsN SlcC TauK TauL TauM
-CuyA HpsN SsuD TauA TauB TauC
 CuyA HpsN TauA TauB TauC
 CuyA HpsN TauA TauB TauC TauR
 CuyA HpsN TauA TauB TauC TauR TauX TauY
@@ -580,20 +478,17 @@ CuyA HpsN TauK TauL TauM TauZ
 CuyA HpsN TauK TauL TauM Tpa Xsc
 CuyA HpsN TauK TauL TauM Xsc
 CuyA HpsO IseJ SsuA SsuB SsuC
-CuyA HpsO SauT TauA TauB TauC
 CuyA HpsO TauA TauB TauC
 CuyA HpsU TauA TauB TauC
 CuyA IseD IseU SlaB Xsc
 CuyA IseJ IseK IseL IseM
 CuyA IseJ IseK IseL IseM IseR
-CuyA IseJ SauS SlcC SsuA SsuB SsuC TauA TauB TauC TauD
+CuyA IseJ SlcC SsuA SsuB SsuC TauA TauB TauC TauD
 CuyA IseJ TauA TauB TauC
 CuyA IseU TauA TauB TauC
 CuyA Pta SlaB TauK TauL TauM TauR TauX TauY TauZ Toa Xsc
 CuyA Pta TauR TauZ Tpa Xsc
 CuyA Pta TauR Tpa Xsc
-CuyA SauT TauA TauB TauC Tpa
-CuyA SauU TauA TauB TauC
 CuyA SlaB TauA TauB TauC
 CuyA SlcC SsuA SsuB SsuC SsuD
 CuyA SsuA SsuB SsuC SsuD
@@ -624,13 +519,8 @@ CuyZ IseR Pta TauE TauK TauL TauM TauX TauY Xsc
 CuyZ IseR Pta TauK TauL TauM TauR TauX TauY Xsc
 CuyZ IseR TauE TauR TauX TauY Xsc
 CuyZ IseU Pta SlcD TauR Tpa
-CuyZ Pta SauT TauR Tpa Xsc
-CuyZ Pta SlaB TauR Tpa Xsc
-CuyZ Pta TauK TauL TauM Xsc
-CuyZ Pta TauR Tpa Xsc
 DhpA HpfD HpfE HpfG HpfH
 DhpA HpfD HpsG HpsH HpsU
-DhpA HpfD HpsN SauT SlaB
 DhpA HpfD HpsO HpsP SlaB
 DhpA HpfD HpsO IseR SlaB
 DhpA HpfD HpsO IseU Xsc
@@ -638,13 +528,7 @@ DhpA HpfD HpsO SarD SlaB SlcC
 DhpA HpfD HpsO SarD Xsc
 DhpA HpfD HpsP SauU SlaB
 DhpA HpfD TauK TauL TauM
-DhpA HpfY HpfZ HpsG HpsH SauS SauU Xsc
 DhpA HpfY HpfZ HpsO HpsU IseJ IseR SauS SauT Xsc
-DhpA HpfY HpfZ HpsO HpsU IseJ IseR SauS Xsc
-DhpA HpfY HpfZ IseJ IseR SauS Tpa Xsc
-DhpA HpfY HpfZ IseR SauS
-DhpA HpfY HpfZ IseR Xsc
-DhpA HpfY HpfZ IseU Pta SarD SauS SauU Xsc
 DhpA HpfY HpfZ SlaB Xsc
 DhpA HpfY HpfZ Toa Xsc
 DhpA HpsG HpsH HpsO HpsP
@@ -663,12 +547,11 @@ DhpA HpsK HpsL HpsM SlaB
 DhpA HpsK HpsL HpsM SuyB
 DhpA HpsK HpsL HpsM TauK TauL TauM
 DhpA HpsK HpsL HpsM Xsc
-DhpA HpsN SauT SuyA SuyB
+DhpA HpsN SuyA SuyB
 DhpA HpsO HpsP IseJ SlcC
 DhpA HpsO HpsP IseR SauU SlaB SuyB
 DhpA HpsO HpsP IseR SlcC Xsc
 DhpA HpsO HpsP IseR Xsc
-DhpA HpsO HpsP SauT SlcC
 DhpA HpsO HpsP SauU SlcC
 DhpA HpsO HpsP SlcC SuyB
 DhpA HpsO HpsP SlcC SuyB Toa
@@ -677,27 +560,19 @@ DhpA HpsO HpsP SlcC TauZ
 DhpA HpsO HpsP TauK TauL TauM TauX TauY TauZ
 DhpA HpsO HpsP TauK TauL TauM TauX TauY TauZ Xsc
 DhpA HpsO HpsU IseU IsfD SlaB
-DhpA HpsO HpsU IseU SauT SlaB
+DhpA HpsO HpsU IseU SlaB
 DhpA HpsO HpsU IseU TauZ
-DhpA HpsO HpsU SauT SlaB
-DhpA HpsO HpsU SauU SlaB
-DhpA HpsO HpsU SauU SlaB SlcC
+DhpA HpsO HpsU SlaB
+DhpA HpsO HpsU SlaB
+DhpA HpsO HpsU SlaB SlcC
 DhpA HpsO IseJ IseK IseL IseM SlaB
 DhpA HpsO IseJ IseR IseU Pta SlcD TauA TauB TauC TauR TauX TauY Xsc
 DhpA HpsO IseJ SauU SlaB
 DhpA HpsO IseJ SlaB TauE
 DhpA HpsO IseJ SlaB Xsc
-DhpA HpsO IseU SauT SlaB
 DhpA HpsO IseU SauU SlaB
 DhpA HpsO IseU SlaB SlcC
-DhpA HpsO IsfD SauT SlaB SlcC
 DhpA HpsO IsfD SuyB Xsc
-DhpA HpsO SauS SlaB SlcC
-DhpA HpsO SauT SlaB SlcC
-DhpA HpsO SauT SlaB SlcD
-DhpA HpsO SauT SlaB Toa
-DhpA HpsO SauT SlcC SuyB
-DhpA HpsO SauT Toa Xsc
 DhpA HpsO TauA TauB TauC
 DhpA HpsP HpsU SauT SlaB
 DhpA HpsP IseJ IseK IseL IseM IseR Tpa
@@ -707,8 +582,6 @@ DhpA HpsP SlaB SsuA SsuB SsuC SsuD
 DhpA HpsU IseJ IseR Pta SauS SauT SauU TauA TauB TauC TauR TauX TauY Xsc
 DhpA HpsU IseJ IseR SauS SauT SauU SlaB Xsc
 DhpA HpsU IseJ IseR SauS SauT SauU TauR TauX TauY
-DhpA HpsU IseU SauT SlaB
-DhpA HpsU IseU SauT SlaB Toa
 DhpA HpsU IseU SlaB Toa
 DhpA HpsU IseU SlaB Xsc
 DhpA IseJ IseK IseL IseM IseR Pta SlaB TauE TauZ Xsc
@@ -718,11 +591,6 @@ DhpA IseJ IseK IseL IseM SlaB Xsc
 DhpA IseJ IseR IseU SlaB
 DhpA IseJ IseR IseU TauA TauB TauC TauX TauY TauZ Xsc
 DhpA IseJ IseR SauS SauT SauU
-DhpA IseJ IseR SauS Xsc
-DhpA IseJ SauT SauU SlaB
-DhpA IseJ SauT SlaB TauD
-DhpA IseJ SauU SlaB SlcD
-DhpA IseJ SauU SlaB Xsc
 DhpA IseK IseL IseM SlaB TauZ
 DhpA IseK IseL IseM TauR Tpa
 DhpA IseR IseU SarD SauT SlaB
@@ -735,9 +603,6 @@ DhpA IsfD IsfE TauK TauL TauM TauR Tpa
 DhpA Pta TauE TauZ Xsc
 DhpA SauT SauU SlaB SlcC
 DhpA SauT SauU SlaB Xsc
-DhpA SauT SlcC TauA TauB TauC
-DhpA SauT SsuA SsuB SsuC
-DhpA SauT SsuA SsuB SsuC SsuD
 DhpA SauU SlaB SlcD SuyB
 DhpA SauU SlaB SlcD Xsc
 DhpA SauU SlaB SsuA SsuB SsuC
@@ -794,39 +659,23 @@ HpfD HpsO HpsP SlaB Xsc
 HpfD HpsO HpsP SlcC SuyB
 HpfD HpsO HpsU IseJ SlcC
 HpfD HpsO HpsU IseU SlaB
-HpfD HpsO IseR SauT SlaB
 HpfD HpsO IseR SlaB Xsc
-HpfD HpsO SauT SlaB SuyB
-HpfD HpsO SauT SlaB Toa
-HpfD HpsO SauT SlaB Toa Tpa
-HpfD HpsO SauT SlaB Tpa
-HpfD HpsO SauT SlcD TauD
-HpfD HpsO SauU SlcC SuyB
-HpfD HpsO SauU SlcC Tpa
-HpfD HpsO SlaB SlcC Toa
 HpfD HpsO SlaB TauD Xsc
 HpfD HpsO SsuA SsuB SsuC SsuD TauA TauB TauC
 HpfD HpsP IsfD SlaB Tpa
-HpfD HpsP SauT SlaB Tpa
 HpfD HpsP SlaB SlcD Xsc
-HpfD IseD SauT SlaB SlcD
 HpfD IseD TauA TauB TauC Toa
 HpfD IseJ IseK IseL IseM IseR SlaB
 HpfD IseJ IseK IseL IseM IseR TauZ Xsc
 HpfD IseK IseL IseM SlaB
 HpfD IseK IseL IseM SlcD
-HpfD IseR IseU SauT SlaB
 HpfD IseR SlaB Tpa Xsc
-HpfD IseU SauT SlaB Xsc
 HpfD IseU SlaB SlcC TauD
 HpfD IseU SlaB Toa Xsc
 HpfD Pta TauR Tpa Xsc
 HpfD SarD SauU SlaB Toa
 HpfD SauT SauU SlaB TauD
 HpfD SauT SauU SlaB TauR Toa
-HpfD SauT SlaB SlcC Toa
-HpfD SauT SlaB SlcC Toa Tpa
-HpfD SauT SlaB TauD Tpa
 HpfD SlaB SlcC TauD Toa
 HpfD SlaB SsuA SsuB SsuC
 HpfD SlaB TauA TauB TauC
@@ -841,13 +690,13 @@ HpfE HpfG HpfH HpfX HpfY HpfZ
 HpfE HpfG HpfH HpfX HpsP
 HpfG HpfH HpfX HpsO IseD
 HpfG HpfH HpsG HpsH HpsO
-HpfG HpfH HpsG HpsH SauT
 HpfG HpfH HpsG HpsH SlaB
 HpfG HpfH HpsG HpsH Tpa
 HpfG HpfH HpsO SarD Xsc
 HpfG HpfH HpsO TauR Toa
 HpfG HpfH SlaB TauA TauB TauC
 HpfG HpfH TauA TauB TauC
+HpfX HpfY HpfZ
 HpfX HpfY HpfZ HpsO HpsP
 HpfX HpfY HpfZ HpsO HpsP SlaB
 HpfX HpfY HpfZ HpsO HpsP SlcC
@@ -855,25 +704,18 @@ HpfX HpfY HpfZ HpsO SlaB SlcC
 HpfX HpfY HpfZ HpsO SlcC
 HpfX HpfY HpfZ HpsP SlaB
 HpfX HpfY HpfZ Pta Xsc
-HpfX HpfZ SauT SlaB Tpa
 HpfX HpsG HpsH SlcC Xsc
 HpfY HpfZ HpsG HpsH SauS SsuA SsuB SsuC
 HpfY HpfZ HpsG HpsH Xsc
 HpfY HpfZ HpsN HpsO HpsP
 HpfY HpfZ HpsN HpsO HpsP IseR SauS SlcC TauD Tpa Xsc
 HpfY HpfZ HpsN HpsO Xsc
-HpfY HpfZ HpsN SauS Toa
 HpfY HpfZ HpsO HpsP SlaB
 HpfY HpfZ HpsO HpsP SlcC
 HpfY HpfZ HpsO HpsU SarD SauS Xsc
-HpfY HpfZ HpsO HpsU SauS
 HpfY HpfZ HpsO HpsU SlcC
 HpfY HpfZ HpsO IseJ IseR IseU SauS SauU TauZ Tpa Xsc
-HpfY HpfZ HpsO IseJ SauT SlaB Toa
-HpfY HpfZ HpsO IseR SarD SauT
-HpfY HpfZ HpsO IseR SauS Xsc
 HpfY HpfZ HpsO IseU SarD SauS Xsc
-HpfY HpfZ HpsO Pta SauS
 HpfY HpfZ HpsO Pta SauS SauU TauD Xsc
 HpfY HpfZ HpsO SarD SauS SsuA SsuB SsuC
 HpfY HpfZ HpsO SauS SlaB SlcD
@@ -1038,7 +880,6 @@ HpsK HpsL HpsM HpsN HpsO HpsP Toa
 HpsK HpsL HpsM HpsN HpsO HpsP Xsc
 HpsK HpsL HpsM HpsN HpsO IseJ
 HpsK HpsL HpsM HpsN HpsO IseR
-HpsK HpsL HpsM HpsN HpsO SauT
 HpsK HpsL HpsM HpsN HpsO SlcD
 HpsK HpsL HpsM HpsN HpsO SlcF SlcG SlcH
 HpsK HpsL HpsM HpsN HpsO SuyA SuyB
@@ -1083,7 +924,6 @@ HpsN HpsO HpsP IseJ IseK IseL IseM IseR Tpa Xsc
 HpsN HpsO HpsP IseJ IseK IseL IseM SlcD
 HpsN HpsO HpsP IseJ IseR
 HpsN HpsO HpsP IseJ IseR SuyB
-HpsN HpsO HpsP IseJ SauT
 HpsN HpsO HpsP IseJ SlaB SuyB
 HpsN HpsO HpsP IseJ SlcD
 HpsN HpsO HpsP IseJ SuyA SuyB
@@ -1115,14 +955,10 @@ HpsN HpsO HpsP TauX TauY
 HpsN HpsO HpsU IseD SlaB
 HpsN HpsO HpsU IseJ Xsc
 HpsN HpsO HpsU IseU SlaB
-HpsN HpsO HpsU SauU SlaB
 HpsN HpsO IseD IseR SlaB
-HpsN HpsO IseJ IseU SauT
-HpsN HpsO IseJ SauT Toa
 HpsN HpsO IseJ SlaB Tpa Xsc
 HpsN HpsO IseJ SuyA SuyB
 HpsN HpsO IseJ TauA TauB TauC Tpa
-HpsN HpsO SauT SlaB Toa
 HpsN HpsO SlaB SlcC Xsc
 HpsN HpsO SlcC SlcD Toa
 HpsN HpsO SlcC SuyA SuyB
@@ -1152,10 +988,6 @@ HpsN Pta TauA TauB TauC TauR Toa Xsc
 HpsN Pta TauA TauB TauC Tpa
 HpsN Pta TauK TauL TauM TauR TauX TauY TauZ Xsc
 HpsN Pta TauR Tpa Xsc
-HpsN SauS TauA TauB TauC TauR TauX TauY
-HpsN SauS TauA TauB TauC Toa
-HpsN SauT TauA TauB TauC
-HpsN SauT TauA TauB TauC TauR TauX TauY
 HpsN SlaB TauA TauB TauC Toa
 HpsN SlcC SsuA SsuB SsuC
 HpsN SsuA SsuB SsuC SsuD
@@ -1193,7 +1025,6 @@ HpsO HpsP IseU IsfD SlaB Toa
 HpsO HpsP IseU SlaB SlcC
 HpsO HpsP IsfD SauT SlaB Toa
 HpsO HpsP IsfD SlaB SlcC
-HpsO HpsP Pta SauT SlaB
 HpsO HpsP SarD SlaB Xsc
 HpsO HpsP SauT SlaB SlcD
 HpsO HpsP SauT SlaB Toa
@@ -1215,57 +1046,18 @@ HpsO HpsP TauA TauB TauC TauX TauY
 HpsO HpsP TauK TauL TauM TauX TauY TauZ Xsc
 HpsO HpsU IseD SlaB SlcC
 HpsO HpsU IseJ IseU TauE TauR TauZ Tpa Xsc
-HpsO HpsU IseJ SauT SlaB
-HpsO HpsU IseJ SauT TauZ
-HpsO HpsU IseR IseU SlaB
-HpsO HpsU IseR Pta TauR TauZ Toa Xsc
-HpsO HpsU IseR SlaB Xsc
-HpsO HpsU IseU SauT SlaB
-HpsO HpsU IseU SauT SlaB SlcC TauR Toa
-HpsO HpsU IseU SauT TauR Tpa
-HpsO HpsU IseU SlaB TauR Toa
-HpsO HpsU IseU SlcD TauD
-HpsO HpsU Pta TauR TauZ Toa
-HpsO HpsU SarD SauT SlaB
-HpsO HpsU SauT SauU SuyB
-HpsO HpsU SauT SauU TauD
-HpsO HpsU SauT SlaB Toa
-HpsO HpsU SauU SlaB SlcC
-HpsO HpsU SauU SlaB SlcD
-HpsO HpsU SlaB SlcC SlcD
-HpsO HpsU SlaB SlcC TauR Toa
-HpsO HpsU SlaB SlcC TauR Toa Xsc
-HpsO HpsU SlaB SsuD TauZ
 HpsO HpsU SsuA SsuB SsuC SsuD
-HpsO HpsU SsuA SsuB SsuC TauD
 HpsO HpsU TauA TauB TauC
 HpsO HpsU TauA TauB TauC TauD
 HpsO IseD IsfD SauS Xsc
 HpsO IseD SlaB SlcC Tpa
-HpsO IseJ IseK IseL IseM
-HpsO IseJ IseK IseL IseM IseR
-HpsO IseJ IseK IseL IseM IseR SlaB
-HpsO IseJ IseK IseL IseM IseR TauA TauB TauC TauR Tpa Xsc
-HpsO IseJ IseK IseL IseM IseR TauE Xsc
-HpsO IseJ IseR IseU Pta Xsc
-HpsO IseJ IseR SauS SauT Xsc
-HpsO IseJ IseR SauT TauZ
-HpsO IseJ IseR SlaB Tpa
-HpsO IseJ IseR TauX TauY
-HpsO IseJ IseU IsfD SlaB
+IseJ IseK IseL IseM
+IseJ IseK IseL IseM IseR
+IseJ IseK IseL IseM IseR TauA TauB TauC TauR Tpa Xsc
+IseJ IseK IseL IseM IseR TauE Xsc
+IseJ IseR IseU Pta Xsc
+IseJ IseR SauS SauT Xsc
 HpsO IseJ IseU SauS SauT SauU SlaB SuyB
-HpsO IseJ IseU SauT SlaB
-HpsO IseJ IseU SlaB Xsc
-HpsO IseJ IseU SlcC TauR
-HpsO IseJ IsfD SlaB Toa
-HpsO IseJ SauT SauU SlaB
-HpsO IseJ SauT SauU TauD
-HpsO IseJ SauT SlaB SlcD
-HpsO IseJ SauT SlaB TauD
-HpsO IseJ SauT SlaB Xsc
-HpsO IseJ SauT SlcD Xsc
-HpsO IseJ SauU SlaB SuyB
-HpsO IseJ SauU SlcC TauR
 HpsO IseJ SlaB SlcC TauD
 HpsO IseJ SlaB SlcC Toa
 HpsO IseJ SlaB SsuA SsuB SsuC SsuD
@@ -1275,67 +1067,22 @@ HpsO IseJ SlcC TauD Xsc
 HpsO IseJ SlcD TauD Xsc
 HpsO IseJ SsuA SsuB SsuC
 HpsO IseJ SuyA SuyB Xsc
-HpsO IseJ TauA TauB TauC
-HpsO IseK IseL IseM IseR SauT TauD
-HpsO IseK IseL IseM TauE TauZ
-HpsO IseR IseU IsfD SlcC
-HpsO IseR IseU SauU SlaB Xsc
 HpsO IseR Pta SauU TauA TauB TauC TauE Xsc
 HpsO IseR Pta SlcC TauA TauB TauC TauE Xsc
 HpsO IseR SauS SauT SauU TauA TauB TauC
-HpsO IseR SauT SsuD Xsc
-HpsO IseR SauU SlaB TauD
 HpsO IseR SlaB SsuA SsuB SsuC
 HpsO IseR SlaB SsuA SsuB SsuC TauD
-HpsO IseR SlcC Toa Xsc
 HpsO IseR TauA TauB TauC TauR TauX TauY Xsc
 HpsO IseR TauR TauX TauY
 HpsO IseR TauX TauY Xsc
-HpsO IseU SauT SlaB Toa
-HpsO IseU SauU SlaB Toa
-HpsO IseU SlaB SlcC Xsc
-HpsO IseU SlaB SlcD Xsc
-HpsO IseU SsuA SsuB SsuC SsuD
 HpsO IsfD IsfE TauA TauB TauC TauR Tpa
-HpsO IsfD TauA TauB TauC TauR Toa
-HpsO IsfD TauA TauB TauC TauR Toa Tpa
-HpsO IsfD TauA TauB TauC TauR Tpa
-HpsO Pta SauU SlaB SlcC
-HpsO Pta SlaB TauR Tpa Xsc
-HpsO Pta SlaB TauZ Xsc
-HpsO Pta SsuA SsuB SsuC SsuD
-HpsO Pta TauA TauB TauC TauR TauX TauY TauZ Xsc
-HpsO Pta TauA TauB TauC TauR Tpa Xsc
-HpsO Pta TauK TauL TauM TauR TauX TauY TauZ Xsc
-HpsO Pta TauR Tpa Xsc
-HpsO SarD SauU SlaB SlcC
-HpsO SauT SauU SlaB SuyB
-HpsO SauT SauU SlaB TauD
-HpsO SauT SauU SlaB TauD Xsc
-HpsO SauT SauU SlcC SlcD
-HpsO SauT SlaB SlcC Toa
-HpsO SauT SlaB SlcD SsuD
-HpsO SauT SlaB SsuA SsuB SsuC Xsc
-HpsO SauT SlaB TauD TauZ
-HpsO SauT SlaB TauD Xsc
-HpsO SauT SlaB TauR Toa
-HpsO SauT SlaB Toa Tpa
-HpsO SauT SlaB Toa Xsc
-HpsO SauT SlcC TauA TauB TauC
-HpsO SauT SlcC TauD Xsc
-HpsO SauT SlcC Toa Xsc
-HpsO SauT SlcD Tpa Xsc
-HpsO SauT SsuA SsuB SsuC
-HpsO SauT SsuA SsuB SsuC SsuD
-HpsO SauT SsuD TauA TauB TauC
-HpsO SauT TauA TauB TauC
-HpsO SauT TauK TauL TauM TauX TauY TauZ Xsc
-HpsO SauT TauR Toa Xsc
-HpsO SauT TauR Tpa Xsc
-HpsO SauU SlcC TauD Toa
-HpsO SauU SsuA SsuB SsuC
-HpsO SauU SsuA SsuB SsuC SsuD TauD
-HpsO SauU TauA TauB TauC TauD
+IsfD TauA TauB TauC TauR Toa
+IsfD TauA TauB TauC TauR Toa Tpa
+IsfD TauA TauB TauC TauR Tpa
+Pta TauA TauB TauC TauR TauX TauY TauZ Xsc
+Pta TauA TauB TauC TauR Tpa Xsc
+Pta TauK TauL TauM TauR TauX TauY TauZ Xsc
+Pta TauR Tpa Xsc
 HpsO SlaB SlcC Toa Xsc
 HpsO SlaB SsuA SsuB SsuC
 HpsO SlaB SsuA SsuB SsuC SsuD
@@ -1343,7 +1090,6 @@ HpsO SlaB SuyB TauE TauK TauL TauM
 HpsO SlaB TauA TauB TauC
 HpsO SlaB TauA TauB TauC TauD Tpa
 HpsO SlaB TauR Toa Tpa
-HpsO SlcC SlcD SsuD SuyB
 HpsO SlcC SlcD Toa Xsc
 HpsO SsuA SsuB SsuC SsuD
 HpsO SsuA SsuB SsuC SsuD Toa
@@ -1654,7 +1400,6 @@ IseR SauU SsuA SsuB SsuC SuyB
 IseR SlaB SsuA SsuB SsuC
 IseR SlaB TauA TauB TauC Toa Tpa
 IseR SlcC TauA TauB TauC Xsc
-IseR SsuA SsuB SsuC SsuD
 IseR TauA TauB TauC TauD
 IseR TauA TauB TauC TauE TauR TauX TauY TauZ Xsc
 IseR TauA TauB TauC TauR TauX TauY
@@ -1886,6 +1631,7 @@ SsuA SsuB SsuC SsuD TauZ
 SsuA SsuB SsuC SsuD Toa
 SsuA SsuB SsuC SsuD Tpa
 SsuA SsuB SsuC SsuD Xsc
+SsuA SsuB SsuC SsuD SsuE
 SsuA SsuB SsuC TauA TauB TauC
 SsuA SsuB SsuC TauA TauB TauC TauD
 SsuA SsuB SsuC TauA TauB TauC TauD Toa
