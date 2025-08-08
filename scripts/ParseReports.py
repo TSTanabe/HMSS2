@@ -679,7 +679,7 @@ def process_genome(
         )
 
         # Remove genes that should not occur as singletons
-        # alters the combined_protein_dict but ignores trusted_protein_ids
+        # alters the combined_protein_dict but ignores singletons that complete pathway
         remove_exclusion_singletons(
             combined_protein_dict,
             cluster_dict,

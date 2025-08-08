@@ -23,7 +23,7 @@ from . import Queue
 #get location of script or executable
 #for the output module report 
 #TODO print a database description file from database (otherwise it is too complex for a short task) should include the 
-
+#TODO make the synteny completion, transitions and removal optional
 logger = myUtil.logger
 
 if getattr(sys, 'frozen', False):
@@ -107,7 +107,7 @@ def parse_arguments(arguments: list):
         inputdef.add_argument(
             '-r', dest='result_files_directory', type=myUtil.dir_path,
             metavar='<directory>', default=__location__ + "/results",
-            help='Directory for the result files' if show_advanced else argparse.SUPPRESS
+            help='Directory for the result files'
         )
         inputdef.add_argument(
             '-db', dest='database_directory', type=myUtil.file_path,
@@ -115,11 +115,11 @@ def parse_arguments(arguments: list):
         )    
         inputdef.add_argument(
             '-c', dest='cores', type=int, default=4,
-            metavar='<int>', help='Allocated CPU cores'
+            metavar='<int>', help='Allocated CPU cores' if show_advanced else argparse.SUPPRESS
         )
         inputdef.add_argument(
             '-glob_report', dest='glob_report', type=myUtil.file_path,
-            metavar='<filepath>', help='Filepath to glob hmmreport. Each report with one HMM queried against the concatenated genomes.'
+            metavar='<filepath>', help='Filepath to glob hmmreport. Each report with one HMM queried against the concatenated genomes.' if show_advanced else argparse.SUPPRESS
         )
         parser.add_argument(
             '-v', '--verbose', type=int, default=1, choices=[0,1,2],
@@ -143,7 +143,7 @@ def parse_arguments(arguments: list):
         )
         parameters.add_argument(
             '-taxonomy_info', dest='taxonomy_file', type=myUtil.file_path, default=None,
-            metavar='<filepath>', help='Filepath to taxonomy tsv file' if show_advanced else argparse.SUPPRESS
+            metavar='<filepath>', help='Filepath to tab separated taxonomy file'
         )
         parameters.add_argument(
             '-refseq_ident', dest='refseq_identity', type=int, default=90,
@@ -163,6 +163,7 @@ def parse_arguments(arguments: list):
             choices=[0, 1, 2, 3, 4, 5],
             help='Exit at step' if show_advanced else argparse.SUPPRESS
         )
+        
         # Search library resources
         resources = parser.add_argument_group("Search library resources")
 
@@ -479,7 +480,11 @@ def ressource_preparation(options: HMSSS) -> None:
         For patterns, whitespaces are replaced with tabs and 
         numerical pattern names are given
     """
-    
+    if options.HMM_sets:
+        # specific HMM sets only
+        allowed_words = options.HMM_sets if isinstance(options.HMM_sets, list) else options.HMM_sets.split()
+        Queue.concatenate_selected_hmms(__location__ + "/src", allowed_words, '', '.hmm', options.library)
+
     if not os.path.isfile(options.library):
         Queue.concatenate_files_shell(__location__ + "/src", 'grp', '.hmm', options.library)
     
@@ -608,11 +613,6 @@ def parse_reports_to_database(options: object) -> None:
     logger.info("Parsing summary report into database")
     ParseReports.main_parse_summary_hmmreport(options)
     
-    # TODO in der main parse summary hmmreport sollte nachgeschaut werden, ob sich ein csb global vervollständigen lässt. D.h. 
-    # eine bestimmte Kombination die auch alleinstehend vorkommen kann sollte auch im intermediate bereich anerkannt werden, auch wenn sich diese nicht
-    # in einem gencluster befindet. das sollte abdecken, falls ein TC hit nicht vorhanden ist aber sein sollte
-    
-    # Umgekehrt sollten alleine liegende hits die immer in kobination vorkommen müssen gelöscht werden
 
     return
 

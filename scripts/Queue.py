@@ -154,50 +154,36 @@ def find_missing_genomes(genomeIDs: Set[str], faa_file_directory: str) -> List[s
     return missing_files
 
 
-def prepare_HMMlib_shell(
-    options: Any,
-    execute_location: str,
-    allowed_prefixes: Optional[Set[str]] = None
-) -> None:
+def concatenate_selected_hmms(src_dir: str, allowed_words: List[str], prefix: str, suffix: str, output_library: str) -> None:
     """
-    Uses 'cat' to concatenate all .hmm files from subdirectories with allowed prefixes
-    inside src/HMMs into a single HMMlib file.
+    Concatenate .hmm files from subdirectories where at least one word in the dir name (split by '_')
+    is present in allowed_words list.
 
-    Parameters
-    ----------
-    options : Any
-        Argument container with script options (unused here, but kept for compatibility).
-    execute_location : str
-        Path to the base execution directory.
-    allowed_prefixes : set or list of str, optional
-        Folder name prefixes to include (e.g., {"grp0", "grp1"}).
-        If None or empty, all subdirectories are included.
+    Args:
+        src_dir (str): Parent directory to search (e.g., __location__ + "/src").
+        allowed_words (List[str]): List of allowed words (from whitespace-separated user input).
+        prefix (str): File prefix filter (e.g., 'grp').
+        suffix (str): File suffix filter (e.g., '.hmm').
+        output_library (str): Output concatenated library file path.
     """
-    output_file_path = os.path.join(execute_location, "src", "HMMlib")
-    hmm_base_dir = os.path.join(execute_location, "src", "HMMs")
-    os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
+    import glob
 
-    hmm_files = []
+    files_to_concatenate = []
 
-    for entry in os.listdir(hmm_base_dir):
-        entry_path = os.path.join(hmm_base_dir, entry)
-        if os.path.isdir(entry_path):
-            if allowed_prefixes:
-                if not any(entry.startswith(prefix) for prefix in allowed_prefixes):
-                    continue
-            # Recursively collect .hmm files
-            for root, _, files in os.walk(entry_path):
-                for file in files:
-                    if file.endswith(".hmm"):
-                        hmm_files.append(os.path.join(root, file))
+    for subdir, dirs, files in os.walk(src_dir):
+        subdir_name = os.path.basename(subdir)
+        subdir_words = set(subdir_name.split('_'))
+        if subdir_words & set(allowed_words):
+            # If intersection is non-empty, at least one word matches
+            matched_files = glob.glob(os.path.join(subdir, f"{prefix}*{suffix}"))
+            files_to_concatenate.extend(matched_files)
 
-    if hmm_files:
-        cat_command = f"cat {' '.join(map(str, hmm_files))} > {output_file_path}"
-        logger.debug(f"Running: {cat_command}")
-        os.system(cat_command)
-        logger.debug(f"All HMM files concatenated into {output_file_path}")
-    else:
-        logger.error(f"No matching HMM files found in directory {hmm_base_dir}.")
+    # Concatenate files
+    with open(output_library, 'w') as outfile:
+        for fname in files_to_concatenate:
+            with open(fname) as infile:
+                shutil.copyfileobj(infile, outfile)
+
 
 
     
