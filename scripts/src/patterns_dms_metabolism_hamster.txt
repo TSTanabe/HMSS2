@@ -1,0 +1,642 @@
+AcuI AcuK AcuN
+AcuI AcuK AcuN DddA
+AcuI AcuK AcuN DddA DddC
+AcuI AcuK AcuN DddA DddC DddD DddT
+AcuI AcuK AcuN DddA DddC DddP DddT
+AcuI AcuK AcuN DddA DddC DddY
+AcuI AcuK AcuN DddA DddC DmdB
+AcuI AcuK AcuN DddA DddD
+AcuI AcuK AcuN DddA DddD DddT DmdD
+AcuI AcuK AcuN DddA DddY
+AcuI AcuK AcuN DddC
+AcuI AcuK AcuN DddC DddY
+AcuI AcuK AcuN DddC DmdB
+AcuI AcuK AcuN DddY
+AcuI AcuK AcuN DmdB
+AcuI AcuK AcuN DmdB SnfG
+AcuI AcuK AcuN DmdC
+AcuI AcuK AcuN DmoA
+DddA DddC DddD
+DddA DddC DddD DddT
+DddA DddC DddD DddT DmdB
+DddA DddC DddD DmdA
+DddA DddC DddP
+DddA DddC DddP DddT
+DddA DddC DddP DmdA
+DddA DddC DddP DmdB
+DddA DddC DddT
+DddA DddC DddT DmdA
+DddA DddC DddT DmdB
+DddA DddC DddT DmdB MddH
+DddA DddC DddT DmoA
+DddA DddC DddT DmoA MsmG MsmH
+DddA DddC DddT DmoA MsuC
+DddA DddC DddT DsoF
+DddA DddC DddT MddH
+DddA DddC DddT MsuC
+DddA DddC DddW
+DddA DddC DmdA
+DddA DddC DmdB
+DddA DddC DmdB DmdC
+DddA DddC DmdB DmoA
+DddA DddC DmdB SnfG
+DddA DddC DmdC
+DddA DddC DmdC DmdD
+DddA DddC DmdD
+DddA DddC DmoA
+DddA DddC DmoA MsuC
+DddA DddC DmoA MsuC MsuD
+DddA DddC DmoA MsuC MsuD SnfG
+DddA DddC DmsA
+DddA DddC DmsA DmsB
+DddA DddC DsoF
+DddA DddC DsoF MsmA
+DddA DddC MddH
+DddA DddC MsmA
+DddA DddC MsmG MsmH
+DddA DddC MsuC
+DddA DddC MsuC MsuD SnfG
+DddA DddC MsuD
+DddA DddC SnfG
+DddA DddD DddT
+DddA DddD DddT DmdA
+DddA DddD DddT DmdA DmdB DmdD
+DddA DddD DddT DmdC DmdD
+DddA DddP SnfG
+DddA DddT DmdA
+DddA DddT DmdB
+DddA DmdA DmdB
+DddA DmdA DmdB DmdD
+DddA DmdB DmdC
+DddA DmdB DmoA
+DddA DmdB DmsB
+DddA DmdB DsoF
+DddA DmdB MddA
+DddA DmdB MsmG MsmH
+DddA DmdB SnfG
+DddA DmoA MsuC
+DddA DmoA MsuD
+DddA DmoA SnfG
+DddA DmsA DmsB
+DddA DorR DorS MddA
+DddA DsoF MsmA
+DddA MsmA SnfG
+DddA MsmG MsmH
+DddA MsuC SnfG
+DddC DddD DddT
+DddC DddD DmdB
+DddC DddD SnfG
+DddC DddL DddP
+DddC DddL DddP DddT
+DddC DddP DddT
+DddC DddP DmdA
+DddC DddP DmdA DmdB
+DddC DddP DmdB
+DddC DddP DmdD
+DddC DddP DsoF
+DddC DddT DddW
+DddC DddT DmdA
+DddC DddT DmdB
+DddC DddT DmoA
+DddC DddT DmoA MsuC
+DddC DddT DmsA
+DddC DddT DorR DorS
+DddC DddT MsmA
+DddC DddT MsuC
+DddC DmdA DmdB
+DddC DmdA DmdB DmdC DmdD
+DddC DmdA DmdC
+DddC DmdA MddH
+DddC DmdA MsuD
+DddC DmdB DmdC
+DddC DmdB DmdC DmdD
+DddC DmdB DmdC DorA
+DddC DmdB DmdC DsoF
+DddC DmdB DmdD
+DddC DmdB DmoA
+DddC DmdB DmoA MsuD
+DddC DmdB DmsA
+DddC DmdB DmsA DmsB
+DddC DmdB DmsB
+DddC DmdB DorA
+DddC DmdB DsoB DsoC DsoD DsoF
+DddC DmdB DsoB DsoD DsoF
+DddC DmdB DsoD DsoF
+DddC DmdB DsoF
+DddC DmdB MddA
+DddC DmdB MddH
+DddC DmdB MsmA
+DddC DmdB MsmD
+DddC DmdB MsmG MsmH
+DddC DmdB MsuC
+DddC DmdB MsuD
+DddC DmdB SnfG
+DddC DmdC DmdD
+DddC DmdC DmsA
+DddC DmdC DsoD DsoF
+DddC DmdC MddH
+DddC DmdC MsmG MsmH
+DddC DmdC MsuD
+DddC DmoA DsoF
+DddC DmoA DsoF MsmA
+DddC DmoA DsoF MsuC MsuD
+DddC DmoA MsuC
+DddC DmoA MsuC MsuD
+DddC DmoA MsuC SnfG
+DddC DmoA MsuD
+DddC DmoA MsuE
+DddC DmoA MsuE SnfG
+DddC DmoA SnfG
+DddC DmsA DmsB
+DddC DmsB DsoB DsoD DsoF
+DddC DorR DorS
+DddC DsoA DsoB DsoC DsoD DsoE DsoF
+DddC DsoB DsoC
+DddC DsoB DsoC DsoD
+DddC DsoB DsoC DsoD DsoE DsoF
+DddC DsoB DsoC DsoD DsoF
+DddC DsoB DsoC DsoD DsoF MsmA
+DddC DsoB DsoD
+DddC DsoB DsoD DsoE DsoF
+DddC DsoB DsoD DsoF
+DddC DsoB DsoD DsoF MsmA
+DddC DsoB DsoD DsoF MsmD
+DddC DsoC DsoD DsoE DsoF
+DddC DsoC DsoD DsoF
+DddC DsoC DsoF
+DddC DsoD DsoF
+DddC DsoD MsmA MsmD
+DddC DsoD MsmD
+DddC DsoE DsoF
+DddC DsoF MsmA
+DddC DsoF MsmG MsmH
+DddC MsmA MsmB MsmD
+DddC MsmA MsmD
+DddC MsmF MsmG MsmH
+DddC MsmG MsmH
+DddC MsuC MsuD
+DddC MsuC MsuD MsuE SnfG
+DddC MsuC MsuD SnfG
+DddC MsuC MsuE
+DddC MsuC MsuE SnfG
+DddC MsuC SnfG
+DddC MsuD SnfG
+DddC MsuE SnfG
+DddP DmdA DmdB
+DddP DmdB MsmG MsmH
+DddP DmsA DmsB
+DddP MsmG MsmH
+DddP MsmG MsmH MsuD
+DddT DddW DmoA
+DddT DmdA DmdB
+DddT DmdA DmdB DmdD
+DddT DmdB DmdC
+DddT DmdB DmoA
+DddT DmdB DsoF
+DddT DmdC DmdD
+DddT DmoA MsmG MsmH
+DddT DmoA MsmG MsmH MsuC
+DddT DmoA MsuC
+DddT DmsA DmsB
+DddT DmsA DmsB DmsC DmsD
+DddT DmsA DmsB DmsD
+DddT DorR DorS
+DddT DsoF MsmA
+DddT DsoF MsmG MsmH
+DddT MsmG MsmH
+DddT MsmG MsmH MsuC
+DddT MsuC MsuD SnfG
+DmdA DmdB DmdC DmdD
+DmdA DmdB DmdC DmdD MsuE
+DmdA DmdB DmdD
+DmdA DmdB DorA DsoF
+DmdA DmdB MddH
+DmdA DmdC DmdD
+DmdA MsmA MsmB MsmD MsmE MsmF MsmG MsmH
+DmdA MsmA MsmD
+DmdA MsmE MsmF MsmG MsmH
+DmdA MsmF MsmG MsmH
+DmdA MsmG MsmH
+DmdA MsuC MsuD
+DmdA MsuC MsuD MsuE SnfG
+DmdA MsuC MsuE SnfG
+DmdA MsuC SnfG
+DmdB DmdC DmdD
+DmdB DmdC DmoA
+DmdB DmdC DmsA
+DmdB DmdC DmsA DmsB
+DmdB DmdC DsoF
+DmdB DmdC MddA
+DmdB DmdC MddH
+DmdB DmoA MddH
+DmdB DmoA MddH MsuC
+DmdB DmoA MsmG MsmH
+DmdB DmoA MsuC
+DmdB DmoA MsuC MsuD
+DmdB DmoA MsuC SnfG
+DmdB DmoA MsuE
+DmdB DmoA SnfG
+DmdB DmsA DmsB
+DmdB DmsA DsoF
+DmdB DmsA MsmG MsmH
+DmdB DmsB MddH
+DmdB DorA MddH
+DmdB DorC DorR DorS
+DmdB DorR DorS
+DmdB DsoB DsoC DsoD DsoE
+DmdB DsoB DsoC DsoD DsoE DsoF
+DmdB DsoB DsoC DsoD DsoF
+DmdB DsoB DsoD DsoF
+DmdB DsoD DsoF
+DmdB DsoF MsmA
+DmdB MsmE MsmF MsmG MsmH
+DmdB MsmE MsmG MsmH
+DmdB MsmF MsmG MsmH
+DmdB MsmG MsmH
+DmdB MsmG MsmH MsuC
+DmdB MsuC MsuD
+DmdB MsuC MsuD SnfG
+DmdB MsuC MsuE
+DmdB MsuC MsuE SnfG
+DmdB MsuC SnfG
+DmdB MsuD SnfG
+DmdB MsuE SnfG
+DmdC DmdD MsmG MsmH
+DmdC DmoA MsuC
+DmdC DmsB MsmG MsmH
+DmdC DsoB DsoC DsoD DsoF
+DmdC DsoB DsoD DsoF
+DmdC DsoD MsmD
+DmdC MsmG MsmH
+DmdC MsuC MsuD SnfG
+DmoA DmsA DmsB
+DmoA DmsA DsoF
+DmoA DmsA MsmG MsmH MsuC
+DmoA DmsA MsuC
+DmoA DmsB MsmG MsmH MsuE
+DmoA DmsB MsuD
+DmoA DmsB MsuE
+DmoA DorR DorS
+DmoA DsoA DsoB DsoC DsoD DsoE DsoF MsuC
+DmoA DsoF MsmA
+DmoA MddA MsuC
+DmoA MsmA MsmB MsmE MsmF MsmG MsmH MsuC
+DmoA MsmE MsmF MsmG MsmH
+DmoA MsmE MsmF MsmG MsmH MsuC MsuD SnfG
+DmoA MsmE MsmF MsmG MsmH MsuD
+DmoA MsmF MsuD
+DmoA MsmG MsmH
+DmoA MsmG MsmH MsuC
+DmoA MsmG MsmH MsuC MsuD
+DmoA MsmG MsmH MsuC MsuD MsuE SnfG
+DmoA MsmG MsmH MsuC MsuD SnfG
+DmoA MsmG MsmH MsuC MsuE
+DmoA MsmG MsmH MsuC SnfG
+DmoA MsmG MsmH MsuD
+DmoA MsmG MsmH MsuE
+DmoA MsuC MsuD
+DmoA MsuC MsuD MsuE
+DmoA MsuC MsuD MsuE SnfG
+DmoA MsuC MsuD SnfG
+DmoA MsuC MsuE
+DmoA MsuC MsuE SnfG
+DmoA MsuC SnfG
+DmoA MsuD MsuE
+DmoA MsuD SnfG
+DmoA MsuE SnfG
+DmsA DmsB DmsC
+DmsA DmsB DmsC DmsD
+DmsA DmsB DmsD
+DmsA DmsB MddH
+DmsA DmsB MsmA MsmB MsmD MsmE MsmF MsmG MsmH
+DmsA DmsB MsmB MsmD MsmE MsmF MsmG MsmH
+DmsA DmsB MsmC
+DmsA DmsB MsmE MsmF MsmG MsmH
+DmsA DmsB MsmG MsmH
+DmsA DmsB MsuD
+DmsA DmsC DmsD
+DmsA MsmA MsmB MsmD MsmE
+DmsA MsmG MsmH
+DmsA MsuE SnfG
+DmsB DmsC DmsD
+DmsB DorR DorS
+DmsB MsmA MsmB MsmC MsmD MsmF MsmG MsmH
+DmsB MsmA MsmB MsmC MsmE MsmF MsmG MsmH
+DmsB MsmA MsmB MsmD MsmE MsmF MsmG MsmH
+DmsB MsmA MsmD
+DmsB MsmA MsmD MsmE MsmF MsmG MsmH
+DmsB MsmF MsmG MsmH
+DmsB MsmG MsmH
+DmsB MsuC MsuD SnfG
+DorA MsmG MsmH
+DorA MsmG MsmH MsuD
+DorC DorD DorR DorS
+DorC DorR DorS
+DsoA DsoB DsoC DsoD
+DsoA DsoB DsoC DsoD DsoE DsoF
+DsoA DsoB DsoC DsoD DsoE DsoF MsmA
+DsoB DsoC DsoD
+DsoB DsoC DsoD DsoE
+DsoB DsoC DsoD DsoE DsoF
+DsoB DsoC DsoD DsoE DsoF MsmA
+DsoB DsoC DsoD DsoF
+DsoB DsoC DsoD DsoF MsmD
+DsoB DsoD DsoE DsoF
+DsoB DsoD DsoF
+DsoB DsoD DsoF MsmD
+DsoB DsoD MsmD
+DsoC DsoD DsoE DsoF
+DsoC DsoD DsoF
+DsoD DsoE DsoF
+DsoD DsoF MddH
+DsoD DsoF MsmA
+DsoF MsmA MsmB
+DsoF MsmA SnfG
+DsoF MsmG MsmH
+MddA MsmG MsmH
+MddA MsuC MsuD
+MddA MsuC MsuE SnfG
+MddH MsmA MsmB
+MddH MsmA MsmB MsmD MsmE MsmF MsmG MsmH
+MsmA MsmB MsmC
+MsmA MsmB MsmC MsmD
+MsmA MsmB MsmC MsmD MsmE
+MsmA MsmB MsmC MsmD MsmE MsmF MsmG MsmH
+MsmA MsmB MsmC MsmD MsmF MsmG MsmH
+MsmA MsmB MsmC MsmE MsmF MsmG MsmH
+MsmA MsmB MsmD
+MsmA MsmB MsmD MsmE
+MsmA MsmB MsmD MsmE MsmF
+MsmA MsmB MsmD MsmE MsmF MsmG MsmH
+MsmA MsmB MsmD MsmG MsmH
+MsmA MsmB MsmE
+MsmA MsmB MsmE MsmF MsmG MsmH
+MsmA MsmB MsmG MsmH
+MsmA MsmB MsuC MsuE SnfG
+MsmA MsmB MsuD
+MsmA MsmD MsmE MsmF
+MsmA MsmD MsmE MsmF MsmG MsmH
+MsmA MsmE MsmF
+MsmA MsmE MsmF MsmG MsmH
+MsmA MsmF MsmG MsmH
+MsmA MsmG MsmH
+MsmA MsuC SnfG
+MsmB MsmC MsmD
+MsmB MsmC MsmD MsmE MsmF MsmG MsmH
+MsmB MsmD MsmE
+MsmB MsmD MsmE MsmF
+MsmB MsmD MsmE MsmF MsmG MsmH
+MsmC MsmD MsmE
+MsmC MsmD MsmE MsmF MsmG MsmH
+MsmC MsmE MsmF MsmG MsmH
+MsmD MsmE MsmF
+MsmD MsmE MsmF MsmG MsmH
+MsmD MsmG MsmH
+MsmE MsmF MsmG MsmH
+MsmE MsmF MsmG MsmH MsuC
+MsmE MsmF MsmG MsmH MsuD
+MsmE MsmG MsmH
+MsmF MsmG MsmH
+MsmF MsmG MsmH MsuC
+MsmF MsmG MsmH MsuD
+MsmF MsuC MsuD MsuE SnfG
+MsmG MsmH MsuC
+MsmG MsmH MsuC MsuD
+MsmG MsmH MsuC MsuD MsuE
+MsmG MsmH MsuC MsuD MsuE SnfG
+MsmG MsmH MsuC MsuE
+MsmG MsmH MsuC SnfG
+MsmG MsmH MsuD
+MsmG MsmH MsuD MsuE
+MsmG MsmH MsuD MsuE SnfG
+MsmG MsmH MsuD SnfG
+MsmG MsmH MsuE
+MsmG MsmH SnfG
+MsuC MsuD MsuE
+MsuC MsuD MsuE SnfG
+MsuC MsuD SnfG
+MsuC MsuE SnfG
+MsuD MsuE SnfG
+DmsA DmsB DmsC DmsD MsmG
+DmoA MsmG MsuC MsuE SnfG
+DmoA MsmG MsuC MsuD MsuE
+DmoA MsmG MsuC MsuD MsuE SnfG
+DmoA MsmG MsuC MsuD SnfG
+DmoA MsmF MsmG MsuC MsuD MsuE
+DddC DmoA MsmG MsuC MsuD
+DddC DmoA MsmG MsuC SnfG
+DddA DddC DmoA MsmG MsuC SnfG
+DddA DddC DddP DmoA MsmG
+DddA DddC DddT DmdB DorS
+AcuK AcuN DmdB DorR MsmG
+DmoA DorR MsmG
+DmoA DorR MsmG MsuC
+DmoA DorR MsmG MsuC MsuD
+AcuK AcuN DddC DmdB DorR
+DmsA DmsB DmsC DmsD
+AcuN MsmA MsmB MsmC MsmD MsmE MsmF MsmG MsmH
+DddA DddC DddT DorR
+DddA DddC DorR
+AcuN DmoA DmsB
+AcuN DmoA MsmG MsmH
+AcuN DmdC DmdD
+AcuN DmdC DmoA
+AcuN DmdB DmoA
+AcuN DmdB DmdC
+AcuN DddC DmdC
+AcuN DddC DmdB
+AcuN DddA DddC
+AcuN DddA DddC DmdB
+AcuN DddA DddC DmdC
+AcuK AcuN MsmG MsmH
+AcuK AcuN MsuC
+AcuK AcuN MsuD
+AcuK AcuN SnfG
+AcuK AcuN MsmE MsmF MsmG MsmH
+AcuK AcuN DmdC
+AcuK AcuN DmdC DmsA
+AcuK AcuN DmdD
+AcuK AcuN DmoA
+AcuK AcuN DmoA MsmG MsmH MsuC
+AcuK AcuN DmoA MsuC
+AcuK AcuN DmoA MsuC MsuD
+AcuK AcuN DmoA SnfG
+AcuK AcuN DmsA
+AcuK AcuN DmdB
+AcuK AcuN DmdB DmdC
+AcuK AcuN DmdB DmdC DmdD
+AcuK AcuN DmdB DmdD
+AcuK AcuN DmdB DmoA
+AcuK AcuN DmdB DmsA
+AcuK AcuN DmdB DmsA DmsB
+AcuK AcuN DmdB DmsA DmsB DmsD
+AcuK AcuN DmdB DsoF
+AcuK AcuN DmdB MddA
+AcuK AcuN DmdB MddH
+AcuK AcuN DddC DmdB
+AcuK AcuN DddC DmdB DmdC
+AcuK AcuN DddC DmdB DmoA
+AcuK AcuN DddC DmdB DmsA
+AcuK AcuN DddC DmdC
+AcuK AcuN DddC DmoA
+AcuK AcuN DddC DsoF
+AcuK AcuN DddC MddH
+AcuK AcuN DddC MsuD
+AcuK AcuN DddD
+AcuK AcuN DddD DmdB
+AcuK AcuN DddP
+AcuK AcuN DddP DmdA
+AcuK AcuN DddT
+AcuK AcuN DddT DmdB
+AcuK AcuN DddA
+AcuK AcuN DddA DddC
+AcuK AcuN DddA DddC DddD DddP DddT
+AcuK AcuN DddA DddC DddD DddT
+AcuK AcuN DddA DddC DddL
+AcuK AcuN DddA DddC DddT
+AcuK AcuN DddA DddC DmdB
+AcuK AcuN DddA DddC DmdB DmdC
+AcuK AcuN DddA DddC MsmG MsmH
+AcuK AcuN DddA DddD
+AcuK AcuN DddA DddL
+AcuK AcuN DddA DmdB
+AcuK AcuN DddA DmdB DmdC
+AcuK AcuN DddA DmdC
+AcuK AcuN DddA DmdC DmsA
+AcuK AcuN DddA DmoA
+AcuK AcuN DddC
+AcuK DmoA MsuC
+AcuK DmoA MsuC SnfG
+AcuK DmoA MsuD
+AcuK DmoA SnfG
+AcuK DmsA DmsB
+AcuK DmsA DmsB DmsC DmsD
+AcuK DorR DorS
+AcuK DsoB DsoD
+AcuK DsoB DsoD DsoF
+AcuK DsoD DsoF
+AcuK DsoF MsmA
+AcuK MsmA MsmB MsmC MsmD MsmE MsmF MsmG MsmH
+AcuK MsmF MsmG MsmH
+AcuK MsmG MsmH
+AcuK MsuC MsuD MsuE SnfG
+AcuK MsuC MsuD SnfG
+AcuK MsuC MsuE SnfG
+AcuK MsuC SnfG
+AcuK DddC DmdA
+AcuK DddC DmdA DmdB
+AcuK DddC DmdB
+AcuK DddC DmdB DmdC
+AcuK DddC DmdB DmdC DmoA
+AcuK DddC DmdB DmdD
+AcuK DddC DmdB DmoA
+AcuK DddC DmdB DmsA
+AcuK DddC DmdB DsoF
+AcuK DddC DmdB MddH
+AcuK DddC DmdB MsmD
+AcuK DddC DmdB MsuD
+AcuK DddC DmdB SnfG
+AcuK DddA DddC
+AcuK DddA DddC DddD DmdB
+AcuK DddA DddC DddT
+AcuK DddA DddC DmdA
+AcuK DddA DddC DmdB
+AcuK DddA DddC DmdB DmdC
+AcuK DddA DddC DmdC
+AcuK DddA DddC DmoA
+AcuK DddA DddD
+AcuK DddA DddD DmdB
+AcuK DddA DddP
+AcuK DddA DddT
+AcuK DddA DmdA
+AcuK DddA DmdA DmdB
+AcuK DddA DmdB
+AcuK DddA DmdB DmdC
+AcuK DddA DmdB DmoA
+AcuK DddA DmdB DorA
+AcuK DddA DmdC
+AcuK DddA DmdC DmdD
+AcuK DddA DmoA
+AcuK DddA DmoA SnfG
+AcuK DddA DsoF
+AcuK DddA MddA
+AcuK DddA MsmG MsmH
+AcuK DddA MsuD
+AcuK DddC DddD
+AcuK DddC DddD DddT
+AcuK DddC DddD DmdB
+AcuI DddA DddC
+AcuI DddA DddC DddD DddT
+AcuI DddA DddC DddD DddT TorA
+AcuI DddA DddC DmdB
+AcuI DddA DddD
+AcuI DddA DddD DddT
+AcuI DddA DddL
+AcuI DddA DddT DmdA
+AcuI DddA DmdA
+AcuI DddA DmdA DmsA
+AcuI DddA DmdB
+AcuI DddA DmdC
+AcuI DddC DddD DddT
+AcuI DddC DddD DddT DmdB DmdC
+AcuI DddC DddP
+AcuI DddC DddT
+AcuI DddC DddY
+AcuI DddC DmdA
+AcuI DddC DmdB
+AcuI DddC DmdC
+AcuI DddL MsmG MsmH
+AcuI DddP DmdA
+AcuI DddP DmdA DmdC
+AcuI DddP DmdC
+AcuI DddT DmdA
+AcuI DddT DmdA DmdB
+AcuI DddT DmdC MsuD
+AcuI DddY DmdB
+AcuI DmdA DmdB
+AcuI DmdA DmdB DmdD
+AcuI DmdA DmdB DmsB
+AcuI DmdA DmdD
+AcuI DmdB DmdC
+AcuI DmdB DmdD
+AcuI DmdB SnfG
+AcuI DmdB TorA
+AcuI DmsA DmsB
+AcuI DorR DorS
+AcuI DsoB DsoD
+AcuI DsoB DsoD DsoF
+AcuI DsoF MsmA
+AcuI MsmG MsmH
+AcuI AcuK BisC
+AcuI AcuK DddA
+AcuI AcuK DddA DddC
+AcuI AcuK DddC
+AcuI AcuK DddC DddT
+AcuI AcuK DddC DmdA
+AcuI AcuK DddC DmdB
+AcuI AcuK DddC DmdD
+AcuI AcuK DddC MsmA
+AcuI AcuK DddY
+AcuI AcuK DmdA
+AcuI AcuK DmdB
+AcuI AcuK DmdB DmdC
+AcuI AcuK DmdB DmoA
+AcuI AcuK DmdB MddH
+AcuI AcuK DmdC
+AcuI AcuK DmdC DorR DorS
+AcuI AcuK DmdD
+AcuI AcuK DmoA SnfG
+AcuI AcuK MsmG MsmH
+AcuI AcuK SnfG
+AcuI AcuN BisC
+AcuI AcuN DddA
+AcuI AcuN DddA DddC
+AcuI AcuN DddA DmdB MsmG MsmH
+AcuI AcuN DddC
+AcuI AcuN DddC DmdB
+AcuI AcuN DddC DmdC
+AcuI AcuN DddT
+AcuI AcuN DmdA
+AcuI AcuN DmdB
+AcuI AcuN DmdC
+DdhA DdhB DdhC DdhD

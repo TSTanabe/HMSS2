@@ -126,6 +126,7 @@ HpsP SqwF SqwG SqwH SqwI
 HpsP SqwG SqwH SqwI YihV
 HpsU SftD SftE SftF SqiA SqiK
 SfcD SfcE SfcF SfcG SfcH SfcI SfcJ SfcK
+SfcD Sqdh SfcI SmoE SmoF SmoG SmoH SqgA SmoA SmoB SmoC SmoD SqoK SqoL SqoM
 SfcG SfcI SfcJ SfcK SmoC
 SfcG SfcI SfcJ SftD SftF SftI SftX SqiA SqiK YihQ
 SfcG SfcI SfcJ SmoB SmoC YihQ
