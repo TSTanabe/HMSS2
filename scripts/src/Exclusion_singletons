@@ -3,6 +3,7 @@ SuyA	SuyB
 SlcH	SlcF	SlcG
 SsuA	SsuB	SsuC
 SqiA	SqiK
+SfcG	SfcI	SfcJ	SfcK
 SmoE	SmoF	SmoH
 SqoK	SqoL	SqoM
 SftF
@@ -18,11 +19,14 @@ ShyA	ShyB	ShyC	ShyD
 TtrR	TtrS
 SoxX	SoxA	SoxY	SoxZ	SoxC	SoxD
 SoeA	SoeB	SoeC
+TmcA	TmcB	TmcC	TmcD
+HmcA	HmcB	HmcC	HmcD	HmcE	HmcF
+QrcA	QrcB	QrcC	QrcD
 FlxA	FlxB	FlxC	FlxD
 sHdrA	sHdrB1	sHdrB2	sHdrC1	sHdrC2	sHdrH
 dHdrA	dHdrB	dHdrC
 sHdrR	sHdrJ	sHdrI
 SoxR
-sEtfA sEtfB
+sEtfA	sEtfB
 SoxO
-
+DorR	DorS
