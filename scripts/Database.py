@@ -295,6 +295,8 @@ def insert_taxonomy_data(database: str, taxonomy_file: str) -> None:
                     fields = line.strip().split('\t')
                    
                     if len(fields) < 8:
+                        fields = parse_taxonomy_line(line, "NA")
+                    if len(fields) < 8:            
                         logger.warning(f"Line has insufficient columns: {line}")
                         continue              
                    
@@ -337,7 +339,43 @@ def insert_taxonomy_data(database: str, taxonomy_file: str) -> None:
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         
-        
+
+def parse_taxonomy_line(line: str, na: str = "") -> List[str]:
+    
+    RANK_KEYS = ["domain", "phylum", "class", "order", "family", "genus", "species"]
+
+    parts = line.rstrip("\n").split("\t")
+    if len(parts) < 2:
+        raise ValueError("Line must contain at least two tab-separated fields: <ID> and <taxonomy>")
+
+    genome_id = parts[0].strip()
+    tax_str = parts[1].strip()
+
+    raw_tokens = [t.strip() for t in tax_str.split(";") if t.strip()]
+    ranks = {k: na for k in RANK_KEYS}
+
+    prefix_to_rank = {
+        "d__": "domain", "k__": "domain",
+        "p__": "phylum",
+        "c__": "class",
+        "o__": "order",
+        "f__": "family",
+        "g__": "genus",
+        "s__": "species",
+    }
+
+    for token in raw_tokens:
+        for pre in prefix_to_rank:
+            if token.startswith(pre):
+                rank = prefix_to_rank[pre]
+                value = token[len(pre):].strip()
+                # Leerzeichen in Unterstrich nur bei species
+                if rank == "species":
+                    value = value.replace(" ", "_")
+                ranks[rank] = value
+                break
+
+    return [genome_id] + [ranks[k] for k in RANK_KEYS]   
         
 ##############################################################
 ########## Alter information from database routines ##########

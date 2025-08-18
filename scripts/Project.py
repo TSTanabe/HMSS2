@@ -47,7 +47,7 @@ def prepare_result_space(options, project: str = "project") -> None:
         write_options_to_tsv(options, options.result_files_directory)
 
     # User-defined directory: check for project
-    elif not isProjectFolder(options):
+    elif not is_existing_project_directory(options):
         if not os.path.isdir(options.result_files_directory):
             try:
                 os.mkdir(options.result_files_directory)
@@ -95,6 +95,26 @@ def prepare_result_space(options, project: str = "project") -> None:
                 
     return                
 
+def prepare_minimal_output_context(options):
+    """
+    Minimal-Setup für Output-only:
+    - setzt result_files_directory auf den DB-Ordner
+    - legt KEIN neues Projekt an, schreibt KEINE options-TSV
+    - erstellt optional nur Verzeichnisse, die echte Outputs brauchen
+    """
+    if not options.database_directory or not os.path.isfile(options.database_directory):
+        logger.error("Please use -db with an existing database")
+        sys.exit()
+    options.result_files_directory = os.path.dirname(options.database_directory)
+
+    # Csb output file is needed
+    options.Csb_directory = options.result_files_directory+"/Collinear_syntenic_blocks"
+    options.csb_output_file = options.Csb_directory+"/Csb_output.txt"
+    
+    if not os.path.isfile(options.csb_output_file):
+    	logger.error("Database is missing the /Collinear_syntenic_blocks/Csb_output.txt file")
+    	sys.exit()
+
 
 def create_project(directory, projectname="project"):
     now = datetime.now()
@@ -109,7 +129,7 @@ def create_project(directory, projectname="project"):
     return directory
     
 
-def isProjectFolder(options) -> bool:
+def is_existing_project_directory(options) -> bool:
     """
     Checks if a result_files_directory contains a valid project structure.
     If a database is found, adjusts options accordingly.

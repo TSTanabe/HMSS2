@@ -20,7 +20,7 @@ from math import floor
 
 
 
-def main_binary_dataset(options, directory, taxon_dict, protein_dict, cluster_dict):
+def main_binary_dataset(options, directory, protein_dict, cluster_dict, taxon_dict):
     """
     Main function to process species binary datasets for proteins and keywords.
 
@@ -34,12 +34,12 @@ def main_binary_dataset(options, directory, taxon_dict, protein_dict, cluster_di
     # Process protein dataset
     protein_presence_dict = fetch_protein_presence(protein_dict)
     protein_binary_matrix_dict, prot_headers = create_presence_absence_matrix(taxon_dict, options.fetch_proteins, protein_presence_dict)
-    process_binary_dataset(taxon_dict, protein_binary_matrix_dict, prot_headers, directory, options.dataset_divide_sign, "domains")
+    process_binary_dataset(taxon_dict, protein_binary_matrix_dict, prot_headers, directory, options.dataset_divide_sign, "proteins")
     
     # Process keyword dataset
-    keywords_presence_dict = fetch_keyword_presence(cluster_dict)
-    keywords_binary_matrix_dict, key_headers = create_presence_absence_matrix(taxon_dict, options.fetch_keywords, keywords_presence_dict)
-    process_binary_dataset(taxon_dict, keywords_binary_matrix_dict, key_headers, directory, options.dataset_divide_sign, "keywords")
+    #keywords_presence_dict = fetch_keyword_presence(cluster_dict)
+    #keywords_binary_matrix_dict, key_headers = create_presence_absence_matrix(taxon_dict, options.fetch_keywords, keywords_presence_dict)
+    #process_binary_dataset(taxon_dict, keywords_binary_matrix_dict, key_headers, directory, options.dataset_divide_sign, "keywords")
 
     return
     

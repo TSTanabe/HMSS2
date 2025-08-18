@@ -307,6 +307,8 @@ def make_threshold_dict(
                     score = float(parts[1])
                 elif len(parts) > threshold_type:
                     score = float(parts[threshold_type])
+                    if parts[threshold_type] == "-inf":
+                        score = float(5000) # Hardcode never reachable score cutoff equal to infinite
             except (ValueError, IndexError) as e:
                 logger.warning(f"[Line {line_number}] Problem parsing: {line.strip()} — {e}")
                 continue

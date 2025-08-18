@@ -126,7 +126,7 @@ HpsP SqwF SqwG SqwH SqwI
 HpsP SqwG SqwH SqwI YihV
 HpsU SftD SftE SftF SqiA SqiK
 SfcD SfcE SfcF SfcG SfcH SfcI SfcJ SfcK
-SfcD Sqdh SfcI SmoE SmoF SmoG SmoH SqgA SmoA SmoB SmoC SmoD SqoK SqoL SqoM
+Sqdh SmoE SmoF SmoG SmoH SqgA SmoA SmoB SmoC SmoD SqoK SqoL SqoM
 SfcG SfcI SfcJ SfcK SmoC
 SfcG SfcI SfcJ SftD SftF SftI SftX SqiA SqiK YihQ
 SfcG SfcI SfcJ SmoB SmoC YihQ
@@ -414,11 +414,11 @@ YihO YihS YihT YihU YihV
 YihP YihQ YihS YihT YihU YihV
 YihQ YihR YihT YihU YihV
 HpfH HpsG HpsH SftR Sgdh Sgald Sqdh Sgl YihP YihQ YihR
-HpsK HpsL HpsM HpsN HpsO HpsP SfcI Sgdh SmoE SmoF SmoG SmoH Sgald Sqdh SqgA YihQ
+HpsK HpsL HpsM HpsN HpsO HpsP Sgdh SmoE SmoF SmoG SmoH Sgald Sqdh SqgA YihQ
 HpsK HpsL HpsM HpsN HpsO HpsP Sgdh Sgald
-HpsN HpsO HpsP SfcG SftD Sgdh Sgald Sqdh SqoL SqoM YihQ YihU
-HpsN HpsO HpsP SfcG Sgdh SmoE SmoF SmoG SmoH Sgald Sqdh Sgl YihQ YihR
-HpsN HpsO HpsP SfcG Sgdh Sgald
+HpsN HpsO HpsP SftD Sgdh Sgald Sqdh SqoL SqoM YihQ YihU
+HpsN HpsO HpsP Sgdh SmoE SmoF SmoG SmoH Sgald Sqdh Sgl YihQ YihR
+HpsN HpsO HpsP Sgdh Sgald
 HpsN HpsO HpsP Sgdh SmoE SmoF SmoG SmoH Sgald Sqdh Sgl YihQ
 HpsO HpsP SfcF Sgdh Sgald Sqdh YihU
 HpsO HpsP Sgdh Sgald Sqdh
@@ -432,11 +432,10 @@ HpsU SfcE Sgdh SmoE SmoF SmoG SmoH Sgald Sqdh Sgl YihQ
 HpsU SftR Sgdh Sgald Sqdh Sgl YihR
 HpsU Sgdh Sgald Sqdh Sgl YihQ YihR
 SfcD SftI Sladh SmoE SmoG SmoH Sqdh SqgA SqoK SqoL SqoM YihV
-SfcE Sgdh SmoE SmoF SmoG SmoH Sgald Sqdh Sgl YihQ
-SfcE Sladh SmoA SmoB SmoC SmoD SmoE SmoG SmoH Sqdh SqgA Sgl
-SfcF SfcI SftD Sgdh SmoE SmoG Sgald Sqdh Sgl SqoL YihQ
-SfcF Sgdh SmoE SmoG SmoH
-SfcI Sgdh SmoG Sgald Sqdh Sgl YihQ
+Sgdh SmoE SmoF SmoG SmoH Sgald Sqdh Sgl YihQ
+Sladh SmoA SmoB SmoC SmoD SmoE SmoG SmoH Sqdh SqgA Sgl
+SftD Sgdh SmoE SmoF SmoG Sgald Sqdh Sgl SqoL SqoK SqoM YihQ
+Sgdh SmoG Sgald Sqdh Sgl YihQ
 Sgdh SmoA SmoB SmoC SmoD SqgA
 Sgdh Sladh SmoE SmoF SmoG SmoH Sgald Sqdh Sgl YihQ
 Sgdh SmoB SmoD SmoE Sqdh SqgA Sgl SqoD SqoK SqoL SqoM

@@ -17,7 +17,7 @@ logger = myUtil.logger
 ####################### MAIN OUTPUT ROUTINE #############################
 #########################################################################
 
-def print_fasta_and_hit_table(directory: str, options: Any) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
+def fetch_fasta_and_hit_data(options: Any) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
     """Main output routine: creates hit tables and writes protein FASTA files.
 
     Args:
@@ -34,27 +34,23 @@ def print_fasta_and_hit_table(directory: str, options: Any) -> Tuple[Dict[str, A
         >>> prot, clust, tax = print_fasta_and_hit_table("/out/", options)
     """
     
-    print_command_line_args(directory+"1_fetch_command.txt")
-    
-    path1 = directory+"1_hit_table.txt" #individual hit table in tsv file
-    path2 = directory+"2_Protein"       #protein fasta files
     
     #Limit the genomeIDs and fetch the lineage
-    taxon_diction = dict()
+    taxon_dict = dict()
     if options.limiter:
-        taxon_diction = fetch_limiter_data(options)
-    #Fetch protein/cluster diction
+        taxon_dict = fetch_limiter_data(options)
+    #Fetch protein/cluster dict
     if options.fetch_csbs:
         logger.info(f"Collecting gene clusters containing {options.fetch_csbs}")
         csb_listing = find_csbs_with_proteins(options.csb_output_file, options.fetch_csbs)
-        logger.info(csb_listing)
+        logger.debug(csb_listing)
         logger.info(f"Found {len(csb_listing)} types of gene clusters containing {options.fetch_csbs}")
         if len(csb_listing) == 0:
             sys.exit()
         options.fetch_keywords.extend(csb_listing)
     
 
-    logger.info("Collecting protein sequences")
+    logger.info("Collecting hits from local database")
     protein_dict, cluster_dict, taxon_dict = fetch_bulk_data(
         options.database_directory,
         options.fetch_genomes,
@@ -64,19 +60,50 @@ def print_fasta_and_hit_table(directory: str, options: Any) -> Tuple[Dict[str, A
         options.min_completeness,
         options.dataset_divide_sign
     )
+    return protein_dict,cluster_dict,taxon_dict  
 
+def print_fasta_and_hit_outputs(
+    directory: str,
+    protein_dict: Dict[str, Any],
+    cluster_dict: Dict[str, Any],
+    taxon_dict: Dict[str, str],
+) -> None:
+    """
+    Main output routine: creates hit tables, taxonomy summaries, and protein FASTA files.
+
+    Args:
+        directory (str): Output directory path.
+        protein_dict: Mapping proteinID -> proteinObj.
+        cluster_dict: Mapping clusterID -> clusterObj.
+        taxon_dict: Mapping genomeID -> taxonomy string.
+        taxon_divider: Separator used within taxonomy strings.
+    """
+    
+    # Printing results
     logger.info("Finished collecting protein sequences")
     logger.info("Writing fasta formated output files to disk")
+    logger.info("Printing genome information output files")
+
+    # Metadata for taxonomy and hits    
+    hit_report = directory+"1_hit_table.txt" #individual hit table in tsv file
+    taxonomy_report = directory+"1_taxonomy_table.txt"
+    taxonomy_summary = directory+"1_hit_taxonomy_counts.txt"
     
-    output_genome_report(path1,protein_diction,cluster_diction,taxon_diction)    #Output report
-    files = output_distinct_fasta_reports(path2,protein_diction,cluster_diction) #Output per domain
+    output_genome_report(hit_report, protein_dict, cluster_dict, taxon_dict)    # Output hit report
+    output_unique_taxonomy_table(taxonomy_report, taxon_dict) # Output unique taxonomy report
+    output_taxonomy_summary(taxonomy_summary, taxon_dict)
+    
+    # Proteine sequences
+    logger.info("Printing protein fasta files to {directory}")
+    
+    fasta_file_directory = directory+"2_Protein"       #protein fasta files
+    files = output_distinct_fasta_reports(fasta_file_directory,protein_dict,cluster_dict) #Output per domain
     singletons(directory,files)                                                  #Output singleton per genome and doublicates
     
     myUtil.clean_empty_files(directory)
-    generate_taxonomy_summary(path1,directory+"1_hit_taxonomy_stats.txt")
-    print(f"\nWrote fasta output to :\n{directory}")
+
     
-    return protein_diction,cluster_diction,taxon_diction   
+ 
     
 #########################################################################
 #########################################################################
@@ -336,88 +363,203 @@ def write_detail_to_protein_dict(
 #############################################################################################
 #############################################################################################
 
-def output_genome_report(filepath,protein_dict,cluster_dict,taxon_dict={},genomeID="",writemode="w"):
-    """Writes the main genome hit table as a text file.
-
-    Args:
-        output_file (str): Output path.
-        protein_dict (Dict[str, Any]): ProteinID to Protein object.
-        cluster_dict (Dict[str, Any]): ClusterID to Cluster object.
-        taxon_dict (Dict[str, Any]): GenomeID to taxonomy string.
-
-    Example:
-        >>> output_genome_report("1_hit_table.txt", protein_dict, cluster_dict, taxon_dict)
-   
-    11.9.22
-    
-    Args:
-        Filepath    Outputfile
-        protein_dict    proteinID => proteinObj
-        cluster_dict    key:clusterID => value:clusterObj
-        Writemode   default "w" for overwrite/new file otherwise "a" for append
-    Output:
-        TSV file with columns
-        Protein attributes:
-        proteinID get_domains domain_scores domain_coordinates
-        gene_contig gene_start gene_end gene_strand gene_locustag
-        Cluster attributes:
-        keyword completeness csb
-        Taxonomy lineage 
-        
-        Reports in a textfile a abbreviated summary of the protein information with cluster and lineage
-        
-                listing.append(self.proteinID)
-        listing.append(self.get_domains())
-        listing.append(str (self.get_domain_scores()))
-        listing.append(str (self.get_domain_coordinates()))
-        listing.append(self.gene_contig)
-        listing.append(str (self.gene_start))
-        listing.append(str (self.gene_end))
-        listing.append(self.gene_strand)
-        listing.append(self.gene_locustag)
+def output_genome_report(
+    output_filepath: str,
+    protein_dict: Dict[str, Any],
+    cluster_dict: Dict[str, Any],
+    taxon_dict: Dict[str, str] = {},
+    genomeID: str = "",
+    writemode: str = "w",
+    taxon_divider: str = ".",
+) -> None:
     """
-    header ='\t'.join(["genomeID","proteinID","domains","dom_scores","dom_coords","contig","gene_start","gene_end","gene_strand","locustag","clusterID","keyword","cluster_completeness","","Taxonomy"]) 
-    
-    with open(filepath, writemode) as writer:
-    
-        writer.write(header+"\n")
-        proteinID_list = sorted(protein_dict, key=lambda x: \
-        (protein_dict[x].genomeID, protein_dict[x].gene_contig, protein_dict[x].gene_start)) 
-        
+    Writes the main genome hit table (TSV).
+
+    Columns:
+      genomeID, proteinID, domains, dom_scores, dom_coords, contig, gene_start, gene_end,
+      gene_strand, locustag, clusterID, csb,
+      Superkingdom, Phylum, Class, Order, Family, Genus, Species
+    """
+    taxon_cols = ["genomeID","Superkingdom","Phylum","Class","Order","Family","Genus","Species"]
+    header_cols = [
+        "genomeID","proteinID","domains","dom_scores","dom_coords",
+        "contig","gene_start","gene_end","gene_strand","locustag",
+        "clusterID",
+        *taxon_cols
+    ]
+    header = '\t'.join(header_cols)
+
+    # sortiert nach genomeID, contig, start
+    proteinID_list = sorted(
+        protein_dict,
+        key=lambda x: (protein_dict[x].genomeID, protein_dict[x].gene_contig, protein_dict[x].gene_start)
+    )
+
+    with open(output_filepath, writemode) as writer:
+        writer.write(header + "\n")
+
         for proteinID in proteinID_list:
-        #Write each line includes all information about one protein
             protein = protein_dict[proteinID]
-            proteinlist = protein.get_protein_list()  #list representation of a protein object
-            
-            out = protein.genomeID + '\t' +'\t'.join(proteinlist)
-            
+            # protein.get_protein_list() erwartete Reihenfolge laut Docstring:
+            # [proteinID, get_domains(), get_domain_scores(), get_domain_coordinates(),
+            #  gene_contig, gene_start, gene_end, gene_strand, gene_locustag]
+            pl = protein.get_protein_list()
+
+            # clusterID + csb (ohne keyword/completeness)
             clusterID = protein.clusterID
+            csb_val = ""
             if clusterID:
-                
-                if clusterID in cluster_dict.keys():
-                    cluster = cluster_dict[clusterID]
-                    clusterlist = cluster.get_cluster_list(",")
-                    out += '\t' + '\t'.join(clusterlist)
-                
+                if clusterID in cluster_dict:
+                    # cluster.get_cluster_list(",") liefert i. d. R. [clusterID, keyword, completeness, csb]
+                    cl = cluster_dict[clusterID].get_cluster_list(",")
+                    # defensiv extrahieren:
+                    out_clusterID = cl[0] if len(cl) >= 1 else clusterID
+                    csb_val = cl[3] if len(cl) >= 4 else (cl[-1] if len(cl) >= 2 else "")
                 else:
-                    out += '\t'+ clusterID + '\t\t\t'
+                    out_clusterID = clusterID
             else:
-                out += '\t\t\t\t'
-            
-            genomeID = protein.genomeID
-            if genomeID in taxon_dict.keys():
-                taxon = taxon_dict[genomeID]
-                out += '\t' + taxon
-            else:
-                out += '\t\t\t\t\t\t\t\t\t\t\t'
-            out += '\n'                
-            writer.write(out)
+                out_clusterID = ""
+
+            # Taxonomie in 7 Spalten
+            gid = protein.genomeID
+            taxon_levels = [""] * 8
+            if gid in taxon_dict and taxon_dict[gid]:
+                parts = [p.strip() for p in str(taxon_dict[gid]).split(taxon_divider)]
+                for i in range(min(8, len(parts))):
+                    taxon_levels[i] = parts[i]
+            row = [
+                protein.genomeID,  # genomeID
+                pl[0],             # proteinID
+                pl[1],             # domains
+                pl[2],             # dom_scores
+                pl[3],             # dom_coords
+                pl[4],             # contig
+                pl[5],             # gene_start
+                pl[6],             # gene_end
+                pl[7],             # gene_strand
+                pl[8],             # locustag
+                out_clusterID,
+                *taxon_levels
+            ]
+            writer.write('\t'.join(map(str, row)) + '\n')
     return
 
 
 
 
+def output_taxonomy_summary(
+    output_file: str,
+    taxon_dict: Dict[str, str],
+    taxon_divider: str = ".",
+) -> None:
+    """
+    Build taxonomy statistics directly from `taxon_dict` (no file I/O for input).
+    Parsing mirrors `output_genome_report`: split taxonomy by `taxon_divider`,
+    use the last 7 parts as ranks (Superkingdom..Species), pad with "" if fewer.
 
+    Writes:
+        - `output_file`: a TSV with per-level counts of distinct genomes per taxon.
+          Columns: Taxonomic Level, Taxon, distinct genomes
+    """
+    tax_cols = ["Superkingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"]
+
+    # level -> {taxon -> set(genomeIDs)}
+    taxonomy_levels: Dict[str, Dict[str, Set[str]]] = {level: {} for level in tax_cols}
+    # set of unique 7-rank lineages (not used further here, but kept for completeness)
+    unique_taxonomies: Set[Tuple[str, str, str, str, str, str, str]] = set()
+
+    # Parse taxonomy directly from the dict
+    for genome_id, lineage_str in (taxon_dict or {}).items():
+        if not genome_id or not lineage_str:
+            continue
+
+        # Split and take the last 7 parts as ranks; if fewer, left-pad with ""
+        parts = [p.strip() for p in str(lineage_str).split(taxon_divider)]
+        tail7: List[str] = parts[-7:] if len(parts) >= 7 else ([""] * (7 - len(parts)) + parts)
+        if len(tail7) != 7:
+            tail7 = (tail7 + [""] * 7)[:7]  # harden against odd inputs
+
+        # Update per-level sets and unique lineage set
+        for level_name, value in zip(tax_cols, tail7):
+            if value:
+                taxonomy_levels[level_name].setdefault(value, set()).add(genome_id)
+        unique_taxonomies.add(tuple(tail7))
+
+    # Write per-level statistics
+    with open(output_file, "w", newline="") as out:
+        out.write("Taxonomic Level\tTaxon\tdistinct genomes\n")
+        for level in tax_cols:
+            # Alphabetical within each level; empty strings (if any) go last
+            for taxon in sorted(taxonomy_levels[level].keys(), key=lambda s: (s == "", s.casefold())):
+                out.write(f"{level}\t{taxon}\t{len(taxonomy_levels[level][taxon])}\n")
+
+
+
+
+
+def output_unique_taxonomy_table(
+    output_file: str,
+    taxon_dict: Dict[str, str],
+    taxon_divider: str = "."
+) -> str:
+    """
+    Write a non-redundant taxonomy table.
+    - Deduplicates entries based on the 7 taxonomy ranks (Superkingdom..Species).
+    - Sorts only by the taxonomy columns, ignoring the GenomeID.
+    - Prints GenomeID in the first column.
+
+    Args:
+        output_file: Base file name used to generate the output file path.
+        taxon_dict: Mapping from genomeID to taxonomy string.
+        taxon_divider: Separator used in taxonomy strings (default: ".").
+
+    Returns:
+        Path to the written file.
+    """
+    # Output file name: add suffix "_unique_taxonomies.txt"
+    unique_file = output_file.replace(".txt", "") + "_unique_taxonomies.txt"
+
+    # Map from taxonomy tuple (7 ranks) -> representative genomeID
+    representative: Dict[Tuple[str, str, str, str, str, str, str], str] = {}
+
+    for gid, lineage_str in (taxon_dict or {}).items():
+        if not lineage_str:
+            continue
+        # Split taxonomy string into parts
+        parts = [p.strip() for p in str(lineage_str).split(taxon_divider)]
+        # Take the last 7 parts as the taxonomy ranks, fill with "" if fewer
+        tail7 = parts[-7:] if len(parts) >= 7 else ([""] * (7 - len(parts)) + parts)
+        if len(tail7) != 7:
+            tail7 = (tail7 + [""] * 7)[:7]
+        tail_tup = tuple(tail7)
+        # Keep the first genomeID encountered for each unique taxonomy
+        representative.setdefault(tail_tup, gid)
+
+    # Build rows: GenomeID first, then taxonomy ranks
+    rows: List[Tuple[str, ...]] = [
+        (rep_gid, *taxo) for taxo, rep_gid in representative.items()
+    ]
+
+    # Column headers
+    header_cols = ["GenomeID", "Superkingdom", "Phylum", "Class",
+                   "Order", "Family", "Genus", "Species"]
+
+    # Sorting key: use only taxonomy columns (ignore GenomeID in column 0)
+    # Empty fields are sorted last; otherwise sort case-insensitively
+    def _sort_key(row: Tuple[str, ...]):
+        taxo_cols = row[1:]
+        return tuple((s == "", (s or "").casefold()) for s in taxo_cols)
+
+    # Sort rows using taxonomy columns
+    rows_sorted = sorted(rows, key=_sort_key)
+
+    # Write file
+    with open(unique_file, "w", newline="") as uf:
+        uf.write("\t".join(header_cols) + "\n")
+        for row in rows_sorted:
+            uf.write("\t".join(map(str, row)) + "\n")
+
+    return unique_file
 
 
 
@@ -536,7 +678,10 @@ def find_csbs_with_proteins(file_path: str, proteins: List[str]) -> List[str]:
         >>> find_csbs_with_proteins("Csb_output.txt", ["protA", "protB"])
         ['CSB_01', 'CSB_15']
     """
+    logger.debug(f"Csb file filepath is {file_path}")
     csb_list: List[str] = []
+    
+    
     try:
         with open(file_path, 'r') as file:
             for line in file:
@@ -604,9 +749,11 @@ def fetch_bulk_data(
         query, args = generate_fetch_query(genomes, proteins, keywords, taxon_dict)
         cur.execute(query, args)
         for index, row in enumerate(cur):
-            logger.debug(f"Fetched domains: {index + 1}")
+            
             proteinID, genomeID, clusterID = row[0], row[1], row[2]
             domain, domStart, domEnd, score = row[8], row[9], row[10], row[11]
+            
+            logger.debug(f"Fetched protein for {genomeID}. Total proteins: {index + 1}")
 
             if proteinID in protein_dict:
                 protein_dict[proteinID].add_domain(domain, domStart, domEnd, score)
@@ -829,7 +976,7 @@ def output_distinct_fasta_reports(
 
     # Output: per domain class
     for HMM, proteinID_list in HMM_dict.items():
-        filepath = os.path.join(directory, f"_{HMM}.faa")
+        filepath = directory + f"_{HMM}.faa"
         files.add(filepath)
         with open(filepath, writemode) as writer:
             for proteinID in proteinID_list:
@@ -932,69 +1079,8 @@ def singletons(directory,filepaths):
 
 
 
-def generate_taxonomy_summary(input_file, output_file):
-    # Initialize a dictionary to store the results based on the adjusted mapping
-    taxonomy_levels = {
-        'Kingdom': {},
-        'Phylum': {},
-        'Class': {},
-        'Order': {},
-        'Family': {},
-        'Genus': {},
-        'Species': {}
-    }
 
-    # Open the input file and process each line
-    with open(input_file, 'r') as file:
-        for line in file:
-            columns = line.strip().split('\t')
-            genome_id = columns[0]  # First column is the genome ID
-            taxonomy = columns[-1].split(';')  # Last column is the concatenated taxonomy string
-            
-            # Map the taxonomy levels according to your specification
-            if len(taxonomy) > 1:
-                if taxonomy[1] not in taxonomy_levels['Kingdom']:
-                    taxonomy_levels['Kingdom'][taxonomy[1]] = set()
-                taxonomy_levels['Kingdom'][taxonomy[1]].add(genome_id)
-            
-            if len(taxonomy) > 3:
-                if taxonomy[3] not in taxonomy_levels['Phylum']:
-                    taxonomy_levels['Phylum'][taxonomy[3]] = set()
-                taxonomy_levels['Phylum'][taxonomy[3]].add(genome_id)
-            
-            if len(taxonomy) > 4:
-                if taxonomy[4] not in taxonomy_levels['Class']:
-                    taxonomy_levels['Class'][taxonomy[4]] = set()
-                taxonomy_levels['Class'][taxonomy[4]].add(genome_id)
-            
-            if len(taxonomy) > 5:
-                if taxonomy[5] not in taxonomy_levels['Order']:
-                    taxonomy_levels['Order'][taxonomy[5]] = set()
-                taxonomy_levels['Order'][taxonomy[5]].add(genome_id)
-            
-            if len(taxonomy) > 6:
-                if taxonomy[6] not in taxonomy_levels['Family']:
-                    taxonomy_levels['Family'][taxonomy[6]] = set()
-                taxonomy_levels['Family'][taxonomy[6]].add(genome_id)
-            
-            if len(taxonomy) > 7:
-                if taxonomy[7] not in taxonomy_levels['Genus']:
-                    taxonomy_levels['Genus'][taxonomy[7]] = set()
-                taxonomy_levels['Genus'][taxonomy[7]].add(genome_id)
-            
-            if len(taxonomy) > 8:
-                if taxonomy[8] not in taxonomy_levels['Species']:
-                    taxonomy_levels['Species'][taxonomy[8]] = set()
-                taxonomy_levels['Species'][taxonomy[8]].add(genome_id)
 
-    # Write the summary to the output file
-    with open(output_file, 'w') as file:
-        file.write('Taxonomic Level,Taxon,Count\n')
-        for level in taxonomy_levels:
-            for taxon, genomes in taxonomy_levels[level].items():
-                file.write(f'{level}\t{taxon}\t{len(genomes)}\n')
-
-    print(f"Summary file generated: {output_file}")
 
 
 

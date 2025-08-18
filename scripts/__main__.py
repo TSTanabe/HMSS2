@@ -167,7 +167,7 @@ def parse_arguments(arguments: list):
         # Search library resources
         resources = parser.add_argument_group("Search library resources")
 
-        resources.add_argument( # TODO limit to specific sets, needs to be implemented correctly
+        resources.add_argument(
             '-hmms', nargs='+', dest='HMM_sets', type=str, default=[],
             metavar='<list>', help='Limit to HMM sets (whitespace separated)' if show_advanced else argparse.SUPPRESS
         )
@@ -345,7 +345,7 @@ def parse_arguments(arguments: list):
             metavar='<directory>', help='Concatenates alignment files with extention .fasta_aln' if show_advanced else argparse.SUPPRESS
         )
         process.add_argument(
-            '-add_taxonomy', dest='add_taxonomy', type=str,
+            '-add_taxonomy_to_alignment', dest='add_taxonomy', type=str,
             metavar='<file> or <directory>',
             help='Adds taxonomy to alignment files in <dir>, requires -db with taxonomy' if show_advanced else argparse.SUPPRESS
         )
@@ -373,11 +373,11 @@ def parse_arguments(arguments: list):
     formatter = lambda prog: argparse.HelpFormatter(prog,max_help_position=96,width =300)
 
     parser = argparse.ArgumentParser(
-        description="HAMSTER: Homolog and Synteny Mining Pipeline",
+        description="HMSS2: Sulfur metabolism annotation",
         epilog="Please cite: Tanabe TS, Dahl C. HMSS2: An advanced tool for the analysis of sulphur metabolism, including organosulphur compound transformation, in genome and metagenome assemblies. Mol Ecol Resour. 2023;23(8):1930-1945. doi:10.1111/1755-0998.13848", # Formatter makes this a one-liner
 
         usage="HMSSS.py -f <genomes_dir> [options]\n"
-      "       hamster.py --help-all",
+      "       HMSSS.py --help-all",
 
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
@@ -438,15 +438,12 @@ def parse_arguments(arguments: list):
     
     
     
-    if options.redo_taxonomy:
-        if options.taxonomy_file and options.database_directory:
-            options.stage = 5 # direct the stage to taxonomy addition
-        else:
-            sys.exit("Please use the -db argument to provide a valid database and -tax argument to provide a taxonomy table")
-    
+    if options.taxonomy_file and options.database_directory and not options.fasta_file_directory:
+        options.stage = 100 # direct the stage to taxonomy addition
+        logger.info("Redo taxonomy assignment with database and taxonomy tsv")    
  #####Processes are at stage 100
     if process_args:
-        options.stage = 100
+        options.stage = 101
         
         
         if options.fetch_proteins or options.fetch_keywords or options.fetch_csbs or options.fetch_genomes:
@@ -703,18 +700,21 @@ def output_operator(options: HMSSS) -> None:
     """
 
     #Set directory
-    date = datetime.now()
-    
-    directory = os.path.dirname(options.database_directory)+"/"+str(date)+"_dataset/"
+    date_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # YYYY-MM-DD_HH-MM-SS
+    directory = os.path.join(
+        os.path.dirname(options.database_directory),
+        f"{date_str}_dataset/"
+    )
     os.mkdir(directory) #save results in the same folder as the database
     logger.info("Created output directory: %s", directory)
     
     #primary output routine for fasta files
-    protein_dict, cluster_dict, taxon_dict = Output.print_fasta_and_hit_table(directory,options)
-    logger.info("Printed FASTA and hit table")
-        
+    Output.print_command_line_args(os.path.join(directory, "1_fetch_command.txt"))
+
+    protein_dict, cluster_dict, taxon_dict = Output.fetch_fasta_and_hit_data(options)
+    Output.print_fasta_and_hit_outputs(directory, protein_dict, cluster_dict, taxon_dict)
     #dataset generation
-    Datasets.main_binary_dataset(options, directory, taxon_dict, protein_dict, cluster_dict)
+    Datasets.main_binary_dataset(options, directory, protein_dict, cluster_dict, taxon_dict)
     logger.info("Generated binary dataset")
         
     return
@@ -781,25 +781,29 @@ def main(args=None):
 
     myUtil.print_header("\nInitilizing result file directory")
     options = parse_arguments(args)
-
+    
     # Initilize the logger
 #1
-    Project.prepare_result_space(options)
-    log_file = os.path.join(options.result_files_directory, "execution_logfile.txt")    
-    myUtil.setup_logging(getattr(options, 'verbose', 0), log_file)  
+    if options.stage < 100:
+        # Prepare results directory and new project 
+        Project.prepare_result_space(options)
+        log_file = os.path.join(options.result_files_directory, "execution_logfile.txt")    
+        myUtil.setup_logging(getattr(options, 'verbose', 0), log_file)  
     
-    # Set up library, pattern and cutoff files
-    ressource_preparation(options)
+        # Set up library, pattern and cutoff files
+        ressource_preparation(options)
 
     if options.stage <= 1 and options.exit >= 1:
-        #ignored if bulk is used because nobody should want to translate a glob via prodigal
+        # ignored if bulk is used because nobody should want to translate a glob via prodigal
         myUtil.print_header("\nProkaryotic gene recognition and translation via prodigal")
         fasta_preparation(options)
     
-    # Queue the .faa/.gff file pairs
-    Queue.queue_files(options)
+
     
     if options.stage <= 2 and options.exit >= 2:
+        # Queue the .faa/.gff file pairs
+        Queue.queue_files(options)    
+    
         myUtil.print_header("\nSearching for homologoues sequences")
         initial_search(options)
         options.stage = 2
@@ -813,27 +817,37 @@ def main(args=None):
         myUtil.print_header("\nParse trusted hits and recognized gene clusters")
         parse_reports_to_database(options)
         options.stage = 4
-                        
+        
     if options.stage <= 5 and options.exit >= 5:
         myUtil.print_header("\nSearching for collinear syntenic blocks")
         csb_finder(options)
-   
+        options.stage = 5
 
-    if options.stage <= 4:
+    if options.stage <= 6 and options.exit >= 6:
+        # Add taxonomy to existing database
         myUtil.print_header(f"\nAssigning taxonomy information")
         collect_taxonomy_information(options)
+        
             
 
     
+######### Output routines from main
+    if options.stage > 99:
+        log_file = os.path.join(options.result_files_directory, "execution_logfile.txt")    
+        myUtil.setup_logging(getattr(options, 'verbose', 0), log_file)  
     
     
+    if options.stage == 100:
+        # Add taxonomy to existing database
+        myUtil.print_header(f"\nAssigning taxonomy information")
+        collect_taxonomy_information(options)
     
 # These routines modify the existing data and output    
         
     if options.fetch:
         #14
         myUtil.print_header(f"\nOutput from database")
-            
+        Project.prepare_minimal_output_context(options)
         Database.index_database(options.database_directory)
         output_operator(options)
         
