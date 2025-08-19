@@ -4,7 +4,7 @@ DmdA DmdB DmdC DmdD MddA
 DmdA DmdB DmdC DmdD MddH
 DmdA DmdB DmdC DmdD DmoA
 DmsA DmsB DmsC DmsD
-MsuD MsuE
+MsuC MsuD MsuE
 DorC DorA DorD
 SnfG MsmA MsmB MsmC MsmD
 SnfG MsuD MsuE
