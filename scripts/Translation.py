@@ -33,8 +33,7 @@ def parallel_translation(directory: str, cores: int) -> None:
     # Check for the combinations of fasta files
     zipped_fna_files = myUtil.compare_file_lists(directory,".fna.gz",".faa.gz")
     unzip_fna_files = myUtil.compare_file_lists(directory, ".fna.gz", ".faa")
-    fna_files = zipped_fna_files - unzip_fna_files
-     
+    fna_files = zipped_fna_files & unzip_fna_files
     FnaFiles = myUtil.compare_file_lists(directory,".fna",".faa")
     fastaFiles = set(myUtil.getAllFiles(directory,".fasta"))
     NucleotideFastaFiles = FnaFiles | fna_files | fastaFiles

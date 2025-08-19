@@ -143,21 +143,42 @@ def generate_color(seed_int: int) -> str:
 
 
 
+def _strip_suffix(filename: str, suffix: str) -> str:
+    """
+    Entfernt den exakten Suffix `suffix` nur dann, wenn er am Ende steht.
+    Beispiel: ("a.b.c.fna.gz", ".fna.gz") -> "a.b.c"
+             ("a.b.c.fna", ".fna.gz")     -> unverändert
+    """
+    return filename[:-len(suffix)] if suffix and filename.endswith(suffix) else filename
+
 def compare_file_lists(directory: str, ext1: str, ext2: str) -> Set[str]:
     """
-    Compares files in a directory: finds files with ext1 that do not have a corresponding file with ext2.
-    
-    Returns:
-        Set[str]: Set of filepaths (with ext1) that lack a matching file with ext2.
-    """
-    directory = Path(directory)
-    files1 = {f.stem: f for f in directory.glob(f'*{ext1}') if f.is_file()}
-    files2 = {f.stem: f for f in directory.glob(f'*{ext2}') if f.is_file()}
-    
-    # Set comprehension to collect missing file paths
-    missing = {str(files1[stem]) for stem in files1 if stem not in files2}
-    return missing
+    Liefert alle Dateien mit Endung `ext1`, für die KEIN Gegenstück mit Endung `ext2` existiert.
+    Unterstützt mehrstufige Endungen (z.B. ".fna.gz", ".faa.gz").
 
+    Beispiel:
+      dir:  ["genome1.fna.gz", "genome1.faa", "genome2.fna.gz"]
+      Aufruf: compare_file_lists(dir, ".fna.gz", ".faa")
+      Rückgabe: {"<pfad>/genome2.fna.gz"}  # genome1 hat Gegenstück, genome2 nicht
+    """
+    p = Path(directory)
+
+    # mapping: Normalisierter_Basisname -> Path
+    files1 = {}
+    for f in p.glob(f'*{ext1}'):
+        if f.is_file():
+            base = _strip_suffix(f.name, ext1)  # z.B. "genome1" aus "genome1.fna.gz"
+            files1[base] = f
+
+    files2 = {}
+    for f in p.glob(f'*{ext2}'):
+        if f.is_file():
+            base = _strip_suffix(f.name, ext2)  # z.B. "genome1" aus "genome1.faa"
+            files2[base] = f
+
+    # diejenigen ext1-Dateien, die keinen passenden ext2-Basisnamen haben
+    missing = {str(files1[base]) for base in files1.keys() - files2.keys()}
+    return missing
 
 
 def getAllFiles(directory: str, ending: Union[str, int] = 0) -> List[str]:
