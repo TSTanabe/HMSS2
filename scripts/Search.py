@@ -5,7 +5,7 @@ import sys
 import glob
 import subprocess
 
-from multiprocessing import Pool,Value, Lock
+from multiprocessing import Pool, Value, Lock
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Optional
 
@@ -22,6 +22,7 @@ counter_lock = None
 ########################################################################################################
 #################### HMMsearch routines for individual file input ######################################
 ########################################################################################################
+
 
 def unified_search(options: Any, processes: int = 4) -> Dict[str, str]:
     """
@@ -51,24 +52,25 @@ def unified_search(options: Any, processes: int = 4) -> Dict[str, str]:
         (
             options.faa_files[genomeID],
             options.library,
-            options.thrs_score, # static minimal cutoff score
+            options.thrs_score,  # static minimal cutoff score
             options.clean_reports,
-            total
+            total,
         )
         for genomeID in options.queued_genomes
     ]
 
     # Shared Counter und Lock erstellen
-    counter = Value('i', 0)  # 'i' = integer
+    counter = Value("i", 0)  # 'i' = integer
     lock = Lock()
 
-    with Pool(processes=processes, initializer=init_globals, initargs=(counter, lock)) as pool:
+    with Pool(
+        processes=processes, initializer=init_globals, initargs=(counter, lock)
+    ) as pool:
         results = pool.starmap(run_search, args)
 
     return dict(zip(options.queued_genomes, results))
-    
-    
-    
+
+
 def init_globals(counter: Value, lock: Lock) -> None:
     global current_counter
     global counter_lock
@@ -76,13 +78,8 @@ def init_globals(counter: Value, lock: Lock) -> None:
     counter_lock = lock
 
 
-
 def run_search(
-    faa_file: str,
-    query_db: str,
-    score: float,
-    clean_reports: bool,
-    total: int
+    faa_file: str, query_db: str, score: float, clean_reports: bool, total: int
 ) -> str:
     """Runs hmmsearch for a single protein FASTA file and creates a prefixed report.
 
@@ -108,19 +105,17 @@ def run_search(
         counter = current_counter.value + 1
         current_counter.value = counter
         print(f"Processing file {counter} of {total}", end="\r")
-        
+
     domtblout_path = hmm_search(faa_file, query_db, score, clean_reports, 2)
-    hmmreport = prefix_domtblout_hits(domtblout_path, separator="___", suffix=".hmmreport")
-    
+    hmmreport = prefix_domtblout_hits(
+        domtblout_path, separator="___", suffix=".hmmreport"
+    )
+
     return hmmreport
-    
-    
+
+
 def hmm_search(
-    path: str,
-    query_db: str,
-    score: float,
-    clean_reports: bool = False,
-    cores: int = 1
+    path: str, query_db: str, score: float, clean_reports: bool = False, cores: int = 1
 ) -> str:
     """Executes HMMER hmmsearch and returns path to the domtblout file.
 
@@ -138,18 +133,18 @@ def hmm_search(
         >>> hmm_search("/tmp/A.faa", "/tmp/db.hmm", 42.0)
         '/tmp/A.domtblout'
     """
-    
-    output = os.path.splitext(path)[0] + '.domtblout'
-    hmmreport = os.path.splitext(path)[0] + '.hmmreport'
+
+    output = os.path.splitext(path)[0] + ".domtblout"
+    hmmreport = os.path.splitext(path)[0] + ".hmmreport"
     if not os.path.isfile(hmmreport) or clean_reports:
-        os.system(f'hmmsearch -T {score} --domT {score} --cpu {str(cores)} --noali --domtblout {output} {query_db} {path} > /dev/null 2>&1')
+        os.system(
+            f"hmmsearch -T {score} --domT {score} --cpu {str(cores)} --noali --domtblout {output} {query_db} {path} > /dev/null 2>&1"
+        )
     return output
 
 
 def prefix_domtblout_hits(
-    domtblout_path: str,
-    separator: str = "___",
-    suffix: str = ".hmmreport"
+    domtblout_path: str, separator: str = "___", suffix: str = ".hmmreport"
 ) -> str:
     """Prefixes each domain hit ID in a domtblout file with the file's basename and writes to a new file.
 
@@ -171,9 +166,9 @@ def prefix_domtblout_hits(
 
     output_path = os.path.splitext(domtblout_path)[0] + suffix
     if os.path.isfile(domtblout_path):
-        with open(domtblout_path, 'r') as infile, open(output_path, 'w') as outfile:
+        with open(domtblout_path, "r") as infile, open(output_path, "w") as outfile:
             for line in infile:
-                if line.startswith('#'):
+                if line.startswith("#"):
                     continue
 
                 parts = line.strip().split()
@@ -181,15 +176,14 @@ def prefix_domtblout_hits(
                     continue
 
                 parts[0] = f"{basename}{separator}{parts[0]}"
-                outfile.write('\t'.join(parts) + '\n')
+                outfile.write("\t".join(parts) + "\n")
         os.remove(domtblout_path)
-        
+
     return output_path
 
 
 def concatenate_hmmreports_cat(
-    report_paths: Dict[str, str],
-    output_path: str = "global_report.cat_hmmreport"
+    report_paths: Dict[str, str], output_path: str = "global_report.cat_hmmreport"
 ) -> str:
     """Concatenates multiple .hmmreport files into a single global file.
 
@@ -204,30 +198,32 @@ def concatenate_hmmreports_cat(
         >>> concatenate_hmmreports_cat({'g1': '/tmp/g1.hmmreport', 'g2': '/tmp/g2.hmmreport'}, '/tmp/all.cat_hmmreport')
         '/tmp/all.cat_hmmreport'
     """
-    
+
     logger.info(f"Concatenate hit reports to {output_path}")
-    
+
     # Filtere nur existierende Dateien
     valid_paths = [path for path in report_paths.values() if os.path.isfile(path)]
     if not valid_paths:
         logger.error(f"No valid hmmreport files found in {report_paths}")
-        raise FileNotFoundError(f"No valid hmmreport files found in directory {report_paths}.")
+        raise FileNotFoundError(
+            f"No valid hmmreport files found in directory {report_paths}."
+        )
 
     # Führe das cat-Kommando aus
     cmd = ["cat"] + valid_paths
-    with open(output_path, 'w') as outfile:
+    with open(output_path, "w") as outfile:
         subprocess.run(cmd, stdout=outfile)
 
     return output_path
-    
+
+
 ########################################################################################################
 #################### Filter the glob report to trusted hits and potential hits #########################
 ########################################################################################################
 
+
 def filter_trusted_and_noise_hits(
-    options: object,
-    glob_report: str,
-    processes: int = 4
+    options: object, glob_report: str, processes: int = 4
 ) -> str:
     """Filters hits in a global report into trusted/intermediate categories and writes summary files.
 
@@ -255,7 +251,7 @@ def filter_trusted_and_noise_hits(
     noise_dict = make_threshold_dict(
         options.score_threshold_file, 3, options.thrs_score
     )
-    
+
     output_dir = options.Cross_check_directory
     os.makedirs(output_dir, exist_ok=True)
 
@@ -265,7 +261,7 @@ def filter_trusted_and_noise_hits(
             glob_report,
             trusted_dict[hmm_id],
             noise_dict.get(hmm_id, options.thrs_score),
-            output_dir
+            output_dir,
         )
         for hmm_id in trusted_dict
     ]
@@ -274,11 +270,10 @@ def filter_trusted_and_noise_hits(
         pool.starmap(process_single_hmm, args)
 
     return os.path.abspath(output_dir)
-    
+
+
 def make_threshold_dict(
-    file_path: str,
-    threshold_type: int = 1,
-    default_score: float = 50.0
+    file_path: str, threshold_type: int = 1, default_score: float = 50.0
 ) -> Dict[str, float]:
     """Parses a tab-separated score threshold file into a dict.
 
@@ -308,9 +303,13 @@ def make_threshold_dict(
                 elif len(parts) > threshold_type:
                     score = float(parts[threshold_type])
                     if parts[threshold_type] == "-inf":
-                        score = float(5000) # Hardcode never reachable score cutoff equal to infinite
+                        score = float(
+                            5000
+                        )  # Hardcode never reachable score cutoff equal to infinite
             except (ValueError, IndexError) as e:
-                logger.warning(f"[Line {line_number}] Problem parsing: {line.strip()} — {e}")
+                logger.warning(
+                    f"[Line {line_number}] Problem parsing: {line.strip()} — {e}"
+                )
                 continue
 
             if key:
@@ -324,7 +323,7 @@ def process_single_hmm(
     glob_report: str,
     trusted_cutoff: float,
     noise_cutoff: float,
-    output_dir: str
+    output_dir: str,
 ) -> None:
     """Processes hits for one HMM ID, separating trusted and intermediate hits.
 
@@ -343,25 +342,24 @@ def process_single_hmm(
     Example:
         >>> process_single_hmm('PF00001', '/tmp/global.cat_hmmreport', 42.0, 21.0, '/tmp/xcheck')
     """
-    
+
     # Define output list for trusted and intermediate hits
     trusted_path = os.path.join(output_dir, f"{hmm_id}.trusted_hits")
     intermediate_path = os.path.join(output_dir, f"{hmm_id}.intermediate_hits")
-    
+
     # Check if the trusted and the intermediate hit files are already present and skip existing files
     if os.path.isfile(intermediate_path):
         return
     if os.path.isfile(trusted_path):
         return
-    
-    
+
     # trusted hits + collect candidates
     candidates = {}
-    with open(glob_report, 'r') as infile, open(trusted_path, 'w') as trusted_out:
+    with open(glob_report, "r") as infile, open(trusted_path, "w") as trusted_out:
         for line in infile:
-            if line.startswith('#') or not line.strip():
+            if line.startswith("#") or not line.strip():
                 continue
-            parts = line.strip().split('\t')
+            parts = line.strip().split("\t")
 
             target = parts[0]
             hit_hmm = parts[3]
@@ -372,56 +370,53 @@ def process_single_hmm(
             try:
                 score = float(parts[7])  # Bit-Score
                 if int(parts[10]) > 1:
-                # Domain Bit score is in column 13
+                    # Domain Bit score is in column 13
                     score = float(parts[13])
                 else:
-                # Full Bit score is in column 7 (0-based index)
+                    # Full Bit score is in column 7 (0-based index)
                     score = float(parts[7])
 
             except ValueError:
                 continue
 
-
             if score >= trusted_cutoff:
-                logger.debug(f"Above trusted cutoff hit {score} >= {trusted_cutoff} {parts[0]} {parts[3]}")
+                logger.debug(
+                    f"Above trusted cutoff hit {score} >= {trusted_cutoff} {parts[0]} {parts[3]}"
+                )
                 trusted_out.write(line)
             elif score > noise_cutoff:
-                logger.debug(f"Intermediate above noise cutoff hit {score} >= {trusted_cutoff} {parts[0]} {parts[3]}")
+                logger.debug(
+                    f"Intermediate above noise cutoff hit {score} >= {trusted_cutoff} {parts[0]} {parts[3]}"
+                )
                 candidates[target] = score
-    
-    # remove empty trusted files 
+
+    # remove empty trusted files
     if os.path.getsize(trusted_path) == 0:
         os.remove(trusted_path)
     # and skip if no candidates found
     if not candidates:
         return
 
-
     # Write down remaining candidates
-    with open(glob_report, 'r') as infile, open(intermediate_path, 'w') as interm_out:
+    with open(glob_report, "r") as infile, open(intermediate_path, "w") as interm_out:
         for line in infile:
-            if line.startswith('#') or not line.strip():
+            if line.startswith("#") or not line.strip():
                 continue
-            parts = line.strip().split('\t')
+            parts = line.strip().split("\t")
 
             target = parts[0]
             hit_hmm = parts[3]
 
             if hit_hmm == hmm_id and target in candidates:
                 interm_out.write(line)
-    
+
     if os.path.getsize(intermediate_path) == 0:
         os.remove(intermediate_path)
     return
 
 
-
-
-
-
 def extract_fasta_per_intermediate_hitfile(
-    options: object,
-    intermediate_hit_dir: str
+    options: object, intermediate_hit_dir: str
 ) -> None:
     """Extracts protein sequences for every .intermediate_hits file and writes .intermediate_hit_faa files.
 
@@ -436,22 +431,24 @@ def extract_fasta_per_intermediate_hitfile(
     Example:
         >>> extract_fasta_per_intermediate_hitfile(options, '/tmp/xcheck')
     """
-    
+
     for file in os.listdir(intermediate_hit_dir):
         if not file.endswith(".intermediate_hits"):
             continue
 
         hmm_id = file.replace(".intermediate_hits", "")
         hitfile_path = os.path.join(intermediate_hit_dir, file)
-        output_fasta = os.path.join(intermediate_hit_dir, f"{hmm_id}.intermediate_hit_faa")
+        output_fasta = os.path.join(
+            intermediate_hit_dir, f"{hmm_id}.intermediate_hit_faa"
+        )
 
         # IDs sammeln: genomeID → set(proteinIDs)
         genome_hits = {}
-        with open(hitfile_path, 'r') as f:
+        with open(hitfile_path, "r") as f:
             for line in f:
                 if line.startswith("#") or not line.strip():
                     continue
-                parts = line.strip().split('\t')
+                parts = line.strip().split("\t")
                 full_id = parts[0]
                 if "___" not in full_id:
                     continue
@@ -459,14 +456,14 @@ def extract_fasta_per_intermediate_hitfile(
                 genome_hits.setdefault(genome_id, set()).add(protein_id)
 
         # Write sequential files per genome
-        with open(output_fasta, 'w') as out:
+        with open(output_fasta, "w") as out:
             for genome_id, protein_ids in genome_hits.items():
                 faa_path = options.faa_files.get(genome_id)
                 if not faa_path or not os.path.isfile(faa_path):
                     logger.warning(f".faa file not found for genome: {genome_id}")
                     continue
 
-                with open(faa_path, 'r') as faa:
+                with open(faa_path, "r") as faa:
                     write = False
                     header_id = None
 
@@ -482,14 +479,12 @@ def extract_fasta_per_intermediate_hitfile(
         print(f"[✓] {hmm_id} → {output_fasta}")
 
 
-
 def process_hitfile(
     hitfile_path: str,
     intermediate_hit_dir: str,
     faa_files: Dict[str, str],
-    max_per_genome: int = 10
+    max_per_genome: int = 10,
 ) -> None:
-
     hmm_id = os.path.basename(hitfile_path).replace(".intermediate_hits", "")
     output_fasta = os.path.join(intermediate_hit_dir, f"{hmm_id}.intermediate_hits_faa")
 
@@ -499,18 +494,18 @@ def process_hitfile(
         return
 
     genome_hits = {}
-    with open(hitfile_path, 'r') as f:
+    with open(hitfile_path, "r") as f:
         for line in f:
             if line.startswith("#") or not line.strip():
                 continue
-            parts = line.strip().split('\t')
+            parts = line.strip().split("\t")
             full_id = parts[0]
             if "___" not in full_id:
                 continue
             genome_id, protein_id = full_id.split("___", 1)
             genome_hits.setdefault(genome_id, set()).add(protein_id)
 
-    with open(output_fasta, 'w') as out:
+    with open(output_fasta, "w") as out:
         for genome_id, protein_ids in genome_hits.items():
             faa_path = faa_files.get(genome_id)
             if not faa_path or not os.path.isfile(faa_path):
@@ -518,7 +513,7 @@ def process_hitfile(
                 continue
 
             written = 0  # <-- pro genom zurücksetzen
-            with open(faa_path, 'r') as faa:
+            with open(faa_path, "r") as faa:
                 write = False
                 header_id = None
 
@@ -536,9 +531,7 @@ def process_hitfile(
 
 
 def generate_faa_per_hitfile_parallel(
-    options: object,
-    intermediate_hit_dir: str,
-    processes: int = 4
+    options: object, intermediate_hit_dir: str, processes: int = 4
 ) -> None:
     """Parallel extraction of FASTA for all .intermediate_hits files in a directory.
 
@@ -554,25 +547,29 @@ def generate_faa_per_hitfile_parallel(
     Example:
         >>> generate_faa_per_hitfile_parallel(options, '/tmp/xcheck', 2)
     """
-    
+
     output_dir = intermediate_hit_dir  # same dir for output
-    faa_files = options.faa_files      # dict: genome_id → path
+    faa_files = options.faa_files  # dict: genome_id → path
     max_seqs_per_genome = options.max_seqs_per_genome
-    
+
     hitfiles = [
         os.path.join(intermediate_hit_dir, f)
         for f in os.listdir(intermediate_hit_dir)
         if f.endswith(".intermediate_hits")
     ]
 
-    args = [(hitfile, output_dir, faa_files, max_seqs_per_genome) for hitfile in hitfiles]
+    args = [
+        (hitfile, output_dir, faa_files, max_seqs_per_genome) for hitfile in hitfiles
+    ]
 
     with Pool(processes=processes) as pool:
         pool.starmap(process_hitfile, args)
 
+
 ##########################################################################################################################################################
 #################### Cross check hits with reference sequences and add the hmmreport lines to the trusted cutoff hmmreport ###############################
 ##########################################################################################################################################################
+
 
 def find_refseq_file(base_dir: str, filename: str) -> Optional[str]:
     """Recursively search a base directory for a file with a specific name.
@@ -588,7 +585,7 @@ def find_refseq_file(base_dir: str, filename: str) -> Optional[str]:
         >>> find_refseq_file('/data', 'ref.fa')
         '/data/refs/ref.fa'
     """
-    
+
     for root, _, files in os.walk(base_dir):
         if filename in files:
             return os.path.join(root, filename)
@@ -601,15 +598,21 @@ def cross_check_candidates_with_reference_seqs(options) -> List[str]:
 
     refseq_dir = os.path.join(options.execute_location, "src", "RefSeqs")
     refseq_unavailable_list = []
-    
+
     cross_check_dir = options.Cross_check_directory
-    intermediate_files = glob.glob(os.path.join(cross_check_dir, "*.intermediate_hits_faa"))
+    intermediate_files = glob.glob(
+        os.path.join(cross_check_dir, "*.intermediate_hits_faa")
+    )
     diamond = myUtil.find_executable("diamond")
-        
+
     for inter_file in intermediate_files:
-        logger.debug(f"Checking reference sequences for candidates sequences in {inter_file}")
-        hmm_id = os.path.splitext(os.path.basename(inter_file))[0].replace(".intermediate_hits_faa", "")
-        hmm_type = hmm_id.split('_')[-1]
+        logger.debug(
+            f"Checking reference sequences for candidates sequences in {inter_file}"
+        )
+        hmm_id = os.path.splitext(os.path.basename(inter_file))[0].replace(
+            ".intermediate_hits_faa", ""
+        )
+        hmm_type = hmm_id.split("_")[-1]
 
         db_base = os.path.splitext(os.path.join(refseq_dir, hmm_id))[0]
         db_path = db_base + ".dmnd"
@@ -629,7 +632,9 @@ def cross_check_candidates_with_reference_seqs(options) -> List[str]:
                     logger.debug(f"Found exact match: {exact_faa}")
                 else:
                     # 3. Fallback: any file ending with {hmm_type}.faa
-                    logger.debug(f"Exact match for {hmm_id} was not found. Now searching for {hmm_type}.faa")
+                    logger.debug(
+                        f"Exact match for {hmm_id} was not found. Now searching for {hmm_type}.faa"
+                    )
                     pattern = os.path.join(refseq_dir, f"**/*{hmm_type}.faa")
                     backup_faa_files = glob.glob(pattern, recursive=True)
 
@@ -637,38 +642,52 @@ def cross_check_candidates_with_reference_seqs(options) -> List[str]:
                         faa_path = backup_faa_files[0]
                         logger.debug(f"Using backup match: {faa_path}")
                     else:
-                        logger.warning(f"Skipping {hmm_id}: Reference sequence file not found.")
+                        logger.warning(
+                            f"Skipping {hmm_id}: Reference sequence file not found."
+                        )
                         refseq_unavailable_list.append(hmm_id)
                         continue
 
                 logger.debug(f"Creating Diamond DB from {faa_path} for {hmm_id}")
-                subprocess.run([diamond, "makedb", "--in", faa_path, "-d", db_path, "--quiet"], check=True)
-                
+                subprocess.run(
+                    [diamond, "makedb", "--in", faa_path, "-d", db_path, "--quiet"],
+                    check=True,
+                )
+
             # Run DIAMOND
             cmd = [
-                diamond, "blastp",
-                "--query", inter_file,
-                "--db", db_path,
-                "--out", output_file,
-                "--outfmt", "6",
-                "--max-target-seqs", "1",
-                "--id", str(options.refseq_identity),
-                "--threads", str(options.cores),
-                "--quiet"
+                diamond,
+                "blastp",
+                "--query",
+                inter_file,
+                "--db",
+                db_path,
+                "--out",
+                output_file,
+                "--outfmt",
+                "6",
+                "--max-target-seqs",
+                "1",
+                "--id",
+                str(options.refseq_identity),
+                "--threads",
+                str(options.cores),
+                "--quiet",
             ]
             logger.info(f"Verifying {hmm_id} hits with reference sequences")
             result = subprocess.run(cmd)
 
             if os.path.getsize(output_file) == 0:
                 os.remove(output_file)
-        
-        except Exception as e: 
+
+        except Exception as e:
             logger.error(f"Failed to compare with diamond {hmm_id}\nError: {e}")
             refseq_unavailable_list.append(hmm_id)
             continue
-        
-    return refseq_unavailable_list  
-    
+
+    return refseq_unavailable_list
+
+
 def find_file_in_prefixed_subdirs(base_dir: str, filename: str, dir_prefix: str) -> str:
     """Recursively searches for a file in subdirectories with a specific prefix.
 
@@ -716,15 +735,15 @@ def process_crosscheck(hmm_id: str, crosscheck_dir: str) -> None:
     if not os.path.exists(crosscheck_path):
         logger.error(f"Crosscheck file missing: '{crosscheck_path}'")
     if not os.path.exists(intermediate_path):
-        logger.error(f"Intermediate file missing: '{intermediate_path}'")#
-        
+        logger.error(f"Intermediate file missing: '{intermediate_path}'")  #
+
     # Lade IDs aus crosscheck
     valid_hits = set()
-    with open(crosscheck_path, 'r') as f:
+    with open(crosscheck_path, "r") as f:
         for line in f:
             if line.startswith("#") or not line.strip():
                 continue
-            valid_hits.add(line.strip().split('\t')[0])
+            valid_hits.add(line.strip().split("\t")[0])
 
     if not valid_hits:
         return
@@ -732,15 +751,17 @@ def process_crosscheck(hmm_id: str, crosscheck_dir: str) -> None:
     promoted_count = 0
 
     # Promote direkt
-    with open(intermediate_path, 'r') as interm, open(trusted_path, 'a') as trusted:
+    with open(intermediate_path, "r") as interm, open(trusted_path, "a") as trusted:
         for line in interm:
             if line.startswith("#") or not line.strip():
                 continue
-            if line.strip().split('\t')[0] in valid_hits:
+            if line.strip().split("\t")[0] in valid_hits:
                 trusted.write(line)
                 promoted_count += 1
 
-    logger.info(f"{hmm_id}: promoted {promoted_count} hits via comparison with reference sequences")
+    logger.info(
+        f"{hmm_id}: promoted {promoted_count} hits via comparison with reference sequences"
+    )
 
 
 def promote_crosschecked_hits(crosscheck_dir: str, processes: int = 4) -> None:
@@ -757,7 +778,7 @@ def promote_crosschecked_hits(crosscheck_dir: str, processes: int = 4) -> None:
     Example:
         >>> promote_crosschecked_hits('/tmp/xcheck', 4)
     """
-    
+
     hmm_ids = [
         f.replace(".crosschecked.tsv", "")
         for f in os.listdir(crosscheck_dir)
@@ -766,12 +787,13 @@ def promote_crosschecked_hits(crosscheck_dir: str, processes: int = 4) -> None:
 
     with Pool(processes=processes) as pool:
         pool.starmap(
-            process_crosscheck,
-            [(hmm_id, crosscheck_dir) for hmm_id in hmm_ids]
+            process_crosscheck, [(hmm_id, crosscheck_dir) for hmm_id in hmm_ids]
         )
-    
-    
-def summarize_trusted_hits(directory: str, crosscheck_dir: str, name: str, suffix: str = ".trusted_hits") -> str:
+
+
+def summarize_trusted_hits(
+    directory: str, crosscheck_dir: str, name: str, suffix: str = ".trusted_hits"
+) -> str:
     """Creates a summary file by concatenating all .trusted_hits files in a directory.
 
     Args:
@@ -787,12 +809,12 @@ def summarize_trusted_hits(directory: str, crosscheck_dir: str, name: str, suffi
         >>> summarize_trusted_hits('/tmp/results', '/tmp/xcheck', 'summary.txt')
         '/tmp/results/summary.txt'
     """
-    
+
     summary_path = os.path.join(directory, name)
-    
+
     if os.path.isfile(summary_path) and os.path.getsize(summary_path) != 0:
-    	return summary_path
-    
+        return summary_path
+
     trusted_files = [
         os.path.join(crosscheck_dir, f)
         for f in os.listdir(crosscheck_dir)
@@ -803,23 +825,22 @@ def summarize_trusted_hits(directory: str, crosscheck_dir: str, name: str, suffi
         logger.error("No trusted hit files found for summary.")
         logger.info("There were no hits found in any genome. Closing the search")
         sys.exit()
-        
-    exit_code = os.system(f"cat {' '.join(trusted_files)} > {summary_path}")
-    
-    return summary_path
-    
-    
 
-    
+    exit_code = os.system(f"cat {' '.join(trusted_files)} > {summary_path}")
+
+    return summary_path
+
+
 ####################################################################################################
 #################### Promote by cutoff when cross check is not available ###########################
 ####################################################################################################
+
 
 def promote_by_cutoff(
     options: object,
     directory: str,
     processes: int = 4,
-    hmm_ids: Optional[List[str]] = None
+    hmm_ids: Optional[List[str]] = None,
 ) -> None:
     """Parallel promotion of intermediate hits to trusted hits based on thresholds.
 
@@ -837,7 +858,7 @@ def promote_by_cutoff(
         >>> promote_by_cutoff(options, '/tmp/xcheck', 4, hmm_ids="all")
     """
     # If no hmm identifier were defined use all that are in
-    if hmm_ids=="all":
+    if hmm_ids == "all":
         hmm_ids = [
             f.replace(".intermediate_hits", "")
             for f in os.listdir(directory)
@@ -847,17 +868,17 @@ def promote_by_cutoff(
     optimized_dict = make_threshold_dict(
         options.score_threshold_file, options.threshold_type, options.thrs_score
     )
-    
+
     with Pool(processes=processes) as pool:
         pool.starmap(
             process_optimized_cutoff,
-            [(hmm_id, directory, optimized_dict) for hmm_id in hmm_ids]
+            [(hmm_id, directory, optimized_dict) for hmm_id in hmm_ids],
         )
 
 
-
-
-def process_optimized_cutoff(hmm_id: str, crosscheck_dir: str, optimized_dict: Dict[str, float]) -> None:
+def process_optimized_cutoff(
+    hmm_id: str, crosscheck_dir: str, optimized_dict: Dict[str, float]
+) -> None:
     """Promotes intermediate hits to trusted hits based on a score threshold.
 
     Args:
@@ -871,12 +892,12 @@ def process_optimized_cutoff(hmm_id: str, crosscheck_dir: str, optimized_dict: D
     Example:
         >>> process_optimized_cutoff('PF00001', '/tmp/xcheck', {'PF00001': 42.0})
     """
-    
+
     intermediate_path = os.path.join(crosscheck_dir, f"{hmm_id}.intermediate_hits")
     trusted_path = os.path.join(crosscheck_dir, f"{hmm_id}.trusted_hits")
-    
+
     threshold_score = optimized_dict.get(hmm_id, 50)
-    
+
     if not os.path.isfile(intermediate_path):
         logger.warning(f"Intermediate or trusted hit file missing for {hmm_id}")
         return
@@ -884,19 +905,16 @@ def process_optimized_cutoff(hmm_id: str, crosscheck_dir: str, optimized_dict: D
     promoted_count = 0
 
     # Promote direkt
-    with open(intermediate_path, 'r') as interm, open(trusted_path, 'a') as trusted:
+    with open(intermediate_path, "r") as interm, open(trusted_path, "a") as trusted:
         for line in interm:
             if line.startswith("#") or not line.strip():
                 continue
-            parts = line.strip().split('\t')
+            parts = line.strip().split("\t")
             score = float(parts[7])
             if score >= threshold_score:
                 trusted.write(line)
                 promoted_count += 1
 
-    logger.info(f"{hmm_id}: promoted {promoted_count} hits due to the given threshold {threshold_score}")
-
-    
-
-
-
+    logger.info(
+        f"{hmm_id}: promoted {promoted_count} hits due to the given threshold {threshold_score}"
+    )

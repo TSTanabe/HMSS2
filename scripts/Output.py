@@ -17,7 +17,10 @@ logger = myUtil.logger
 ####################### MAIN OUTPUT ROUTINE #############################
 #########################################################################
 
-def fetch_fasta_and_hit_data(options: Any) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
+
+def fetch_fasta_and_hit_data(
+    options: Any,
+) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
     """Main output routine: creates hit tables and writes protein FASTA files.
 
     Args:
@@ -33,22 +36,24 @@ def fetch_fasta_and_hit_data(options: Any) -> Tuple[Dict[str, Any], Dict[str, An
     Example:
         >>> prot, clust, tax = print_fasta_and_hit_table("/out/", options)
     """
-    
-    
-    #Limit the genomeIDs and fetch the lineage
+
+    # Limit the genomeIDs and fetch the lineage
     taxon_dict = dict()
     if options.limiter:
         taxon_dict = fetch_limiter_data(options)
-    #Fetch protein/cluster dict
+    # Fetch protein/cluster dict
     if options.fetch_csbs:
         logger.info(f"Collecting gene clusters containing {options.fetch_csbs}")
-        csb_listing = find_csbs_with_proteins(options.csb_output_file, options.fetch_csbs)
+        csb_listing = find_csbs_with_proteins(
+            options.csb_output_file, options.fetch_csbs
+        )
         logger.debug(csb_listing)
-        logger.info(f"Found {len(csb_listing)} types of gene clusters containing {options.fetch_csbs}")
+        logger.info(
+            f"Found {len(csb_listing)} types of gene clusters containing {options.fetch_csbs}"
+        )
         if len(csb_listing) == 0:
             sys.exit()
         options.fetch_keywords.extend(csb_listing)
-    
 
     logger.info("Collecting hits from local database")
     protein_dict, cluster_dict, taxon_dict = fetch_bulk_data(
@@ -58,9 +63,10 @@ def fetch_fasta_and_hit_data(options: Any) -> Tuple[Dict[str, Any], Dict[str, An
         options.fetch_keywords,
         taxon_dict,
         options.min_completeness,
-        options.dataset_divide_sign
+        options.dataset_divide_sign,
     )
-    return protein_dict,cluster_dict,taxon_dict  
+    return protein_dict, cluster_dict, taxon_dict
+
 
 def print_fasta_and_hit_outputs(
     directory: str,
@@ -78,40 +84,40 @@ def print_fasta_and_hit_outputs(
         taxon_dict: Mapping genomeID -> taxonomy string.
         taxon_divider: Separator used within taxonomy strings.
     """
-    
+
     # Printing results
     logger.info("Finished collecting protein sequences")
     logger.info("Writing fasta formated output files to disk")
     logger.info("Printing genome information output files")
 
-    # Metadata for taxonomy and hits    
-    hit_report = directory+"1_hit_table.txt" #individual hit table in tsv file
-    taxonomy_report = directory+"1_taxonomy_table.txt"
-    taxonomy_summary = directory+"1_hit_taxonomy_counts.txt"
-    
-    output_genome_report(hit_report, protein_dict, cluster_dict, taxon_dict)    # Output hit report
-    output_unique_taxonomy_table(taxonomy_report, taxon_dict) # Output unique taxonomy report
+    # Metadata for taxonomy and hits
+    hit_report = directory + "1_hit_table.txt"  # individual hit table in tsv file
+    taxonomy_report = directory + "1_taxonomy_table.txt"
+    taxonomy_summary = directory + "1_hit_taxonomy_counts.txt"
+
+    output_genome_report(
+        hit_report, protein_dict, cluster_dict, taxon_dict
+    )  # Output hit report
+    output_unique_taxonomy_table(
+        taxonomy_report, taxon_dict
+    )  # Output unique taxonomy report
     output_taxonomy_summary(taxonomy_summary, taxon_dict)
-    
+
     # Proteine sequences
     logger.info("Printing protein fasta files to {directory}")
-    
-    fasta_file_directory = directory+"2_Protein"       #protein fasta files
-    files = output_distinct_fasta_reports(fasta_file_directory,protein_dict,cluster_dict) #Output per domain
-    singletons(directory,files)                                                  #Output singleton per genome and doublicates
-    
+
+    fasta_file_directory = directory + "2_Protein"  # protein fasta files
+    files = output_distinct_fasta_reports(
+        fasta_file_directory, protein_dict, cluster_dict
+    )  # Output per domain
+    singletons(directory, files)  # Output singleton per genome and doublicates
+
     myUtil.clean_empty_files(directory)
 
-    
- 
-    
+
 #########################################################################
 #########################################################################
 #########################################################################
-
-
-
-
 
 
 def print_command_line_args(output_file: str) -> None:
@@ -124,13 +130,12 @@ def print_command_line_args(output_file: str) -> None:
         >>> print_command_line_args("args.txt")
     """
     try:
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             f.write("Command-line arguments passed to the script:\n")
             for index, arg in enumerate(sys.argv):
                 f.write(f"Argument {index}: {arg}\n")
     except Exception as e:
         logger.error(f"Failed to write to file {output_file}: {e}")
-
 
 
 def print_file_content(file_path: str) -> None:
@@ -143,7 +148,7 @@ def print_file_content(file_path: str) -> None:
         >>> print_file_content("csb_patterns.txt")
     """
     try:
-        with open(file_path, 'r') as file:
+        with open(file_path, "r") as file:
             content = file.read()
         logger.info(f"File Path: {file_path}")
         logger.info("File Content:")
@@ -155,9 +160,7 @@ def print_file_content(file_path: str) -> None:
 
 
 def get_protein_ids_by_domains(
-    database: str,
-    domains: List[str],
-    keywords: Optional[List[str]] = None
+    database: str, domains: List[str], keywords: Optional[List[str]] = None
 ) -> Dict[str, Set[str]]:
     """Retrieve proteinIDs for given domains, optionally filtered by keywords.
 
@@ -172,7 +175,7 @@ def get_protein_ids_by_domains(
     Example:
         >>> get_protein_ids_by_domains("db.sqlite", ["PF00001"])
     """
-    
+
     with sqlite3.connect(database) as con:
         cur = con.cursor()
 
@@ -182,7 +185,7 @@ def get_protein_ids_by_domains(
         FROM Proteins
         JOIN Domains ON Proteins.proteinID = Domains.proteinID
         WHERE Domains.domain IN ({})
-        """.format(','.join(['?'] * len(domains)))
+        """.format(",".join(["?"] * len(domains)))
 
         # Parameters list
         params = domains
@@ -212,9 +215,7 @@ def get_protein_ids_by_domains(
 
 
 def get_protein_ids_by_keywords(
-    database: str,
-    keywords: List[str],
-    domain: Optional[str] = None
+    database: str, keywords: List[str], domain: Optional[str] = None
 ) -> Dict[str, Set[str]]:
     """Retrieve proteinIDs for a set of keywords, optionally filtered by domain.
 
@@ -241,7 +242,7 @@ def get_protein_ids_by_keywords(
         JOIN Domains ON Proteins.proteinID = Domains.proteinID
         WHERE 
         """
-        
+
         # Add keyword filter
         keyword_conditions = " OR ".join(["Keywords.keyword = ?" for _ in keywords])
         query += f"{keyword_conditions}"
@@ -267,6 +268,7 @@ def get_protein_ids_by_keywords(
 
     return domain_protein_dict
 
+
 # Example usage of routine get_protein_ids_by_keywords:
 # database = "path/to/your/database.db"
 # keywords = ["keyword1", "keyword2"]
@@ -276,8 +278,7 @@ def get_protein_ids_by_keywords(
 
 
 def fetch_protein_details(
-    database: str,
-    protein_ids: Set[str]
+    database: str, protein_ids: Set[str]
 ) -> List[Tuple[Any, ...]]:
     """Fetches detailed information for a set of proteinIDs.
 
@@ -291,7 +292,7 @@ def fetch_protein_details(
     Example:
         >>> fetch_protein_details("db.sqlite", {"prot1", "prot2"})
     """
-    
+
     with sqlite3.connect(database) as con:
         cur = con.cursor()
 
@@ -305,7 +306,7 @@ def fetch_protein_details(
         FROM Proteins
         LEFT JOIN Domains ON Proteins.proteinID = Domains.proteinID
         WHERE Proteins.proteinID IN ({})
-        """.format(','.join(['?'] * len(protein_ids)))
+        """.format(",".join(["?"] * len(protein_ids)))
 
         cur.execute(query, list(protein_ids))
         rows = cur.fetchall()
@@ -314,7 +315,7 @@ def fetch_protein_details(
 
 
 def write_detail_to_protein_dict(
-    details: List[Tuple[Any, ...]]
+    details: List[Tuple[Any, ...]],
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """Converts SQL protein details to protein and cluster dictionaries.
 
@@ -327,22 +328,22 @@ def write_detail_to_protein_dict(
     Example:
         >>> prot, clust = write_detail_to_protein_dict(details)
     """
-    
+
     protein_dict = dict()
     cluster_dict = dict()
     count = 1
     for row in details:
-        print(f"\tFetched protein sequences: {count}",end="\r")
-        count = count +1 
-            # 0 => proteinID, 1 => genomeID, 2 => clusterID, 3 => contig,
-            # 4 => start, 5 => end, 6 => strand, 7 => sequence,
-            # 8 => domain, 9 => domStart, 10 => domEnd, 11 => score,
+        print(f"\tFetched protein sequences: {count}", end="\r")
+        count = count + 1
+        # 0 => proteinID, 1 => genomeID, 2 => clusterID, 3 => contig,
+        # 4 => start, 5 => end, 6 => strand, 7 => sequence,
+        # 8 => domain, 9 => domStart, 10 => domEnd, 11 => score,
         if row[0] in protein_dict.keys():
             protein = protein_dict[row[0]]
-            protein.add_domain(row[8],row[9],row[10],row[11])
+            protein.add_domain(row[8], row[9], row[10], row[11])
 
         else:
-            protein = ParseReports.Protein(row[0],row[8],row[9],row[10],row[11])
+            protein = ParseReports.Protein(row[0], row[8], row[9], row[10], row[11])
             protein.set_genomeID(row[1])
             protein.set_clusterID(row[2])
             protein.set_gene_contig(row[3])
@@ -354,14 +355,16 @@ def write_detail_to_protein_dict(
 
         if not row[2] is None and not row[2] in cluster_dict:
             cluster = Csb_finder.Cluster(row[2])
-            cluster.add_gene(row[0],row[8])
+            cluster.add_gene(row[0], row[8])
             cluster_dict[row[2]] = cluster
 
-    return protein_dict,cluster_dict
+    return protein_dict, cluster_dict
+
 
 #############################################################################################
 #############################################################################################
 #############################################################################################
+
 
 def output_genome_report(
     output_filepath: str,
@@ -380,19 +383,40 @@ def output_genome_report(
       gene_strand, locustag, clusterID, csb,
       Superkingdom, Phylum, Class, Order, Family, Genus, Species
     """
-    taxon_cols = ["genomeID","Superkingdom","Phylum","Class","Order","Family","Genus","Species"]
-    header_cols = [
-        "genomeID","proteinID","domains","dom_scores","dom_coords",
-        "contig","gene_start","gene_end","gene_strand","locustag",
-        "clusterID",
-        *taxon_cols
+    taxon_cols = [
+        "genomeID",
+        "Superkingdom",
+        "Phylum",
+        "Class",
+        "Order",
+        "Family",
+        "Genus",
+        "Species",
     ]
-    header = '\t'.join(header_cols)
+    header_cols = [
+        "genomeID",
+        "proteinID",
+        "domains",
+        "dom_scores",
+        "dom_coords",
+        "contig",
+        "gene_start",
+        "gene_end",
+        "gene_strand",
+        "locustag",
+        "clusterID",
+        *taxon_cols,
+    ]
+    header = "\t".join(header_cols)
 
     # sortiert nach genomeID, contig, start
     proteinID_list = sorted(
         protein_dict,
-        key=lambda x: (protein_dict[x].genomeID, protein_dict[x].gene_contig, protein_dict[x].gene_start)
+        key=lambda x: (
+            protein_dict[x].genomeID,
+            protein_dict[x].gene_contig,
+            protein_dict[x].gene_start,
+        ),
     )
 
     with open(output_filepath, writemode) as writer:
@@ -414,7 +438,9 @@ def output_genome_report(
                     cl = cluster_dict[clusterID].get_cluster_list(",")
                     # defensiv extrahieren:
                     out_clusterID = cl[0] if len(cl) >= 1 else clusterID
-                    csb_val = cl[3] if len(cl) >= 4 else (cl[-1] if len(cl) >= 2 else "")
+                    csb_val = (
+                        cl[3] if len(cl) >= 4 else (cl[-1] if len(cl) >= 2 else "")
+                    )
                 else:
                     out_clusterID = clusterID
             else:
@@ -429,22 +455,20 @@ def output_genome_report(
                     taxon_levels[i] = parts[i]
             row = [
                 protein.genomeID,  # genomeID
-                pl[0],             # proteinID
-                pl[1],             # domains
-                pl[2],             # dom_scores
-                pl[3],             # dom_coords
-                pl[4],             # contig
-                pl[5],             # gene_start
-                pl[6],             # gene_end
-                pl[7],             # gene_strand
-                pl[8],             # locustag
+                pl[0],  # proteinID
+                pl[1],  # domains
+                pl[2],  # dom_scores
+                pl[3],  # dom_coords
+                pl[4],  # contig
+                pl[5],  # gene_start
+                pl[6],  # gene_end
+                pl[7],  # gene_strand
+                pl[8],  # locustag
                 out_clusterID,
-                *taxon_levels
+                *taxon_levels,
             ]
-            writer.write('\t'.join(map(str, row)) + '\n')
+            writer.write("\t".join(map(str, row)) + "\n")
     return
-
-
 
 
 def output_taxonomy_summary(
@@ -461,7 +485,15 @@ def output_taxonomy_summary(
         - `output_file`: a TSV with per-level counts of distinct genomes per taxon.
           Columns: Taxonomic Level, Taxon, distinct genomes
     """
-    tax_cols = ["Superkingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"]
+    tax_cols = [
+        "Superkingdom",
+        "Phylum",
+        "Class",
+        "Order",
+        "Family",
+        "Genus",
+        "Species",
+    ]
 
     # level -> {taxon -> set(genomeIDs)}
     taxonomy_levels: Dict[str, Dict[str, Set[str]]] = {level: {} for level in tax_cols}
@@ -475,7 +507,9 @@ def output_taxonomy_summary(
 
         # Split and take the last 7 parts as ranks; if fewer, left-pad with ""
         parts = [p.strip() for p in str(lineage_str).split(taxon_divider)]
-        tail7: List[str] = parts[-7:] if len(parts) >= 7 else ([""] * (7 - len(parts)) + parts)
+        tail7: List[str] = (
+            parts[-7:] if len(parts) >= 7 else ([""] * (7 - len(parts)) + parts)
+        )
         if len(tail7) != 7:
             tail7 = (tail7 + [""] * 7)[:7]  # harden against odd inputs
 
@@ -490,17 +524,14 @@ def output_taxonomy_summary(
         out.write("Taxonomic Level\tTaxon\tdistinct genomes\n")
         for level in tax_cols:
             # Alphabetical within each level; empty strings (if any) go last
-            for taxon in sorted(taxonomy_levels[level].keys(), key=lambda s: (s == "", s.casefold())):
+            for taxon in sorted(
+                taxonomy_levels[level].keys(), key=lambda s: (s == "", s.casefold())
+            ):
                 out.write(f"{level}\t{taxon}\t{len(taxonomy_levels[level][taxon])}\n")
 
 
-
-
-
 def output_unique_taxonomy_table(
-    output_file: str,
-    taxon_dict: Dict[str, str],
-    taxon_divider: str = "."
+    output_file: str, taxon_dict: Dict[str, str], taxon_divider: str = "."
 ) -> str:
     """
     Write a non-redundant taxonomy table.
@@ -541,8 +572,16 @@ def output_unique_taxonomy_table(
     ]
 
     # Column headers
-    header_cols = ["GenomeID", "Superkingdom", "Phylum", "Class",
-                   "Order", "Family", "Genus", "Species"]
+    header_cols = [
+        "GenomeID",
+        "Superkingdom",
+        "Phylum",
+        "Class",
+        "Order",
+        "Family",
+        "Genus",
+        "Species",
+    ]
 
     # Sorting key: use only taxonomy columns (ignore GenomeID in column 0)
     # Empty fields are sorted last; otherwise sort case-insensitively
@@ -562,17 +601,10 @@ def output_unique_taxonomy_table(
     return unique_file
 
 
-
-
-
-
-
-
-
-
 ##############################################################
 ########## Fetch information from database routines ##########
 ##############################################################
+
 
 def fetch_limiter_data(options: object) -> Dict[str, str]:
     """Fetch limiter data from the database based on specified conditions.
@@ -680,25 +712,28 @@ def find_csbs_with_proteins(file_path: str, proteins: List[str]) -> List[str]:
     """
     logger.debug(f"Csb file filepath is {file_path}")
     csb_list: List[str] = []
-    
-    
+
     try:
-        with open(file_path, 'r') as file:
+        with open(file_path, "r") as file:
             for line in file:
                 if line.strip():
-                    parts = line.rstrip('\n').split("\t")
+                    parts = line.rstrip("\n").split("\t")
                     csb_id = parts[0]
                     protein_sets = [parse_protein_set(ps) for ps in parts[1:]]
                     # Each 'protein' must occur in at least one of the sets in this CSB
-                    if all(any(protein in protein_set for protein_set in protein_sets) for protein in proteins):
+                    if all(
+                        any(protein in protein_set for protein_set in protein_sets)
+                        for protein in proteins
+                    ):
                         csb_list.append(csb_id)
     except Exception as e:
         logger.error(f"Could not read CSB file '{file_path}': {e}")
     return sorted(csb_list)
 
-    
-################### Fetch batch results ##############################    
-    
+
+################### Fetch batch results ##############################
+
+
 def fetch_bulk_data(
     database: str,
     genomes: Optional[List[str]],
@@ -706,7 +741,7 @@ def fetch_bulk_data(
     keywords: Optional[List[str]],
     taxon_dict: Optional[Dict[str, str]] = None,
     min_cluster_completeness: float = 0,
-    trennzeichen: str = ';'
+    trennzeichen: str = ";",
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, str]]:
     """Fetch bulk data from the database based on specified conditions, using batching to avoid SQLite's variable limit.
 
@@ -749,16 +784,17 @@ def fetch_bulk_data(
         query, args = generate_fetch_query(genomes, proteins, keywords, taxon_dict)
         cur.execute(query, args)
         for index, row in enumerate(cur):
-            
             proteinID, genomeID, clusterID = row[0], row[1], row[2]
             domain, domStart, domEnd, score = row[8], row[9], row[10], row[11]
-            
+
             logger.debug(f"Fetched protein for {genomeID}. Total proteins: {index + 1}")
 
             if proteinID in protein_dict:
                 protein_dict[proteinID].add_domain(domain, domStart, domEnd, score)
             else:
-                protein = ParseReports.Protein(proteinID, domain, domStart, domEnd, score)
+                protein = ParseReports.Protein(
+                    proteinID, domain, domStart, domEnd, score
+                )
                 protein.genomeID = genomeID
                 protein.clusterID = clusterID
                 protein.gene_contig = row[3]
@@ -788,7 +824,7 @@ def fetch_bulk_data(
             )
             rows = []
             for batch in batched(list(fusion_protIDs), 500):
-                placeholders = ','.join(['?'] * len(batch))
+                placeholders = ",".join(["?"] * len(batch))
                 query = base_query.format(placeholders)
                 cur.execute(query, batch)
                 rows.extend(cur.fetchall())
@@ -804,7 +840,7 @@ def fetch_bulk_data(
             )
             rows = []
             for batch in batched(list(cluster_dict), 500):
-                placeholders = ','.join(['?'] * len(batch))
+                placeholders = ",".join(["?"] * len(batch))
                 query = base_query.format(placeholders)
                 cur.execute(query, batch)
                 rows.extend(cur.fetchall())
@@ -824,7 +860,7 @@ def fetch_bulk_data(
             )
             rows = []
             for batch in batched(list(genomeID_set), 500):
-                placeholders = ','.join(['?'] * len(batch))
+                placeholders = ",".join(["?"] * len(batch))
                 query = base_query.format(placeholders)
                 cur.execute(query, batch)
                 rows.extend(cur.fetchall())
@@ -833,7 +869,7 @@ def fetch_bulk_data(
                 taxon_dict[row[0]] = myUtil.taxonomy_lineage(row, trennzeichen)
 
     return protein_dict, cluster_dict, taxon_dict
-    
+
 
 def batched(iterable: Iterable[Any], n: int = 500) -> Iterable[List[Any]]:
     """Yield successive n-sized batches from an iterable.
@@ -857,16 +893,13 @@ def batched(iterable: Iterable[Any], n: int = 500) -> Iterable[List[Any]]:
             batch = []
     if batch:
         yield batch
-        
-        
-        
 
 
 def generate_fetch_query(
     genomes: Optional[List[str]],
     proteins: Optional[List[str]],
     keywords: Optional[List[str]],
-    taxon_dict: Optional[Dict[str, Any]]
+    taxon_dict: Optional[Dict[str, Any]],
 ) -> Tuple[str, List[Any]]:
     """Generate a SQL query for fetching data based on genomes, proteins, keywords and taxonomy.
 
@@ -885,7 +918,7 @@ def generate_fetch_query(
         SELECT ...
         >>> print(a)
         ['%G001%', '%PF00001%', 'motifX']
-    
+
     Generate a SQL query for fetching data based on proteins and keywords.
 
     Args:
@@ -896,7 +929,7 @@ def generate_fetch_query(
     Returns:
         tuple: SQL query string and list of arguments for the query.
     """
-    
+
     # Query for the basic concatenation of sql tables
     query = """
         SELECT DISTINCT 
@@ -911,41 +944,43 @@ def generate_fetch_query(
     conditions = []
     args = []
     if genomes:
-        conditions.append("(" + " OR ".join(["Genomes.genomeID LIKE ?"] * len(genomes)) + ")")
+        conditions.append(
+            "(" + " OR ".join(["Genomes.genomeID LIKE ?"] * len(genomes)) + ")"
+        )
         args.extend([f"%{genome}%" for genome in genomes])
-        
+
     if proteins:
-        conditions.append("(" + " OR ".join(["Domains.domain LIKE ?"] * len(proteins)) + ")")
+        conditions.append(
+            "(" + " OR ".join(["Domains.domain LIKE ?"] * len(proteins)) + ")"
+        )
         args.extend([f"%{protein}%" for protein in proteins])
 
     if keywords:
-        conditions.append("(" + " OR ".join(["Keywords.keyword LIKE ?"] * len(keywords)) + ")")
+        conditions.append(
+            "(" + " OR ".join(["Keywords.keyword LIKE ?"] * len(keywords)) + ")"
+        )
         args.extend([f"{keyword}" for keyword in keywords])
-    
+
     if taxon_dict:
-        conditions.append("Genomes.genomeID IN (" + ",".join("?" * len(taxon_dict)) + ")") #Only exact matches
+        conditions.append(
+            "Genomes.genomeID IN (" + ",".join("?" * len(taxon_dict)) + ")"
+        )  # Only exact matches
         args.extend(taxon_dict.keys())
 
     if conditions:
         query += " WHERE " + " AND ".join(conditions)
 
     return query, args
-    
-
-
-
 
 
 ########## File Output Routines ##########
-
-
 
 
 def output_distinct_fasta_reports(
     directory: str,
     protein_dict: Dict[str, Any],
     cluster_dict: Dict[str, Any],
-    writemode: str = "w"
+    writemode: str = "w",
 ) -> Set[str]:
     """Writes all protein sequences into distinct FASTA files by domain class and for fusion domains.
 
@@ -983,7 +1018,7 @@ def output_distinct_fasta_reports(
                 protein = protein_dict[proteinID]
                 genomeID = protein.genomeID
                 proteinlist = protein.get_protein_list()
-                sequence = str(protein.protein_sequence).replace('*', '')
+                sequence = str(protein.protein_sequence).replace("*", "")
 
                 clusterID = protein.clusterID
                 if clusterID in cluster_dict:
@@ -991,11 +1026,11 @@ def output_distinct_fasta_reports(
                     clusterlist = cluster.get_cluster_list(",")
                     out = f">{genomeID}-{' '.join(proteinlist[:-5])} {' '.join(clusterlist)}\n"
                     writer.write(out)
-                    writer.write(sequence + '\n')
+                    writer.write(sequence + "\n")
                 else:
                     out = f">{genomeID}-{' '.join(proteinlist[:-5])}\n"
                     writer.write(out)
-                    writer.write(sequence + '\n')
+                    writer.write(sequence + "\n")
 
     # Output: fused domains as separate FASTA
     for protein in fusion_dict.values():
@@ -1003,10 +1038,10 @@ def output_distinct_fasta_reports(
         domain_dict = protein.get_domains_dict()
         genomeID = protein.genomeID
         proteinlist = protein.get_protein_list()
-        sequence = str(protein.protein_sequence).replace('*', '')
+        sequence = str(protein.protein_sequence).replace("*", "")
         for domain in domain_dict.values():
             HMM = domain.HMM
-            domain_sequence = sequence[domain.start:domain.end]
+            domain_sequence = sequence[domain.start : domain.end]
             filepath = os.path.join(directory, f"_fused_domain_{HMM}.faa")
             files.add(filepath)
             with open(filepath, "a") as writer:
@@ -1015,40 +1050,31 @@ def output_distinct_fasta_reports(
                     clusterlist = cluster.get_cluster_list(",")
                     out = f">{genomeID}-{' '.join(proteinlist[:-5])} {' '.join(clusterlist)}\n"
                     writer.write(out)
-                    writer.write(domain_sequence + '\n')
+                    writer.write(domain_sequence + "\n")
                 else:
                     out = f">{genomeID}-{' '.join(proteinlist[:-5])}\n"
                     writer.write(out)
-                    writer.write(domain_sequence + '\n')
+                    writer.write(domain_sequence + "\n")
     logger.info(f"FASTA output written to: {files}")
     return files
-
-
-
-
-        
-
-
-
-
-
 
 
 ##############################################################
 ##########          Fasta File Postprocessing       ##########
 ##############################################################
 
-def singletons(directory,filepaths):
+
+def singletons(directory, filepaths):
     """
     01.11.22
         Args:
             directory to store new files
             filepaths with the files to be processed
-            
+
         Routine should filter all singletons, meaning each new file will result in one protein per type per genome
         paralogs are filtered out and should be wrote separately. Output is a faa fasta file
     """
-    
+
     for filepath in filepaths:
         record_dict = SeqIO.to_dict(SeqIO.parse(filepath, "fasta"))
         genome_list = []
@@ -1057,36 +1083,24 @@ def singletons(directory,filepaths):
             genome_list.append(genomeID)
 
         doublicate = set([x for x in genome_list if genome_list.count(x) > 1])
-        
-        path = os.path.splitext(filepath)[0] 
+
+        path = os.path.splitext(filepath)[0]
         name = os.path.basename(path)
-        single = open(directory+f"/{name}_singleton.faa","w")
-        double = open(directory+f"/{name}_doublicate.faa","w")
-        
+        single = open(directory + f"/{name}_singleton.faa", "w")
+        double = open(directory + f"/{name}_doublicate.faa", "w")
+
         for record in record_dict.keys():
-            #print(record_dict[record])
+            # print(record_dict[record])
             sequence = record_dict[record]
             genomeID = record.split("-")[0]
             if not genomeID in doublicate:
-                single.write(">"+sequence.description+"\n")
-                single.write(str(sequence.seq)+"\n")
+                single.write(">" + sequence.description + "\n")
+                single.write(str(sequence.seq) + "\n")
             else:
-                double.write(">"+sequence.description+"\n")
-                double.write(str(sequence.seq)+"\n")
+                double.write(">" + sequence.description + "\n")
+                double.write(str(sequence.seq) + "\n")
         single.close()
-        double.close()        
-
-
-
-
-
-
-
-
-
-
-
-
+        double.close()
 
 
 ##############################################################
@@ -1094,7 +1108,7 @@ def singletons(directory,filepaths):
 ##############################################################
 
 
-def add_taxonomy(database,filepath,trennzeichen='_'):
+def add_taxonomy(database, filepath, trennzeichen="_"):
     """
     12.03.23
     taxonomy lineage and domain type should be added to a fasta file and replace the
@@ -1105,61 +1119,58 @@ def add_taxonomy(database,filepath,trennzeichen='_'):
     print("Collecting genome identifier")
     record_dict = {}
     taxon_dict = {}
-    writer = open(filepath+".taxon_names","w")    
+    writer = open(filepath + ".taxon_names", "w")
     with sqlite3.connect(database) as con:
         cur = con.cursor()
-    
+
         for record in SeqIO.parse(filepath, "fasta"):
             dataset_range_line = ""
             genomeID, proteinID = record.id.split("-", maxsplit=1)
             genomeID = myUtil.getGenomeID(genomeID)
-            #check genome has multiple proteins in the fasta
+            # check genome has multiple proteins in the fasta
             if genomeID not in record_dict:
                 record_dict[genomeID] = 1
             else:
                 record_dict[genomeID] = record_dict[genomeID] + 1
 
-            #Fetch taxonomy
-            #Creating the first column for the dataset
-            cur.execute("""SELECT genomeID,Superkingdom,Clade,Phylum,Class,Ordnung,Family,Genus,Species FROM Genomes WHERE genomeID = ?""",(genomeID,))
+            # Fetch taxonomy
+            # Creating the first column for the dataset
+            cur.execute(
+                """SELECT genomeID,Superkingdom,Clade,Phylum,Class,Ordnung,Family,Genus,Species FROM Genomes WHERE genomeID = ?""",
+                (genomeID,),
+            )
             row = cur.fetchone()
             lineage = myUtil.taxonomy_lineage(row, trennzeichen)
             dataset_range_line = lineage if lineage else record.id
             if record_dict[genomeID] > 1:
-                dataset_range_line += '_'+str(record_dict[genomeID])
-            
+                dataset_range_line += "_" + str(record_dict[genomeID])
 
             try:
-                dom_type = record.description.split(' ')[1]
-                dom_type = ' '+dom_type+' '
+                dom_type = record.description.split(" ")[1]
+                dom_type = " " + dom_type + " "
             except:
-                dom_type = ''
+                dom_type = ""
             try:
-                #print(f"Insert {genomeID}")
-                #print(record_dict[genomeID[:-2]])
-                writer.write(">"+dataset_range_line+dom_type+"\n")
+                # print(f"Insert {genomeID}")
+                # print(record_dict[genomeID[:-2]])
+                writer.write(">" + dataset_range_line + dom_type + "\n")
                 writer.write(str(record.seq) + "\n")
             except:
                 print(f"WARNING: No taxonomy found for {genomeID}")
 
     writer.close()
 
-    
-    
-    
-    
-    
 
-def add_genomic_context(database,filepath):
+def add_genomic_context(database, filepath):
     """
     22.02.23
         Args:
-            database for the sequence file 
+            database for the sequence file
             filepath with the file to be processed
         This routine takes a fasta file, iterates through the sequences and
         writes down the specific genomic context in which this was found together with
         some genomic features
-        
+
         nicht schön aber funktioniert vielleicht so
     """
     cp_dict = {}
@@ -1170,39 +1181,49 @@ def add_genomic_context(database,filepath):
 
         # Group protein IDs into batches of 1000 for efficient querying
         batch_size = 1000
-        protein_ids = [f"'{record.id.split('-', 1)[-1]}'" for record in SeqIO.parse(filepath, "fasta")]
+        protein_ids = [
+            f"'{record.id.split('-', 1)[-1]}'"
+            for record in SeqIO.parse(filepath, "fasta")
+        ]
 
         for i in range(0, len(protein_ids), batch_size):
-            batch = ','.join(protein_ids[i:i+batch_size])
+            batch = ",".join(protein_ids[i : i + batch_size])
             cur.execute(query.format(batch))
             results = cur.fetchall()
             for protein_id, cluster_id in results:
                 cp_dict[protein_id] = cluster_id
 
-        
-        
         cur.execute("""PRAGMA foreign_keys = ON;""")
-        with open(filepath+"_gene_vicinity", "a") as writer:
-            writer.write("Index\tProteinID\tDomain(s)\tHit_score\thit_align\tcontig\tstart\tend\tstrand\tSuperkingdom\tClade\tPhylum\tClass\tOrdnung\tFamily\tGenus\tSpecies")
-                    
+        with open(filepath + "_gene_vicinity", "a") as writer:
+            writer.write(
+                "Index\tProteinID\tDomain(s)\tHit_score\thit_align\tcontig\tstart\tend\tstrand\tSuperkingdom\tClade\tPhylum\tClass\tOrdnung\tFamily\tGenus\tSpecies"
+            )
+
         print(f"\tAssigning genetic environment:")
-        for current_proteinID,current_clusterID in cp_dict.items():
-            print(f"\tFetched: {current_proteinID} {current_clusterID}",end="\r")
+        for current_proteinID, current_clusterID in cp_dict.items():
+            print(f"\tFetched: {current_proteinID} {current_clusterID}", end="\r")
             protein_dict = dict()
             fusion_protIDs = dict()
             query = "SELECT DISTINCT Proteins.proteinID,Proteins.genomeID,Proteins.clusterID,contig,start,end,strand,sequence,domain,domStart,domEnd,score,dom_count from Proteins LEFT JOIN Domains ON Proteins.proteinID = Domains.proteinID WHERE Proteins.clusterID = ?"
-            cur.execute(query,[current_clusterID,])
-            #Fill the protein dict
-            
+            cur.execute(
+                query,
+                [
+                    current_clusterID,
+                ],
+            )
+            # Fill the protein dict
+
             for row in cur:
                 # 0 => proteinID, 1 => genomeID, 2 => clusterID, 3 => contig,
                 # 4 => start, 5 => end, 6 => strand, 7 => sequence,
                 # 8 => domain, 9 => domStart, 10 => domEnd, 11 => score,
                 if row[0] in protein_dict.keys():
                     protein = protein_dict[row[0]]
-                    protein.add_domain(row[8],row[9],row[10],row[11])
+                    protein.add_domain(row[8], row[9], row[10], row[11])
                 else:
-                    protein = ParseReports.Protein(row[0],row[8],row[9],row[10],row[11])
+                    protein = ParseReports.Protein(
+                        row[0], row[8], row[9], row[10], row[11]
+                    )
                     protein.set_genomeID(row[1])
                     protein.set_clusterID(row[2])
                     protein.set_gene_contig(row[3])
@@ -1213,78 +1234,108 @@ def add_genomic_context(database,filepath):
 
                 if row[12] > 1:
                     fusion_protIDs[row[0]] = 1
-                    
-            #Also collect domains from fusion proteins
-            
+
+            # Also collect domains from fusion proteins
+
             if fusion_protIDs:
-                count = 1        
+                count = 1
                 query = """SELECT DISTINCT proteinID,domain,domStart,domEnd,score FROM Domains WHERE proteinID = ? """
                 add_array = []
                 proteins_array = []
                 args = []
-                                    
+
                 for proteinID in fusion_protIDs.keys():
                     arguments = args.copy()
-                    arguments.insert(0,proteinID)
-                    cur.execute(query,arguments)
+                    arguments.insert(0, proteinID)
+                    cur.execute(query, arguments)
                     for row in cur:
-                        print(f"\tFetched fused domains: {count}",end="\r")
+                        print(f"\tFetched fused domains: {count}", end="\r")
                         count = count + 1
                         protein = protein_dict[row[0]]
-                        protein.add_domain(row[1],row[2],row[3],row[4])
-                        
+                        protein.add_domain(row[1], row[2], row[3], row[4])
+
                 print("")
-            #an diesem punkt haben wir ein vollständiges unsortiertes protein_dict aber keine txonomy information
+            # an diesem punkt haben wir ein vollständiges unsortiertes protein_dict aber keine txonomy information
             # taxonomie info holen
             taxon_dict = dict()
             query = "SELECT genomeID,Superkingdom,Clade,Phylum,Class,Ordnung,Family,Genus,Species FROM Genomes WHERE genomeID = ? "
-            genomeID = current_proteinID.split('-')[0]
-            cur.execute(query,[genomeID,])
+            genomeID = current_proteinID.split("-")[0]
+            cur.execute(
+                query,
+                [
+                    genomeID,
+                ],
+            )
             for row in cur:
                 taxon_dict[row[0]] = row[1:]
-            
-            #create indices for the
-            proteinID_list = sorted(protein_dict, key=lambda x: protein_dict[x].gene_start)
+
+            # create indices for the
+            proteinID_list = sorted(
+                protein_dict, key=lambda x: protein_dict[x].gene_start
+            )
             try:
                 index = proteinID_list.index(current_proteinID) * -1
             except:
-                index = 0    
-            with open(filepath+"_gene_vicinity", "a") as writer:
+                index = 0
+            with open(filepath + "_gene_vicinity", "a") as writer:
                 for proteinID in proteinID_list:
-                    #Write each line includes all information about one protein
+                    # Write each line includes all information about one protein
                     protein = protein_dict[proteinID]
-                    proteinlist = protein.get_protein_list()  #list representation of a protein object
-            
-                    out = str(index) + '\t' +'\t'.join(proteinlist) + '\t'.join(taxon_dict[genomeID]) + '\n'
+                    proteinlist = (
+                        protein.get_protein_list()
+                    )  # list representation of a protein object
+
+                    out = (
+                        str(index)
+                        + "\t"
+                        + "\t".join(proteinlist)
+                        + "\t".join(taxon_dict[genomeID])
+                        + "\n"
+                    )
                     index = index + 1
                     writer.write(out)
-            
-    
-    # Specify input and output file names
-    input_file = filepath+"_gene_vicinity"
-    output_file = filepath+"_gene_vicinity_sorted"
 
-    # Specify the headers of the columns to sort onSuperkingdom,Clade,Phylum,Class,Ordnung,Family,Genus,Species 
-    sort_headers = ['Superkingdom', 'Phylum', 'Class', 'Ordnung', 'Family', 'Genus', 'Species']
+    # Specify input and output file names
+    input_file = filepath + "_gene_vicinity"
+    output_file = filepath + "_gene_vicinity_sorted"
+
+    # Specify the headers of the columns to sort onSuperkingdom,Clade,Phylum,Class,Ordnung,Family,Genus,Species
+    sort_headers = [
+        "Superkingdom",
+        "Phylum",
+        "Class",
+        "Ordnung",
+        "Family",
+        "Genus",
+        "Species",
+    ]
 
     # Read in the input file and store the rows as a list of dictionaries
-    with open(input_file, 'r', newline='') as f:
-        reader = csv.DictReader(f, delimiter='\t')
+    with open(input_file, "r", newline="") as f:
+        reader = csv.DictReader(f, delimiter="\t")
         rows = [row for row in reader]
 
     # Sort the rows hierarchically based on the sort columns
-    sorted_rows = sorted(rows, key=lambda x: (x[sort_headers[0]], x[sort_headers[1]],x[sort_headers[2]],x[sort_headers[3]],x[sort_headers[4]],x[sort_headers[5]]))
+    sorted_rows = sorted(
+        rows,
+        key=lambda x: (
+            x[sort_headers[0]],
+            x[sort_headers[1]],
+            x[sort_headers[2]],
+            x[sort_headers[3]],
+            x[sort_headers[4]],
+            x[sort_headers[5]],
+        ),
+    )
 
     # Write the sorted rows to the output file
-    with open(output_file, 'w', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=reader.fieldnames, delimiter='\t')
+    with open(output_file, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=reader.fieldnames, delimiter="\t")
         writer.writeheader()
         for row in sorted_rows:
             writer.writerow(row)
 
 
-
-    
 def fetch_database_all(database):
     """
     1.10.22
@@ -1296,27 +1347,24 @@ def fetch_database_all(database):
         cur.execute("""PRAGMA foreign_keys = ON;""")
         cur.execute(""" SELECT * FROM Proteins; """)
         con.commit()
-        #print("----------Proteins--------------")
-        #print(cur.fetchall())
-        
+        # print("----------Proteins--------------")
+        # print(cur.fetchall())
+
         cur = con.cursor()
         cur.execute(""" SELECT * FROM Clusters; """)
         con.commit()
         print("----------Clusters--------------")
         print(cur.fetchall())
 
-
         cur = con.cursor()
         cur.execute(""" SELECT * FROM Keywords; """)
         con.commit()
         print("----------Keywords--------------")
         print(cur.fetchall())
-        
+
         cur = con.cursor()
         cur.execute(""" SELECT * FROM Genomes; """)
         con.commit()
         print("----------Genomes--------------")
         print(cur.fetchall())
     return
-
-

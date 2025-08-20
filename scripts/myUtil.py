@@ -11,6 +11,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+
 def setup_logging(verbose_level: int = 0, log_file: Optional[str] = None) -> None:
     """
     Sets up logging:
@@ -24,11 +25,9 @@ def setup_logging(verbose_level: int = 0, log_file: Optional[str] = None) -> Non
         log_file (str, optional): File path to write logs
     """
     # Determine user console log level
-    level = {
-        0: logging.WARNING,
-        1: logging.INFO,
-        2: logging.DEBUG
-    }.get(verbose_level, logging.DEBUG)
+    level = {0: logging.WARNING, 1: logging.INFO, 2: logging.DEBUG}.get(
+        verbose_level, logging.DEBUG
+    )
 
     # Remove all handlers if present (for repeated calls in notebooks/scripts)
     for handler in logging.root.handlers[:]:
@@ -38,8 +37,7 @@ def setup_logging(verbose_level: int = 0, log_file: Optional[str] = None) -> Non
     console_handler = logging.StreamHandler()
     console_handler.setLevel(level)
     console_format = logging.Formatter(
-        "%(asctime)s | %(levelname)-8s | %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
+        "%(asctime)s | %(levelname)-8s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
     )
     console_handler.setFormatter(console_format)
     handlers = [console_handler]
@@ -50,16 +48,13 @@ def setup_logging(verbose_level: int = 0, log_file: Optional[str] = None) -> Non
         file_handler.setLevel(logging.DEBUG)  # Always maximum detail
         file_format = logging.Formatter(
             "%(asctime)s | %(levelname)-8s | %(processName)s | %(message)s | %(filename)s:%(lineno)d",
-            datefmt="%Y-%m-%d %H:%M:%S"
+            datefmt="%Y-%m-%d %H:%M:%S",
         )
         file_handler.setFormatter(file_format)
         handlers.append(file_handler)
 
     # Root logger: accept everything, handlers do the filtering
-    logging.basicConfig(
-        level=logging.DEBUG,
-        handlers=handlers
-    )
+    logging.basicConfig(level=logging.DEBUG, handlers=handlers)
 
 
 def packgz(path: str) -> str:
@@ -72,10 +67,11 @@ def packgz(path: str) -> str:
     Returns:
         str: Path to compressed .gz file.
     """
-    file = path + '.gz'
-    with open(path, 'rb') as src, gzip.open(file, 'wb') as dst:
+    file = path + ".gz"
+    with open(path, "rb") as src, gzip.open(file, "wb") as dst:
         dst.writelines(src)
     return file
+
 
 def unpackgz(path: str) -> str:
     """
@@ -87,21 +83,23 @@ def unpackgz(path: str) -> str:
     Returns:
         str: Path to decompressed file.
     """
-    if not path.endswith('.gz'):
+    if not path.endswith(".gz"):
         return path
     file = path[:-3]
     if os.path.exists(file):
         return file
-    with gzip.open(path, 'rb') as f_in:
-        with open(file, 'wb') as f_out:
+    with gzip.open(path, "rb") as f_in:
+        with open(file, "wb") as f_out:
             shutil.copyfileobj(f_in, f_out)
     return file
+
 
 def dir_path(string: str) -> str:
     """Validates that a string points to a valid directory."""
     if os.path.isdir(string):
-        return string.rstrip('/')
+        return string.rstrip("/")
     sys.exit(f"\nERROR: {string} is not a valid directory")
+
 
 def file_path(string: str) -> str:
     """Validates that a string points to a valid file."""
@@ -109,14 +107,14 @@ def file_path(string: str) -> str:
         return string
     sys.exit(f"\nERROR: {string} is not a valid file")
 
+
 def auto_float(value):
-    if value == 'auto':
+    if value == "auto":
         return value
     try:
         return float(value)
     except ValueError:
         raise argparse.ArgumentTypeError("%r is not a valid float or 'auto'" % value)
-
 
 
 def print_header(string: str, verbose: int = 0) -> None:
@@ -127,6 +125,7 @@ def print_header(string: str, verbose: int = 0) -> None:
         print(current_time)
         print((len(current_time) + 3 + len(string)) * "-")
 
+
 def clean_empty_files(directory: str) -> None:
     """Removes all empty files in a given directory."""
     for filename in os.listdir(directory):
@@ -135,12 +134,11 @@ def clean_empty_files(directory: str) -> None:
             os.remove(file_path)
             logger.debug(f"Removed empty file: {file_path}")
 
+
 def generate_color(seed_int: int) -> str:
     """Generates a consistent random color hex string from a seed integer."""
     random.seed(seed_int)
-    return '#{:06x}'.format(random.randint(0, 0xFFFFFF))
-
-
+    return "#{:06x}".format(random.randint(0, 0xFFFFFF))
 
 
 def _strip_suffix(filename: str, suffix: str) -> str:
@@ -149,7 +147,10 @@ def _strip_suffix(filename: str, suffix: str) -> str:
     Beispiel: ("a.b.c.fna.gz", ".fna.gz") -> "a.b.c"
              ("a.b.c.fna", ".fna.gz")     -> unverändert
     """
-    return filename[:-len(suffix)] if suffix and filename.endswith(suffix) else filename
+    return (
+        filename[: -len(suffix)] if suffix and filename.endswith(suffix) else filename
+    )
+
 
 def compare_file_lists(directory: str, ext1: str, ext2: str) -> Set[str]:
     """
@@ -165,13 +166,13 @@ def compare_file_lists(directory: str, ext1: str, ext2: str) -> Set[str]:
 
     # mapping: Normalisierter_Basisname -> Path
     files1 = {}
-    for f in p.glob(f'*{ext1}'):
+    for f in p.glob(f"*{ext1}"):
         if f.is_file():
             base = _strip_suffix(f.name, ext1)  # z.B. "genome1" aus "genome1.fna.gz"
             files1[base] = f
 
     files2 = {}
-    for f in p.glob(f'*{ext2}'):
+    for f in p.glob(f"*{ext2}"):
         if f.is_file():
             base = _strip_suffix(f.name, ext2)  # z.B. "genome1" aus "genome1.faa"
             files2[base] = f
@@ -200,7 +201,10 @@ def getAllFiles(directory: str, ending: Union[str, int] = 0) -> List[str]:
                 matched.append(file)
     return matched
 
-def compareFileLists(directory: str, ext1: Union[str, int] = 0, ext2: Union[str, int] = 0) -> List[str]:
+
+def compareFileLists(
+    directory: str, ext1: Union[str, int] = 0, ext2: Union[str, int] = 0
+) -> List[str]:
     """
     Compares file lists by extension and returns those missing a match.
 
@@ -217,21 +221,26 @@ def compareFileLists(directory: str, ext1: Union[str, int] = 0, ext2: Union[str,
         return addExtToList(list(difference), ext1)
     return []
 
+
 def removeExtFromList(listing: List[str], ext: str) -> List[str]:
     """Removes extension and returns only basenames without directory."""
     return [os.path.splitext(os.path.basename(element))[0] for element in listing]
+
 
 def addExtToList(listing: List[str], ext: str) -> List[str]:
     """Appends the specified extension to each string in the list."""
     return [element + ext for element in listing]
 
+
 def getGenomeID(path: str) -> str:
     """Extracts genome ID from filename (before first dot)."""
-    return os.path.basename(path).split('.')[0]
+    return os.path.basename(path).split(".")[0]
+
 
 def getReportName(path: str) -> str:
     """Appends '.HmmReport' extension to a given path (removes original extension)."""
     return os.path.splitext(path)[0] + ".HmmReport"
+
 
 def taxonomy_lineage(array: List[str], trennzeichen: str) -> str:
     """
@@ -249,7 +258,7 @@ def taxonomy_lineage(array: List[str], trennzeichen: str) -> str:
 
 def get_executable_dir() -> str:
     """Returns directory of script (or executable in case of PyInstaller)."""
-    if getattr(sys, 'frozen', False):
+    if getattr(sys, "frozen", False):
         return os.path.dirname(sys.executable)
     return os.path.dirname(os.path.abspath(__file__))
 
@@ -291,8 +300,13 @@ def remove_directory(directory_path: str) -> None:
         logger.debug(f"Directory not found: {directory_path}")
 
 
-
-def save_cache(options: Any, name: str, data: object, redirect: Optional[str] = None, overwrite: bool = False) -> None:
+def save_cache(
+    options: Any,
+    name: str,
+    data: object,
+    redirect: Optional[str] = None,
+    overwrite: bool = False,
+) -> None:
     """
     Saves a Python object using pickle into a defined cache directory.
 
@@ -303,7 +317,11 @@ def save_cache(options: Any, name: str, data: object, redirect: Optional[str] = 
         redirect (str, optional): Alternate output directory.
         overwrite (bool): Whether to overwrite an existing file.
     """
-    cache_dir = redirect if redirect else os.path.join(options.result_files_directory, "pkl_cache")
+    cache_dir = (
+        redirect
+        if redirect
+        else os.path.join(options.result_files_directory, "pkl_cache")
+    )
     os.makedirs(cache_dir, exist_ok=True)
     file_path = os.path.join(cache_dir, name)
     if os.path.exists(file_path) and not overwrite:
@@ -314,8 +332,9 @@ def save_cache(options: Any, name: str, data: object, redirect: Optional[str] = 
     logger.debug(f"Saved cache file: {file_path}")
 
 
-
-def load_cache(options: Any, name: str, file_path: Optional[str] = None) -> Optional[object]:
+def load_cache(
+    options: Any, name: str, file_path: Optional[str] = None
+) -> Optional[object]:
     """
     Loads a Python object from a pickle file in the cache directory.
 
@@ -341,8 +360,9 @@ def load_cache(options: Any, name: str, file_path: Optional[str] = None) -> Opti
     return None
 
 
-
-def merge_grouped_refseq_dicts_simple(grouped_3_dict: Dict[str, Set[str]], grouped_4_dict: Dict[str, Set[str]]) -> Dict[str, Set[str]]:
+def merge_grouped_refseq_dicts_simple(
+    grouped_3_dict: Dict[str, Set[str]], grouped_4_dict: Dict[str, Set[str]]
+) -> Dict[str, Set[str]]:
     """
     Merges two protein dictionaries.
 
@@ -356,12 +376,15 @@ def merge_grouped_refseq_dicts_simple(grouped_3_dict: Dict[str, Set[str]], group
     merged = {}
     all_domains = set(grouped_3_dict.keys()) | set(grouped_4_dict.keys())
     for domain in all_domains:
-        merged[domain] = grouped_3_dict.get(domain, set()) | grouped_4_dict.get(domain, set())
+        merged[domain] = grouped_3_dict.get(domain, set()) | grouped_4_dict.get(
+            domain, set()
+        )
     return merged
 
 
-
-def merge_score_limits(dict1: Dict[str, Dict[str, float]], dict2: Dict[str, Dict[str, float]]) -> Dict[str, Dict[str, float]]:
+def merge_score_limits(
+    dict1: Dict[str, Dict[str, float]], dict2: Dict[str, Dict[str, float]]
+) -> Dict[str, Dict[str, float]]:
     """
     Merges two dictionaries of score limits.
 
@@ -379,16 +402,21 @@ def merge_score_limits(dict1: Dict[str, Dict[str, float]], dict2: Dict[str, Dict
     for key in all_keys:
         val1 = dict1.get(key, {})
         val2 = dict2.get(key, {})
-        lower = min(val1.get("lower_limit", float('inf')), val2.get("lower_limit", float('inf')))
-        upper = max(val1.get("upper_limit", float('-inf')), val2.get("upper_limit", float('-inf')))
+        lower = min(
+            val1.get("lower_limit", float("inf")), val2.get("lower_limit", float("inf"))
+        )
+        upper = max(
+            val1.get("upper_limit", float("-inf")),
+            val2.get("upper_limit", float("-inf")),
+        )
         merged[key] = {"lower_limit": lower, "upper_limit": upper}
     return merged
 
 
-def move_HMMs(input_folder,output_folder,file_extension):
+def move_HMMs(input_folder, output_folder, file_extension):
     logger.info(f"Saving HMMs in the directory: {output_folder}")
     for datafile in os.listdir(input_folder):
         if datafile.endswith(file_extension):
             source = os.path.join(input_folder, datafile)
             target = os.path.join(output_folder, datafile)
-            shutil.move(source,target)
+            shutil.move(source, target)
