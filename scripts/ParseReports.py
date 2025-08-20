@@ -69,6 +69,7 @@ class Protein:
         self.keywords: Dict = {}
         self.domains: Dict[int, Domain] = {}  # start coordinate → Domain object
         self.add_domain(HMM, start, end, score, ident, bsr)
+        self.selection_comment: str = ""  # Trusted cutoff Flag or cooccurrence
 
     ##### Getter ####
 
@@ -577,7 +578,7 @@ def process_batch(
     genome_ids,
     faa_files,
     gff_files,
-    hmmreport_path,
+    trusted_hmmreport_path,
     intermediate_hmmreport,
     nucleotide_range,
     min_completeness,
@@ -597,7 +598,7 @@ def process_batch(
                 genome_id=genome_id,
                 faa_path=faa_files[genome_id],
                 gff_path=gff_files[genome_id],
-                hmmreport_path=hmmreport_path,
+                trusted_hmmreport_path=trusted_hmmreport_path,
                 intermediate_hmmreport=intermediate_hmmreport,
                 nucleotide_range=nucleotide_range,
                 min_completeness=min_completeness,
@@ -617,7 +618,7 @@ def process_genome(
     genome_id: str,
     faa_path: str,
     gff_path: str,
-    hmmreport_path: str,
+    trusted_hmmreport_path: str,
     intermediate_hmmreport: str,
     nucleotide_range: int,
     min_completeness: float,
@@ -640,7 +641,7 @@ def process_genome(
         data_queue: Multiprocessing queue for result transport.
         genome_id: ID of the genome.
         faa_path, gff_path: Paths to input files (can be .gz).
-        hmmreport_path, intermediate_hmmreport: HMM report files.
+        trusted_hmmreport_path, intermediate_hmmreport: HMM report files.
         nucleotide_range: Nucleotide window for cluster detection.
         min_completeness: Minimum completeness for cluster pattern assignment.
         pattern_dict: Patterns for cluster annotation.
@@ -659,11 +660,13 @@ def process_genome(
         parseGFFfile(gff_file, intermediate_protein_dict)
 
         # Primary protein hits
-        protein_dict = parse_bulk_HMMreport_genomize(genome_id, hmmreport_path)
-        parseGFFfile(gff_file, protein_dict)
+        trusted_protein_dict = parse_bulk_HMMreport_genomize(
+            genome_id, trusted_hmmreport_path
+        )
+        parseGFFfile(gff_file, trusted_protein_dict)
 
         # Combine protein dictionaries
-        combined_protein_dict = {**intermediate_protein_dict, **protein_dict}
+        combined_protein_dict = {**intermediate_protein_dict, **trusted_protein_dict}
 
         # Detect and annotate syntenic gene clusters
         cluster_dict = Csb_finder.find_syntenic_blocks(
@@ -687,7 +690,8 @@ def process_genome(
         singletons_with_complete_pathway_set = enhance_pathway_completeness(
             combined_protein_dict, cooccurrence_pattern, threshold_dict
         )
-        trusted_protein_ids = set(protein_dict.keys()).union(
+        trusted_cutoff_protein_ids = set(trusted_protein_dict.keys())
+        trusted_protein_ids = trusted_cutoff_protein_ids.union(
             singletons_with_complete_pathway_set
         )
 
@@ -702,6 +706,13 @@ def process_genome(
             combined_protein_dict,
             cluster_dict,
             exclusion_singletons,
+            singletons_with_complete_pathway_set,
+        )
+
+        # Attach the reason for selection to protein objects
+        combined_protein_dict = add_selection_criterium(
+            combined_protein_dict,
+            trusted_cutoff_protein_ids,
             singletons_with_complete_pathway_set,
         )
 
@@ -885,6 +896,42 @@ def remove_unassigned_intermediate_proteins(
                     if gene in combined_protein_dict:
                         combined_protein_dict[gene].clusterID = ""
                 del cluster_dict[clusterID]
+
+    return combined_protein_dict
+
+
+def add_selection_criterium(
+    combined_protein_dict: Dict[str, Protein],
+    trusted_cutoff_protein_ids: Set[str],
+    singletons_with_complete_pathway_set: Set[str],
+) -> Dict[str, Protein]:
+    """
+    Annotates Protein objects in the combined_protein_dict with selection criteria.
+
+    Each Protein object may receive one or both attributes:
+    - 'Tc': Assigned if the proteinID is in the trusted_cutoff_protein_ids set.
+    - 'Coo': Assigned if the proteinID is in the singletons_with_complete_pathway_set set.
+
+    Args:
+        combined_protein_dict (Dict[str, Protein]): Dictionary mapping protein IDs to Protein objects.
+        trusted_cutoff_protein_ids (Set[str]): Set of protein IDs considered "trusted cutoff".
+        singletons_with_complete_pathway_set (Set[str]): Set of protein IDs considered "complete pathway singletons".
+
+    Returns:
+        Dict[str, Protein]: Updated combined_protein_dict with annotated Protein objects.
+    """
+
+    for protein_id, protein in combined_protein_dict.items():
+        selection_comment = []
+        # Add "Tc" if protein is in trusted cutoff set
+        if protein_id in trusted_cutoff_protein_ids:
+            selection_comment.append("Tc")
+
+        # Add "Coo" if protein is in complete pathway set
+        if protein_id in singletons_with_complete_pathway_set:
+            selection_comment.append("Coo")
+
+        protein.selection_comment = ",".join(selection_comment)
 
     return combined_protein_dict
 

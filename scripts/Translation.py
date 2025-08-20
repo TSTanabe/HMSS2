@@ -45,23 +45,26 @@ def parallel_translation(directory: str, cores: int) -> None:
     counter = manager.Value("i", 0)
     lock = manager.Lock()
     length = len(NucleotideFastaFiles)
+    prodigal = myUtil.find_executable("prodigal")
     with multiprocessing.Pool(processes=cores) as pool:
-        args_list = [(fasta, length, counter, lock) for fasta in NucleotideFastaFiles]
+        args_list = [
+            (fasta, length, counter, lock, prodigal) for fasta in NucleotideFastaFiles
+        ]
         pool.map(translate_fasta, args_list)
     logger.info(f"Processing assembly {counter.value} of {length}")
     return
 
 
 def translate_fasta(
-    args: Tuple[str, int, multiprocessing.Value, multiprocessing.Lock],
+    args: Tuple[str, int, multiprocessing.Value, multiprocessing.Lock, str],
 ) -> None:
     """
     Runs prodigal for a single fasta file.
 
     Args:
-        args: Tuple of (fasta path, total length, shared counter, shared lock)
+        args: Tuple of (fasta path, total length, shared counter, shared lock, prodigal_executable)
     """
-    fasta, length, counter, lock = args
+    fasta, length, counter, lock, prodigal = args
 
     # unpack if required
     if os.path.splitext(fasta)[-1] == ".gz":
@@ -70,8 +73,6 @@ def translate_fasta(
     # Run prodigal
     output = os.path.splitext(fasta)[0]
     faa = output + ".faa"
-
-    prodigal = myUtil.find_executable("prodigal")
 
     string = f"{prodigal} -a {faa} -i {fasta} >/dev/null 2>&1"
     try:

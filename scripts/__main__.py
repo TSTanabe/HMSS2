@@ -1240,6 +1240,7 @@ def main(args=None):
     if options.stat_keywords:
         Output.print_file_content(options.patterns_file)
         sys.exit()
+
     if options.stat_csb:  # TODO move to argument parser for direct execution
         Output.print_file_content(options.csb_output_file)
         sys.exit()

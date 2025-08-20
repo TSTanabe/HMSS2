@@ -404,6 +404,7 @@ def output_genome_report(
         "gene_end",
         "gene_strand",
         "locustag",
+        "selection_comment",
         "clusterID",
         *taxon_cols,
     ]
@@ -446,6 +447,8 @@ def output_genome_report(
             else:
                 out_clusterID = ""
 
+            # Selection comment
+
             # Taxonomie in 7 Spalten
             gid = protein.genomeID
             taxon_levels = [""] * 8
@@ -464,6 +467,7 @@ def output_genome_report(
                 pl[6],  # gene_end
                 pl[7],  # gene_strand
                 pl[8],  # locustag
+                protein.selection_comment,
                 out_clusterID,
                 *taxon_levels,
             ]

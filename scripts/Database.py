@@ -74,6 +74,7 @@ def create_database(database: str) -> None:
         start       int(11)                         DEFAULT NULL,
         end         int(11)                         DEFAULT NULL,
         strand      varchar(1)                      DEFAULT NULL,
+        comment     varchar(12)                     DEFAULT NULL,
         dom_count   smallint(6)                     DEFAULT NULL,
         sequence    varchar(4096)                   DEFAULT NULL,
         UNIQUE(proteinID,genomeID),
@@ -219,6 +220,7 @@ def insert_database_proteins(database: str, protein_dict: Dict[str, Any]) -> Non
                     protein.gene_start,
                     protein.gene_end,
                     protein.gene_strand,
+                    protein.selection_comment,
                     len(domains),
                     protein.get_sequence(),
                 )
@@ -240,8 +242,8 @@ def insert_database_proteins(database: str, protein_dict: Dict[str, Any]) -> Non
             # Batch insert for proteins
             cur.executemany(
                 """INSERT OR IGNORE INTO Proteins
-                (proteinID, genomeID, locustag, contig, start, end, strand, dom_count, sequence)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (proteinID, genomeID, locustag, contig, start, end, strand, comment, dom_count, sequence)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 protein_records,
             )
 
