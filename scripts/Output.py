@@ -44,8 +44,8 @@ def fetch_fasta_and_hit_data(
     # Fetch protein/cluster dict
     if options.fetch_csbs:
         logger.info(f"Collecting gene clusters containing {options.fetch_csbs}")
-        csb_listing = find_csbs_with_proteins(
-            options.csb_output_file, options.fetch_csbs
+        csb_listing = find_csbs_with_proteins_db(
+            options.database_directory, options.fetch_csbs, None
         )
         logger.debug(csb_listing)
         logger.info(
@@ -95,16 +95,21 @@ def print_fasta_and_hit_outputs(
     taxonomy_report = directory + "1_taxonomy_table.txt"
     taxonomy_summary = directory + "1_hit_taxonomy_counts.txt"
 
+    # Output hit report
     output_genome_report(
         hit_report, protein_dict, cluster_dict, taxon_dict
-    )  # Output hit report
+    )
+    
+    # Output unique taxonomy report
     output_unique_taxonomy_table(
         taxonomy_report, taxon_dict
-    )  # Output unique taxonomy report
+    )
+    
+    # Output taxonomy summary
     output_taxonomy_summary(taxonomy_summary, taxon_dict)
 
     # Proteine sequences
-    logger.info("Printing protein fasta files to {directory}")
+    logger.info(f"Printing protein fasta files to {directory}")
 
     fasta_file_directory = directory + "2_Protein"  # protein fasta files
     files = output_distinct_fasta_reports(
@@ -734,7 +739,55 @@ def find_csbs_with_proteins(file_path: str, proteins: List[str]) -> List[str]:
         logger.error(f"Could not read CSB file '{file_path}': {e}")
     return sorted(csb_list)
 
+def find_csbs_with_proteins_db(
+    database: str,
+    proteins: List[str],
+    keyword_prefix: str = "csb-"  # optional: nur CSB-Keywords berücksichtigen
+) -> List[str]:
+    """
+    Liefert die CSB-Keyword-Namen aus der Tabelle Keywords, für die es mindestens
+    einen Cluster gibt, der *für jeden* gewünschten Proteintyp (proteins) ein
+    passendes Domain-Vorkommen enthält.
 
+    Matching-Regel für den Proteintyp:
+      - exakte Domain-Gleichheit ODER
+      - Domain endet auf '_<Proteintyp>' (z. B. 'grp3_SQRI' → 'SQRI').
+
+    Nutzt EXISTS pro Typ -> gute Nutzung der vorhandenen Indizes.
+    """
+    if not proteins:
+        return []
+
+    sql = """\
+    SELECT DISTINCT k.keyword
+    FROM Keywords k
+    WHERE (? = '' OR k.keyword LIKE ?)
+    """
+    params: List[str] = ["", ""]  # default: kein Prefix-Filter
+    if keyword_prefix:
+        params = ["x", f"{keyword_prefix}%"]  # aktiviere Prefix-Filter
+
+    # Für jeden geforderten Proteintyp eine EXISTS-Klausel
+    for _ in proteins:
+        sql += """
+        AND EXISTS (
+          SELECT 1
+          FROM Proteins p
+          JOIN Domains d ON d.proteinID = p.proteinID
+          WHERE p.clusterID = k.clusterID
+            AND (d.domain = ?
+                 OR d.domain LIKE '%' || '_' || ?)  -- suffix match
+        )"""
+
+    # Parameter anhängen: je Protein 2 Stück (exakt, suffix)
+    for typ in proteins:
+        params.extend([typ, typ])
+
+    with sqlite3.connect(database) as con:
+        con.execute("PRAGMA foreign_keys = ON;")
+        cur = con.cursor()
+        cur.execute(sql, params)
+        return [row[0] for row in cur.fetchall()]
 ################### Fetch batch results ##############################
 
 
@@ -747,28 +800,25 @@ def fetch_bulk_data(
     min_cluster_completeness: float = 0,
     trennzeichen: str = ";",
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, str]]:
-    """Fetch bulk data from the database based on specified conditions, using batching to avoid SQLite's variable limit.
+    """
+    Fetch bulk data from the database based on specified conditions, using batching
+    to avoid SQLite's variable limit.
 
-    Args:
-        database (str): Path to the SQLite database.
-        genomes (List[str], optional): Genome IDs to limit to.
-        proteins (List[str], optional): Protein domains to limit to.
-        keywords (List[str], optional): Cluster keywords to limit to.
-        taxon_dict (Dict[str, str], optional): If present, only use these genomes. If None or empty, fetch all.
-        min_cluster_completeness (float): Minimal completeness for cluster keywords.
-        trennzeichen (str): Separator for taxonomy lineage.
+    This version expects the SELECT produced by `generate_fetch_query(...)` to provide
+    stable, unique column aliases. Specifically, the following aliases are used here:
 
-    Returns:
-        Tuple[
-            Dict[str, Any],  # protein_dict: proteinID -> Protein object
-            Dict[str, Any],  # cluster_dict: clusterID -> Cluster object
-            Dict[str, str]   # taxon_dict: genomeID -> taxonomy lineage
-        ]
+      proteinID, genomeID, clusterID,
+      contig, gene_start, gene_end, gene_strand, protein_sequence,
+      domain, domStart, domEnd, score,
+      dom_count, comment
 
-    Example:
-        >>> prot_dict, clust_dict, tax_dict = fetch_bulk_data(
-                "db.sqlite", ["G001"], ["PF00001"], ["motifA"], {}, 0, ";"
-            )
+    Implementation notes:
+      - Uses sqlite3.Row for name-based access to row fields (avoids index errors).
+      - Keeps your existing flow: build Protein objects on-the-fly, collect Cluster
+        stubs (one per clusterID), then enrich clusters with Keywords and genomes
+        with taxonomy in batched queries.
+      - `min_cluster_completeness` is available for optional filtering after keyword
+        hydration (left unchanged here to preserve current behavior).
     """
     protein_dict: Dict[str, Any] = {}
     cluster_dict: Dict[str, Any] = {}
@@ -778,99 +828,141 @@ def fetch_bulk_data(
         taxon_dict = {}
 
     with sqlite3.connect(database) as con:
+        # Enable name-based access: row["column_alias"]
+        con.row_factory = sqlite3.Row
         cur = con.cursor()
+
+        # Pragmas for speed (same as before)
         cur.execute("PRAGMA foreign_keys = ON;")
         cur.execute("PRAGMA cache_size = 100000;")
         cur.execute("PRAGMA synchronous = OFF;")
         cur.execute("PRAGMA temp_store = MEMORY;")
 
-        # Query generation (muss existieren!)
+        # 1) Main streaming SELECT: Proteins JOIN Domains (+ Genomes/Keywords) with clear aliases
         query, args = generate_fetch_query(genomes, proteins, keywords, taxon_dict)
         cur.execute(query, args)
+
         for index, row in enumerate(cur):
-            proteinID, genomeID, clusterID = row[0], row[1], row[2]
-            domain, domStart, domEnd, score = row[8], row[9], row[10], row[11]
+            protein_id  = row["proteinID"]
+            genome_id   = row["genomeID"]
+            cluster_id  = row["clusterID"]
 
-            logger.debug(f"Fetched protein for {genomeID}. Total proteins: {index + 1}")
+            domain      = row["domain"]
+            dom_start   = row["domStart"]
+            dom_end     = row["domEnd"]
+            score       = row["score"]
 
-            if proteinID in protein_dict:
-                protein_dict[proteinID].add_domain(domain, domStart, domEnd, score)
+            # Progress / debug
+            logger.debug(f"Fetched protein for {genome_id}. Total proteins: {index + 1}")
+
+            # Create-or-extend Protein object
+            if protein_id in protein_dict:
+                protein_dict[protein_id].add_domain(domain, dom_start, dom_end, score)
             else:
-                protein = ParseReports.Protein(
-                    proteinID, domain, domStart, domEnd, score
-                )
-                protein.genomeID = genomeID
-                protein.clusterID = clusterID
-                protein.gene_contig = row[3]
-                protein.gene_start = row[4]
-                protein.gene_end = row[5]
-                protein.gene_strand = row[6]
-                protein.protein_sequence = row[7]
-                protein_dict[proteinID] = protein
-                genomeID_set.add(genomeID)
+                p = ParseReports.Protein(protein_id, domain, dom_start, dom_end, score)
+                p.genomeID          = genome_id
+                p.clusterID         = cluster_id
+                p.gene_contig       = row["contig"]
+                p.gene_start        = row["gene_start"]
+                p.gene_end          = row["gene_end"]
+                p.gene_strand       = row["gene_strand"]
+                p.protein_sequence  = row["protein_sequence"]
+                p.selection_comment           = row["comment"]
+                protein_dict[protein_id] = p
+                genomeID_set.add(genome_id)
 
-            if clusterID is not None and clusterID not in cluster_dict:
-                cluster = Csb_finder.Cluster(clusterID)
-                cluster.genomeID = genomeID
-                cluster.add_gene(proteinID, domain)
-                cluster_dict[clusterID] = cluster
+            # Create cluster stub on first encounter
+            if cluster_id is not None and cluster_id not in cluster_dict:
+                cl = Csb_finder.Cluster(cluster_id)
+                cl.genomeID = genome_id
+                cl.add_gene(protein_id, domain)
+                cluster_dict[cluster_id] = cl
 
-            if row[12] >= 2:
-                fusion_protIDs.add(proteinID)
+            # Track proteins that appear to be fused (>=2 domains)
+            if row["dom_count"] >= 2:
+                fusion_protIDs.add(protein_id)
 
         logger.info(f"Fetched {len(protein_dict)} proteins.")
 
-        # Fused proteins: batched fetch for large sets
+        # 2) Add all domains for fused proteins (batched)
         if fusion_protIDs:
             base_query = (
-                "SELECT DISTINCT proteinID, domain, domStart, domEnd, score "
+                "SELECT DISTINCT "
+                "  proteinID AS proteinID, "
+                "  domain    AS domain, "
+                "  domStart  AS domStart, "
+                "  domEnd    AS domEnd, "
+                "  score     AS score "
                 "FROM Domains WHERE proteinID IN ({})"
             )
-            rows = []
+            rows: List[sqlite3.Row] = []
             for batch in batched(list(fusion_protIDs), 500):
                 placeholders = ",".join(["?"] * len(batch))
-                query = base_query.format(placeholders)
-                cur.execute(query, batch)
+                q = base_query.format(placeholders)
+                cur.execute(q, batch)
                 rows.extend(cur.fetchall())
-            for index, row in enumerate(rows):
-                logger.debug(f"Fetched fused domains: {index} proteinID {row[0]}")
-                protein_dict[row[0]].add_domain(row[1], row[2], row[3], row[4])
+            for i, r in enumerate(rows):
+                logger.debug(f"Fetched fused domains: {i} proteinID {r['proteinID']}")
+                protein_dict[r["proteinID"]].add_domain(
+                    r["domain"], r["domStart"], r["domEnd"], r["score"]
+                )
 
-        # Cluster keywords: batched fetch
+        # 3) Hydrate clusters with keywords (batched)
         if cluster_dict:
             base_query = (
-                "SELECT DISTINCT Keywords.clusterID, keyword, completeness, collinearity "
-                "FROM Keywords WHERE Keywords.clusterID IN ({})"
+                "SELECT DISTINCT "
+                "  clusterID    AS clusterID, "
+                "  keyword      AS keyword, "
+                "  completeness AS completeness, "
+                "  collinearity AS collinearity "
+                "FROM Keywords WHERE clusterID IN ({})"
             )
-            rows = []
+            rows: List[sqlite3.Row] = []
             for batch in batched(list(cluster_dict), 500):
                 placeholders = ",".join(["?"] * len(batch))
-                query = base_query.format(placeholders)
-                cur.execute(query, batch)
+                q = base_query.format(placeholders)
+                cur.execute(q, batch)
                 rows.extend(cur.fetchall())
-            for index, row in enumerate(rows):
-                logger.debug(f"Fetched keywords: {index + 1}")
-                clusterID = row[0]
-                keyword = row[1]
-                completeness = row[2]
-                collinearity = row[3]
-                cluster_dict[clusterID].add_keyword(keyword, completeness, collinearity)
+            for i, r in enumerate(rows):
+                logger.debug(f"Fetched keywords: {i + 1}")
+                cid = r["clusterID"]
+                cluster_dict[cid].add_keyword(
+                    r["keyword"], r["completeness"], r["collinearity"]
+                )
 
-        # Taxonomy info: batched fetch
+            # Optional (kept disabled to preserve current semantics):
+            # If you want to drop clusters that don't meet the completeness threshold:
+            # if min_cluster_completeness > 0:
+            #     cluster_dict = {
+            #         cid: cl for cid, cl in cluster_dict.items()
+            #         if any(kw.completeness >= min_cluster_completeness for kw in cl.get_keywords())
+            #     }
+
+        # 4) Taxonomy info for any missing genomes (batched)
         if not taxon_dict and genomeID_set:
             base_query = (
-                "SELECT Genomes.genomeID, Superkingdom, Phylum, Class, Ordnung, Family, Genus, Species "
+                "SELECT "
+                "  genomeID     AS genomeID, "
+                "  Superkingdom AS Superkingdom, "
+                "  Phylum       AS Phylum, "
+                "  Class        AS Class, "
+                "  Ordnung      AS Ordnung, "
+                "  Family       AS Family, "
+                "  Genus        AS Genus, "
+                "  Species      AS Species "
                 "FROM Genomes WHERE genomeID IN ({})"
             )
-            rows = []
+            rows: List[sqlite3.Row] = []
             for batch in batched(list(genomeID_set), 500):
                 placeholders = ",".join(["?"] * len(batch))
-                query = base_query.format(placeholders)
-                cur.execute(query, batch)
+                q = base_query.format(placeholders)
+                cur.execute(q, batch)
                 rows.extend(cur.fetchall())
-            for index, row in enumerate(rows):
-                logger.debug(f"Fetched taxonomy: {index + 1}")
-                taxon_dict[row[0]] = myUtil.taxonomy_lineage(row, trennzeichen)
+            for i, r in enumerate(rows):
+                logger.debug(f"Fetched taxonomy: {i + 1}")
+                # myUtil.taxonomy_lineage expects columns in the order shown above;
+                # sqlite3.Row supports both index- and name-based access, so passing r is fine.
+                taxon_dict[r["genomeID"]] = myUtil.taxonomy_lineage(r, trennzeichen)
 
     return protein_dict, cluster_dict, taxon_dict
 
@@ -905,76 +997,102 @@ def generate_fetch_query(
     keywords: Optional[List[str]],
     taxon_dict: Optional[Dict[str, Any]],
 ) -> Tuple[str, List[Any]]:
-    """Generate a SQL query for fetching data based on genomes, proteins, keywords and taxonomy.
-
-    Args:
-        genomes (List[str], optional): List of genome IDs (partial match).
-        proteins (List[str], optional): List of protein domain names (partial match).
-        keywords (List[str], optional): List of keyword strings (exact match).
-        taxon_dict (Dict[str, Any], optional): If given, restrict to these genomeIDs (exact match).
-
-    Returns:
-        Tuple[str, List[Any]]: (SQL query string, query arguments list)
-
-    Example:
-        >>> q, a = generate_fetch_query(['G001'], ['PF00001'], ['motifX'], None)
-        >>> print(q)
-        SELECT ...
-        >>> print(a)
-        ['%G001%', '%PF00001%', 'motifX']
-
-    Generate a SQL query for fetching data based on proteins and keywords.
-
-    Args:
-        proteins (list): List of proteins.
-        keywords (list): List of keywords.
-        taxon_dict (dict): Dictionary of taxonomy information.
-
-    Returns:
-        tuple: SQL query string and list of arguments for the query.
     """
+    Build a parameterized SQL SELECT that joins Proteins, Domains, Keywords, and Genomes,
+    returning a row-per-(proteinID, domain) with stable column aliases suitable for
+    name-based access (sqlite3.Row). This function only constructs the SQL and its bound
+    parameters; it does not execute the query.
 
-    # Query for the basic concatenation of sql tables
+    Filtering semantics:
+      - genomes: partial match (LIKE) on Genomes.genomeID
+      - proteins: partial match (LIKE) on Domains.domain
+      - keywords: exact match (=) on Keywords.keyword
+      - taxon_dict: restrict to the set of genomeIDs present as keys (IN (...))
+
+    Notes on JOINs and NULL-handling:
+      - We use LEFT JOIN for Domains and Keywords so we can still fetch Proteins rows even if
+        a given protein has no recorded domain hits or keyworded cluster (depending on filters).
+      - HOWEVER: when *no* explicit proteins filter is specified, we add "d.domain IS NOT NULL"
+        to avoid yielding rows where the domain fields would be NULL (downstream code expects
+        valid domain values when constructing Protein objects). If you truly want bare proteins
+        without domains, remove that condition.
+
+    Returns:
+      (sql, args): sql is the SELECT statement with "?" placeholders; args is the list of
+      parameters in correct order. Always use the returned args with cursor.execute(sql, args)
+      to ensure correctness and protection against SQL injection.
+
+    Performance considerations:
+      - The query is DISTINCT to guard against duplicate rows from JOINs.
+      - Ensure indexes exist on:
+          Proteins(proteinID), Proteins(genomeID), Proteins(clusterID)
+          Domains(proteinID), Domains(domain)
+          Keywords(clusterID), Keywords(keyword)
+          Genomes(genomeID)
+        so that LIKE/IN/EXISTS patterns remain efficient.
+    """
+    # Base SELECT with explicit, unique aliases for every output column.
+    # This prevents ambiguity in sqlite3.Row lookups when different tables have identically named columns.
     query = """
-        SELECT DISTINCT 
-            Proteins.proteinID, Genomes.genomeID, Proteins.clusterID, Proteins.contig,
-            Proteins.start, Proteins.end, Proteins.strand, Proteins.sequence,
-            Domains.domain, Domains.domStart, Domains.domEnd, Domains.score, Proteins.dom_count
-        FROM Proteins
-        LEFT JOIN Domains ON Proteins.proteinID = Domains.proteinID
-        LEFT JOIN Keywords ON Proteins.clusterID = Keywords.clusterID
-        LEFT JOIN Genomes ON Proteins.genomeID = Genomes.genomeID
+        SELECT DISTINCT
+            p.proteinID        AS proteinID,
+            g.genomeID         AS genomeID,
+            p.clusterID        AS clusterID,
+            p.contig           AS contig,
+            p.start            AS gene_start,
+            p.end              AS gene_end,
+            p.strand           AS gene_strand,
+            p.sequence         AS protein_sequence,
+            d.domain           AS domain,
+            d.domStart         AS domStart,
+            d.domEnd           AS domEnd,
+            d.score            AS score,
+            p.dom_count        AS dom_count,
+            p.comment          AS comment
+        FROM Proteins p
+        LEFT JOIN Domains  d ON d.proteinID = p.proteinID
+        LEFT JOIN Keywords k ON k.clusterID  = p.clusterID
+        LEFT JOIN Genomes  g ON g.genomeID   = p.genomeID
     """
-    conditions = []
-    args = []
+
+    conditions: List[str] = []
+    args: List[Any] = []
+
+    # genomes: partial match (LIKE) over Genomes.genomeID
+    # Build (g.genomeID LIKE ? OR g.genomeID LIKE ? OR ...)
     if genomes:
-        conditions.append(
-            "(" + " OR ".join(["Genomes.genomeID LIKE ?"] * len(genomes)) + ")"
-        )
-        args.extend([f"%{genome}%" for genome in genomes])
+        conditions.append("(" + " OR ".join(["g.genomeID LIKE ?"] * len(genomes)) + ")")
+        args.extend([f"%{gid}%" for gid in genomes])
 
+    # proteins: partial match (LIKE) over Domains.domain
+    # Build (d.domain LIKE ? OR d.domain LIKE ? OR ...)
     if proteins:
-        conditions.append(
-            "(" + " OR ".join(["Domains.domain LIKE ?"] * len(proteins)) + ")"
-        )
-        args.extend([f"%{protein}%" for protein in proteins])
+        conditions.append("(" + " OR ".join(["d.domain LIKE ?"] * len(proteins)) + ")")
+        args.extend([f"%{prot}%" for prot in proteins])
 
+    # keywords: exact match over Keywords.keyword
+    # Build (k.keyword = ? OR k.keyword = ? OR ...)
     if keywords:
-        conditions.append(
-            "(" + " OR ".join(["Keywords.keyword LIKE ?"] * len(keywords)) + ")"
-        )
-        args.extend([f"{keyword}" for keyword in keywords])
+        conditions.append("(" + " OR ".join(["k.keyword = ?"] * len(keywords)) + ")")
+        args.extend(list(keywords))
 
+    # taxon_dict: hard restriction to specific genomeIDs (IN (...))
+    # Note: order of keys is preserved as we only append parameters; SQLite doesn't care about order for IN.
     if taxon_dict:
-        conditions.append(
-            "Genomes.genomeID IN (" + ",".join("?" * len(taxon_dict)) + ")"
-        )  # Only exact matches
-        args.extend(taxon_dict.keys())
+        conditions.append("g.genomeID IN (" + ",".join("?" * len(taxon_dict)) + ")")
+        args.extend(list(taxon_dict.keys()))
 
+    # If no protein-domain filter is provided, ensure we only return rows where a domain exists.
+    # This keeps downstream logic simple (it expects to call .add_domain(...) with non-NULL values).
+    if not proteins:
+        conditions.append("d.domain IS NOT NULL")
+
+    # Final WHERE clause assembly (if any conditions were added).
     if conditions:
         query += " WHERE " + " AND ".join(conditions)
 
     return query, args
+
 
 
 ########## File Output Routines ##########
@@ -1059,7 +1177,7 @@ def output_distinct_fasta_reports(
                     out = f">{genomeID}-{' '.join(proteinlist[:-5])}\n"
                     writer.write(out)
                     writer.write(domain_sequence + "\n")
-    logger.info(f"FASTA output written to: {files}")
+    #logger.info(f"FASTA output written to: {files}")
     return files
 
 
