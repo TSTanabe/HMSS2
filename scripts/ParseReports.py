@@ -703,7 +703,7 @@ def process_genome(
             combined_protein_dict, trusted_cutoff_protein_ids, "Tc"
         )
 
-        # Enhance cluster completeness if needed
+        # Enhance cluster completeness if needed with synteny correction
         # alters the combined_protein_dict
         enhance_syntenic_block_completeness(
             cluster_dict,
@@ -716,6 +716,11 @@ def process_genome(
         # Collect trusted protein IDs: those with complete pathways and those in the main protein dict
         singletons_with_complete_pathway_set = enhance_pathway_completeness(
             combined_protein_dict, cooccurrence_pattern, threshold_dict
+        )
+
+        # Attach the reason for selection to protein objects complete pathway
+        combined_protein_dict = add_selection_comment_to_many_proteins(
+            combined_protein_dict, singletons_with_complete_pathway_set, "Coo"
         )
 
         trusted_protein_ids = trusted_cutoff_protein_ids.union(
@@ -734,11 +739,6 @@ def process_genome(
             cluster_dict,
             exclusion_singletons,
             singletons_with_complete_pathway_set,
-        )
-
-        # Attach the reason for selection to protein objects complete pathway
-        combined_protein_dict = add_selection_comment_to_many_proteins(
-            combined_protein_dict, singletons_with_complete_pathway_set, "Coo"
         )
 
         # Attach protein sequences

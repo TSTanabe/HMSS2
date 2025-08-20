@@ -136,7 +136,7 @@ grp3_oxDsrJ	143.2	178.2	143.2
 grp3_oxDsrM	154.3	310.3	147.1
 grp3_oxDsrO	221.3	399.6	164.4
 grp3_oxDsrP	293.5	629.9	183.2
-grp3_oxSat	610.2	670.1	313.4
+grp3_oxSat	610.2	670.1	213.4
 grp3_redAprA	994.7	1013.6	686.6
 grp3_redAprB	170.1	257.4	148.3
 grp3_redDsrA	294.7	663.9	294.7

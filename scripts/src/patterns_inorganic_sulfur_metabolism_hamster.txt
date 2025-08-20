@@ -2,7 +2,7 @@ AprM DsrE DsrE2 DsrF DsrH DsrL SoxA SoxB SoxT1 SoxV SoxW SoxY SoxZ oxAprAI oxApr
 AprM DsrE DsrE2 DsrF DsrH DsrL SoxA SoxT1 SoxZ oxAprAI oxAprBI oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP oxSat
 AprM DsrE DsrF DsrH DsrL DsrR oxAprAI oxAprBI oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP oxSat
 AprM DsrE DsrF DsrH DsrL SoeA SoeB SoeC SoxT1 oxAprAI oxAprBI oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP oxSat
-AprM DsrE DsrF DsrH DsrL SoeA SoeB SoeC SoxT1 oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP redSat
+AprM DsrE DsrF DsrH DsrL SoeA SoeB SoeC SoxT1 oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP oxSat
 AprM DsrE DsrF DsrH DsrL SoxT1 oxAprAI oxAprBI oxDsrA oxDsrB oxDsrC oxDsrJ oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
 AprM DsrE DsrF DsrH DsrL SoxT1 oxAprAI oxAprBI oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
 AprM DsrE DsrF DsrH DsrL oxAprAI oxAprBI oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrO oxDsrP
@@ -616,13 +616,12 @@ DsrL DsrT redDsrC redDsrK redDsrM
 DsrL DsrT redDsrC redDsrM redDsrN
 DsrL Otr oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM
 DsrL QmoA QmoB QmoC oxAprAII oxAprBII oxDsrC oxDsrK oxDsrM oxDsrN redDsrA redDsrB redSat
-DsrL QmoA QmoB QmoC oxAprAII oxAprBII oxDsrC redDsrA redDsrB redDsrJ redDsrK redDsrM redDsrO redDsrP redSat
-DsrL QmoA QmoB QmoC oxAprAII oxAprBII oxDsrK oxDsrM redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
-DsrL QmoA QmoB QmoC oxAprAII oxAprBII oxDsrK oxDsrO oxDsrP redDsrA redDsrB redSat
-DsrL QmoA QmoB QmoC oxAprAII oxAprBII oxDsrK oxSat redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
-DsrL QmoA QmoB QmoC oxAprAII oxAprBII oxDsrK redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP redSat
-DsrL QmoA QmoB QmoC oxAprAII oxAprBII oxDsrK redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrP redSat
-DsrL QmoA QmoB QmoC oxAprAII oxAprBII oxDsrO oxDsrP redDsrA redDsrB redDsrK redDsrM redDsrN redDsrO redDsrP
+DsrL QmoA QmoB QmoC oxAprAII oxAprBII redDsrC redDsrA redDsrB redDsrJ redDsrK redDsrM redDsrO redDsrP redSat
+DsrL QmoA QmoB QmoC oxAprAII oxAprBII redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
+DsrL QmoA QmoB QmoC oxAprAII oxAprBII redSat redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
+DsrL QmoA QmoB QmoC oxAprAII oxAprBII redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP redSat
+DsrL QmoA QmoB QmoC oxAprAII oxAprBII redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrP redSat
+DsrL QmoA QmoB QmoC oxAprAII oxAprBII redDsrA redDsrB redDsrK redDsrM redDsrN redDsrO redDsrP
 DsrL QmoA QmoB QmoC oxAprAII oxAprBII oxSat redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
 DsrL QmoA QmoB QmoC oxAprAII oxAprBII oxSat redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
 DsrL QmoA QmoB QmoC oxAprAII oxAprBII oxSat redDsrA redDsrB redDsrC redDsrN
@@ -1344,7 +1343,6 @@ SoeA SoeB SoeC oxAprAII oxAprBII redSat
 SoeA SoeB SoeC oxDsrA oxDsrB
 SoeA SoeB SoeC oxDsrN oxDsrO oxDsrP
 SoeA SoeB SoeC oxDsrN oxDsrP
-SoeA SoeB SoeC oxDsrN oxDsrP redSat
 SorA SoxA SoxB SoxV SoxW
 SorA SoxA SoxB SoxV SoxY
 SoxA SoxB SoxC SoxD SoxE SoxF SoxG SoxH
@@ -1625,20 +1623,20 @@ oxDsrC oxDsrP redDsrA redDsrB redDsrJ redDsrK redDsrM redDsrO
 oxDsrC oxDsrP redDsrE redDsrF redDsrK redDsrM redDsrN redDsrO
 oxDsrC oxDsrP redDsrJ redDsrK redDsrM redDsrN redDsrO
 oxDsrC oxDsrP redDsrJ redDsrK redDsrM redDsrO
-oxDsrC redDsrA redDsrB redDsrJ redDsrK redDsrM redDsrN redDsrO
-oxDsrC redDsrA redDsrB redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
-oxDsrC redDsrA redDsrB redDsrJ redDsrK redDsrM redDsrO redDsrP
-oxDsrC redDsrA redDsrB redDsrJ redDsrM redDsrN redDsrO redDsrP
-oxDsrC redDsrA redDsrB redDsrJ redDsrO redDsrP
-oxDsrC redDsrA redDsrB redDsrK redDsrM redDsrN redDsrO redDsrP
-oxDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO
-oxDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
-oxDsrC redDsrJ redDsrK redDsrM redDsrN redDsrP
-oxDsrC redDsrJ redDsrK redDsrM redDsrO
-oxDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
-oxDsrC redDsrJ redDsrK redDsrO redDsrP
-oxDsrK oxDsrM oxDsrN redDsrA redDsrB redDsrC
-oxDsrK oxDsrM redDsrA redDsrB redDsrC
+redDsrC redDsrA redDsrB redDsrJ redDsrK redDsrM redDsrN redDsrO
+redDsrC redDsrA redDsrB redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
+redDsrC redDsrA redDsrB redDsrJ redDsrK redDsrM redDsrO redDsrP
+redDsrC redDsrA redDsrB redDsrJ redDsrM redDsrN redDsrO redDsrP
+redDsrC redDsrA redDsrB redDsrJ redDsrO redDsrP
+redDsrC redDsrA redDsrB redDsrK redDsrM redDsrN redDsrO redDsrP
+redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO
+redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
+redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrP
+redDsrC redDsrJ redDsrK redDsrM redDsrO
+redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
+redDsrC redDsrJ redDsrK redDsrO redDsrP
+redDsrK redDsrM redDsrN redDsrA redDsrB redDsrC
+redDsrK redDsrM redDsrA redDsrB redDsrC
 oxDsrK oxDsrM redDsrA redDsrB redDsrC redDsrK
 oxDsrK oxDsrM redDsrA redDsrB redDsrC redDsrN
 oxDsrK oxDsrM redDsrA redDsrB redDsrN
@@ -1647,9 +1645,9 @@ oxDsrK oxDsrN redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO
 oxDsrK oxDsrN redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
 oxDsrK oxDsrN redDsrA redDsrB redDsrC redDsrK redDsrM
 oxDsrK oxDsrN redDsrA redDsrB redDsrC redDsrK redDsrM redDsrO redDsrP
-oxDsrK oxDsrN redDsrA redDsrB redDsrC redDsrM
-oxDsrK oxDsrN redDsrA redDsrB redDsrC redDsrO redDsrP
-oxDsrK oxDsrN redDsrA redDsrB redDsrK
+oxDsrK redDsrN redDsrA redDsrB redDsrC redDsrM
+oxDsrK redDsrN redDsrA redDsrB redDsrC redDsrO redDsrP
+oxDsrK redDsrN redDsrA redDsrB redDsrK
 oxDsrK redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN
 oxDsrK redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO
 oxDsrK redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
@@ -1677,19 +1675,19 @@ oxDsrK redDsrJ redDsrK redDsrM redDsrO
 oxDsrK redDsrJ redDsrK redDsrM redDsrO redDsrP
 oxDsrK redDsrJ redDsrK redDsrO redDsrP
 oxDsrK redDsrK redDsrM redDsrO redDsrP
-oxDsrM oxDsrN redDsrA redDsrB redDsrC
-oxDsrM oxDsrN redDsrA redDsrB redDsrC redDsrK
-oxDsrM redDsrA redDsrB redDsrC redDsrN
-oxDsrM redDsrJ redDsrK redDsrO redDsrP
+redDsrM redDsrN redDsrA redDsrB redDsrC
+redDsrM redDsrN redDsrA redDsrB redDsrC redDsrK
+redDsrM redDsrA redDsrB redDsrC redDsrN
+redDsrM redDsrJ redDsrK redDsrO redDsrP
 redDsrN redSat redDsrA redDsrB redDsrC
-oxDsrN redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
-oxDsrN redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
-oxDsrN redDsrC redDsrJ redDsrO redDsrP
-oxDsrO oxDsrP redDsrC redDsrK redDsrM
-oxDsrP redDsrC redDsrJ redDsrK redDsrM redDsrO
-oxDsrP redDsrJ redDsrK redDsrM redDsrO
-oxDsrP redDsrJ redDsrK redDsrM redDsrO sHdrB3
-oxDsrP redDsrK redDsrM redDsrO sHdrB3
+redDsrN redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
+redDsrN redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
+redDsrN redDsrC redDsrJ redDsrO redDsrP
+redDsrO redDsrP redDsrC redDsrK redDsrM
+redDsrP redDsrC redDsrJ redDsrK redDsrM redDsrO
+redDsrP redDsrJ redDsrK redDsrM redDsrO
+redDsrP redDsrJ redDsrK redDsrM redDsrO sHdrB3
+redDsrP redDsrK redDsrM redDsrO sHdrB3
 redSat redDsrA redDsrB redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
 redSat redDsrC redDsrJ redDsrK redDsrM redDsrN redDsrO redDsrP
 redSat redDsrC redDsrJ redDsrK redDsrM redDsrO redDsrP
@@ -1772,6 +1770,10 @@ TmcA TmcB TmcC
 TmcA TmcB TmcC TmcD
 oxAprAI oxAprBI
 oxAprAII oxAprBII
+oxAprAI oxAprBI oxSat
+oxAprAII oxAprBII oxSat
+oxAprAI oxAprBI oxSat AprM
+oxAprAII oxAprBII oxSat AprM
 redAprA redAprB
 redAprA redAprB redSat
 redDsrA redDsrB

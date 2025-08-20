@@ -34,9 +34,7 @@ DddA DddC DddT DsoF
 DddA DddC DddT MddH
 DddA DddC DddT MsuC
 DddA DddC DddW
-DddA DddC DmdA
-DddA DddC DmdB
-DddA DddC DmdB DmdC
+DddA DddC DmdA DmdB DmdC
 DddA DddC DmdB DmoA
 DddA DddC DmdB SnfG
 DddA DddC DmdC
@@ -59,16 +57,8 @@ DddA DddD DddT DmdA
 DddA DddD DddT DmdA DmdB DmdD
 DddA DddD DddT DmdC DmdD
 DddA DddP SnfG
-DddA DddT DmdA
-DddA DddT DmdB
-DddA DmdA DmdB
+DddA DddT DmdA DmdB
 DddA DmdA DmdB DmdD
-DddA DmdB DmdC
-DddA DmdB DmoA
-DddA DmdB DmsB
-DddA DmdB DsoF
-DddA DmdB MddA
-DddA DmdB SnfG
 DddA DmoA MsuC
 DddA DmoA MsuD
 DddA DmoA SnfG
@@ -82,22 +72,18 @@ DddC DddL DddP DddT
 DddC DddP DddT
 DddC DddP DmdA
 DddC DddP DmdA DmdB
-DddC DddP DmdB
 DddC DddP DmdD
 DddC DddP DsoF
 DddC DddT DddW
 DddC DddT DmdA
-DddC DddT DmdB
 DddC DddT DmoA
 DddC DddT DmoA MsuC
 DddC DddT DmsA
 DddC DddT MsuC
-DddC DmdA DmdB
 DddC DmdA DmdB DmdC DmdD
 DddC DmdA DmdC
 DddC DmdA MddH
 DddC DmdA MsuD
-DddC DmdB DmdC
 DddC DmdB DmdC DmdD
 DddC DmdB DmdC DorA
 DddC DmdB DmdC DsoF
@@ -289,12 +275,6 @@ AcuN MsmA MsmB MsmC MsmD MsmE MsmF MsmG MsmH
 AcuN DmoA DmsB
 AcuN DmdC DmdD
 AcuN DmdC DmoA
-AcuN DmdB DmoA
-AcuN DmdB DmdC
-AcuN DddC DmdC
-AcuN DddC DmdB
-AcuN DddA DddC
-AcuN DddA DddC DmdB
 AcuN DddA DddC DmdC
 AcuK AcuN MsuC
 AcuK AcuN MsuD
@@ -307,15 +287,9 @@ AcuK AcuN DmoA MsuC
 AcuK AcuN DmoA MsuC MsuD
 AcuK AcuN DmoA SnfG
 AcuK AcuN DmsA
-AcuK AcuN DmdB
-AcuK AcuN DmdB DmdC
 AcuK AcuN DmdB DmdC DmdD
-AcuK AcuN DmdB DmdD
-AcuK AcuN DmdB DmoA
-AcuK AcuN DmdB DmsA
 AcuK AcuN DmdB DmsA DmsB
 AcuK AcuN DmdB DmsA DmsB DmsD
-AcuK AcuN DmdB DsoF
 AcuK AcuN DmdB MddA
 AcuK AcuN DmdB MddH
 AcuK AcuN DddC DmdB
@@ -363,18 +337,6 @@ AcuK MsuC MsuD SnfG
 AcuK MsuC MsuE SnfG
 AcuK MsuC SnfG
 AcuK DddC DmdA
-AcuK DddC DmdA DmdB
-AcuK DddC DmdB
-AcuK DddC DmdB DmdC
-AcuK DddC DmdB DmdC DmoA
-AcuK DddC DmdB DmdD
-AcuK DddC DmdB DmoA
-AcuK DddC DmdB DmsA
-AcuK DddC DmdB DsoF
-AcuK DddC DmdB MddH
-AcuK DddC DmdB MsmD
-AcuK DddC DmdB MsuD
-AcuK DddC DmdB SnfG
 AcuK DddA DddC
 AcuK DddA DddC DddD DmdB
 AcuK DddA DddC DddT
@@ -388,11 +350,6 @@ AcuK DddA DddD DmdB
 AcuK DddA DddP
 AcuK DddA DddT
 AcuK DddA DmdA
-AcuK DddA DmdA DmdB
-AcuK DddA DmdB
-AcuK DddA DmdB DmdC
-AcuK DddA DmdB DmoA
-AcuK DddA DmdB DorA
 AcuK DddA DmdC
 AcuK DddA DmdC DmdD
 AcuK DddA DmoA
@@ -450,8 +407,7 @@ AcuI AcuK DddC DmdA
 AcuI AcuK DddC DmdB
 AcuI AcuK DddC DmdD
 AcuI AcuK DddY
-AcuI AcuK DmdA
-AcuI AcuK DmdB
+AcuI AcuK DmdA DmdB DmdC
 AcuI AcuK DmdB DmdC
 AcuI AcuK DmdB DmoA
 AcuI AcuK DmdB MddH
@@ -466,7 +422,4 @@ AcuI AcuN DddC
 AcuI AcuN DddC DmdB
 AcuI AcuN DddC DmdC
 AcuI AcuN DddT
-AcuI AcuN DmdA
-AcuI AcuN DmdB
-AcuI AcuN DmdC
 DdhA DdhB DdhC DdhD
