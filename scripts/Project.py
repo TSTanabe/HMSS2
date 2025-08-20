@@ -108,8 +108,6 @@ def prepare_result_space(options, project: str = "project") -> None:
     return
 
 
-
-
 def create_project(directory, projectname="project"):
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")  # z. B. "2025-04-16_14-53-21"

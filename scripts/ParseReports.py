@@ -69,7 +69,8 @@ class Protein:
         self.keywords: Dict = {}
         self.domains: Dict[int, Domain] = {}  # start coordinate → Domain object
         self.add_domain(HMM, start, end, score, ident, bsr)
-        self.selection_comment: str = ""  # Trusted cutoff Flag or cooccurrence
+        self.selection_comment: Set[str] = set()  # Trusted cutoff Flag or cooccurrence
+        self.alternative_hit: str = ""
 
     ##### Getter ####
 
@@ -150,6 +151,13 @@ class Protein:
     def get_length(self):
         return len(self.protein_sequence)
 
+    def get_selection_comment_csv(self, sep: str = ",") -> str:
+        """
+        Return the selection_comment set as a sorted, comma-separated string.
+        Sorting ensures stable output for logs/tables.
+        """
+        return sep.join(sorted(self.selection_comment))
+
     ##### Setter #####
 
     def check_domain_overlap(self, new_start, new_end, current_start, current_end):
@@ -174,6 +182,19 @@ class Protein:
             # domäne außerhalb der alten domäne und adden egal welcher score
             return 0
         return None
+
+    def remove_selection_comment(self) -> None:
+        self.selection_comment = set()
+
+    def add_selection_comment(self, comment: str, sep: str = ",") -> None:
+        """
+        Add one or multiple comment tokens to this protein.
+        - Accepts a single token ("Tc") or a CSV string ("Tc,Coo").
+        """
+        if not comment:
+            return
+        tokens = [t.strip() for t in str(comment).split(sep) if t.strip()]
+        self.selection_comment.update(tokens)
 
     def add_domain(
         self,
@@ -676,6 +697,12 @@ def process_genome(
             pattern_dict, pattern_names, cluster_dict, min_completeness
         )
 
+        # Attach the reason for selection to protein objects trusted cutoff/reference sequence
+        trusted_cutoff_protein_ids = set(trusted_protein_dict.keys())
+        combined_protein_dict = add_selection_comment_to_many_proteins(
+            combined_protein_dict, trusted_cutoff_protein_ids, "Tc"
+        )
+
         # Enhance cluster completeness if needed
         # alters the combined_protein_dict
         enhance_syntenic_block_completeness(
@@ -690,7 +717,7 @@ def process_genome(
         singletons_with_complete_pathway_set = enhance_pathway_completeness(
             combined_protein_dict, cooccurrence_pattern, threshold_dict
         )
-        trusted_cutoff_protein_ids = set(trusted_protein_dict.keys())
+
         trusted_protein_ids = trusted_cutoff_protein_ids.union(
             singletons_with_complete_pathway_set
         )
@@ -709,11 +736,9 @@ def process_genome(
             singletons_with_complete_pathway_set,
         )
 
-        # Attach the reason for selection to protein objects
-        combined_protein_dict = add_selection_criterium(
-            combined_protein_dict,
-            trusted_cutoff_protein_ids,
-            singletons_with_complete_pathway_set,
+        # Attach the reason for selection to protein objects complete pathway
+        combined_protein_dict = add_selection_comment_to_many_proteins(
+            combined_protein_dict, singletons_with_complete_pathway_set, "Coo"
         )
 
         # Attach protein sequences
@@ -900,38 +925,25 @@ def remove_unassigned_intermediate_proteins(
     return combined_protein_dict
 
 
-def add_selection_criterium(
-    combined_protein_dict: Dict[str, Protein],
-    trusted_cutoff_protein_ids: Set[str],
-    singletons_with_complete_pathway_set: Set[str],
-) -> Dict[str, Protein]:
+def add_selection_comment_to_many_proteins(
+    combined_protein_dict: Dict[str, "Protein"],
+    protein_ids_set: Set[str],
+    comment: str,
+) -> Dict[str, "Protein"]:
     """
-    Annotates Protein objects in the combined_protein_dict with selection criteria.
-
-    Each Protein object may receive one or both attributes:
-    - 'Tc': Assigned if the proteinID is in the trusted_cutoff_protein_ids set.
-    - 'Coo': Assigned if the proteinID is in the singletons_with_complete_pathway_set set.
-
-    Args:
-        combined_protein_dict (Dict[str, Protein]): Dictionary mapping protein IDs to Protein objects.
-        trusted_cutoff_protein_ids (Set[str]): Set of protein IDs considered "trusted cutoff".
-        singletons_with_complete_pathway_set (Set[str]): Set of protein IDs considered "complete pathway singletons".
-
-    Returns:
-        Dict[str, Protein]: Updated combined_protein_dict with annotated Protein objects.
+    Add `comment` once to `selection_comment` for all proteins whose ID is in `protein_ids_set`.
+    - Creates `selection_comment` if missing.
+    - Preserves order and avoids duplicates.
+    - Skips empty/whitespace comments.
     """
+    comment = (comment or "").strip()
+    if not comment:
+        return combined_protein_dict  # nothing to add
 
-    for protein_id, protein in combined_protein_dict.items():
-        selection_comment = []
-        # Add "Tc" if protein is in trusted cutoff set
-        if protein_id in trusted_cutoff_protein_ids:
-            selection_comment.append("Tc")
-
-        # Add "Coo" if protein is in complete pathway set
-        if protein_id in singletons_with_complete_pathway_set:
-            selection_comment.append("Coo")
-
-        protein.selection_comment = ",".join(selection_comment)
+    # Iterate over the IDs we actually want to update
+    for protein_id in protein_ids_set:
+        protein = combined_protein_dict.get(protein_id)
+        protein.add_selection_comment(comment)
 
     return combined_protein_dict
 
@@ -1036,7 +1048,7 @@ def enhance_syntenic_block_completeness(
                 # For every "additional" domain: get proteinID and possible transitions to "missing"
                 transitions = []
                 for index, current_domain in enumerate(types):
-                    # remove after debugging
+                    # Parse domtblout to get all potential domains and their scores
                     proteinID = genes[index]
                     protein = combined_protein_dict[proteinID]
 
@@ -1044,11 +1056,8 @@ def enhance_syntenic_block_completeness(
                     if (
                         current_domain in additional_domains
                         and genes[index] in intermediate_protein_dict
+                        and not "Tc" in protein.selection_comment
                     ):
-                        # Parse domtblout to get all potential domains and their scores
-                        proteinID = genes[index]
-                        protein = combined_protein_dict[proteinID]
-
                         # Updates the alternative_protein_type_dict and transition_dict
                         find_possible_transitions(
                             proteinID,
@@ -1107,6 +1116,13 @@ def enhance_syntenic_block_completeness(
             for proteinID, to_domain, _ in best_transitions:
                 if proteinID in combined_protein_dict:
                     protein = combined_protein_dict[proteinID]
+
+                    # Save the original hit as comment
+                    original_domains = protein.get_domains()
+                    protein.add_selection_comment("Syc")
+                    protein.alternative_hit = original_domains
+
+                    # Add the alternative lower hit for synteny completion
                     hit_proteinID, query, hsp_start, hsp_end, hit_bitscore, genomeID = (
                         alternative_protein_type_dict.get((proteinID, to_domain))
                     )  # (hit_proteinID, query, hsp_start, hsp_end, hit_bitscore, genomeID)

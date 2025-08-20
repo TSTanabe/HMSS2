@@ -96,15 +96,11 @@ def print_fasta_and_hit_outputs(
     taxonomy_summary = directory + "1_hit_taxonomy_counts.txt"
 
     # Output hit report
-    output_genome_report(
-        hit_report, protein_dict, cluster_dict, taxon_dict
-    )
-    
+    output_genome_report(hit_report, protein_dict, cluster_dict, taxon_dict)
+
     # Output unique taxonomy report
-    output_unique_taxonomy_table(
-        taxonomy_report, taxon_dict
-    )
-    
+    output_unique_taxonomy_table(taxonomy_report, taxon_dict)
+
     # Output taxonomy summary
     output_taxonomy_summary(taxonomy_summary, taxon_dict)
 
@@ -410,6 +406,7 @@ def output_genome_report(
         "gene_strand",
         "locustag",
         "selection_comment",
+        "alternative hit",
         "clusterID",
         *taxon_cols,
     ]
@@ -472,7 +469,8 @@ def output_genome_report(
                 pl[6],  # gene_end
                 pl[7],  # gene_strand
                 pl[8],  # locustag
-                protein.selection_comment,
+                protein.get_selection_comment_csv(),
+                protein.alternative_hit,
                 out_clusterID,
                 *taxon_levels,
             ]
@@ -739,10 +737,11 @@ def find_csbs_with_proteins(file_path: str, proteins: List[str]) -> List[str]:
         logger.error(f"Could not read CSB file '{file_path}': {e}")
     return sorted(csb_list)
 
+
 def find_csbs_with_proteins_db(
     database: str,
     proteins: List[str],
-    keyword_prefix: str = "csb-"  # optional: nur CSB-Keywords berücksichtigen
+    keyword_prefix: str = "csb-",  # optional: nur CSB-Keywords berücksichtigen
 ) -> List[str]:
     """
     Liefert die CSB-Keyword-Namen aus der Tabelle Keywords, für die es mindestens
@@ -788,6 +787,8 @@ def find_csbs_with_proteins_db(
         cur = con.cursor()
         cur.execute(sql, params)
         return [row[0] for row in cur.fetchall()]
+
+
 ################### Fetch batch results ##############################
 
 
@@ -843,31 +844,34 @@ def fetch_bulk_data(
         cur.execute(query, args)
 
         for index, row in enumerate(cur):
-            protein_id  = row["proteinID"]
-            genome_id   = row["genomeID"]
-            cluster_id  = row["clusterID"]
+            protein_id = row["proteinID"]
+            genome_id = row["genomeID"]
+            cluster_id = row["clusterID"]
 
-            domain      = row["domain"]
-            dom_start   = row["domStart"]
-            dom_end     = row["domEnd"]
-            score       = row["score"]
+            domain = row["domain"]
+            dom_start = row["domStart"]
+            dom_end = row["domEnd"]
+            score = row["score"]
 
             # Progress / debug
-            logger.debug(f"Fetched protein for {genome_id}. Total proteins: {index + 1}")
+            logger.debug(
+                f"Fetched protein for {genome_id}. Total proteins: {index + 1}"
+            )
 
             # Create-or-extend Protein object
             if protein_id in protein_dict:
                 protein_dict[protein_id].add_domain(domain, dom_start, dom_end, score)
             else:
                 p = ParseReports.Protein(protein_id, domain, dom_start, dom_end, score)
-                p.genomeID          = genome_id
-                p.clusterID         = cluster_id
-                p.gene_contig       = row["contig"]
-                p.gene_start        = row["gene_start"]
-                p.gene_end          = row["gene_end"]
-                p.gene_strand       = row["gene_strand"]
-                p.protein_sequence  = row["protein_sequence"]
-                p.selection_comment           = row["comment"]
+                p.genomeID = genome_id
+                p.clusterID = cluster_id
+                p.gene_contig = row["contig"]
+                p.gene_start = row["gene_start"]
+                p.gene_end = row["gene_end"]
+                p.gene_strand = row["gene_strand"]
+                p.protein_sequence = row["protein_sequence"]
+                p.selection_comment = row["comment"]
+                p.alternative_hit = row["alternative_hit"]
                 protein_dict[protein_id] = p
                 genomeID_set.add(genome_id)
 
@@ -1048,7 +1052,8 @@ def generate_fetch_query(
             d.domEnd           AS domEnd,
             d.score            AS score,
             p.dom_count        AS dom_count,
-            p.comment          AS comment
+            p.comment          AS comment,
+            p.alternative_hit  AS alternative_hit
         FROM Proteins p
         LEFT JOIN Domains  d ON d.proteinID = p.proteinID
         LEFT JOIN Keywords k ON k.clusterID  = p.clusterID
@@ -1092,7 +1097,6 @@ def generate_fetch_query(
         query += " WHERE " + " AND ".join(conditions)
 
     return query, args
-
 
 
 ########## File Output Routines ##########
@@ -1177,7 +1181,7 @@ def output_distinct_fasta_reports(
                     out = f">{genomeID}-{' '.join(proteinlist[:-5])}\n"
                     writer.write(out)
                     writer.write(domain_sequence + "\n")
-    #logger.info(f"FASTA output written to: {files}")
+    # logger.info(f"FASTA output written to: {files}")
     return files
 
 

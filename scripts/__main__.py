@@ -934,17 +934,16 @@ def reference_sequence_check(options: object) -> None:
         Search.generate_faa_per_hitfile_parallel(
             options, options.Cross_check_directory, options.cores
         )
-        
 
         # Perform inclusion of hits above chosen cutoff for the hits without refseqs
         logger.info("Testing hits NC < score < TC with reference sequences")
         refseq_unavailable_list = Search.cross_check_candidates_with_reference_seqs(
             options
         )  # Cross check the with diamond against reference sequences
-        
+
         # Move trusted hits from cross check to trusted
         Search.promote_crosschecked_hits(options.Cross_check_directory, options.cores)
-        
+
         # For every sequence without reference sequence dataset promote by optimized score
         Search.promote_by_cutoff(
             options,
@@ -1230,7 +1229,7 @@ def main(args=None):
     if options.fetch:
         # 14
         myUtil.print_header(f"\nOutput from database")
-        #Project.prepare_minimal_output_context(options)
+        # Project.prepare_minimal_output_context(options)
         Database.index_database(options.database_directory)
         output_operator(options)
 
