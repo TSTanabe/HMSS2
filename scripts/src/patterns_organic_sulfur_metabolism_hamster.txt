@@ -1,11 +1,13 @@
 AdhE BmcsA BmcsB BmcsC HpsG HpsH Pta
 AdhE BmcsA BmcsB BmcsC Pta
+AdhE BmcsA BmcsB HpfD HpfG HpfH
 AdhE BmcsA BmcsB HpfD Pta
 AdhE BmcsA BmcsB HpfD Pta TauK TauL TauM
 AdhE BmcsA BmcsB HpsG HpsH
 AdhE BmcsA BmcsB HpsG HpsH Pta
 AdhE BmcsA BmcsB IseD Pta
 AdhE BmcsA BmcsB Pta SauT
+AdhE BmcsB HpfD HpfG HpfH
 AdhE BmcsB HpfD HpsO HpsP
 AdhE BmcsB HpfD HpsO HpsP SlcC
 AdhE BmcsB HpfD Pta SlaB

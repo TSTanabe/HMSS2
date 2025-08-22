@@ -509,7 +509,7 @@ def process_hitfile(
         for genome_id, protein_ids in genome_hits.items():
             faa_path = faa_files.get(genome_id)
             if not faa_path or not os.path.isfile(faa_path):
-                logger.warning(f"FASTA not found for {genome_id}")
+                logger.warning(f"FASTA not found for {genome_id} {faa_path}")
                 continue
 
             written = 0  # <-- pro genom zurücksetzen

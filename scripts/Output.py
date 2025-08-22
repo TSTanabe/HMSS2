@@ -449,8 +449,6 @@ def output_genome_report(
             else:
                 out_clusterID = ""
 
-            # Selection comment
-
             # Taxonomie in 7 Spalten
             gid = protein.genomeID
             taxon_levels = [""] * 8
@@ -472,6 +470,7 @@ def output_genome_report(
                 protein.get_selection_comment_csv(),
                 protein.alternative_hit,
                 out_clusterID,
+                csb_val,
                 *taxon_levels,
             ]
             writer.write("\t".join(map(str, row)) + "\n")

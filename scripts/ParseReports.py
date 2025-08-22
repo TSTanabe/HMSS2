@@ -704,7 +704,7 @@ def process_genome(
         )
 
         # Enhance cluster completeness if needed with synteny correction
-        # alters the combined_protein_dict
+        # alters the combined_protein_dict TODO optional
         enhance_syntenic_block_completeness(
             cluster_dict,
             combined_protein_dict,
@@ -727,13 +727,13 @@ def process_genome(
             singletons_with_complete_pathway_set
         )
 
-        # Remove unassigned intermediate proteins, but keep trusted ones
+        # Remove unassigned intermediate proteins, but keep trusted ones TODO optional
         combined_protein_dict = remove_unassigned_intermediate_proteins(
             combined_protein_dict, trusted_protein_ids, cluster_dict
         )
 
         # Remove genes that should not occur as singletons
-        # alters the combined_protein_dict but ignores singletons that complete pathway
+        # alters the combined_protein_dict but ignores singletons that complete pathway TODO optional
         remove_exclusion_singletons(
             combined_protein_dict,
             cluster_dict,
@@ -1000,6 +1000,14 @@ def enhance_syntenic_block_completeness(
     for each cluster that has no directly matching pattern from the given patterns
     it is tested if a possible conversion of protein types to alternative ones with lower hitscore could reach
     a better completion
+
+    This can overwrite hit above trusted cutoff/reference sequence hits if the completion is better
+    These transitions are displayed in the database and the hit report output
+
+    Keywords that are used to find a possible transition have either same number of additionals to missing
+    or more additionals than missing.
+    The transition with the highest pattern lenght, highest final completion and lowest lost score is
+    chosen for the final transition selection
     """
 
     # Go through all clusters
@@ -1056,7 +1064,7 @@ def enhance_syntenic_block_completeness(
                     if (
                         current_domain in additional_domains
                         and genes[index] in intermediate_protein_dict
-                        and not "Tc" in protein.selection_comment
+                        # and not "Tc" in protein.selection_comment
                     ):
                         # Updates the alternative_protein_type_dict and transition_dict
                         find_possible_transitions(
@@ -1153,12 +1161,13 @@ def select_balanced_best_keywords(keywords, pattern_dict):
                 "pattern_length": pattern_length,
             }
         )
-
+        # print("Finding balanced keyword for with missing")
+        # print(keyword.keyword, missing_domains, additional_domains)
     # Filter: ausgeglichen und mindestens 1 fehlend
     balanced = [
         info
         for info in keyword_infos
-        if info["n_missing"] == info["n_additional"] and info["n_missing"] > 0
+        if info["n_missing"] > 0 and info["n_missing"] <= info["n_additional"]
     ]
     if not balanced:
         return []
