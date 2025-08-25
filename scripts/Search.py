@@ -150,7 +150,11 @@ def run_search(
 
 
 def hmm_search(
-    path: str, query_db: str, score: float, clean_reports: bool = False, cores: int = 1
+    faa_path: str,
+    query_db: str,
+    score: float,
+    clean_reports: bool = False,
+    cores: int = 1,
 ) -> str:
     """Executes HMMER hmmsearch and returns path to the domtblout file.
 
@@ -168,10 +172,10 @@ def hmm_search(
         >>> hmm_search("/tmp/A.faa", "/tmp/db.hmm", 42.0)
         '/tmp/A.domtblout'
     """
-
+    faa_path = myUtil.unpackgz(path)
     output = os.path.splitext(path)[0] + ".domtblout"
     os.system(
-        f"hmmsearch -T {score} --domT {score} --cpu {str(cores)} --noali --domtblout {output} {query_db} {path} > /dev/null 2>&1"
+        f"hmmsearch -T {score} --domT {score} --cpu {str(cores)} --noali --domtblout {output} {query_db} {faa_path} > /dev/null 2>&1"
     )
     return output
 
@@ -603,6 +607,7 @@ def process_hitfile(
     with open(output_fasta, "w") as out:
         for genome_id, protein_ids in genome_hits.items():
             faa_path = faa_files.get(genome_id)
+            faa_path = myUtil.unpackgz(faa_path)
             if not faa_path or not os.path.isfile(faa_path):
                 logger.warning(f"FASTA not found for {genome_id} {faa_path}")
                 continue

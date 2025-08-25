@@ -65,10 +65,7 @@ def translate_fasta(
         args: Tuple of (fasta path, total length, shared counter, shared lock, prodigal_executable)
     """
     fasta, length, counter, lock, prodigal = args
-
-    # unpack if required
-    if os.path.splitext(fasta)[-1] == ".gz":
-        fasta = myUtil.unpackgz(fasta)
+    fasta = myUtil.unpackgz(fasta)
 
     # Run prodigal
     output = os.path.splitext(fasta)[0]

@@ -54,12 +54,11 @@ def queue_files(options) -> None:
         faa_files[genomeID] = faa_file
         gff_files[genomeID] = gff_file
 
-        if os.path.isfile(faa_hmmreport_pairs[faa_file]):
+        hmmreport_path = faa_hmmreport_pairs.get(faa_file)
+        if hmmreport_path and os.path.isfile(hmmreport_path):
             hmmreport = faa_hmmreport_pairs[faa_file]
         else:
-            hmmreport = (
-                os.path.splitext(faa_hmmreport_pairs[faa_file])[0] + ".hmmreport"
-            )
+            hmmreport = os.path.splitext(faa_file)[0] + ".hmmreport"
         hmmreport_files[genomeID] = (
             hmmreport  # points to existing and non-existing hmmreports
         )
@@ -73,26 +72,6 @@ def queue_files(options) -> None:
     options.hmmreport_files = hmmreport_files
     logger.info(f"Found {len(faa_hmmreport_pairs)} existing hmmreports")
     logger.info(f"Queued {len(options.queued_genomes)} faa/gff pairs")
-
-    return
-
-
-def compare_with_existing_database(options, genomeIDs):
-    genomeIDs = Database.fetch_genomeIDs_from_proteins(options.database_directory)
-    for genomeID in genomeIDs:
-        if genomeID in options.faa_files.keys():
-            print(
-                f"\tFound assembly {genomeID} in database leaving out {options.faa_files[genomeID]}"
-            )
-            del options.faa_files[genomeID]
-            del options.gff_files[genomeID]
-            options.queued_genomes.remove(genomeID)
-
-    print(f"Queued {len(options.queued_genomes)} for processing")
-    if len(options.queued_genomes) == 0:
-        print(
-            "There were 0 genomes queued, as all were already present in the local result database"
-        )
 
     return
 
