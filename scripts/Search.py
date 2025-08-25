@@ -4,7 +4,9 @@ import os
 import sys
 import glob
 import subprocess
-
+import shlex
+import shutil
+import tempfile
 from multiprocessing import Pool, Value, Lock
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Optional
@@ -142,9 +144,7 @@ def run_search(
         print(f"Processing file {counter} of {total}", end="\r")
 
     domtblout_path = hmm_search(faa_file, query_db, score, clean_reports, 2)
-    hmmreport = prefix_domtblout_hits(
-        domtblout_path, hmmreport_path, separator="___"
-    )
+    hmmreport = prefix_domtblout_hits(domtblout_path, hmmreport_path, separator="___")
 
     return hmmreport
 
@@ -245,6 +245,69 @@ def concatenate_hmmreports_cat(
     cmd = ["cat"] + valid_paths
     with open(output_path, "w") as outfile:
         subprocess.run(cmd, stdout=outfile)
+
+    return output_path
+
+
+def concatenate_hmmreports_cat_xargs(
+    report_paths: dict[str, str],
+    output_path: str = "global_report.cat_hmmreport",
+) -> str:
+    """
+    Concatenate many .hmmreport files using `xargs -0 cat` to avoid argv limits.
+    Falls back to Python block-copy if xargs/cat fails.
+
+    Args:
+        report_paths: genomeID -> hmmreport path
+        output_path: output file
+
+    Returns:
+        output_path
+    """
+    logger.info(f"Concatenate raw hit reports to {output_path}")
+
+    # Filter existing files
+    valid_paths = [p for p in report_paths.values() if os.path.isfile(p)]
+    if not valid_paths:
+        logger.error("No valid hmmreport files found.")
+        raise FileNotFoundError("No valid hmmreport files found.")
+
+    # Create/overwrite output
+    open_mode = "wb"
+    with open(output_path, open_mode) as _:
+        pass
+
+    # Write a NULL-delimited file list to a temp file
+    try:
+        with tempfile.NamedTemporaryFile("wb", delete=False) as tf:
+            tmp_list = tf.name
+            for p in valid_paths:
+                tf.write(p.encode("utf-8") + b"\x00")
+
+        # Use xargs -0 to feed cat; 'shell=True' to allow redirection
+        cmd = f"xargs -0 -a {tmp_list} cat -- >> {shlex.quote(output_path)}"
+        # Avoid importing shlex? If preferred, do:
+        # import shlex at top and use shlex.quote
+        cmd = (
+            f"xargs -0 -a {shlex.quote(tmp_list)} cat -- >> {shlex.quote(output_path)}"
+        )
+
+        completed = subprocess.run(cmd, shell=True)
+        if completed.returncode != 0:
+            raise RuntimeError(f"xargs/cat failed with code {completed.returncode}")
+
+    except Exception as e:
+        logger.warning(f"xargs+cat failed ({e}); falling back to Python copy.")
+        # Fast block-wise fallback (no argv limits, nearly as fast as cat)
+        with open(output_path, "wb") as outfp:
+            for p in valid_paths:
+                with open(p, "rb") as infp:
+                    shutil.copyfileobj(infp, outfp, length=64 * 1024)
+    finally:
+        try:
+            os.unlink(tmp_list)
+        except Exception:
+            pass
 
     return output_path
 

@@ -53,12 +53,16 @@ def queue_files(options) -> None:
         genomeID_queue.add(genomeID)
         faa_files[genomeID] = faa_file
         gff_files[genomeID] = gff_file
-        
+
         if os.path.isfile(faa_hmmreport_pairs[faa_file]):
             hmmreport = faa_hmmreport_pairs[faa_file]
         else:
-            hmmreport = os.path.splitext(faa_hmmreport_pairs[faa_file])[0] + ".hmmreport"
-        hmmreport_files[genomeID] = hmmreport # points to existing and non-existing hmmreports
+            hmmreport = (
+                os.path.splitext(faa_hmmreport_pairs[faa_file])[0] + ".hmmreport"
+            )
+        hmmreport_files[genomeID] = (
+            hmmreport  # points to existing and non-existing hmmreports
+        )
 
     # compare two sets (find missing)
     find_missing_genomes(genomeID_queue, options.fasta_file_directory)
@@ -69,7 +73,7 @@ def queue_files(options) -> None:
     options.hmmreport_files = hmmreport_files
     logger.info(f"Found {len(faa_hmmreport_pairs)} existing hmmreports")
     logger.info(f"Queued {len(options.queued_genomes)} faa/gff pairs")
-    
+
     return
 
 
@@ -138,9 +142,9 @@ def find_faa_gff_pairs(directory: str) -> List[Tuple[str, str]]:
     return pairs
 
 
-
-
-def find_pairs_by_extensions(directory: str, ext1: str, ext2: str, follow_symlinks: bool = False) -> Dict[str, str]:
+def find_pairs_by_extensions(
+    directory: str, ext1: str, ext2: str, follow_symlinks: bool = False
+) -> Dict[str, str]:
     """
     Recursively find file pairs that share the same basename but have two different
     extensions (e.g., .faa and .hmmreport), regardless of directory. Supports .gz files.

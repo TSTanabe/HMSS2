@@ -913,7 +913,7 @@ def initial_search(options: object) -> None:
             options, int(options.cores / 2)
         )
         logger.info("Concatenating hmmsearch results")
-        options.glob_report = Search.concatenate_hmmreports_cat(
+        options.glob_report = Search.concatenate_hmmreports_cat_xargs(
             genome_to_hmmreport_dict, options.glob_report
         )
 
