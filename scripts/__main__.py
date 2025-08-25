@@ -49,6 +49,7 @@ class HMSSS:
         self.queued_genomes = {}
         self.faa_files = {}
         self.gff_files = {}
+        self.hmmreport_files = {}
 
         # csb prediction dereplication
         self.redundant = 0
@@ -907,7 +908,7 @@ def initial_search(options: object) -> None:
             options.glob_report,
         )
     else:
-        logger.info("Running unified hmmsearch")
+        logger.info("Running hmmsearch for each input genome")
         genome_to_hmmreport_dict = Search.unified_search(
             options, int(options.cores / 2)
         )

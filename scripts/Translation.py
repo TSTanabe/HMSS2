@@ -143,7 +143,7 @@ def parallel_transcription(directory: str, cores: int) -> None:
         args_list = [(fasta, length, counter, lock) for fasta in FaaFiles]
         pool.map(transcripe_fasta, args_list)
 
-    logger.info(f"Generated {counter} gff files")
+    logger.info(f"Generated corresponding gff files")
     return
 
 

@@ -48,16 +48,23 @@ def unified_search(options: Any, processes: int = 4) -> Dict[str, str]:
     """
     total = len(options.queued_genomes)
 
-    args = [
-        (
-            options.faa_files[genomeID],
-            options.library,
-            options.thrs_score,  # static minimal cutoff score
-            options.clean_reports,
-            total,
-        )
-        for genomeID in options.queued_genomes
-    ]
+    args = []
+    for genomeID in options.queued_genomes:
+        faa_path = options.faa_files[genomeID]
+        hmmreport_path = options.hmmreport_files[genomeID]
+
+        # append if report is missing oder overwrite is allowed
+        if not os.path.isfile(hmmreport_path) or options.clean_reports:
+            args.append(
+                (
+                    faa_path,
+                    options.library,
+                    hmmreport_path,  # future report
+                    options.thrs_score,
+                    options.clean_reports,
+                    total,
+                )
+            )
 
     # Shared Counter und Lock erstellen
     counter = Value("i", 0)  # 'i' = integer
@@ -68,7 +75,30 @@ def unified_search(options: Any, processes: int = 4) -> Dict[str, str]:
     ) as pool:
         results = pool.starmap(run_search, args)
 
-    return dict(zip(options.queued_genomes, results))
+    # Sort results and check if all filepaths to reports are valid
+    processed_ids = [
+        genomeID
+        for genomeID in options.queued_genomes
+        if not os.path.isfile(options.hmmreport_files[genomeID])
+        or options.clean_reports
+    ]
+
+    new_results = dict(zip(processed_ids, results))
+
+    final_results = {
+        genomeID: new_results.get(genomeID, options.hmmreport_files[genomeID])
+        for genomeID in options.queued_genomes
+    }
+
+    # Remove non valid filepaths before returning to main routine
+    valid_results = {}
+    for genomeID, path in final_results.items():
+        if os.path.isfile(path):
+            valid_results[genomeID] = path
+        else:
+            logger.error(f"HMMreport file missing for {genomeID}: {path}")
+
+    return valid_results
 
 
 def init_globals(counter: Value, lock: Lock) -> None:
@@ -79,7 +109,12 @@ def init_globals(counter: Value, lock: Lock) -> None:
 
 
 def run_search(
-    faa_file: str, query_db: str, score: float, clean_reports: bool, total: int
+    faa_file: str,
+    query_db: str,
+    hmmreport_path: str,
+    score: float,
+    clean_reports: bool,
+    total: int,
 ) -> str:
     """Runs hmmsearch for a single protein FASTA file and creates a prefixed report.
 
@@ -108,7 +143,7 @@ def run_search(
 
     domtblout_path = hmm_search(faa_file, query_db, score, clean_reports, 2)
     hmmreport = prefix_domtblout_hits(
-        domtblout_path, separator="___", suffix=".hmmreport"
+        domtblout_path, hmmreport_path, separator="___"
     )
 
     return hmmreport
@@ -135,23 +170,21 @@ def hmm_search(
     """
 
     output = os.path.splitext(path)[0] + ".domtblout"
-    hmmreport = os.path.splitext(path)[0] + ".hmmreport"
-    if not os.path.isfile(hmmreport) or clean_reports:
-        os.system(
-            f"hmmsearch -T {score} --domT {score} --cpu {str(cores)} --noali --domtblout {output} {query_db} {path} > /dev/null 2>&1"
-        )
+    os.system(
+        f"hmmsearch -T {score} --domT {score} --cpu {str(cores)} --noali --domtblout {output} {query_db} {path} > /dev/null 2>&1"
+    )
     return output
 
 
 def prefix_domtblout_hits(
-    domtblout_path: str, separator: str = "___", suffix: str = ".hmmreport"
+    domtblout_path: str, hmmreport_path: str, separator: str = "___"
 ) -> str:
     """Prefixes each domain hit ID in a domtblout file with the file's basename and writes to a new file.
 
     Args:
         domtblout_path (str): Path to the domtblout file to process.
+        hmmreport_path (str): Path to the hypothetical hmmreport file
         separator (str, optional): String used between basename and original hit ID.
-        suffix (str, optional): Suffix for the output file.
 
     Returns:
         str: Path to the new .hmmreport file with prefixed IDs.
@@ -164,9 +197,8 @@ def prefix_domtblout_hits(
     # Neuen Prefix vorbereiten (basename ohne Endung)
     basename = os.path.splitext(os.path.basename(domtblout_path))[0]
 
-    output_path = os.path.splitext(domtblout_path)[0] + suffix
     if os.path.isfile(domtblout_path):
-        with open(domtblout_path, "r") as infile, open(output_path, "w") as outfile:
+        with open(domtblout_path, "r") as infile, open(hmmreport_path, "w") as outfile:
             for line in infile:
                 if line.startswith("#"):
                     continue
@@ -179,7 +211,7 @@ def prefix_domtblout_hits(
                 outfile.write("\t".join(parts) + "\n")
         os.remove(domtblout_path)
 
-    return output_path
+    return hmmreport_path
 
 
 def concatenate_hmmreports_cat(

@@ -3,7 +3,9 @@
 import os
 import shutil
 import tempfile
-from typing import List, Tuple, Set, Optional, Any
+import glob
+from collections import defaultdict
+from typing import List, Tuple, Set, Optional, Any, Iterable, Dict
 
 from . import Database
 from . import myUtil
@@ -29,20 +31,34 @@ def queue_files(options) -> None:
         options.queued_genomes = {'GCF_000001405.39', ...}
         options.faa_files = {'GCF_000001405.39': '/dir/xxx.faa', ...}
         options.gff_files = {'GCF_000001405.39': '/dir/xxx.gff', ...}
+
+    The hmmreport scheme: output = os.path.splitext(inputpath)[0] + ".hmmreport"
     """
 
     logger.info("Filling the queue with faa files to be processed")
     genomeID_queue = set()
     faa_files = {}
     gff_files = {}
+    hmmreport_files = {}
 
-    pairs = find_faa_gff_pairs(options.fasta_file_directory)
-
-    for faa_file, gff_file in pairs:
+    # faa_gff_pairs = find_faa_gff_pairs(options.fasta_file_directory)
+    faa_gff_pairs = find_pairs_by_extensions(
+        options.fasta_file_directory, ".faa", ".gff"
+    )
+    faa_hmmreport_pairs = find_pairs_by_extensions(
+        options.fasta_file_directory, ".faa", ".hmmreport"
+    )
+    for faa_file, gff_file in faa_gff_pairs.items():
         genomeID = myUtil.getGenomeID(faa_file)
         genomeID_queue.add(genomeID)
         faa_files[genomeID] = faa_file
         gff_files[genomeID] = gff_file
+        
+        if os.path.isfile(faa_hmmreport_pairs[faa_file]):
+            hmmreport = faa_hmmreport_pairs[faa_file]
+        else:
+            hmmreport = os.path.splitext(faa_hmmreport_pairs[faa_file])[0] + ".hmmreport"
+        hmmreport_files[genomeID] = hmmreport # points to existing and non-existing hmmreports
 
     # compare two sets (find missing)
     find_missing_genomes(genomeID_queue, options.fasta_file_directory)
@@ -50,9 +66,10 @@ def queue_files(options) -> None:
     options.queued_genomes = genomeID_queue
     options.faa_files = faa_files
     options.gff_files = gff_files
-
+    options.hmmreport_files = hmmreport_files
+    logger.info(f"Found {len(faa_hmmreport_pairs)} existing hmmreports")
     logger.info(f"Queued {len(options.queued_genomes)} faa/gff pairs")
-
+    
     return
 
 
@@ -121,6 +138,54 @@ def find_faa_gff_pairs(directory: str) -> List[Tuple[str, str]]:
     return pairs
 
 
+
+
+def find_pairs_by_extensions(directory: str, ext1: str, ext2: str, follow_symlinks: bool = False) -> Dict[str, str]:
+    """
+    Recursively find file pairs that share the same basename but have two different
+    extensions (e.g., .faa and .hmmreport), regardless of directory. Supports .gz files.
+
+    Args:
+        directory: Root directory to search (recursively).
+        ext1: First file extension (with or without leading dot).
+        ext2: Second file extension (with or without leading dot).
+        follow_symlinks: If True, follow directory symlinks during traversal.
+
+    Returns:
+        Dict[str, str]: Mapping from file with ext1 -> file with ext2
+                        (same basename, different extension).
+    """
+    # Normalize extensions
+    ext1 = ext1 if ext1.startswith(".") else f".{ext1}"
+    ext2 = ext2 if ext2.startswith(".") else f".{ext2}"
+
+    # Helper maps
+    by_ext1: Dict[str, str] = {}
+    by_ext2: Dict[str, str] = {}
+
+    for root, _, files in os.walk(directory, followlinks=follow_symlinks):
+        for fname in files:
+            full_path = os.path.join(root, fname)
+
+            # strip optional ".gz"
+            core = fname[:-3] if fname.endswith(".gz") else fname
+
+            if core.endswith(ext1):
+                basename = core[: -len(ext1)]
+                by_ext1[basename] = full_path
+            elif core.endswith(ext2):
+                basename = core[: -len(ext2)]
+                by_ext2[basename] = full_path
+
+    # Build mapping ext1->ext2 where both exist
+    pairs: Dict[str, str] = {}
+    for basename, f1 in by_ext1.items():
+        if basename in by_ext2:
+            pairs[f1] = by_ext2[basename]
+
+    return pairs
+
+
 def find_missing_genomes(genomeIDs: Set[str], faa_file_directory: str) -> List[str]:
     """
     Find .faa files in the directory whose genome IDs are not in the provided list.
@@ -177,7 +242,6 @@ def concatenate_selected_hmms(
         suffix (str): File suffix filter (e.g., '.hmm').
         output_library (str): Output concatenated library file path.
     """
-    import glob
 
     files_to_concatenate = []
 
