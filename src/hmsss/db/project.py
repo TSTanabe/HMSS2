@@ -3,12 +3,11 @@
 import csv
 import os
 import sys
-import tarfile
 from datetime import datetime
 
-from . import myUtil
+from hmsss.utils import myUtil
 
-logger = myUtil.logger
+logger = myUtil.log
 
 
 def prepare_result_space(options, project: str = "project") -> None:

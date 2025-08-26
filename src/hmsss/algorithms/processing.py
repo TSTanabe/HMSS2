@@ -1,22 +1,12 @@
 #!/usr/bin/python
 import os  # For file and directory operations
 import subprocess  # For running external commands (e.g., MAFFT, trimAl)
-import shutil  # For finding executables in the system
-import sys  # For getting system-specific parameters and functions
 import csv  # For reading and writing CSV (TSV) files
 import sqlite3  # For interacting with SQLite databases
 
 from Bio import SeqIO  # For reading and writing sequence files (FASTA format)
 
-from . import (
-    myUtil,
-)  # Custom module for utility functions (assumed to be in the same package)
-from . import (
-    ParseReports,
-)  # Custom module for parsing reports (assumed to be in the same package)
-from . import (
-    Csb_finder,
-)  # Custom module for finding conserved sequence blocks (assumed to be in the same package)
+from src.hmsss.utils import myUtil
 
 
 #########################################################################
@@ -186,7 +176,7 @@ def get_alignments(options):
         Alignment files should be concated if header is the same
     """
 
-    alignment_files = myUtil.getAllFiles(options.concat_alignment, ".fasta_aln")
+    alignment_files = myUtil.get_all_files(options.concat_alignment, ".fasta_aln")
     output = options.concat_alignment + "/concat.fasta_aln"
     trim_output = options.concat_alignment + "/trimmed_concat.fasta_aln"
 
@@ -195,7 +185,7 @@ def get_alignments(options):
         print(
             f"WARNING: There were no alignments with .fasta_aln ending found in {options.concat_alignment}"
         )
-        fasta_files = myUtil.getAllFiles(options.concat_alignment, ".faa")
+        fasta_files = myUtil.get_all_files(options.concat_alignment, ".faa")
         if not fasta_files:
             print(
                 f"ERROR: There were no .faa fasta files in {options.concat_alignment}"
@@ -214,7 +204,7 @@ def get_alignments(options):
             # Align with default mafft
             align_fasta_with_mafft(fasta_file, output_fasta)
 
-    alignment_files = myUtil.getAllFiles(options.concat_alignment, ".fasta_aln")
+    alignment_files = myUtil.get_all_files(options.concat_alignment, ".fasta_aln")
     return alignment_files, output, trim_output
 
 
@@ -291,11 +281,11 @@ def taxonomy_comprehension(options):
     if os.path.isdir(options.add_taxonomy):
         # if directory was provided
         # name all sequences and concat all files
-        fasta_files = myUtil.getAllFiles(options.add_taxonomy, ".faa")
+        fasta_files = myUtil.get_all_files(options.add_taxonomy, ".faa")
         for fasta in fasta_files:
             add_taxonomy(options.database_directory, fasta)
 
-        fasta_files = myUtil.getAllFiles(options.add_taxonomy, ".fasta_aln")
+        fasta_files = myUtil.get_all_files(options.add_taxonomy, ".fasta_aln")
         for fasta in fasta_files:
             add_taxonomy(options.database_directory, fasta)
 
@@ -328,7 +318,7 @@ def add_taxonomy(database, filepath, trennzeichen=";"):
     # First pass: collect all genomeIDs and sequences
     for record in SeqIO.parse(filepath, "fasta"):
         genomeID, proteinID = record.id.split("-", maxsplit=1)
-        genomeID = myUtil.getGenomeID(genomeID)
+        genomeID = myUtil.get_genome_id(genomeID)
         genomeID_list.append(genomeID)
 
         # Check if genome has multiple proteins in the FASTA

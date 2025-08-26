@@ -1,13 +1,10 @@
 #!/usr/bin/python
 
-import re
-from multiprocessing import Manager, Pool, Value
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from . import Database
-from . import myUtil
+from src.hmsss.utils import myUtil
 
-logger = myUtil.logger
+logger = myUtil.log
 
 
 class Cluster:

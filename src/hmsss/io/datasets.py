@@ -4,11 +4,9 @@ import os
 
 
 import sqlite3
-import random
 
 from Bio import SeqIO
-from . import ParseReports
-from . import myUtil
+from src.hmsss.utils import myUtil
 from operator import add
 from itertools import combinations
 from math import floor
@@ -402,7 +400,7 @@ def dataline_combinations(dataline_dict, headers, filepath, combine=5, min_combi
             )  # combinations creates unique permutations by 2 to all elements
             # print(combined_headers)
             all_combined_headers.extend(combined_headers)
-    elif myUtil.file_path(filepath):
+    elif os.path.isfile(filepath):
         all_combined_headers = load_dataline_combination(filepath)
     #    combined_headers2 = list(combinations(headers,2)) #combinations creates unique permutations by 2 elements
     #    combined_headers3 = list(combinations(headers,3))
@@ -558,7 +556,7 @@ def iTol_range_dataset(directory, database, filepath, trennzeichen=";"):
         for record in SeqIO.parse(filepath, "fasta"):
             dataset_range_line = ""
             genomeID, proteinID = record.id.split("-", maxsplit=1)
-            genomeID = myUtil.getGenomeID(genomeID)
+            genomeID = myUtil.get_genome_id(genomeID)
             # check genome has multiple proteins in the fasta
             if genomeID not in record_dict:
                 record_dict[genomeID] = 1
@@ -651,7 +649,7 @@ def iTol_domain_dataset(directory, database, filepath, trennzeichen="_"):
         for record in SeqIO.parse(filepath, "fasta"):
             dataset_range_line = ""
             genomeID, proteinID = record.id.split("-", maxsplit=1)
-            genomeID = myUtil.getGenomeID(genomeID)
+            genomeID = myUtil.get_genome_id(genomeID)
             # check genome has multiple proteins in the fasta
             if genomeID not in record_dict:
                 record_dict[genomeID] = 1
@@ -747,3 +745,9 @@ def iTol_domain_dataset(directory, database, filepath, trennzeichen="_"):
 
             writer.write(dataset_range_line + "\n")
     writer.close()
+
+
+def generate_color(seed_int: int) -> str:
+    """Generates a consistent random color hex string from a seed integer."""
+    random.seed(seed_int)
+    return "#{:06x}".format(random.randint(0, 0xFFFFFF))

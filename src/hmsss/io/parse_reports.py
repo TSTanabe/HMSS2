@@ -3,23 +3,17 @@ import os
 import re
 import subprocess
 import traceback
-import itertools
-import pprint
 
-from . import Search
-from . import Database
-from . import Csb_finder
-from . import myUtil
-from . import Output
+from src.hmsss.utils import myUtil
 
 import numpy as np
 
 from multiprocessing import Pool, Manager
-from typing import Dict, Optional, Any, List, Set
+from typing import Dict, Any, List, Set
 from collections import defaultdict
 from scipy.optimize import linear_sum_assignment
 
-logger = myUtil.logger
+logger = myUtil.log
 
 
 class Protein:
@@ -637,8 +631,8 @@ def process_batch(
 def process_genome(
     data_queue: Any,
     genome_id: str,
-    faa_path: str,
-    gff_path: str,
+    faa_file: str,
+    gff_file: str,
     trusted_hmmreport_path: str,
     intermediate_hmmreport: str,
     nucleotide_range: int,
@@ -671,9 +665,6 @@ def process_genome(
         threshold_dict: Score cutoffs per domain.
     """
     try:
-        faa_file = myUtil.unpackgz(faa_path)
-        gff_file = myUtil.unpackgz(gff_path)
-
         # Intermediate protein hits
         intermediate_protein_dict = parse_bulk_HMMreport_genomize(
             genome_id, intermediate_hmmreport

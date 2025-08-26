@@ -3,15 +3,13 @@ import os
 import sys
 import csv
 import sqlite3
-from typing import Any, Dict, List, Optional, Set, Tuple, Union, Iterable
+from typing import Any, Dict, List, Optional, Set, Tuple, Iterable
 
 from Bio import SeqIO
 
-from . import myUtil
-from . import ParseReports
-from . import Csb_finder
+from src.hmsss.utils import myUtil
 
-logger = myUtil.logger
+logger = myUtil.log
 
 #########################################################################
 ####################### MAIN OUTPUT ROUTINE #############################
@@ -113,7 +111,16 @@ def print_fasta_and_hit_outputs(
     )  # Output per domain
     singletons(directory, files)  # Output singleton per genome and doublicates
 
-    myUtil.clean_empty_files(directory)
+    clean_empty_files(directory)
+
+
+def clean_empty_files(directory: str) -> None:
+    """Removes all empty files in a given directory."""
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        if os.path.isfile(file_path) and os.path.getsize(file_path) == 0:
+            os.remove(file_path)
+            logger.debug(f"Removed empty file: {file_path}")
 
 
 #########################################################################
@@ -1251,7 +1258,7 @@ def add_taxonomy(database, filepath, trennzeichen="_"):
         for record in SeqIO.parse(filepath, "fasta"):
             dataset_range_line = ""
             genomeID, proteinID = record.id.split("-", maxsplit=1)
-            genomeID = myUtil.getGenomeID(genomeID)
+            genomeID = myUtil.get_genome_id(genomeID)
             # check genome has multiple proteins in the fasta
             if genomeID not in record_dict:
                 record_dict[genomeID] = 1

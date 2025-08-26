@@ -2,16 +2,13 @@
 import sqlite3
 import os
 import sys
-import re
 import traceback
 import time
-from typing import List, Dict, Set, Any, Optional
+from typing import List, Dict, Set, Any
 
-from . import myUtil
-from . import ParseReports
-from . import Csb_finder
+from src.hmsss.utils import myUtil
 
-logger = myUtil.logger
+logger = myUtil.log
 
 ########## Write output to Database Routines ##########
 
@@ -499,7 +496,7 @@ def update_domain(
 
 
 def update_keywords(
-    database: str, keyword_dict: Dict[str, List[str]], batch_size: int = 400
+    database: str, keyword_dict: Dict[str, Set[str]], batch_size: int = 400
 ) -> None:
     """
     Update keywords in the database in batches.

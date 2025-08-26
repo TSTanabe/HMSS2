@@ -8,13 +8,11 @@ import shlex
 import shutil
 import tempfile
 from multiprocessing import Pool, Value, Lock
-from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
+from src.hmsss.utils import myUtil
 
-from . import myUtil
-
-logger = myUtil.logger
+logger = myUtil.log
 
 # Global shared variables
 current_counter = None
@@ -172,8 +170,8 @@ def hmm_search(
         >>> hmm_search("/tmp/A.faa", "/tmp/db.hmm", 42.0)
         '/tmp/A.domtblout'
     """
-    faa_path = myUtil.unpackgz(path)
-    output = os.path.splitext(path)[0] + ".domtblout"
+
+    output = os.path.splitext(faa_path)[0] + ".domtblout"
     os.system(
         f"hmmsearch -T {score} --domT {score} --cpu {str(cores)} --noali --domtblout {output} {query_db} {faa_path} > /dev/null 2>&1"
     )
@@ -607,7 +605,7 @@ def process_hitfile(
     with open(output_fasta, "w") as out:
         for genome_id, protein_ids in genome_hits.items():
             faa_path = faa_files.get(genome_id)
-            faa_path = myUtil.unpackgz(faa_path)
+
             if not faa_path or not os.path.isfile(faa_path):
                 logger.warning(f"FASTA not found for {genome_id} {faa_path}")
                 continue
@@ -696,7 +694,7 @@ def cross_check_candidates_with_reference_seqs(options) -> List[str]:
     """Cross-checks candidate hit sequences with reference sequences using DIAMOND with fallback for .faa search."""
     logger.info("Cross check hit sequences with reference sequences")
 
-    refseq_dir = os.path.join(options.execute_location, "src", "RefSeqs")
+    refseq_dir = os.path.join(options.execute_location, "data", "RefSeqs")
     refseq_unavailable_list = []
 
     cross_check_dir = options.Cross_check_directory
@@ -951,6 +949,7 @@ def promote_by_cutoff(
         hmm_ids (List[str] or None): List of HMM IDs, or 'all' for all present.
 
     Returns:
+        None:
         None
 
     Example:
@@ -958,7 +957,7 @@ def promote_by_cutoff(
         >>> promote_by_cutoff(options, '/tmp/xcheck', 4, hmm_ids="all")
     """
     # If no hmm identifier were defined use all that are in
-    if hmm_ids == "all":
+    if hmm_ids == ["all"]:
         hmm_ids = [
             f.replace(".intermediate_hits", "")
             for f in os.listdir(directory)

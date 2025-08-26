@@ -6,14 +6,13 @@ import heapq
 from collections import defaultdict, Counter
 from typing import Dict, List, Set, Tuple, Any
 
-from . import Database
-from . import Csb_Mp_Algorithm
-from . import myUtil
+from src.hmsss.algorithms import csb_mp_algorithm
+from src.hmsss.utils import myUtil
 
 from scipy.spatial import distance
 from sklearn.cluster import AgglomerativeClustering
 
-logger = myUtil.logger
+logger = myUtil.log
 
 
 # For the clustering of csbs by jaccard and agglomerativeClustering
@@ -32,7 +31,7 @@ def csb_prediction(options: Any) -> None:
             .csb_name_suffix (str)
 
     Output:
-        options.computed_Instances_dict: Dict with CSB patterns (tuple of genes) as keys.
+        options.computed_instances_dict: Dict with CSB patterns (tuple of genes) as keys.
         options.redundant, options.non_redundant: Paths to redundant/non-redundant cluster files.
         options.redundancy_hash: Hash of cluster redundancy.
 
@@ -66,19 +65,19 @@ def csb_prediction(options: Any) -> None:
     )  # for all which do not have a redundant gene cluster
     # modified CsbfinderS algorithm
     logger.debug("Initilizing Csb match point algorithm for csb pattern recoginition")
-    computed_Instances_dict = Csb_Mp_Algorithm.csb_finderS_matchpoint_algorithm(
+    computed_instances_dict = csb_mp_algorithm.csb_finderS_matchpoint_algorithm(
         options.redundancy_hash, gene_clusters, options.insertions, options.occurence
     )  # k insertions und q occurences müssen über die optionen festgelegt werden
 
     # Combine reverse csbs
-    reverse_pairs = find_reverse_pairs(computed_Instances_dict)
-    computed_Instances_dict = merge_sets_for_pairs(
-        computed_Instances_dict, reverse_pairs
+    reverse_pairs = find_reverse_pairs(computed_instances_dict)
+    computed_instances_dict = merge_sets_for_pairs(
+        computed_instances_dict, reverse_pairs
     )
 
     # Reduce redundancy in the keys
     options.computed_Instances_dict = csb_collapse_to_longest_pattern(
-        computed_Instances_dict
+        computed_instances_dict
     )
 
 
@@ -359,12 +358,12 @@ def extend_redundancy_hash(
     return redundancy_hash
 
 
-def csb_Instance_key_list(Instance_dict: Dict[Any, Any], threshold: int) -> List[Any]:
+def csb_Instance_key_list(instance_dict: Dict[Any, Any], threshold: int) -> List[Any]:
     """
     Returns keys of Instance_dict with length >= threshold.
 
     Args:
-        Instance_dict (dict): Dict with tuple keys.
+        instance_dict (dict): Dict with tuple keys.
         threshold (int): Minimum key length.
 
     Returns:
@@ -373,7 +372,7 @@ def csb_Instance_key_list(Instance_dict: Dict[Any, Any], threshold: int) -> List
     Example Output:
         [("geneA", "geneB", "geneC"), ...]
     """
-    return [k for k in Instance_dict.keys() if len(k) >= threshold]
+    return [k for k in instance_dict.keys() if len(k) >= threshold]
 
 
 def write_grouped_csb(filepath: str, data: Dict[str, List[Any]]) -> None:
