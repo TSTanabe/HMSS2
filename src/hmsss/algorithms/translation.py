@@ -11,11 +11,12 @@ from src.hmsss.utils import myUtil
 logger = myUtil.log
 
 
-def parallel_translation(directory: str, cores: int) -> None:
+def parallel_translation(fna_files: dict[str,str], cores: int) -> None:
     """
     Uses prodigal to translate all nucleotide fasta files in a directory to protein fasta (.faa).
 
     Args:
+        fna_files (dict[str,str]): Dictionary of fasta files to translate.:
         directory (str): Path to the directory with fasta/fna files.
         cores (int): Number of CPU cores to use (multiprocessing).
 
@@ -29,25 +30,18 @@ def parallel_translation(directory: str, cores: int) -> None:
         If the filepaths include parentheses prodigal is not working
     """
 
-    # Check for the combinations of fasta files
-    zipped_fna_files = compare_file_lists(directory, ".fna.gz", ".faa.gz")
-    unzip_fna_files = compare_file_lists(directory, ".fna.gz", ".faa")
-    fna_files = zipped_fna_files & unzip_fna_files
-    fna_files2 = compare_file_lists(directory, ".fna", ".faa")
-    fasta_files = set(myUtil.get_all_files(directory, ".fasta"))
-    nucleotide_fasta_files = fna_files2 | fna_files | fasta_files
     logger.info(
-        f"Found {len(nucleotide_fasta_files)} assemblies in nucleotide or ambiguous format for prodigal"
+        f"Found {len(fna_files)} assemblies in nucleotide or ambiguous format for prodigal"
     )
 
     manager = multiprocessing.Manager()
     counter = manager.Value("i", 0)
     lock = manager.Lock()
-    length = len(nucleotide_fasta_files)
+    length = len(fna_files)
     prodigal = myUtil.find_executable("prodigal")
     with multiprocessing.Pool(processes=cores) as pool:
         args_list = [
-            (fasta, length, counter, lock, prodigal) for fasta in nucleotide_fasta_files
+            (fasta, length, counter, lock, prodigal) for fasta in fna_files
         ]
         pool.map(translate_fasta, args_list)
     logger.info(f"Processing assembly {counter.value} of {length}")
@@ -64,7 +58,6 @@ def translate_fasta(
         args: Tuple of (fasta path, total length, shared counter, shared lock, prodigal_executable)
     """
     fasta, length, counter, lock, prodigal = args
-    fasta = myUtil.unpackgz(fasta)
 
     # Run prodigal
     output = os.path.splitext(fasta)[0]
@@ -92,7 +85,7 @@ def translate_fasta(
 ############################################################################
 
 
-def parallel_transcription(directory: str, cores: int) -> None:
+def parallel_transcription(faa_files: dict[str,str], cores: int) -> None:
     """
     8.10.22
         Args:
@@ -111,19 +104,6 @@ def parallel_transcription(directory: str, cores: int) -> None:
     Output:
         GFF files are generated in-place.
     """
-
-    gzfaa_files = myUtil.get_all_files(directory, ".faa.gz")
-    gzgff_files = myUtil.get_all_files(directory, ".gff.gz")
-    logger.info(f"Found {len(gzfaa_files)} zipped faa files")
-    logger.info(f"Found {len(gzgff_files)} zipped gff files")
-
-    faa_files = myUtil.get_all_files(directory, ".faa")
-    gff_files = myUtil.get_all_files(directory, ".gff")
-    logger.info(f"Found {len(gff_files)} gff files")
-    logger.info(f"Found {len(faa_files)} faa files")
-
-    faa_files = compare_file_lists(directory, ".faa", ".gff")
-    logger.info(f"Found {len(faa_files)} protein fasta files without gff")
 
     manager = multiprocessing.Manager()
     counter = manager.Value("i", 0)

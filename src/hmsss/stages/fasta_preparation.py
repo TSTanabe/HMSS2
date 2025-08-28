@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from hmsss.core.logging import get_logger, print_header
 from hmsss.algorithms.translation import parallel_translation, parallel_transcription
+from hmsss.io.queue import queue_fna_inputs, queue_faa_without_gff
 
 if TYPE_CHECKING:
     from hmsss.core.options import Hmsss
@@ -18,12 +19,10 @@ def fasta_preparation(options: Hmsss) -> None:
     """
     print_header("FASTA preparation (gene calling / translation)", logger=log)
 
-    in_dir = Path(options.fasta_file_directory or "")
-    if not in_dir.is_dir():
-        raise SystemExit(f"Input FASTA directory does not exist: {in_dir}")
-    log.info("Input genomes directory: %s", in_dir)
+    fna_files: dict[str, str] = queue_fna_inputs(options)
+    parallel_translation(fna_files, options.cores)
 
-    parallel_translation(options.fasta_file_directory, options.cores)
-    parallel_transcription(options.fasta_file_directory, options.cores)
+    faa_files_without_gff: dict[str, str] = queue_faa_without_gff(options)
+    parallel_transcription(faa_files_without_gff, options.cores)
 
     return

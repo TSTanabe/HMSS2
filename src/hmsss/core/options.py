@@ -1,19 +1,16 @@
 # src/hmsss/core/options.py
 from __future__ import annotations
 
+import os
 from typing import Optional, List, Dict, Any
-from hmsss.utils.paths import PACKAGE_ROOT
-
-# Kompatibler Ersatz für das frühere __location__
-__location__ = str(PACKAGE_ROOT)
-
+from hmsss.cli import paths as p
+from hmsss.cli.paths import ROOT_DIR
 
 class Hmsss:
     """
     Zentrales Options-/Konfigurationsobjekt für HMSSS.
 
-    - Alle Attribute sind vorab vorhanden (mit passenden Defaults),
-      sodass IDE-Inspektionen (PyCharm) keine "unresolved attribute"-Warnungen mehr zeigen.
+    - Alle Attribute sind vorab vorhanden (mit passenden Defaults)
     - argparse schreibt bei parse_arguments(...) in dieses Objekt (namespace=opts)
       und überschreibt die hier gesetzten Defaults bei Bedarf.
     """
@@ -21,7 +18,7 @@ class Hmsss:
     def __init__(
         self,
         # --- Bisherige HMSSS-Defaults / interne Felder ---
-        execute_location: str = __location__,
+        execute_location: str = str(ROOT_DIR),
         project_name: str = "project",
         index_db: bool = False,
         csb_name_prefix: str = "csb-",
@@ -46,7 +43,7 @@ class Hmsss:
         fasta_file_directory: Optional[str] = None,  # -f
         score_threshold_file: Optional[str] = None,  # -t
         library: Optional[str] = None,  # -l
-        result_files_directory: str = __location__ + "/results",  # -r
+        result_files_directory: str = str(p.RESULTS_DIR),  # -r
         database_directory: Optional[str] = None,  # -db
         cores: int = 4,  # -c
         glob_report: Optional[str] = None,  # -glob_report
@@ -130,7 +127,7 @@ class Hmsss:
         # Laufzeit-/Queue-Container
         self.finished_genomes = {} if finished_genomes is None else finished_genomes
         self.queued_genomes = {} if queued_genomes is None else queued_genomes
-        self.fna_files = {} if faa_files is None else faa_files
+        self.fna_files = {} if fna_files is None else fna_files
         self.faa_files = {} if faa_files is None else faa_files
         self.gff_files = {} if gff_files is None else gff_files
         self.hmmreport_files = {} if hmmreport_files is None else hmmreport_files
@@ -165,7 +162,7 @@ class Hmsss:
         self.exit = exit_stage
 
         # --- argparse: Search library resources ---
-        self.HMM_sets = [] if hmm_sets is None else hmm_sets
+        self.hmm_sets = [] if hmm_sets is None else hmm_sets
         self.clean_reports = clean_reports
         self.individual_reports = individual_reports
         self.max_seqs_per_genome = max_seqs_per_genome
@@ -222,18 +219,18 @@ class Hmsss:
         self.create_gene_cluster_dataset = create_gene_cluster_dataset
         self.gaps = gaps
 
-        # --- weitere intern genutzte Felder (werden später oft befüllt) ---
+        # --- Interne Felder ---
         # Pfade/Orte
-        self.location = __location__ if location is None else location
+        self.location = str(p.ROOT_DIR) if location is None else location
         self.reference_seq_dir = (
-            (__location__ + "/src/RefSeqs")
+            str(p.REFSEQ_DIR)
             if reference_seq_dir is None
             else reference_seq_dir
         )
         self.new_project = new_project  # wird in parse_arguments auf True/False gesetzt
 
         # Dateien/Verzeichnisse, die im Lauf erzeugt werden
-        self.Cross_check_directory: Optional[str] = getattr(
+        self.cross_check_directory: Optional[str] = getattr(
             self, "Cross_check_directory", None
         )
         self.glob_trusted_hitreport: Optional[str] = getattr(
@@ -249,4 +246,64 @@ class Hmsss:
             setattr(self, k, v)
 
 
-__all__ = ["Hmsss", "__location__"]
+
+def make_options(ns: argparse.Namespace):
+    """
+    Übersetzt argparse.Namespace → Hmsss und setzt fehlende Defaults/Pfade.
+    """
+
+    # 1) Strings normalisieren (argparse.type wirkt NICHT auf defaults)
+    def s(name, fallback=None):
+        v = getattr(ns, name, fallback)
+        return os.fspath(v) if v is not None else None
+
+    # 2) Fehlende CLI-Werte mit zentralen Defaults füllen
+    result_dir = s("result_files_directory") or str(p.RESULTS_DIR)
+    library    = s("library")                 or str(p.HMMS_DIR)
+    thrs_file  = s("score_threshold_file")    or str(p.DATA_DIR / "Thresholds")
+    patt_file  = s("patterns_file")           or str(p.DATA_DIR / "Patterns")
+    cooc_file  = s("cooccurrence_file")       or str(p.DATA_DIR / "Cooccurrence")
+    excl_file  = s("exclusion_singletons")    or str(p.DATA_DIR / "Exclusion_singletons")
+    db_path    = s("database_directory")      # kann None sein → wird später ggf. gesetzt
+
+    # 3) Options-Objekt bauen (Field-Namen ggf. anpassen, falls in Hmsss anders)
+    opts = Hmsss(
+        **{
+            **vars(ns),  # übernimmt alle übrigen Felder (cores, stage, usw.)
+            "result_files_directory": result_dir,
+            "library": library,
+            "score_threshold_file": thrs_file,
+            "patterns_file": patt_file,
+            "cooccurrence_file": cooc_file,
+            "exclusion_singletons": excl_file,
+            "database_directory": db_path,
+        }
+    )
+
+    # 4) Weitere Pfadfelder aus paths einsetzen, falls leer (Single source of truth)
+    #    Passe Feldnamen an, falls dein Hmsss anders heißt:
+    if not getattr(opts, "bin_directory", None):
+        opts.bin_directory = str(p.BIN_DIR)
+    if not getattr(opts, "data_directory", None):
+        opts.data_directory = str(p.DATA_DIR)
+    if not getattr(opts, "hmms_directory", None):
+        opts.hmms_directory = str(p.HMMS_DIR)
+    if not getattr(opts, "refseq_directory", None):
+        opts.refseq_directory = str(p.REFSEQ_DIR)
+    if not getattr(opts, "package_directory", None):
+        opts.package_directory = str(p.PACKAGE_DIR)
+
+    # 5) Abgeleitete Defaults/Flags
+    #    DB-Datei standardmäßig unter results/database.db, wenn leer
+    if not opts.database_directory:
+        opts.database_directory = os.path.join(result_dir, "database.db")
+
+    # „Neues Projekt?“ – z. B. wenn results == Default-RESULTS_DIR
+    try:
+        opts.new_project = (
+            os.path.abspath(result_dir) == os.path.abspath(str(p.RESULTS_DIR))
+        )
+    except Exception:
+        opts.new_project = False
+
+    return opts

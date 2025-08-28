@@ -82,14 +82,12 @@ def print_header(
     text: str, *, char: str = "=", logger: Optional[logging.Logger] = None
 ) -> None:
     """
-    Schöne Abschnittsüberschrift ins Log schreiben (INFO-Level).
+    Write headers into logfile
     """
     log = logger or get_logger(__name__)
-    line = char * len(text)
-    log.info("")  # Leerzeile
-    log.info(line)
+    text: str = 3 * char + " " + text + " " + 3 * char
     log.info(text)
-    log.info(line)
+
 
 
 __all__ = ["setup_logging", "get_logger", "print_header"]

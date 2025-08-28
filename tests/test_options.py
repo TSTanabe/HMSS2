@@ -39,7 +39,7 @@ def test_hmsss_defaults():
     assert o.stage == 0 and o.exit == 10
 
     # Search-Library-Parameter
-    assert o.HMM_sets == []
+    assert o.hmm_sets == []
     assert o.clean_reports is False
     assert o.individual_reports is True
     assert o.max_seqs_per_genome == 4
@@ -97,7 +97,7 @@ def test_hmsss_defaults():
     assert hasattr(o, "new_project")
 
     # dynamisch gesetzte spätere Pfade existieren als Attribute
-    assert hasattr(o, "Cross_check_directory") and o.Cross_check_directory is None
+    assert hasattr(o, "Cross_check_directory") and o.cross_check_directory is None
     assert hasattr(o, "glob_trusted_hitreport") and o.glob_trusted_hitreport is None
     assert (
         hasattr(o, "glob_intermediate_hitreport")
@@ -128,7 +128,7 @@ def test_hmsss_overrides_and_types(tmp_path):
     assert o.database_directory == str(db_file)
     assert o.cores == 8
     assert o.fetch is True and o.process is True and o.limiter is True
-    assert o.HMM_sets == ["setA", "setB"]
+    assert o.hmm_sets == ["setA", "setB"]
     assert o.fetch_genomes == ["g1"]
     assert o.fetch_keywords == ["k1", "k2"]
     assert o.dataset_limit_min_cluster_completeness == 0.7
@@ -139,11 +139,11 @@ def test_mutable_defaults_are_not_shared():
 
     a = Hmsss()
     b = Hmsss()
-    a.HMM_sets.append("X")
+    a.hmm_sets.append("X")
     a.fetch_genomes.append("A")
     a.redundancy_hash["k"] = 1
 
-    assert b.HMM_sets == []  # nicht geteilt
+    assert b.hmm_sets == []  # nicht geteilt
     assert b.fetch_genomes == []  # nicht geteilt
     assert "k" not in b.redundancy_hash  # nicht geteilt
 

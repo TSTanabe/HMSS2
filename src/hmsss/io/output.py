@@ -7,9 +7,12 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Iterable
 
 from Bio import SeqIO
 
-from src.hmsss.utils import myUtil
+from hmsss.io import parse_reports
+from hmsss.algorithms import csb_finder
+from hmsss.utils import myUtil
+from hmsss.core.logging import get_logger
 
-logger = myUtil.log
+logger = get_logger(__name__)
 
 #########################################################################
 ####################### MAIN OUTPUT ROUTINE #############################
@@ -351,7 +354,7 @@ def write_detail_to_protein_dict(
             protein.add_domain(row[8], row[9], row[10], row[11])
 
         else:
-            protein = ParseReports.Protein(row[0], row[8], row[9], row[10], row[11])
+            protein = parse_reports.Protein(row[0], row[8], row[9], row[10], row[11])
             protein.set_genomeID(row[1])
             protein.set_clusterID(row[2])
             protein.set_gene_contig(row[3])
@@ -362,7 +365,7 @@ def write_detail_to_protein_dict(
             protein_dict[row[0]] = protein
 
         if not row[2] is None and not row[2] in cluster_dict:
-            cluster = Csb_finder.Cluster(row[2])
+            cluster = csb_finder.Cluster(row[2])
             cluster.add_gene(row[0], row[8])
             cluster_dict[row[2]] = cluster
 
@@ -868,7 +871,7 @@ def fetch_bulk_data(
             if protein_id in protein_dict:
                 protein_dict[protein_id].add_domain(domain, dom_start, dom_end, score)
             else:
-                p = ParseReports.Protein(protein_id, domain, dom_start, dom_end, score)
+                p = parse_reports.Protein(protein_id, domain, dom_start, dom_end, score)
                 p.genomeID = genome_id
                 p.clusterID = cluster_id
                 p.gene_contig = row["contig"]
@@ -883,7 +886,7 @@ def fetch_bulk_data(
 
             # Create cluster stub on first encounter
             if cluster_id is not None and cluster_id not in cluster_dict:
-                cl = Csb_finder.Cluster(cluster_id)
+                cl = csb_finder.Cluster(cluster_id)
                 cl.genomeID = genome_id
                 cl.add_gene(protein_id, domain)
                 cluster_dict[cluster_id] = cl
@@ -1353,7 +1356,7 @@ def add_genomic_context(database, filepath):
                     protein = protein_dict[row[0]]
                     protein.add_domain(row[8], row[9], row[10], row[11])
                 else:
-                    protein = ParseReports.Protein(
+                    protein = parse_reports.Protein(
                         row[0], row[8], row[9], row[10], row[11]
                     )
                     protein.set_genomeID(row[1])

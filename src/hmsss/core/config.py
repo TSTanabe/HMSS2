@@ -1,0 +1,329 @@
+# hmsss/core/config.py
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Set, Any
+from pathlib import Path
+
+# =========================
+# Pfad-Block (aus paths.py)
+# =========================
+@dataclass(slots=True)
+class PathsCfg:
+    """
+    Projektpfade (Single Source of Truth), typischerweise aus hmsss.cli.paths befüllt.
+    """
+    root: str
+    bin: str
+    data: str
+    hmms: str
+    refseq: str
+    results: str
+    package: str
+
+
+# ==========================================
+# 1) CLI-Argumentgruppen (thematisch getrennt)
+# ==========================================
+@dataclass(slots=True)
+class CliInput:
+    fasta_file_directory: Optional[str] = None
+    score_threshold_file: Optional[str] = None
+    library: Optional[str] = None
+    result_files_directory: Optional[str] = None
+    database_directory: Optional[str] = None
+    cores: int = 4
+    glob_report: Optional[str] = None
+    verbose: int = 1
+
+
+@dataclass(slots=True)
+class CliSearchParams:
+    threshold_type: int = 1            # 1=optimized, 2=trusted, 3=noise
+    thrs_score: float = 50.0
+    taxonomy_file: Optional[str] = None
+    refseq_identity: int = 90
+    name: str = "project"
+    stage: int = 0
+    exit: int = 10
+
+
+@dataclass(slots=True)
+class CliResources:
+    HMM_sets: List[str] = field(default_factory=list)
+    clean_reports: bool = False
+    individual_reports: bool = True
+    max_seqs_per_genome: int = 4
+    bool_cross_check: bool = True
+    optimized_cutoff_cross_check: bool = False
+
+
+@dataclass(slots=True)
+class CliSynteny:
+    patterns_file: Optional[str] = None
+    cooccurrence_file: Optional[str] = None
+    exclusion_singletons: Optional[str] = None
+    min_completeness: float = 0.5
+    glob_chunks: int = 5000
+
+
+@dataclass(slots=True)
+class CliInfo:
+    stat_keywords: bool = False
+    stat_csb: bool = False
+    stat_genomes: bool = False
+
+
+@dataclass(slots=True)
+class CliCsb:
+    nucleotide_range: int = 3500
+    insertions: int = 1
+    occurence: int = 1                 # Schreibweise wie im Parser beibehalten
+    min_csb_size: int = 4
+    max_csb_size: int = 50
+    max_domain_repeats: int = 4
+    jaccard: float = 0.0
+
+
+@dataclass(slots=True)
+class CliFlow:
+    redo_taxonomy: bool = False
+
+
+@dataclass(slots=True)
+class CliLimiter:
+    dataset_limit_lineage: Optional[str] = None
+    dataset_limit_taxon: Optional[str] = None
+    dataset_limit_proteins: str = "0"
+    dataset_limit_keywords: str = "0"
+    dataset_divide_sign: str = "."
+
+
+@dataclass(slots=True)
+class CliOperators:
+    fetch_genomes: List[str] = field(default_factory=list)
+    fetch_proteins: List[str] = field(default_factory=list)
+    fetch_csbs: List[str] = field(default_factory=list)
+    fetch_keywords: List[str] = field(default_factory=list)
+    keywords_connector: str = "OR"
+
+
+@dataclass(slots=True)
+class CliProcess:
+    merge_fasta: Optional[str] = None
+    filter_fasta: Optional[List[str]] = None          # ["FILE","MIN","MAX"]
+    concat_alignment: Optional[str] = None
+    add_taxonomy: Optional[str] = None
+    add_genomic_context: Optional[str] = None
+    create_type_range_dataset: Optional[str] = None
+    create_gene_cluster_dataset: Optional[str] = None
+    gaps: bool = False
+
+
+# ==================================================
+# 2) Ursprüngliche/„interne“ Felder (Laufzeit-State)
+# ==================================================
+@dataclass(slots=True)
+class RuntimeState:
+    """
+    Laufzeit-Container, die während der Pipeline befüllt/ verändert werden.
+    """
+    queued_genomes: Set[str] = field(default_factory=set)
+    finished_genomes: Set[str] = field(default_factory=set)
+
+    fna_files: Dict[str, str] = field(default_factory=dict)
+    faa_files: Dict[str, str] = field(default_factory=dict)
+    gff_files: Dict[str, str] = field(default_factory=dict)
+    hmmreport_files: Dict[str, str] = field(default_factory=dict)
+
+    redundant: Dict[str, List[str]] = field(default_factory=dict)
+    non_redundant: Dict[str, str] = field(default_factory=dict)
+    redundancy_hash: Dict[str, str] = field(default_factory=dict)
+
+
+# ==================================================
+# 3) Project-Felder (werden in project.py gesetzt)
+# ==================================================
+@dataclass(slots=True)
+class ProjectFields:
+    # Verzeichnisse
+    result_files_directory: Optional[str] = None         # finaler Projekt-Results-Pfad
+    fasta_initial_hit_directory: Optional[str] = None
+    fasta_output_directory: Optional[str] = None
+    cross_check_directory: Optional[str] = None
+    csb_directory: Optional[str] = None
+
+    # Dateien
+    database_directory: Optional[str] = None
+    glob_report: Optional[str] = None
+    glob_trusted_hitreport: Optional[str] = None
+    glob_intermediate_hitreport: Optional[str] = None
+    csb_output_file: Optional[str] = None
+    gene_clusters_file: Optional[str] = None
+
+
+# ======================
+# Aggregiertes Objekt
+# ======================
+
+def _cfg_get(obj: Any, path: str) -> Any:
+    cur = obj
+    for name in path.split("."):
+        cur = getattr(cur, name)
+    return cur
+
+def _cfg_set(obj: Any, path: str, value: Any) -> None:
+    parts = path.split(".")
+    cur = obj
+    for name in parts[:-1]:
+        cur = getattr(cur, name)
+    setattr(cur, parts[-1], value)
+
+def prop(path: str) -> property:
+    """Erzeugt eine Property, die auf ein verschachteltes Feld zeigt (per 'dot path')."""
+    def fget(self):  return _cfg_get(self, path)
+    def fset(self, v): _cfg_set(self, path, v)
+    return property(fget, fset)
+
+@dataclass(slots=True)
+class Config:
+    """
+    Zentrales Konfigurationsobjekt für HMSS2.
+    Rein instanzbasiert: alle Felder sind Instanzattribute, keine Klassenvariablen.
+    """
+    # Pflicht: Pfade müssen zur Initialisierung übergeben werden
+    paths: PathsCfg
+
+    # CLI-Gruppen
+    cli_input:     CliInput        = field(default_factory=CliInput)
+    cli_params:    CliSearchParams = field(default_factory=CliSearchParams)
+    cli_resources: CliResources    = field(default_factory=CliResources)
+    cli_synteny:   CliSynteny      = field(default_factory=CliSynteny)
+    cli_info:      CliInfo         = field(default_factory=CliInfo)
+    cli_csb:       CliCsb          = field(default_factory=CliCsb)
+    cli_flow:      CliFlow         = field(default_factory=CliFlow)
+    cli_limiter:   CliLimiter      = field(default_factory=CliLimiter)
+    cli_ops:       CliOperators    = field(default_factory=CliOperators)
+    cli_process:   CliProcess      = field(default_factory=CliProcess)
+
+    # Laufzeit-State & Projektfelder
+    state:   RuntimeState  = field(default_factory=RuntimeState)
+    project: ProjectFields = field(default_factory=ProjectFields)
+
+    # Häufig genutzte CLI-Parameter (kurzer Zugriff)
+    stage               = prop("cli_params.stage")          # :contentReference[oaicite:1]{index=1}
+    name                = prop("cli_params.name")           # :contentReference[oaicite:2]{index=2}
+    exit                = prop("cli_params.exit")           # :contentReference[oaicite:3]{index=3}
+    thrs_score          = prop("cli_params.thrs_score")     # :contentReference[oaicite:4]{index=4}
+    threshold_type      = prop("cli_params.threshold_type") # :contentReference[oaicite:5]{index=5}
+    refseq_identity     = prop("cli_params.refseq_identity")
+    taxonomy_file       = prop("cli_params.taxonomy_file")
+
+    fasta_file_directory = prop("cli_input.fasta_file_directory")  # :contentReference[oaicite:6]{index=6}
+    database_in         = prop("cli_input.database_directory")    # Eingabe-DB (CLI) :contentReference[oaicite:7]{index=7}
+    result_dir_in        = prop("cli_input.result_files_directory")# Eingabe-Results (CLI) :contentReference[oaicite:8]{index=8}
+    cores                = prop("cli_input.cores")                 # :contentReference[oaicite:9]{index=9}
+    verbose              = prop("cli_input.verbose")               # :contentReference[oaicite:10]{index=10}
+    score_threshold_file = prop("cli_input.score_threshold_file")  # :contentReference[oaicite:11]{index=11}
+    library              = prop("cli_input.library")               # :contentReference[oaicite:12]{index=12}
+    glob_report_in       = prop("cli_input.glob_report")           # :contentReference[oaicite:13]{index=13}
+
+    # Ressourcen / Operators / Limiter
+    hmm_sets                     = prop("cli_resources.HMM_sets")            # :contentReference[oaicite:14]{index=14}
+    clean_reports                = prop("cli_resources.clean_reports")
+    bool_cross_check             = prop("cli_resources.bool_cross_check")
+    individual_reports           = prop("cli_resources.individual_reports")
+    max_seqs_per_genome          = prop("cli_resources.max_seqs_per_genome")
+    optimized_cutoff_cross_check = prop("cli_resources.optimized_cutoff_cross_check")
+
+    keywords_connector = prop("cli_ops.keywords_connector")        # :contentReference[oaicite:15]{index=15}
+    fetch_genomes      = prop("cli_ops.fetch_genomes")             # :contentReference[oaicite:16]{index=16}
+    fetch_proteins     = prop("cli_ops.fetch_proteins")            # :contentReference[oaicite:17]{index=17}
+    fetch_csbs         = prop("cli_ops.fetch_csbs")                # :contentReference[oaicite:18]{index=18}
+    fetch_keywords     = prop("cli_ops.fetch_keywords")            # :contentReference[oaicite:19]{index=19}
+
+    dataset_limit_lineage  = prop("cli_limiter.dataset_limit_lineage")   # :contentReference[oaicite:20]{index=20}
+    dataset_limit_taxon    = prop("cli_limiter.dataset_limit_taxon")     # :contentReference[oaicite:21]{index=21}
+    dataset_divide_sign    = prop("cli_limiter.dataset_divide_sign")     # :contentReference[oaicite:22]{index=22}
+
+    # Synteny / CSB / Process
+    patterns_file       = prop("cli_synteny.patterns_file")        # :contentReference[oaicite:23]{index=23}
+    cooccurrence_file   = prop("cli_synteny.cooccurrence_file")    # :contentReference[oaicite:24]{index=24}
+    exclusion_singletons= prop("cli_synteny.exclusion_singletons") # :contentReference[oaicite:25]{index=25}
+    min_completeness    = prop("cli_synteny.min_completeness")     # :contentReference[oaicite:26]{index=26}
+    glob_chunks         = prop("cli_synteny.glob_chunks")          # :contentReference[oaicite:27]{index=27}
+
+    nucleotide_range    = prop("cli_csb.nucleotide_range")         # :contentReference[oaicite:28]{index=28}
+    insertions          = prop("cli_csb.insertions")               # :contentReference[oaicite:29]{index=29}
+    occurence           = prop("cli_csb.occurence")                # :contentReference[oaicite:30]{index=30}
+    min_csb_size        = prop("cli_csb.min_csb_size")             # :contentReference[oaicite:31]{index=31}
+    max_csb_size        = prop("cli_csb.max_csb_size")             # :contentReference[oaicite:32]{index=32}
+    max_domain_repeats  = prop("cli_csb.max_domain_repeats")       # :contentReference[oaicite:33]{index=33}
+    jaccard             = prop("cli_csb.jaccard")                  # :contentReference[oaicite:34]{index=34}
+
+    merge_fasta         = prop("cli_process.merge_fasta")          # :contentReference[oaicite:35]{index=35}
+    filter_fasta        = prop("cli_process.filter_fasta")         # :contentReference[oaicite:36]{index=36}
+    concat_alignment    = prop("cli_process.concat_alignment")     # :contentReference[oaicite:37]{index=37}
+    add_taxonomy        = prop("cli_process.add_taxonomy")         # :contentReference[oaicite:38]{index=38}
+    add_genomic_context = prop("cli_process.add_genomic_context")  # :contentReference[oaicite:39]{index=39}
+    create_type_range_dataset   = prop("cli_process.create_type_range_dataset")  # :contentReference[oaicite:40]{index=40}
+    create_gene_cluster_dataset = prop("cli_process.create_gene_cluster_dataset")# :contentReference[oaicite:41]{index=41}
+    gaps                = prop("cli_process.gaps")                 # :contentReference[oaicite:42]{index=42}
+
+    # Projekt-Ausgaben (vom Project-Setup befüllt)
+    result_files_directory      = prop("project.result_files_directory")        # :contentReference[oaicite:43]{index=43}
+    database_directory          = prop("project.database_directory")            # :contentReference[oaicite:44]{index=44}
+    glob_report                 = prop("project.glob_report")                   # :contentReference[oaicite:45]{index=45}
+    fasta_initial_hit_directory = prop("project.fasta_initial_hit_directory")   # :contentReference[oaicite:46]{index=46}
+    fasta_output_directory    = prop("project.fasta_output_directory")        # :contentReference[oaicite:47]{index=47}
+    cross_check_directory     = prop("project.cross_check_directory")         # :contentReference[oaicite:48]{index=48}
+    csb_directory             = prop("project.csb_directory")                 # :contentReference[oaicite:49]{index=49}
+    csb_output_file     = prop("project.csb_output_file")               # :contentReference[oaicite:50]{index=50}
+    gene_clusters_file  = prop("project.gene_clusters_file")            # :contentReference[oaicite:51]{index=51}
+    glob_trusted_hitreport = prop("project.glob_trusted_hitreport")
+    glob_intermediate_hitreport = prop("project.glob_intermediate_hitreport")
+
+    queued_genomes = prop("state.queued_genomes")
+    finished_genomes = prop("state.finished_genomes")
+    fna_files = prop("state.fna_files")
+    faa_files = prop("state.faa_files")
+    gff_files = prop("state.gff_files")
+    hmmreport_files = prop("state.hmmreport_files")
+    redundant = prop("state.redundant")
+    non_redundant = prop("state.non_redundant")
+    redundancy_hash = prop("state.redundancy_hash")
+
+    def validate(self) -> None:
+        """
+        Einfache Konsistenzchecks (optional erweitern).
+        Wirft ValueError bei offensichtlichen Inkonsistenzen.
+        """
+        if self.cli_params.threshold_type not in (1, 2, 3):
+            raise ValueError("threshold_type must be 1 (optimized), 2 (trusted) or 3 (noise)")
+        if self.cli_ops.keywords_connector not in ("AND", "OR"):
+            raise ValueError("keywords_connector must be 'AND' or 'OR'")
+        if self.cli_synteny.min_completeness < 0.0 or self.cli_synteny.min_completeness > 1.0:
+            raise ValueError("min_completeness must be within [0.0, 1.0]")
+        if self.cli_csb.jaccard < 0.0 or self.cli_csb.jaccard > 1.0:
+            raise ValueError("jaccard must be within [0.0, 1.0]")
+        if self.cli_input.cores < 1:
+            raise ValueError("cores must be >= 1")
+
+        # Pfade der Basisstruktur prüfen
+        missing: list[str] = []
+        def _req_dir(path: str, label: str) -> None:
+            if not Path(path).is_dir():
+                missing.append(f"{label}: {path}")
+
+        _req_dir(self.paths.root,    "ROOT_DIR")
+        _req_dir(self.paths.bin,     "BIN_DIR")
+        _req_dir(self.paths.data,    "DATA_DIR")
+        _req_dir(self.paths.hmms,    "HMMS_DIR")
+        _req_dir(self.paths.refseq,  "REFSEQ_DIR")
+        _req_dir(self.paths.results, "RESULTS_DIR")
+
+        if missing:
+            details = "\n - ".join(missing)
+            raise FileNotFoundError(
+                "Required HMSS2 directories are missing:\n - " + details
+            )

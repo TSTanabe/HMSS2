@@ -98,7 +98,7 @@ def create_database(database: str) -> None:
     return
 
 
-def index_database(database):
+def index_database(database: object) -> None:
     """
     12.11.22
     Indexes the relevant columns in the database to improve search and join performance.
@@ -536,7 +536,7 @@ def delete_keywords_from_csb(database: str, options: Any) -> None:
         cur = con.cursor()
 
         # Construct the pattern
-        pattern = f"{options.csb_name_prefix}%{options.csb_name_suffix}"
+        pattern = f"csb-%_"
 
         # SQL query to delete matching keywords
         delete_query = "DELETE FROM Keywords WHERE keyword LIKE ?"

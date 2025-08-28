@@ -1,11 +1,10 @@
-import gzip
 import os
 import sys
 import shutil
 
 from pathlib import Path
 
-from hmsss.utils.paths import BIN_ROOT  # nutzt HMSSS_BIN_DIR
+from hmsss.cli.paths import BIN_DIR  # nutzt HMSSS_BIN_DIR
 from hmsss.core.logging import get_logger
 
 log = get_logger(__name__)
@@ -69,7 +68,7 @@ def find_executable(executable: str) -> str:
         return path
 
     # 2) hmsss BIN_ROOT (ENV HMSSS_BIN_DIR → PROJECT_ROOT/bin)
-    bin_candidate = Path(BIN_ROOT) / executable
+    bin_candidate = Path(BIN_DIR) / executable
     if bin_candidate.is_file() and os.access(str(bin_candidate), os.X_OK):
         log.debug("Found executable in BIN_ROOT: %s", bin_candidate)
         return str(bin_candidate)
@@ -77,7 +76,7 @@ def find_executable(executable: str) -> str:
     log.error(
         "Executable not found: %s. Searched PATH, BIN_ROOT=%s, and %s",
         executable,
-        BIN_ROOT,
+        BIN_DIR,
         Path(get_executable_dir()) / "bin",
     )
     raise FileNotFoundError(f"{executable} executable not found.")

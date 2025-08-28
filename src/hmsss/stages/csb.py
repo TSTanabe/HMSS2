@@ -23,10 +23,10 @@ def csb_finder(options: Hmsss) -> None:
     print_header("CSB finder", logger=log)
 
     log.info("Running collinear syntenic block pattern prediction")
-    csb_cluster.csb_prediction(options)
+    csb_instances = csb_cluster.csb_prediction(options)
 
     csb_gene_cluster_dict = csb_cluster.csb_jaccard(
-        options, 0.0
+        options, computed_Instances_dict=csb_instances, jaccard_distance= 0.0
     )  # 0.0: nur Clusterdict bilden
 
     database.index_database(options.database_directory)

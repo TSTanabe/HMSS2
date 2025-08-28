@@ -6,6 +6,7 @@ import heapq
 from collections import defaultdict, Counter
 from typing import Dict, List, Set, Tuple, Any
 
+from hmsss.core.config import Config
 from src.hmsss.algorithms import csb_mp_algorithm
 from src.hmsss.utils import myUtil
 
@@ -16,12 +17,12 @@ logger = myUtil.log
 
 
 # For the clustering of csbs by jaccard and agglomerativeClustering
-def csb_prediction(options: Any) -> None:
+def csb_prediction(config: Config) -> dict[Any, set[Any]]:
     """
     Main entry for clustering collinear syntenic blocks (CSBs) using the CSB finder and cluster analysis.
 
     Args:
-        options: Options object. Needs:
+        config: Options object. Needs:
             .gene_clusters_file (str)
             .glob_chunks (int)
             .insertions (int)
@@ -42,31 +43,31 @@ def csb_prediction(options: Any) -> None:
     logger.info("Detecting and sorting gene clusters for with csb finder algorithm")
 
     # Sort the all gene clusters that were detected in the search
-    options.gene_clusters_file = sort_by_first_column_and_filter_csb(
-        options.gene_clusters_file,
-        options.glob_chunks,
-        options.min_csb_size,
-        options.max_csb_size,
-        options.max_domain_repeats,
+    config.gene_clusters_file = sort_by_first_column_and_filter_csb(
+        config.gene_clusters_file,
+        config.glob_chunks,
+        config.min_csb_size,
+        config.max_csb_size,
+        config.max_domain_repeats,
     )
 
     # Finds collinear syntenic blocks with the csb finder algorithm using a printed representation of the clusters.
-    options.redundant, options.non_redundant = dereplicate(
-        options.gene_clusters_file
+    config.redundant, config.non_redundant = dereplicate(
+        config.gene_clusters_file
     )  # returns two filepaths, dereplicates identical gene clusters
 
     logger.debug("Initilizing hashes for the Csb match point algorithm")
-    options.redundancy_hash = create_redundancy_hash(
-        options.redundant
+    config.redundancy_hash = create_redundancy_hash(
+        config.redundant
     )  # value is an integer, number of existing replicates
-    gene_clusters = create_gene_cluster_hash(options.non_redundant)
+    gene_clusters = create_gene_cluster_hash(config.non_redundant)
     extend_redundancy_hash(
-        options.non_redundant, options.redundancy_hash
+        config.non_redundant, config.redundancy_hash
     )  # for all which do not have a redundant gene cluster
     # modified CsbfinderS algorithm
     logger.debug("Initilizing Csb match point algorithm for csb pattern recoginition")
     computed_instances_dict = csb_mp_algorithm.csb_finderS_matchpoint_algorithm(
-        options.redundancy_hash, gene_clusters, options.insertions, options.occurence
+        config.redundancy_hash, gene_clusters, config.insertions, config.occurence
     )  # k insertions und q occurences müssen über die optionen festgelegt werden
 
     # Combine reverse csbs
@@ -76,12 +77,13 @@ def csb_prediction(options: Any) -> None:
     )
 
     # Reduce redundancy in the keys
-    options.computed_Instances_dict = csb_collapse_to_longest_pattern(
+    computed_Instances_dict = csb_collapse_to_longest_pattern(
         computed_instances_dict
     )
 
+    return computed_Instances_dict
 
-def csb_jaccard(options: Any, jaccard_distance: float) -> Dict[str, Set[str]]:
+def csb_jaccard(options: Any, computed_Instances_dict: dict[Any, set[Any]], jaccard_distance: float) -> Dict[str, Set[str]]:
     """
     Agglomerative clustering of CSBs based on Jaccard similarity.
 
@@ -96,7 +98,7 @@ def csb_jaccard(options: Any, jaccard_distance: float) -> Dict[str, Set[str]]:
         {'csb*0*': {'GCID_1', 'GCID_3'}, 'csb*1*': {'GCID_2'}}
     """
     computed_Instances_key_list = csb_Instance_key_list(
-        options.computed_Instances_dict, options.min_csb_size
+        computed_Instances_dict, options.min_csb_size
     )
     cluster_dict = dict()
     if len(computed_Instances_key_list) > 1:
@@ -114,9 +116,9 @@ def csb_jaccard(options: Any, jaccard_distance: float) -> Dict[str, Set[str]]:
     csb_gene_cluster_dict, grouped_csb_tuples = csb_index_to_gene_clusterID(
         cluster_dict,
         computed_Instances_key_list,
-        options.computed_Instances_dict,
-        options.csb_name_prefix,
-        options.csb_name_suffix,
+        computed_Instances_dict,
+        "csb-",
+        "_",
     )
     write_grouped_csb(options.csb_output_file, grouped_csb_tuples)
 
@@ -465,13 +467,6 @@ def jaccard(set1: Set[Any], set2: Set[Any]) -> float:
     Example:
         jaccard({'A','B'}, {'B','C'}) -> 0.333...
     """
-    if not isinstance(set1, set) or not isinstance(set2, set):
-        try:
-            set1 = set(set1)
-            set2 = set(set2)
-        except Exception as e:
-            logger.error(f"Error converting to sets for Jaccard: {e}")
-            return 0
 
     intersection = len(set1.intersection(set2))
     union = len(set1) + len(set2) - intersection

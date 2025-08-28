@@ -3,18 +3,20 @@ import os
 import re
 import subprocess
 import traceback
-
-from src.hmsss.utils import myUtil
-
-import numpy as np
-
+from collections import defaultdict
 from multiprocessing import Pool, Manager
 from typing import Dict, Any, List, Set
-from collections import defaultdict
+
+import numpy as np
 from scipy.optimize import linear_sum_assignment
+from hmsss.db import database
+from hmsss.algorithms import csb_finder
+from hmsss.io import output
+from hmsss.algorithms import search_cross_reference
 
-logger = myUtil.log
+from hmsss.core.logging import get_logger
 
+logger = get_logger(__name__)
 
 class Protein:
     """
@@ -428,8 +430,8 @@ def getLocustag(locustag_pattern: re.Pattern, string: str) -> str:
 
 def submit_batches(protein_batch, cluster_batch, options):
     # Insert into the database
-    Database.insert_database_proteins(options.database_directory, protein_batch)
-    Database.insert_database_clusters(options.database_directory, cluster_batch)
+    database.insert_database_proteins(options.database_directory, protein_batch)
+    database.insert_database_clusters(options.database_directory, cluster_batch)
 
     # Append to the gene clusters file
     with open(options.gene_clusters_file, "a") as file:
@@ -472,7 +474,7 @@ def process_writer(queue, options):
                     options.fasta_initial_hit_directory,
                     str(genomeID) + ".hit_table_txt",
                 )
-                Output.output_genome_report(filepath, protein_dict, cluster_dict)
+                output.output_genome_report(filepath, protein_dict, cluster_dict)
 
         # If batch size is reached, process the batch
         if batch_counter >= batch_size:
@@ -493,7 +495,7 @@ def process_writer(queue, options):
                     str(genomeID) + ".hit_table_txt",
                 )
 
-                Output.output_genome_report(filepath, protein_dict, cluster_dict)
+                output.output_genome_report(filepath, protein_dict, cluster_dict)
     logger.info(f"Processed {batch_counter} genomes")
     return
 
@@ -508,17 +510,17 @@ def main_parse_summary_hmmreport(options):
     genomeID_batches = split_into_batches(genome_ids, options.cores - 1)
 
     # Lade Patterns nur 1x im Hauptprozess
-    csb_patterns, csb_names = Csb_finder.make_pattern_dict(options.patterns_file)
-    cooccurrence_pattern, cooccurence_names = Csb_finder.make_pattern_dict(
+    csb_patterns, csb_names = csb_finder.make_pattern_dict(options.patterns_file)
+    cooccurrence_pattern, cooccurence_names = csb_finder.make_pattern_dict(
         options.cooccurrence_file
     )
-    threshold_dict = Search.make_threshold_dict(
+    threshold_dict = search_cross_reference.make_threshold_dict(
         options.score_threshold_file, 3, options.thrs_score
     )
     exclusion_singletons = parse_exclusion_singletons(options.exclusion_singletons)
 
     # Insert genomeIDs in DB
-    Database.insert_database_genomeIDs(options.database_directory, set(genome_ids))
+    database.insert_database_genomeIDs(options.database_directory, set(genome_ids))
 
     with Manager() as manager:
         data_queue = manager.Queue()
@@ -611,8 +613,8 @@ def process_batch(
             process_genome(
                 data_queue=data_queue,
                 genome_id=genome_id,
-                faa_path=faa_files[genome_id],
-                gff_path=gff_files[genome_id],
+                faa_file=faa_files[genome_id],
+                gff_file=gff_files[genome_id],
                 trusted_hmmreport_path=trusted_hmmreport_path,
                 intermediate_hmmreport=intermediate_hmmreport,
                 nucleotide_range=nucleotide_range,
@@ -681,10 +683,10 @@ def process_genome(
         combined_protein_dict = {**intermediate_protein_dict, **trusted_protein_dict}
 
         # Detect and annotate syntenic gene clusters
-        cluster_dict = Csb_finder.find_syntenic_blocks(
+        cluster_dict = csb_finder.find_syntenic_blocks(
             genome_id, combined_protein_dict, nucleotide_range
         )
-        cluster_dict = Csb_finder.name_syntenic_blocks(
+        cluster_dict = csb_finder.name_syntenic_blocks(
             pattern_dict, pattern_names, cluster_dict, min_completeness
         )
 
@@ -818,8 +820,8 @@ def enhance_pathway_completeness(
 
 
 def remove_exclusion_singletons(
-    combined_protein_dict: Dict[str, "Protein"],
-    cluster_dict: Dict[str, "Cluster"],
+    combined_protein_dict: Dict[str, 'Protein'],
+    cluster_dict: Dict[str, 'Cluster'],
     exclusion_singletons: Set[str],
     trusted_protein_ids: Set[str],
 ) -> None:

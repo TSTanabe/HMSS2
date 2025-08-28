@@ -4,12 +4,16 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-from typing import List
+from typing import List, Sequence, Tuple, Any
 
-from hmsss.utils.paths import DATA_ROOT
-from hmsss.core.options import Hmsss as Options
+from hmsss.core.config import (
+    Config, PathsCfg,
+    CliInput, CliSearchParams, CliResources, CliSynteny, CliInfo,
+    CliCsb, CliFlow, CliLimiter, CliOperators, CliProcess,
+)
+from hmsss.cli import paths as paths
+#from hmsss.core.options import Hmsss as Options
 from hmsss.db import project as project
-
 
 # ---------------------------------------------------------------------------
 # Hilfsroutinen (ersetzen die bisher in myUtil verwendeten argparse-Validatoren)
@@ -17,7 +21,7 @@ from hmsss.db import project as project
 
 
 def dir_path(p: str) -> str:
-    """Verlangt ein existierendes Verzeichnis; gibt den absoluten Pfad zurück."""
+    """Verlangt ein existierendes Verzeichnis; gibt den absoluten Pfad zurück. Prüft die existenz des Pfads."""
     ap = os.path.abspath(p)
     if not os.path.isdir(ap):
         raise argparse.ArgumentTypeError(f"directory does not exist: {p}")
@@ -25,7 +29,7 @@ def dir_path(p: str) -> str:
 
 
 def file_path(p: str) -> str:
-    """Verlangt existierenden Pfad (Datei ODER Verzeichnis); gibt den absoluten Pfad zurück."""
+    """Verlangt existierenden Pfad (Datei ODER Verzeichnis); gibt den absoluten Pfad zurück. Prüft die existenz des Pfads."""
     ap = os.path.abspath(p)
     if not os.path.exists(ap):
         raise argparse.ArgumentTypeError(f"path does not exist: {p}")
@@ -35,17 +39,6 @@ def file_path(p: str) -> str:
 def path_str(p: str) -> str:
     """Nur Normalisierung: absoluter Pfad; Existenz wird NICHT geprüft (für -r/-db/Output-Ziele)."""
     return os.path.abspath(p)
-
-
-def _project_root_from_this_file() -> str:
-    """Geht von src/hmsss/cli/parse.py drei Ebenen nach oben → HMSS2/"""
-    here = os.path.abspath(os.path.dirname(__file__))
-    return os.path.abspath(os.path.join(here, "..", "..", ".."))
-
-
-def _data_dir() -> str:
-    return str(DATA_ROOT)
-
 
 def _list_from_csv_or_repeat(values: List[str]) -> List[str]:
     """Erlaubt -hmms A B C oder -hmms A,B,C."""
@@ -60,13 +53,10 @@ def _list_from_csv_or_repeat(values: List[str]) -> List[str]:
 # ---------------------------------------------------------------------------
 
 
-def parse_arguments(arguments: List[str]) -> Options:
+def parse_arguments(*,show_all: bool = False) -> argparse.ArgumentParser:
     """
-    Baut den Argumentparser, liest Args in ein Options(HMSSS)-Objekt ein,
-    setzt Ressourcen-Defaults (HMSS2/data) und erkennt Modi/Stages.
+    Baut den Argumentparser für das Programm
     """
-    show_all = "--help-all" in (arguments or [])
-    clean_args = [a for a in (arguments or []) if a != "--help-all"]
 
     # ---- Argument-Gruppen genau wie in deiner aktuellen main ----
     parser = argparse.ArgumentParser(
@@ -113,9 +103,9 @@ def parse_arguments(arguments: List[str]) -> Options:
     inputdef.add_argument(
         "-r",
         dest="result_files_directory",
-        type=path_str,
+        type=dir_path,
         metavar="<directory>",
-        default=os.path.join(_project_root_from_this_file(), "results"),
+        default=None,
         help="Directory for the result files",
     )
     inputdef.add_argument(
@@ -237,7 +227,7 @@ def parse_arguments(arguments: List[str]) -> Options:
         "-clean",
         dest="clean_reports",
         action="store_true",
-        help="Clean up any pre-existing HMMreport file"
+        help="Overwrite pre-existing hmmsearch report file"
         if show_all
         else argparse.SUPPRESS,
     )
@@ -634,137 +624,219 @@ def parse_arguments(arguments: List[str]) -> Options:
         else argparse.SUPPRESS,
     )
 
-    # ---- Hilfe? Keine Args? ----
+
+    return parser
+
+def parse_cli(argv: Sequence[str] | None = None) -> argparse.Namespace:
+
+    argv = list(argv) if argv is not None else sys.argv[1:]
+    show_all = "--help-all" in argv
+
+    parser = parse_arguments(show_all=show_all)  # baut NUR den Parser
+
     if show_all:
         parser.print_help()
         sys.exit(0)
-    if len(clean_args) == 0:
-        parser.print_help()
-        sys.exit("Please provide arguments. For help use -h or --help-all")
 
-    # ---- In Options(HMSSS)-Objekt einlesen ----
-    options = Options()
-    parser.parse_args(clean_args, namespace=options)
+    return parser.parse_args(argv)
 
-    # ---- Ressourcen-Defaults (HMSS2/data/...) ----
-    data = _data_dir()
-    options.location = _project_root_from_this_file()
-    options.reference_seq_dir = os.path.join(data, "RefSeqs")
+def _s(ns: Any, name: str) -> str | None:
+    """Hilfsfunktion: CLI-Wert als String normalisieren (type= greift nicht auf Defaults)."""
+    v = getattr(ns, name, None)
+    return os.fspath(v) if v is not None else None
 
-    if options.score_threshold_file is None:
-        options.score_threshold_file = os.path.join(data, "Thresholds")
-    if options.library is None:
-        options.library = os.path.join(data, "HMMlib")
-    if options.patterns_file is None:
-        options.patterns_file = os.path.join(data, "Patterns")
-    if options.cooccurrence_file is None:
-        options.cooccurrence_file = os.path.join(data, "Cooccurrence")
-    if options.exclusion_singletons is None:
-        options.exclusion_singletons = os.path.join(data, "Exclusion_singletons")
+def _paths_cfg_from_paths_module() -> PathsCfg:
+    """ Erzeugt ein config objekt mit den konstanten paths"""
+    d = paths.as_dict(str_paths=True)
+    return PathsCfg(
+        root=d["ROOT_DIR"], bin=d["BIN_DIR"], data=d["DATA_DIR"],
+        hmms=d["HMMS_DIR"], refseq=d["REFSEQ_DIR"],
+        results=d["RESULTS_DIR"], package=d["PACKAGE_DIR"],
+    )
 
-    # result_files_directory absolut machen
-    if not os.path.isabs(options.result_files_directory):
-        options.result_files_directory = os.path.abspath(options.result_files_directory)
+def build_config_from_namespace(ns) -> Config:
+    """
+    Übersetzt argparse.Namespace → Config (ohne Legacy).
+    Setzt fehlende Pfad-Defaults aus hmsss.cli.paths.
+    """
+    paths_cfg = _paths_cfg_from_paths_module()
 
-    # Default-Resultpfad = neues Projekt?
-    default_results = os.path.join(_project_root_from_this_file(), "results")
-    options.new_project = options.result_files_directory == default_results
+    # ---------- CLI-Blöcke ----------
+    cli_input = CliInput(
+        fasta_file_directory=_s(ns, "fasta_file_directory"),
+        score_threshold_file=_s(ns, "score_threshold_file") or os.path.join(paths_cfg.data, "Thresholds"),
+        library=_s(ns, "library") or paths_cfg.hmms,
+        result_files_directory=_s(ns, "result_files_directory") or paths_cfg.results,
+        database_directory=_s(ns, "database_directory"),
+        cores=int(getattr(ns, "cores", 4)),
+        glob_report=_s(ns, "glob_report"),
+        verbose=int(getattr(ns, "verbose", 1)),
+    )
 
-    # ---- Betriebsmodi/Stages erkennen (wie in deiner main) ----
-    # Parser-Defaults einsammeln (nur relevante Felder)
-    default_values = {
-        action.dest: action.default
-        for action in parser._actions
-        if getattr(action, "dest", None) and action.dest != "help"
-    }
-    relevant_groups = [
-        "dataset_limit_lineage",
-        "dataset_limit_taxon",
-        "dataset_limit_proteins",
-        "dataset_limit_keywords",
-        "dataset_limit_min_cluster_completeness",
-        "dataset_divide_sign",
-        "fetch_proteins",
-        "fetch_genomes",
-        "fetch_csbs",
-        "fetch_keywords",
-        "keywords_connector",
-        "stat_genomes",
-        "stat_csb",
-        "merge_fasta",
-        "filter_fasta",
-        "concat_alignment",
-        "add_taxonomy",
-        "add_genomic_context",
-        "create_type_range_dataset",
-        "create_gene_cluster_dataset",
-        "gaps",
-    ]
-    default_values = {k: v for k, v in default_values.items() if k in relevant_groups}
+    cli_params = CliSearchParams(
+        threshold_type=int(getattr(ns, "threshold_type", 1)),
+        thrs_score=float(getattr(ns, "thrs_score", 50)),
+        taxonomy_file=_s(ns, "taxonomy_file"),
+        refseq_identity=int(getattr(ns, "refseq_identity", 90)),
+        name=getattr(ns, "name", "project"),
+        stage=int(getattr(ns, "stage", 0)),
+        exit=int(getattr(ns, "exit", 10)),
+    )
 
-    process_args = project.any_process_args_provided(
-        options, default_values
-    )  # returns bool
+    cli_resources = CliResources(
+        HMM_sets=list(getattr(ns, "HMM_sets", [])),
+        clean_reports=bool(getattr(ns, "clean_reports", False)),
+        individual_reports=bool(getattr(ns, "individual_reports", True)),
+        max_seqs_per_genome=int(getattr(ns, "max_seqs_per_genome", 4)),
+        bool_cross_check=bool(getattr(ns, "bool_cross_check", True)),
+        optimized_cutoff_cross_check=bool(getattr(ns, "optimized_cutoff_cross_check", False)),
+    )
 
-    # Spezial-Stage 100 (nur Taxonomy)
-    if (
-        options.taxonomy_file
-        and options.database_directory
-        and not options.fasta_file_directory
-    ):
-        options.stage = 100
+    cli_synteny = CliSynteny(
+        patterns_file=_s(ns, "patterns_file") or os.path.join(paths_cfg.data, "Patterns"),
+        cooccurrence_file=_s(ns, "cooccurrence_file") or os.path.join(paths_cfg.data, "Cooccurrence"),
+        exclusion_singletons=_s(ns, "exclusion_singletons") or os.path.join(paths_cfg.data, "Exclusion_singletons"),
+        min_completeness=float(getattr(ns, "min_completeness", 0.5)),
+        glob_chunks=int(getattr(ns, "glob_chunks", 5000)),
+    )
 
-    # Stage 101: Processing/Fetch/Operators
-    if process_args:
-        options.stage = 101
+    cli_info = CliInfo(
+        stat_keywords=bool(getattr(ns, "stat_keywords", False)),
+        stat_csb=bool(getattr(ns, "stat_csb", False)),
+        stat_genomes=bool(getattr(ns, "stat_genomes", False)),
+    )
 
-        # Fetch?
-        if (
-            options.fetch_proteins
-            or options.fetch_keywords
-            or options.fetch_csbs
-            or options.fetch_genomes
-        ):
-            options.fetch = True
-            if not options.database_directory:
-                sys.exit("Please use the -db argument to provide a valid database")
+    cli_csb = CliCsb(
+        nucleotide_range=int(getattr(ns, "nucleotide_range", 3500)),
+        insertions=int(getattr(ns, "insertions", 1)),
+        occurence=int(getattr(ns, "occurence", 1)),
+        min_csb_size=int(getattr(ns, "min_csb_size", 4)),
+        max_csb_size=int(getattr(ns, "max_csb_size", 50)),
+        max_domain_repeats=int(getattr(ns, "max_domain_repeats", 4)),
+        jaccard=float(getattr(ns, "jaccard", 0.0)),
+    )
 
-            if (
-                options.dataset_limit_proteins
-                or options.dataset_limit_keywords
-                or options.dataset_limit_lineage
-                or options.dataset_limit_taxon
-            ):
-                options.limiter = True
+    cli_flow = CliFlow(redo_taxonomy=bool(getattr(ns, "redo_taxonomy", False)))
 
-        # Processing?
-        if (
-            options.filter_fasta
-            or options.concat_alignment
-            or options.merge_fasta
-            or options.add_taxonomy
-            or options.add_genomic_context
-            or options.create_type_range_dataset
-            or options.create_gene_cluster_dataset
-        ):
-            options.process = True
-            # Für diese hier braucht man DB
-            if (
-                options.add_taxonomy
-                or options.add_genomic_context
-                or options.create_type_range_dataset
-                or options.create_gene_cluster_dataset
-            ):
-                if not options.database_directory:
-                    sys.exit("Please use the -db argument to provide a valid database")
+    cli_limiter = CliLimiter(
+        dataset_limit_lineage=getattr(ns, "dataset_limit_lineage", None),
+        dataset_limit_taxon=getattr(ns, "dataset_limit_taxon", None),
+        dataset_limit_proteins=getattr(ns, "dataset_limit_proteins", "0"),
+        dataset_limit_keywords=getattr(ns, "dataset_limit_keywords", "0"),
+        dataset_divide_sign=getattr(ns, "dataset_divide_sign", "."),
+    )
 
-    # Normalisierung einiger Felder
-    if options.HMM_sets:
-        options.HMM_sets = _list_from_csv_or_repeat(options.HMM_sets)
+    cli_ops = CliOperators(
+        fetch_genomes=list(getattr(ns, "fetch_genomes", [])),
+        fetch_proteins=list(getattr(ns, "fetch_proteins", [])),
+        fetch_csbs=list(getattr(ns, "fetch_csbs", [])),
+        fetch_keywords=list(getattr(ns, "fetch_keywords", [])),
+        keywords_connector=getattr(ns, "keywords_connector", "OR"),
+    )
 
-    if options.filter_fasta:
-        # ['file', '100', '200'] -> ['file', 100, 200]
-        f, lo, hi = options.filter_fasta
-        options.filter_fasta = [str(f), int(lo), int(hi)]
+    cli_process = CliProcess(
+        merge_fasta=_s(ns, "merge_fasta"),
+        filter_fasta=getattr(ns, "filter_fasta", None),
+        concat_alignment=_s(ns, "concat_alignment"),
+        add_taxonomy=_s(ns, "add_taxonomy"),
+        add_genomic_context=_s(ns, "add_genomic_context"),
+        create_type_range_dataset=_s(ns, "create_type_range_dataset"),
+        create_gene_cluster_dataset=_s(ns, "create_gene_cluster_dataset"),
+        gaps=bool(getattr(ns, "gaps", False)),
+    )
 
-    return options
+    cfg = Config(
+        paths=paths_cfg,
+        cli_input=cli_input,
+        cli_params=cli_params,
+        cli_resources=cli_resources,
+        cli_synteny=cli_synteny,
+        cli_info=cli_info,
+        cli_csb=cli_csb,
+        cli_flow=cli_flow,
+        cli_limiter=cli_limiter,
+        cli_ops=cli_ops,
+        cli_process=cli_process,
+    )
+    cfg.validate()
+    return cfg
+
+def _needs_stage_100(ns: argparse.Namespace) -> bool:
+    """ Prüfe ob ein prozess oder fetch argument oder taxonomie addition vorgebracht wurde """
+    # (1) Fetch aus Datenbank angefordert?
+    fetch_requested = any([
+        bool(getattr(ns, "fetch_genomes", [])),
+        bool(getattr(ns, "fetch_proteins", [])),
+        bool(getattr(ns, "fetch_csbs", [])),
+        bool(getattr(ns, "fetch_keywords", [])),
+        bool(getattr(ns, "dataset_limit_lineage", None)),
+        bool(getattr(ns, "dataset_limit_taxon", None)),
+        getattr(ns, "dataset_limit_proteins", "0") not in (None, "0"),
+        getattr(ns, "dataset_limit_keywords", "0") not in (None, "0"),
+    ])
+
+    # (2) Änderungen an FASTA/Alignment?
+    processing_requested = any([
+        bool(getattr(ns, "merge_fasta", None)),
+        bool(getattr(ns, "filter_fasta", None)),              # list mit ["FILE","MIN","MAX"]
+        bool(getattr(ns, "concat_alignment", None)),
+        bool(getattr(ns, "add_taxonomy", None)),              # -add_taxonomy_to_alignment
+        bool(getattr(ns, "add_genomic_context", None)),
+        bool(getattr(ns, "create_type_range_dataset", None)),
+        bool(getattr(ns, "create_gene_cluster_dataset", None)),
+    ])
+
+    # (3) redo taxonomy?
+    redo_tax = bool(getattr(ns, "redo_taxonomy", False))
+
+    return fetch_requested or processing_requested or redo_tax
+
+def _apply_runtime_defaults(ns: argparse.Namespace) -> argparse.Namespace:
+    """
+    Füllt fehlende Pfad-Defaults aus hmsss.cli.paths und legt die Stage robust fest.
+    (post-parse, damit type= Validierungen nicht auf „phantom defaults“ laufen)
+    """
+    # 1) Pfad-Defaults: nur setzen, wenn None/leer
+    def _set_default(attr: str, value: str) -> None:
+        v = getattr(ns, attr, None)
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            setattr(ns, attr, value)
+
+    _set_default("score_threshold_file", str(paths.SRC_FILE_THRESHOLDS))
+    _set_default("library",               str(paths.SRC_FILE_HMM_LIBRARY))
+    _set_default("patterns_file",         str(paths.SRC_FILE_PATTERNS))
+    _set_default("cooccurrence_file",     str(paths.SRC_FILE_COOCCURRENCE))
+    _set_default("exclusion_singletons",  str(paths.SRC_FILE_EXCLUSION_SINGLETONS))
+    _set_default("result_files_directory",str(paths.RESULTS_DIR))
+
+    # Stage normalisieren oder auf 100 forcieren
+    raw_stage = getattr(ns, "stage", None)
+    try:
+        normalized = int(raw_stage) if raw_stage is not None else 0
+    except Exception:
+        normalized = 0
+    # clamp 0..5
+    if normalized < 0: normalized = 0
+    if normalized > 5: normalized = 5
+
+    if _needs_stage_100(ns):
+        setattr(ns, "stage", 100)
+    else:
+        setattr(ns, "stage", normalized)
+
+    return ns
+
+def parse_to_config(argv: list[str] | None = None) -> Config:
+    """
+    Komfort-Funktion: parst argv und liefert direkt eine fertige Config.
+    """
+    ns = parse_cli(argv)  # deine bestehende Routine
+    ns = _apply_runtime_defaults(ns)
+
+    return build_config_from_namespace(ns)
+
+"""
+Hier werden die Argumente von argparse bzw die default werte dieser Argumente addiert
+Danach werden die default Argumente der Laufzeit hinzugefügt. Das betrifft Dateien, die
+unter Umständen noch nicht vorhanden sind und daher nicht im Argparse auftauchen können
+"""
