@@ -9,12 +9,12 @@ from typing import Dict, Any, List, Set
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
-from hmsss.db import database
-from hmsss.algorithms import csb_finder
-from hmsss.io import output
-from hmsss.algorithms import search_cross_reference
 
+from hmsss.algorithms import csb_finder
+from hmsss.algorithms import search_cross_reference
 from hmsss.core.logging import get_logger
+from hmsss.db import database
+from hmsss.io import output
 
 logger = get_logger(__name__)
 
@@ -74,7 +74,7 @@ class Protein:
         # return string
         listing = []
         for key in sorted(self.domains):
-            listing.append(self.domains[key].get_HMM())
+            listing.append(self.domains[key].get_hmm())
         return "-".join(listing)
 
     def get_domains_dict(self):
@@ -91,7 +91,7 @@ class Protein:
     def get_domain_set(self):
         domains = set()
         for v in self.domains.values():
-            domains.add(v.get_HMM())
+            domains.add(v.get_hmm())
         return domains
 
     def get_domain_coordinates(self):
@@ -272,7 +272,7 @@ class Domain:
             )
         return False
 
-    def get_HMM(self):
+    def get_hmm(self):
         return self.HMM
 
     def get_start(self):
@@ -444,6 +444,7 @@ def process_writer(queue, options):
     # This routine handles the output of the search and writes it into the database
     # It gets input from multiple workers as the database connection to sqlite is unique
 
+    global cluster_dict, protein_dict
     protein_batch = {}
     cluster_batch = {}
     batch_size = options.glob_chunks
@@ -456,7 +457,7 @@ def process_writer(queue, options):
 
         else:
             batch_counter += 1
-            print(f"Processed {batch_counter} genomes ", end="\r")  #
+            logger.debug(f"Processed {batch_counter} genomes ")  #
 
         protein_dict, cluster_dict = tup
 
@@ -505,39 +506,39 @@ def process_writer(queue, options):
 #########################################################################################
 
 
-def main_parse_summary_hmmreport(options):
-    genome_ids = list(options.queued_genomes)
-    genomeID_batches = split_into_batches(genome_ids, options.cores - 1)
+def main_parse_summary_hmmreport(config):
+    genome_ids = list(config.queued_genomes)
+    genomeID_batches = split_into_batches(genome_ids, config.cores - 1)
 
     # Lade Patterns nur 1x im Hauptprozess
-    csb_patterns, csb_names = csb_finder.make_pattern_dict(options.patterns_file)
+    csb_patterns, csb_names = csb_finder.make_pattern_dict(config.patterns_file)
     cooccurrence_pattern, cooccurence_names = csb_finder.make_pattern_dict(
-        options.cooccurrence_file
+        config.cooccurrence_file
     )
     threshold_dict = search_cross_reference.make_threshold_dict(
-        options.score_threshold_file, 3, options.thrs_score
+        config.score_threshold_file, 3, config.thrs_score
     )
-    exclusion_singletons = parse_exclusion_singletons(options.exclusion_singletons)
+    exclusion_singletons = parse_exclusion_singletons(config.exclusion_singletons)
 
     # Insert genomeIDs in DB
-    database.insert_database_genomeIDs(options.database_directory, set(genome_ids))
+    database.insert_database_genome_ids(config.database_directory, set(genome_ids))
 
     with Manager() as manager:
         data_queue = manager.Queue()
 
-        with Pool(processes=options.cores) as pool:
+        with Pool(processes=config.cores) as pool:
             # Start writer
-            p_writer = pool.apply_async(process_writer, (data_queue, options))
+            p_writer = pool.apply_async(process_writer, (data_queue, config))
             args = [
                 (
                     data_queue,
                     batch,
-                    options.faa_files,
-                    options.gff_files,
-                    options.glob_trusted_hitreport,
-                    options.glob_intermediate_hitreport,
-                    options.nucleotide_range,
-                    options.min_completeness,
+                    config.faa_files,
+                    config.gff_files,
+                    config.glob_trusted_hitreport,
+                    config.glob_intermediate_hitreport,
+                    config.nucleotide_range,
+                    config.min_completeness,
                     csb_patterns,
                     csb_names,
                     cooccurrence_pattern,
@@ -551,7 +552,7 @@ def main_parse_summary_hmmreport(options):
             pool.starmap(process_batch, args)
 
             # End writer
-            for _ in range(options.cores):
+            for _ in range(config.cores):
                 data_queue.put(None)
 
             p_writer.get()
@@ -640,7 +641,7 @@ def process_genome(
     nucleotide_range: int,
     min_completeness: float,
     pattern_dict: Dict[str, list],
-    pattern_names: Dict[str, Any],
+    pattern_names: Dict[str, str],
     cooccurrence_pattern: Dict[str, list],
     exclusion_singletons: Set[str],
     threshold_dict: Dict[str, float],
@@ -787,7 +788,7 @@ def enhance_pathway_completeness(
     # Build mapping from domain name to all (protein_id, score) tuples in the genome
     for protein_id, protein in protein_dict.items():
         for domain in protein.get_domain_listing():
-            domain_name = domain.get_HMM()
+            domain_name = domain.get_hmm()
             score = domain.get_score()
             domain_to_protein.setdefault(domain_name, []).append((protein_id, score))
 
@@ -850,7 +851,7 @@ def remove_exclusion_singletons(
             and protein_id not in trusted_protein_ids
         ):
             for domain in protein.get_domain_listing():
-                if domain.get_HMM() in exclusion_singletons:
+                if domain.get_hmm() in exclusion_singletons:
                     to_remove.add(protein_id)
                     break
 
@@ -1225,7 +1226,7 @@ def find_possible_transitions(
                         (
                             domain.get_score()
                             for domain in protein.domains.values()
-                            if domain.get_HMM() == current_domain
+                            if domain.get_hmm() == current_domain
                         ),
                         0,
                     )
@@ -1234,7 +1235,7 @@ def find_possible_transitions(
                     transition_dict[query].add((hit_proteinID, difference))
 
             except Exception as e:
-                logger.warn(f"Skipped line in {hmmreport} due to an error - {str(e)}")
+                logger.warning(f"Skipped line in {hmmreport} due to an error - {str(e)}")
                 continue
 
     return alternative_protein_type_dict, transition_dict

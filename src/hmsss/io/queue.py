@@ -43,8 +43,8 @@ def queue_fna_inputs(config) -> dict[str, str]:
                 decompress_targets.add(gz_path)
 
     if decompress_targets:
-        log.info(f"[FNA] Planned to decompress {len(decompress_targets)} file(s).")
-        _parallel_decompress(decompress_targets, getattr(config, "cores", None))
+        log.info(f"Planned to decompress {len(decompress_targets)} .fna file(s).")
+        _parallel_decompress(decompress_targets, getattr(config, "cores", 4))
 
     # Nach evtl. Entpacken erneut einlesen
     fna_files = get_genome_id_files_dict(root, extension=".fna")

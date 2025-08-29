@@ -221,7 +221,7 @@ class Config:
 
     fasta_file_directory = prop("cli_input.fasta_file_directory")  # :contentReference[oaicite:6]{index=6}
     database_in         = prop("cli_input.database_directory")    # Eingabe-DB (CLI) :contentReference[oaicite:7]{index=7}
-    result_dir_in        = prop("cli_input.result_files_directory")# Eingabe-Results (CLI) :contentReference[oaicite:8]{index=8}
+    cli_result_dir_in        = prop("cli_input.result_files_directory")# Eingabe-Results (CLI) :contentReference[oaicite:8]{index=8}
     cores                = prop("cli_input.cores")                 # :contentReference[oaicite:9]{index=9}
     verbose              = prop("cli_input.verbose")               # :contentReference[oaicite:10]{index=10}
     score_threshold_file = prop("cli_input.score_threshold_file")  # :contentReference[oaicite:11]{index=11}
@@ -236,6 +236,7 @@ class Config:
     max_seqs_per_genome          = prop("cli_resources.max_seqs_per_genome")
     optimized_cutoff_cross_check = prop("cli_resources.optimized_cutoff_cross_check")
 
+    # Database operations
     keywords_connector = prop("cli_ops.keywords_connector")        # :contentReference[oaicite:15]{index=15}
     fetch_genomes      = prop("cli_ops.fetch_genomes")             # :contentReference[oaicite:16]{index=16}
     fetch_proteins     = prop("cli_ops.fetch_proteins")            # :contentReference[oaicite:17]{index=17}
@@ -283,6 +284,7 @@ class Config:
     glob_trusted_hitreport = prop("project.glob_trusted_hitreport")
     glob_intermediate_hitreport = prop("project.glob_intermediate_hitreport")
 
+    # Laufzeit und State Ausgaben
     queued_genomes = prop("state.queued_genomes")
     finished_genomes = prop("state.finished_genomes")
     fna_files = prop("state.fna_files")

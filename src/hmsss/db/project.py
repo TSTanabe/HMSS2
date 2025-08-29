@@ -1,12 +1,12 @@
 #!/usr/bin/python
-
+from __future__ import annotations
 import csv
 import os
-import sys
+
 from datetime import datetime
 from dataclasses import is_dataclass, asdict
 from pathlib import Path
-from typing import Any, Mapping, Iterable
+from typing import Any, Mapping, Iterable, Tuple, Optional
 
 from hmsss.core.logging import get_logger
 logger = get_logger(__name__)
@@ -32,31 +32,26 @@ def prepare_result_space(config, project: str = "project") -> None:
     timestamp = str(datetime.timestamp(now))
 
     # Use standard result directory if -r was not used
-    if config.paths.results == config.result_dir_in:
+    if config.paths.results == config.cli_result_dir_in:
         # Make a new project in default directory
         config.result_files_directory = create_project(config.paths.results, project)
-        write_config_to_tsv(config, config.result_files_directory)
+        new_project = True
 
-    # User-defined directory: check for project
-    elif not is_existing_project_directory(config):
-        if not os.path.isdir(config.result_files_directory):
-            try:
-                os.mkdir(config.result_files_directory)
-                logger.info(f"Created results dir: {config.result_files_directory}")
-            except Exception as e:
-                logger.error(
-                    f"No writing rights for directory {config.result_files_directory}\n {e}"
-                )
-                sys.exit(1)
+    else:
+        # -r was given search for existing project
+        tuple_database_dir_database_path = find_database_in_directory(config.cli_result_dir_in)
+        if tuple_database_dir_database_path:
+            # Existing database was found, first occurrence of .db is used
+            database_dir, database_path = tuple_database_dir_database_path
+            config.result_files_directory = str(database_dir)
 
-        config.result_files_directory = create_project(
-            config.result_files_directory, project
-        )
-        config.new_project = True
-        write_config_to_tsv(config, config.result_files_directory)
+        else:
+            # No existing was found, save new project to given location
+            config.result_files_directory = create_project(config.cli_result_dir_in, project)
+            new_project = True
 
-        # Project structure, applies in both cases
-        # Directories
+    # The project directory is now saved in config.result_files_directory
+    # Setup the project folders
     config.database_directory = config.result_files_directory + "/database.db"
     config.fasta_initial_hit_directory = config.result_files_directory + "/Hit_list"
     config.fasta_output_directory = config.result_files_directory + "/Sequences"
@@ -66,11 +61,9 @@ def prepare_result_space(config, project: str = "project") -> None:
     config.cross_check_directory = config.result_files_directory + "/Filtered_hits"
 
     # Output files
-    if config.glob_report is None or not os.path.isfile(config.glob_report):
-        config.glob_report = os.path.join(
+    config.glob_report = os.path.join(
             config.result_files_directory, "global_report.cat_hmmreport"
         )
-
     config.glob_trusted_hitreport = (
             config.result_files_directory + "/global_trusted_hits_summary.hmmreport"
     )
@@ -90,15 +83,17 @@ def prepare_result_space(config, project: str = "project") -> None:
         if not os.path.exists(path):
             os.mkdir(path)
 
+    # Write down setting
+    write_config_to_tsv(config, config.result_files_directory)
     # 5. If using a pre-existing project, force pipeline to start at stage 3
-    # if not options.new_project and options.stage < 3:
+    #if new_project and config.stage < 3:
     #    logger.warning("Existing project directory detected. Setting start stage to 4.")
-    #    options.stage = 4
+    #    config.stage = 4
 
     return
 
 
-def create_project(directory, projectname="project"):
+def create_project(directory, projectname="project")-> str:
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")  # z. B. "2025-04-16_14-53-21"
     directory = os.path.join(directory, f"{timestamp}_{projectname}")
@@ -111,84 +106,36 @@ def create_project(directory, projectname="project"):
     return directory
 
 
-def is_existing_project_directory(config) -> bool:
+def find_database_in_directory(
+    directory: str | Path,
+    db_name: str = "database.db",
+) -> Optional[Tuple[Path, Path]]:
     """
-    Checks if a result_files_directory contains a valid project structure.
-    If a database is found, adjusts options accordingly.
-
-    Args:
-        config (Options): Has .result_files_directory etc.
+    Suche nach einer DB-Datei unterhalb von `directory`.
 
     Returns:
-        bool: True if project folder found or created, else False.
+        (database_dir, database_path) oder None
     """
+    root = Path(directory).expanduser().resolve()
 
-    # Database may be provided, then consider this as a result directory
-    if config.database_directory and os.path.isfile(config.database_directory):
-        config.result_files_directory = os.path.dirname(config.database_directory)
+    # 1) Erwartete Position: direkt in `directory`
+    candidate = root / db_name
+    if candidate.is_file():
+        return candidate.parent, candidate
 
-    try:
-        database_path = os.path.join(config.result_files_directory, "database.db")
+    logger.warning(
+        "No database file at expected location: %s. Searching recursively under %s.",
+        candidate, root,
+    )
 
-        if not os.path.isfile(database_path):
-            logger.warning(
-                "No database file found in expected directory. Searching recursively..."
-            )
+    # 2) Rekursiv suchen – erster Treffer
+    for db_path in root.rglob(db_name):
+        logger.info("Found database at %s", db_path)
+        return db_path.parent, db_path
 
-            # Recursive search for database.db
-            found_db = None
-            for root, dirs, files in os.walk(config.result_files_directory):
-                if "database.db" in files:
-                    found_db = os.path.join(root, "database.db")
-                    break
+    logger.warning("No database named %r found under %s.", db_name, root)
+    return None
 
-            if found_db:
-                logger.info(f"Found database at {found_db}")
-                config.result_files_directory = os.path.dirname(found_db)
-            else:
-                logger.warning(
-                    "No database found at all. Existing project was not found."
-                )
-                return False
-
-        # Now ensure required directories exist
-        required_dirs = [
-            "Sequences",
-            "Filtered_hits",
-            "Hit_list",
-            "Collinear_syntenic_blocks",
-        ]
-
-        for subdir in required_dirs:
-            path = os.path.join(config.result_files_directory, subdir)
-            if not os.path.isdir(path):
-                logger.info(f"Missing directory {subdir} created")
-                os.makedirs(path, exist_ok=True)
-
-        self_query_path = os.path.join(config.result_files_directory, "self_blast.faa")
-        if os.path.isfile(self_query_path):
-            config.self_query = self_query_path
-        else:
-            logger.warning(
-                "No internal query file (self_blast.faa) found. Will need to create it later."
-            )
-
-        # Find blast table if not already defined
-        if config.glob_report is None:
-            for file_name in os.listdir(config.result_files_directory):
-                if file_name.startswith("global_report.cat_hmmreport"):
-                    config.glob_report = os.path.join(
-                        config.result_files_directory, file_name
-                    )
-                    break
-
-    except Exception as e:
-        logger.error(
-            f"An error occurred while checking for existing project folder: {e}"
-        )
-        sys.exit(1)
-
-    return True
 
 
 def any_process_args_provided(args, default_values: dict) -> bool:
@@ -209,7 +156,7 @@ def any_process_args_provided(args, default_values: dict) -> bool:
     return False
 
 
-
+# Routinen für den config file
 def write_config_to_tsv(
     config: Any,
     output_directory: str | os.PathLike,

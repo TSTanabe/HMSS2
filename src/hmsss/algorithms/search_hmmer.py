@@ -1,17 +1,14 @@
 #!/usr/bin/python
 
 import os
-import sys
-import glob
-import subprocess
-import shlex
-import shutil
-import tempfile
+
 from multiprocessing import Pool, Value, Lock
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 
 from hmsss.core.logging import get_logger
+from hmsss.utils.myUtil import get_genome_id
+
 log = get_logger(__name__)
 
 # Global shared variables
@@ -24,7 +21,7 @@ counter_lock = None
 ########################################################################################################
 
 
-def consecutive_hmm_search(options: Any, processes: int = 4) -> Dict[str, str]:
+def consecutive_hmm_search(options: Any, processes: int = 4) -> list[str]:
     """
     Executes a parallelized HMM search across multiple genome protein files and processes the results.
 
@@ -104,6 +101,7 @@ def run_search(
     prefixes each hit with the file's basename, and writes the results to a new .hmmreport file.
 
     Args:
+        hmmreport_path (str): Path to the HMM report file
         faa_file (str): Path to the input protein FASTA file.
         query_db (str): Path to the HMM profile database.
         score (float): The minimum bit score threshold for reporting hits.
@@ -139,7 +137,7 @@ def hmm_search(
     """Executes HMMER hmmsearch and returns path to the domtblout file.
 
     Args:
-        path (str): Path to input protein FASTA file.
+        faa_path (str): Path to input protein FASTA file.
         query_db (str): Path to HMM profile database.
         score (float): Minimum bit score threshold for reporting hits.
         clean_reports (bool, optional): If True, overwrite existing output files.
@@ -180,7 +178,7 @@ def prefix_domtblout_hits(
 
     # Neuen Prefix vorbereiten (basename ohne Endung)
     basename = os.path.splitext(os.path.basename(domtblout_path))[0]
-
+    basename = get_genome_id(basename)
     if os.path.isfile(domtblout_path):
         with open(domtblout_path, "r") as infile, open(hmmreport_path, "w") as outfile:
             for line in infile:

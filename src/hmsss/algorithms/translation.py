@@ -17,7 +17,6 @@ def parallel_translation(fna_files: dict[str,str], cores: int) -> None:
 
     Args:
         fna_files (dict[str,str]): Dictionary of fasta files to translate.:
-        directory (str): Path to the directory with fasta/fna files.
         cores (int): Number of CPU cores to use (multiprocessing).
 
     Output:
@@ -39,9 +38,10 @@ def parallel_translation(fna_files: dict[str,str], cores: int) -> None:
     lock = manager.Lock()
     length = len(fna_files)
     prodigal = myUtil.find_executable("prodigal")
+
     with multiprocessing.Pool(processes=cores) as pool:
         args_list = [
-            (fasta, length, counter, lock, prodigal) for fasta in fna_files
+            (fna_fasta, length, counter, lock, prodigal) for fna_fasta in fna_files.values()
         ]
         pool.map(translate_fasta, args_list)
     logger.info(f"Processing assembly {counter.value} of {length}")
@@ -65,6 +65,7 @@ def translate_fasta(
 
     string = f"{prodigal} -a {faa} -i {fasta} >/dev/null 2>&1"
     try:
+
         os.system(string)
     except Exception as e:
         logger.warning(f"Could not translate {fasta} - {e}")
@@ -73,7 +74,7 @@ def translate_fasta(
     with lock:
         counter.value += 1
         print(
-            f"[INFO] Processing assembly {counter.value} of {length}",
+            f"Prodigal processing assembly {counter.value} of {length}",
             end="\r",
             flush=True,
         )
@@ -89,20 +90,15 @@ def parallel_transcription(faa_files: dict[str,str], cores: int) -> None:
     """
     8.10.22
         Args:
-            directory   fasta file containing directory
+            cores: Number of cores
+            faa_files: Dictionary of fasta files to translate.
 
         Transcribe for all faa files gff3 files
         Secure a packed and unpacked version is present
         Unlink unpacked versions afterward
         Warning: if the directory path includes parentheses function prodigal is not working
-    For all .faa files in a directory, transcribe GFF3 files using prodigal header format.
+        For all .faa files in a directory, transcribe GFF3 files using prodigal header format.
 
-    Args:
-        directory (str): Directory with .faa and .gff files.
-        cores (int): Number of CPU cores.
-
-    Output:
-        GFF files are generated in-place.
     """
 
     manager = multiprocessing.Manager()
@@ -111,7 +107,7 @@ def parallel_transcription(faa_files: dict[str,str], cores: int) -> None:
     length = len(faa_files)
 
     with multiprocessing.Pool(processes=cores) as pool:
-        args_list = [(fasta, length, counter, lock) for fasta in faa_files]
+        args_list = [(faa_fasta, length, counter, lock) for faa_fasta in faa_files.values()]
         pool.map(transcripe_fasta, args_list)
 
     logger.info(f"Generated corresponding gff files")
@@ -135,8 +131,8 @@ def transcripe_fasta(
         with lock:
             counter.value += 1
             print(
-                f"[INFO] Processing file {counter.value} of {length}",
-                end="",
+                f"Processing file {counter.value} of {length}",
+                end="\r",
                 flush=True,
             )
 
@@ -201,7 +197,7 @@ def prodigal_faa_to_gff(filepath: str) -> str:
                     line = line[1:]
                     ar = line.split("#")
                     # print(ar)
-                    contig = re.split(r"_{1}\d+\W+$", ar[0])
+                    contig = re.split(r"_\d+\W+$", ar[0])
                     # print(contig)
                     strand = "+" if ar[3] == " 1 " else "-"
                     writer.write(

@@ -1,16 +1,16 @@
 #!/usr/bin/python
 from collections import defaultdict
 import os
-
-
 import sqlite3
 
+from collections import defaultdict
 from Bio import SeqIO
-from src.hmsss.utils import myUtil
 from operator import add
 from itertools import combinations
 from math import floor
-
+from src.hmsss.utils import myUtil
+from hmsss.core.logging import get_logger
+logger = get_logger(__name__)
 
 ##################################################################
 ########## Species tree mapping matrix from diction ##############

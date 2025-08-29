@@ -6,9 +6,9 @@ import traceback
 import time
 from typing import List, Dict, Set, Any
 
-from src.hmsss.utils import myUtil
+from hmsss.core.logging import get_logger
 
-logger = myUtil.log
+logger = get_logger(__name__)
 
 ########## Write output to Database Routines ##########
 
@@ -98,7 +98,7 @@ def create_database(database: str) -> None:
     return
 
 
-def index_database(database: object) -> None:
+def index_database(database: str) -> None:
     """
     12.11.22
     Indexes the relevant columns in the database to improve search and join performance.
@@ -156,7 +156,7 @@ def index_database(database: object) -> None:
         sys.exit(1)
 
 
-def insert_database_genomeIDs(database: str, genomeIDs: List[str]) -> None:
+def insert_database_genome_ids(database: str, genome_ids: Set[str]) -> None:
     """
     22.6.24
         Args:
@@ -169,10 +169,10 @@ def insert_database_genomeIDs(database: str, genomeIDs: List[str]) -> None:
         cur.execute("""PRAGMA synchronous = OFF;""")
         cur.execute("""PRAGMA journal_mode = OFF;""")
         # Prepare a list of tuples, each containing one genomeID
-        genomeID_tuples = [(genomeID,) for genomeID in genomeIDs]
+        genome_id_tuples = [(genomeID,) for genomeID in genome_ids]
         # Use executemany to insert all genomeIDs in a single batch
         cur.executemany(
-            """INSERT OR IGNORE INTO Genomes (genomeID) VALUES (?)""", genomeID_tuples
+            """INSERT OR IGNORE INTO Genomes (genomeID) VALUES (?)""", genome_id_tuples
         )
         con.commit()
     con.close()
@@ -181,10 +181,10 @@ def insert_database_genomeIDs(database: str, genomeIDs: List[str]) -> None:
 
 def insert_database_proteins(database: str, protein_dict: Dict[str, Any]) -> None:
     """
-    Inserts for concated glob hmmsearches. GenomeId must be defined within the protein object
+    Inserts for concatenated glob hmm searches. GenomeId must be defined within the protein object
     Args:
         database (str): Path to database file.
-        protein_dict (dict): Dictionary of protein objects. proteinID => obj
+        protein_dict (dict): Dictionary of protein objects. protein_id => obj
     """
 
     try:
@@ -202,17 +202,17 @@ def insert_database_proteins(database: str, protein_dict: Dict[str, Any]) -> Non
             domain_records = []
 
             for protein in protein_list:
-                genomeID = protein.genomeID
-                proteinID = f"{genomeID}-{protein.proteinID}"
+                genome_id = protein.genomeID
+                protein_id = f"{genome_id}-{protein.proteinID}"
                 domains = protein.domains
-                if not genomeID or not proteinID:
+                if not genome_id or not protein_id:
                     print(f"[WARN] Undefined error for {protein.proteinID}")
                     continue
 
                 # Prepare the protein record
                 protein_record = (
-                    proteinID,
-                    genomeID,
+                    protein_id,
+                    genome_id,
                     protein.gene_locustag,
                     protein.gene_contig,
                     protein.gene_start,
@@ -228,7 +228,7 @@ def insert_database_proteins(database: str, protein_dict: Dict[str, Any]) -> Non
                 # Prepare domain records
                 for domain in domains.values():
                     domain_record = (
-                        proteinID,
+                        protein_id,
                         domain.HMM,
                         domain.start,
                         domain.end,
@@ -258,7 +258,7 @@ def insert_database_proteins(database: str, protein_dict: Dict[str, Any]) -> Non
 
     except Exception as e:
         logger.warning(
-            f"Proteins were not inserted for {genomeID}.\nError: - {str(e)}\nTraceback: {traceback.format_exc()}"
+            f"Proteins were not inserted for {genome_id}.\nError: - {str(e)}\nTraceback: {traceback.format_exc()}"
         )
 
     return
@@ -285,20 +285,20 @@ def insert_database_clusters(database: str, cluster_dict: Dict[str, Any]) -> Non
             keyword_inserts = []
 
             for cluster_index, cluster in cluster_dict.items():
-                clusterID = cluster.get_clusterID()
-                if clusterID is None:
+                cluster_id = cluster.get_cluster_id()
+                if cluster_id is None:
                     continue
 
-                cluster_inserts.append((clusterID, cluster.genomeID))
+                cluster_inserts.append((cluster_id, cluster.genomeID))
 
                 for proteinID in cluster.get_genes():
-                    full_proteinID = f"{cluster.genomeID}-{proteinID}"
-                    protein_updates.append((clusterID, full_proteinID))
+                    full_protein_id = f"{cluster.genomeID}-{proteinID}"
+                    protein_updates.append((cluster_id, full_protein_id))
 
                 for Keyword in cluster.get_keywords():
                     keyword_inserts.append(
                         (
-                            clusterID,
+                            cluster_id,
                             Keyword.get_keyword(),
                             Keyword.get_completeness(),
                             Keyword.get_csb(),
@@ -419,7 +419,7 @@ def insert_taxonomy_data(database: str, taxonomy_file: str) -> None:
 
 
 def parse_taxonomy_line(line: str, na: str = "") -> List[str]:
-    RANK_KEYS = ["domain", "phylum", "class", "order", "family", "genus", "species"]
+    rank_keys = ["domain", "phylum", "class", "order", "family", "genus", "species"]
 
     parts = line.rstrip("\n").split("\t")
     if len(parts) < 2:
@@ -431,7 +431,7 @@ def parse_taxonomy_line(line: str, na: str = "") -> List[str]:
     tax_str = parts[1].strip()
 
     raw_tokens = [t.strip() for t in tax_str.split(";") if t.strip()]
-    ranks = {k: na for k in RANK_KEYS}
+    ranks = {k: na for k in rank_keys}
 
     prefix_to_rank = {
         "d__": "domain",
@@ -455,7 +455,7 @@ def parse_taxonomy_line(line: str, na: str = "") -> List[str]:
                 ranks[rank] = value
                 break
 
-    return [genome_id] + [ranks[k] for k in RANK_KEYS]
+    return [genome_id] + [ranks[k] for k in rank_keys]
 
 
 ##############################################################
@@ -524,19 +524,20 @@ def update_keywords(
     return
 
 
-def delete_keywords_from_csb(database: str, options: Any) -> None:
+def delete_keywords_from_csb(database: str, prefix: str = "csb-", suffix: str = "_") -> None:
     """
     Remove keywords from the database that match the pattern options.csb_name_prefix + a number + options.csb_name_suffix.
 
     Args:
         database: Name of the database to be worked on.
-        options: An object containing csb_name_prefix and csb_name_suffix attributes.
+        prefix: prefix of the keyword to be deleted
+        suffix: suffix of the keyword to be deleted
     """
     with sqlite3.connect(database) as con:
         cur = con.cursor()
 
         # Construct the pattern
-        pattern = f"csb-%_"
+        pattern = f"{prefix}%{suffix}"
 
         # SQL query to delete matching keywords
         delete_query = "DELETE FROM Keywords WHERE keyword LIKE ?"
@@ -551,24 +552,24 @@ def delete_keywords_from_csb(database: str, options: Any) -> None:
     return
 
 
-def fetch_genomeIDs(database: str) -> Set[str]:
+def fetch_genome_ids(database: str) -> Set[str]:
     """
-    Fetches the distinct genomeIDs from the Genomes table in the SQLite database.
+    Fetches the distinct genome_ids from the Genomes table in the SQLite database.
 
     Args:
         database: Path to the SQLite database.
 
     Returns:
-        A set of distinct genomeIDs.
+        A set of distinct genome_ids.
     """
     with sqlite3.connect(database) as con:
         cur = con.cursor()
         cur.execute("SELECT DISTINCT genomeID FROM Genomes")
 
-        # Use set comprehension to create the set of genomeIDs
-        genomeIDs = {row[0] for row in cur.fetchall()}
+        # Use set comprehension to create the set of genome_ids
+        genome_ids = {row[0] for row in cur.fetchall()}
 
-    return genomeIDs
+    return genome_ids
 
 
 def clean_database_locks(database_path, wait_seconds=10):
@@ -667,8 +668,12 @@ def fetch_genome_statistic(database):
             for row in rows:
                 print(row)
                 writer.write(f"{row[0]}" + "\t" + f"{row[1]}\n")
-        except:
-            print("ERROR: Could not open write database statistics")
+        except (FileNotFoundError, IsADirectoryError, PermissionError) as e:
+            # Pfad existiert nicht / ist ein Verzeichnis / fehlt Schreibrecht
+            raise OSError(f"Cannot write statistics from '{database}': {e}") from e
+        except OSError as e:
+            # Sonstige OS-bezogene I/O-Fehler (IOError alias)
+            raise OSError(f"I/O error while writing '{database}': {e}") from e
         else:
             writer.close()
 

@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import bisect
-import os
 
 
 class InstanceList:

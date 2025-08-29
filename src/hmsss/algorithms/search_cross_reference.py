@@ -12,13 +12,15 @@ import tempfile
 from multiprocessing import Pool
 from typing import Dict, List, Optional, TYPE_CHECKING
 
+from hmsss.core.config import Config
+
 if TYPE_CHECKING:
     from hmsss.core.options import Hmsss
 
 from hmsss.core.logging import get_logger
 from hmsss.utils.myUtil import find_executable
 
-log = get_logger(__name__)
+logger = get_logger(__name__)
 
 
 # Global shared variables
@@ -47,12 +49,12 @@ def concatenate_hmmreports_cat_xargs(
     Returns:
         output_path
     """
-    log.info(f"Concatenate raw hit reports to {output_path}")
+    logger.info(f"Concatenate raw hit reports to {output_path}")
 
     # Filter existing files
     valid_paths = [p for p in report_paths.values() if os.path.isfile(p)]
     if not valid_paths:
-        log.error("No valid hmmreport files found.")
+        logger.error("No valid hmmreport files found.")
         raise FileNotFoundError("No valid hmmreport files found.")
 
     # Create/overwrite output
@@ -67,10 +69,6 @@ def concatenate_hmmreports_cat_xargs(
             for p in valid_paths:
                 tf.write(p.encode("utf-8") + b"\x00")
 
-        # Use xargs -0 to feed cat; 'shell=True' to allow redirection
-        cmd = f"xargs -0 -a {tmp_list} cat -- >> {shlex.quote(output_path)}"
-        # Avoid importing shlex? If preferred, do:
-        # import shlex at top and use shlex.quote
         cmd = (
             f"xargs -0 -a {shlex.quote(tmp_list)} cat -- >> {shlex.quote(output_path)}"
         )
@@ -80,7 +78,7 @@ def concatenate_hmmreports_cat_xargs(
             raise RuntimeError(f"xargs/cat failed with code {completed.returncode}")
 
     except Exception as e:
-        log.warning(f"xargs+cat failed ({e}); falling back to Python copy.")
+        logger.warning(f"xargs+cat failed ({e}); falling back to Python copy.")
         # Fast block-wise fallback (no argv limits, nearly as fast as cat)
         with open(output_path, "wb") as outfp:
             for p in valid_paths:
@@ -89,7 +87,8 @@ def concatenate_hmmreports_cat_xargs(
     finally:
         try:
             os.unlink(tmp_list)
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Temporary concatenation file as not unlinked {e}")
             pass
 
         return output_path
@@ -129,7 +128,7 @@ def make_threshold_dict(
                             5000
                         )  # Hardcode never reachable score cutoff equal to infinite
             except (ValueError, IndexError) as e:
-                log.warning(
+                logger.warning(
                     f"[Line {line_number}] Problem parsing: {line.strip()} — {e}"
                 )
                 continue
@@ -242,7 +241,7 @@ def process_single_hmm(
                 continue
 
             try:
-                score = float(parts[7])  # Bit-Score
+
                 if int(parts[10]) > 1:
                     # Domain Bit score is in column 13
                     score = float(parts[13])
@@ -254,12 +253,12 @@ def process_single_hmm(
                 continue
 
             if score >= trusted_cutoff:
-                log.debug(
+                logger.debug(
                     f"Above trusted cutoff hit {score} >= {trusted_cutoff} {parts[0]} {parts[3]}"
                 )
                 trusted_out.write(line)
             elif score > noise_cutoff:
-                log.debug(
+                logger.debug(
                     f"Intermediate above noise cutoff hit {score} >= {trusted_cutoff} {parts[0]} {parts[3]}"
                 )
                 candidates[target] = score
@@ -334,12 +333,12 @@ def extract_fasta_per_intermediate_hitfile(
             for genome_id, protein_ids in genome_hits.items():
                 faa_path = options.faa_files.get(genome_id)
                 if not faa_path or not os.path.isfile(faa_path):
-                    log.warning(f".faa file not found for genome: {genome_id}")
+                    logger.warning(f".faa file not found for genome: {genome_id}")
                     continue
 
                 with open(faa_path, "r") as faa:
                     write = False
-                    header_id = None
+
 
                     for line in faa:
                         if line.startswith(">"):
@@ -364,7 +363,7 @@ def process_hitfile(
 
     # Skip existing outputs
     if os.path.isfile(output_fasta):
-        log.debug(f"The above noise hit faa file already existed for {hmm_id}")
+        logger.debug(f"The above noise hit faa file already existed for {hmm_id}")
         return
 
     genome_hits = {}
@@ -383,14 +382,15 @@ def process_hitfile(
         for genome_id, protein_ids in genome_hits.items():
             faa_path = faa_files.get(genome_id)
 
+
             if not faa_path or not os.path.isfile(faa_path):
-                log.warning(f"FASTA not found for {genome_id} {faa_path}")
+                logger.warning(f"FASTA not found for {genome_id} {faa_path}")
+
                 continue
 
-            written = 0  # <-- pro genom zurücksetzen
+            written = 0  # ← pro genom zurücksetzen
             with open(faa_path, "r") as faa:
                 write = False
-                header_id = None
 
                 for line in faa:
                     if line.startswith(">"):
@@ -406,12 +406,12 @@ def process_hitfile(
 
 
 def generate_faa_per_hitfile_parallel(
-    options: Hmsss, intermediate_hit_dir: str, processes: int = 4
+    config: Config, intermediate_hit_dir: str, processes: int = 4
 ) -> None:
     """Parallel extraction of FASTA for all .intermediate_hits files in a directory.
 
     Args:
-        options (object): Configuration object containing:
+        config (object): Configuration object containing:
             - faa_files (Dict[str, str]): Mapping from genome ID to FASTA path.
         intermediate_hit_dir (str): Directory containing .intermediate_hits files.
         processes (int, optional): Number of parallel workers.
@@ -420,12 +420,13 @@ def generate_faa_per_hitfile_parallel(
         None
 
     Example:
-        >>> generate_faa_per_hitfile_parallel(options, '/tmp/xcheck', 2)
+        >>> generate_faa_per_hitfile_parallel(config, '/tmp/xcheck', 2)
     """
 
     output_dir = intermediate_hit_dir  # same dir for output
-    faa_files = options.faa_files  # dict: genome_id → path
-    max_seqs_per_genome = options.max_seqs_per_genome
+    faa_files = config.faa_files  # dict: genome_id → path
+
+    max_seqs_per_genome = config.max_seqs_per_genome
 
     hitfiles = [
         os.path.join(intermediate_hit_dir, f)
@@ -469,7 +470,7 @@ def find_refseq_file(base_dir: str, filename: str) -> Optional[str]:
 
 def cross_check_candidates_with_reference_seqs(config) -> List[str]:
     """Cross-checks candidate hit sequences with reference sequences using DIAMOND with fallback for .faa search."""
-    log.info("Cross check hit sequences with reference sequences")
+    logger.info("Cross check hit sequences with reference sequences")
 
     refseq_dir = config.paths.refseq
     refseq_unavailable_list = []
@@ -481,7 +482,7 @@ def cross_check_candidates_with_reference_seqs(config) -> List[str]:
     diamond = find_executable("diamond")
 
     for inter_file in intermediate_files:
-        log.debug(
+        logger.debug(
             f"Checking reference sequences for candidates sequences in {inter_file}"
         )
         hmm_id = os.path.splitext(os.path.basename(inter_file))[0].replace(
@@ -494,20 +495,20 @@ def cross_check_candidates_with_reference_seqs(config) -> List[str]:
         output_file = os.path.join(cross_check_dir, f"{hmm_id}.crosschecked.tsv")
 
         if os.path.isfile(output_file):
-            log.debug(f"Results already present for {hmm_id}")
+            logger.debug(f"Results already present for {hmm_id}")
             continue
         try:
             # 1. Try exact match for .dmnd
             if not os.path.isfile(db_path):
                 # 2. Try exact match for .faa
                 exact_faa = os.path.join(refseq_dir, f"{hmm_id}.faa")
-                faa_path = None
+
                 if os.path.isfile(exact_faa):
                     faa_path = exact_faa
-                    log.debug(f"Found exact match: {exact_faa}")
+                    logger.debug(f"Found exact match: {exact_faa}")
                 else:
                     # 3. Fallback: any file ending with {hmm_type}.faa
-                    log.debug(
+                    logger.debug(
                         f"Exact match for {hmm_id} was not found. Now searching for {hmm_type}.faa"
                     )
                     pattern = os.path.join(refseq_dir, f"**/*{hmm_type}.faa")
@@ -515,15 +516,15 @@ def cross_check_candidates_with_reference_seqs(config) -> List[str]:
 
                     if backup_faa_files:
                         faa_path = backup_faa_files[0]
-                        log.debug(f"Using backup match: {faa_path}")
+                        logger.debug(f"Using backup match: {faa_path}")
                     else:
-                        log.warning(
+                        logger.warning(
                             f"Skipping {hmm_id}: Reference sequence file not found."
                         )
                         refseq_unavailable_list.append(hmm_id)
                         continue
 
-                log.debug(f"Creating Diamond DB from {faa_path} for {hmm_id}")
+                logger.debug(f"Creating Diamond DB from {faa_path} for {hmm_id}")
                 subprocess.run(
                     [diamond, "makedb", "--in", faa_path, "-d", db_path, "--quiet"],
                     check=True,
@@ -549,14 +550,14 @@ def cross_check_candidates_with_reference_seqs(config) -> List[str]:
                 str(config.cores),
                 "--quiet",
             ]
-            log.info(f"Verifying {hmm_id} hits with reference sequences")
-            result = subprocess.run(cmd)
+            logger.info(f"Verifying {hmm_id} hits with reference sequences")
+            subprocess.run(cmd)
 
             if os.path.getsize(output_file) == 0:
                 os.remove(output_file)
 
         except Exception as e:
-            log.error(f"Failed to compare with diamond {hmm_id}\nError: {e}")
+            logger.error(f"Failed to compare with diamond {hmm_id}\nError: {e}")
             refseq_unavailable_list.append(hmm_id)
             continue
 
@@ -580,9 +581,9 @@ def process_crosscheck(hmm_id: str, crosscheck_dir: str) -> None:
     trusted_path = os.path.join(crosscheck_dir, f"{hmm_id}.trusted_hits")
 
     if not os.path.exists(crosscheck_path):
-        log.error(f"Crosscheck file missing: '{crosscheck_path}'")
+        logger.error(f"Crosscheck file missing: '{crosscheck_path}'")
     if not os.path.exists(intermediate_path):
-        log.error(f"Intermediate file missing: '{intermediate_path}'")  #
+        logger.error(f"Intermediate file missing: '{intermediate_path}'")  #
 
     # Lade IDs aus crosscheck
     valid_hits = set()
@@ -606,7 +607,7 @@ def process_crosscheck(hmm_id: str, crosscheck_dir: str) -> None:
                 trusted.write(line)
                 promoted_count += 1
 
-    log.info(
+    logger.info(
         f"{hmm_id}: promoted {promoted_count} hits via comparison with reference sequences"
     )
 
@@ -669,11 +670,13 @@ def summarize_trusted_hits(
     ]
 
     if not trusted_files:
-        log.error("No trusted hit files found for summary.")
-        log.info("There were no hits found in any genome. Closing the search")
+        logger.error("No trusted hit files found for summary.")
+        logger.info("There were no hits found in any genome. Closing the search")
         sys.exit()
 
     exit_code = os.system(f"cat {' '.join(trusted_files)} > {summary_path}")
+    if exit_code != 0:
+        logger.error("Could not summarize hit files")
 
     return summary_path
 
@@ -747,7 +750,7 @@ def process_optimized_cutoff(
     threshold_score = optimized_dict.get(hmm_id, 50)
 
     if not os.path.isfile(intermediate_path):
-        log.warning(f"Intermediate or trusted hit file missing for {hmm_id}")
+        logger.warning(f"Intermediate or trusted hit file missing for {hmm_id}")
         return
 
     promoted_count = 0
@@ -763,6 +766,6 @@ def process_optimized_cutoff(
                 trusted.write(line)
                 promoted_count += 1
 
-    log.info(
+    logger.info(
         f"{hmm_id}: promoted {promoted_count} hits due to the given threshold {threshold_score}"
     )

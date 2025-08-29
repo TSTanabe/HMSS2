@@ -16,9 +16,6 @@ class Cluster:
         clusterID = unique string
 
     11.04.23 added the cluster_start and cluster_end lines
-
-    Organizes genes in synteny with a specific order.
-    Each cluster has a unique clusterID derived from the assemblyID plus an index number.
     """
 
     def __init__(self, cluster_id: str, distance: int = 3500) -> None:
@@ -90,20 +87,20 @@ class Cluster:
         tmp = "-".join(self.types)
         return set(tmp.split("-"))
 
-    def get_clusterID(self):
+    def get_cluster_id(self):
         return self.clusterID
 
     def get_protein_type_list(self) -> List[str]:
         """
         Returns a list of protein types behind the last '_' in each entry of self.types.
-        Example: "grp0_ProteinA" → "ProteinA", "TGIRFAM0000_ProteinB" → "ProteinB".
+        Example: "grp0_ProteinA" → "ProteinA", "TIGRFAM0000_ProteinB" → "ProteinB".
         """
         return [typus.split("_")[-1] if "_" in typus else typus for typus in self.types]
 
     def get_protein_type_set(self) -> Set[str]:
         """
         Returns a set of unique protein types behind the last '_' in each entry of self.types.
-        Example: "grp0_ProteinA" → "ProteinA", "TGIRFAM0000_ProteinB" → "ProteinB".
+        Example: "grp0_ProteinA" → "ProteinA", "TIGRFAM0000_ProteinB" → "ProteinB".
         """
         return {typus.split("_")[-1] if "_" in typus else typus for typus in self.types}
 
@@ -121,7 +118,7 @@ class Cluster:
             keywords_string += separator + str(element.get_keyword())
             completeness_string += separator + str(element.get_completeness())
             csb_string += separator + str(element.get_csb())
-        return [self.get_clusterID(), keywords_string]
+        return [self.get_cluster_id(), keywords_string]
 
 
 class Keyword:

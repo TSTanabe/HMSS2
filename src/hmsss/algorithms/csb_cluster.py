@@ -8,12 +8,13 @@ from typing import Dict, List, Set, Tuple, Any
 
 from hmsss.core.config import Config
 from src.hmsss.algorithms import csb_mp_algorithm
-from src.hmsss.utils import myUtil
+
 
 from scipy.spatial import distance
 from sklearn.cluster import AgglomerativeClustering
+from hmsss.core.logging import get_logger
 
-logger = myUtil.log
+logger = get_logger(__name__)
 
 
 # For the clustering of csbs by jaccard and agglomerativeClustering
@@ -77,17 +78,19 @@ def csb_prediction(config: Config) -> dict[Any, set[Any]]:
     )
 
     # Reduce redundancy in the keys
-    computed_Instances_dict = csb_collapse_to_longest_pattern(
+    computed_instances_dict = csb_collapse_to_longest_pattern(
         computed_instances_dict
     )
 
-    return computed_Instances_dict
+    return computed_instances_dict
 
-def csb_jaccard(options: Any, computed_Instances_dict: dict[Any, set[Any]], jaccard_distance: float) -> Dict[str, Set[str]]:
+def csb_jaccard(options: Any, computed_instances_dict: dict[Any, set[Any]], jaccard_distance: float) -> dict[str, set[
+    Any]]:
     """
     Agglomerative clustering of CSBs based on Jaccard similarity.
 
     Args:
+        computed_instances_dict: includes the instances of csb from the csb mp algorithm
         options: Options object with .computed_Instances_dict, .min_csb_size, etc.
         jaccard_distance (float): Threshold for clustering. 0.2 means at least 80% overlap.
 
@@ -97,26 +100,26 @@ def csb_jaccard(options: Any, computed_Instances_dict: dict[Any, set[Any]], jacc
     Example Output:
         {'csb*0*': {'GCID_1', 'GCID_3'}, 'csb*1*': {'GCID_2'}}
     """
-    computed_Instances_key_list = csb_Instance_key_list(
-        computed_Instances_dict, options.min_csb_size
+    computed_instances_key_list = csb_instance_key_list(
+        computed_instances_dict, options.min_csb_size
     )
     cluster_dict = dict()
-    if len(computed_Instances_key_list) > 1:
+    if len(computed_instances_key_list) > 1:
         matrix = calculate_similarity_matrix_jaccard(
-            computed_Instances_key_list
+            computed_instances_key_list
         )  # matrix of similarity and the corresponding clusterID for each row and column as names
         cluster_dict = hierachy_clustering(
             matrix, jaccard_distance
         )  # 0.2 means that 80 % have to be the same genes
-    elif len(computed_Instances_key_list) == 1:
+    elif len(computed_instances_key_list) == 1:
         cluster_dict[0] = [0]
     else:
-        return
+        return {}
     # Sorts the csb keywords to the geneclusters based on the present csb
-    csb_gene_cluster_dict, grouped_csb_tuples = csb_index_to_gene_clusterID(
+    csb_gene_cluster_dict, grouped_csb_tuples = csb_index_to_gene_cluster_id(
         cluster_dict,
-        computed_Instances_key_list,
-        computed_Instances_dict,
+        computed_instances_key_list,
+        computed_instances_dict,
         "csb-",
         "_",
     )
@@ -360,7 +363,7 @@ def extend_redundancy_hash(
     return redundancy_hash
 
 
-def csb_Instance_key_list(instance_dict: Dict[Any, Any], threshold: int) -> List[Any]:
+def csb_instance_key_list(instance_dict: Dict[Any, Any], threshold: int) -> List[Any]:
     """
     Returns keys of Instance_dict with length >= threshold.
 
@@ -552,10 +555,10 @@ def hierachy_clustering(
     return clusters
 
 
-def csb_index_to_gene_clusterID(
+def csb_index_to_gene_cluster_id(
     cluster_dict: Dict[int, List[int]],
-    computed_Instances_key_list: List[Any],
-    computed_Instances_dict: Dict[Any, Set[Any]],
+    computed_instances_key_list: List[Any],
+    computed_instances_dict: Dict[Any, Set[Any]],
     prefix: str = "csb-",
     suffix: str = "_",
 ) -> Tuple[Dict[str, List[Any]], Dict[str, List[Any]]]:
@@ -564,9 +567,10 @@ def csb_index_to_gene_clusterID(
 
     Args:
         cluster_dict: cluster id -> row indices
-        computed_Instances_key_list: List of tuple keys (order = matrix rows)
-        computed_Instances_dict: key -> set of gene clusters
-        prefix, suffix: CSB cluster label
+        computed_instances_key_list: List of tuple keys (order = matrix rows)
+        computed_instances_dict: key -> set of gene clusters
+        prefix: prefix for all automatically defined csb
+        suffix: suffix for all automatically defined csb
 
     Returns:
         dict1: csbID -> [gene cluster IDs]
@@ -581,11 +585,11 @@ def csb_index_to_gene_clusterID(
 
     for key, indices in cluster_dict.items():
         tuples = [
-            computed_Instances_key_list[i] for i in indices
+            computed_instances_key_list[i] for i in indices
         ]  # list of tuples corresponding to the indices from jaccard clustering
         result_dict2[prefix + str(key) + suffix] = tuples
         for i in tuples:
-            for e in computed_Instances_dict[
+            for e in computed_instances_dict[
                 i
             ]:  # returns all clusterIDs of the csb 'i'
                 if prefix + str(key) + suffix in result_dict.keys():
@@ -617,12 +621,12 @@ def replicates(
     # Read cluster IDs from the redundant file
     with open(filepath_redundant, "r") as file:
         for line in file:
-            clusterIDs = line.strip().split("\t")
-            first_clusterID = clusterIDs[0]
-            redundant_dict[first_clusterID] = clusterIDs[1:]
+            cluster_ids = line.strip().split("\t")
+            first_cluster_id = cluster_ids[0]
+            redundant_dict[first_cluster_id] = cluster_ids[1:]
     # Iterate through the csb_gene_cluster_dict and merge with redundant_dict
     for key, cluster_ids in csb_gene_cluster_dict.items():
-        expanded_clusters = set(
+        expanded_clusters: set[Any] = set(
             cluster_ids
         )  # Create a copy to avoid modifying the original list
         for cluster_id in cluster_ids:

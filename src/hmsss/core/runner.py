@@ -41,73 +41,64 @@ def run_pipeline(config) -> None:
     101: Operatoren/Fetch/Processing (wenn any_process_args_provided True)
     """
 
-        # --- Vorbereitende Schritte & Ressourcen ---
-    if config.stage < 100:
-        # Ergebnisraum anlegen (Unterordner, Projektpfade, etc.)
-        project.prepare_result_space(config)
+    # Ergebnisraum anlegen (Unterordner, Projektpfade, etc.)
+    project.prepare_result_space(config)
 
-        # Logging initialisieren (falls nicht schon in __main__ geschehen)
-        log_file = os.path.join(config.result_files_directory, "execution_logfile.txt")
-        setup_logging(getattr(config, "verbose", 1), log_file)
+    # Logging initialisieren
+    log_file = os.path.join(config.result_files_directory, "execution_logfile.txt")
+    setup_logging(getattr(config, "verbose", 1), log_file)
 
-        print_header("\nInitializing resources")
+    if config.stage < 6:
+        print_header("Initializing resources")
         ressource_preparation(config)
 
 
     # --- Stage 1: FASTA/Prodigal ---
     if config.stage <= 1 <= config.exit:
-        print_header("\nProkaryotic gene recognition and translation (prodigal)")
+        print_header("Prokaryotic gene recognition and translation (prodigal)")
         fasta_preparation(config)
 
     # --- Stage 2: Hmmsearch ---
     if config.stage <= 2 <= config.exit:
-        print_header("\nQueueing input files")
+        print_header("Queueing input files")
         queue_protein_annotation_inputs(config)
 
-        print_header("\nSearching for homologous sequences (hmmsearch)")
+        print_header("Searching for homologous sequences (hmmsearch)")
         initial_search(config)
         config.stage = 2
 
     # --- Stage 3: Cross-Check / Cutoffs ---
     if config.stage <= 3 <= config.exit:
-        print_header("\nCross check with reference sequences / cutoff optimization")
+        print_header("Cross check with reference sequences / cutoff optimization")
         reference_sequence_check(config)
         config.stage = 3
 
     # --- Stage 4: Reports -> DB ---
     if config.stage <= 4 <= config.exit:
-        print_header("\nParse trusted hits and recognized gene clusters into database")
+        print_header("Parse trusted hits and recognized gene clusters into database")
         parse_reports_to_database(config)
         config.stage = 4
 
     # --- Stage 5: CSB Finder ---
     if config.stage <= 5 <= config.exit:
-        print_header("\nSearching for collinear syntenic blocks (CSB)")
+        print_header("Searching for collinear syntenic blocks (CSB)")
         csb_finder(config)
         config.stage = 5
 
     # --- Stage 6: Taxonomy ---
     if config.stage <= 6 <= config.exit:
-        print_header("\nAssigning taxonomy information")
+        print_header("Assigning taxonomy information")
         collect_taxonomy_information(config)
-
-    # --- Spezialfälle >= 100 ---
-    if config.stage > 99:
-        # eigenes Logging sicherstellen (falls 100/101 direkt aufgerufen werden)
-        log_file = os.path.join(config.result_files_directory, "execution_logfile.txt")
-        setup_logging(getattr(config, "verbose", 1), log_file)
 
     if config.stage == 100:
-        print_header("\nAssigning taxonomy information (stage 100)")
-        collect_taxonomy_information(config)
+       print_header("Assigning taxonomy information (stage 100)")
+       collect_taxonomy_information(config)
 
     # --- Output-/Stats-/Processing-Operatoren ---
-    if getattr(config, "fetch", False):
-        print_header("\nOutput from database (fetch)")
+    if config.stage == 101:
+        print_header("Output from database (fetch)")
         if not config.database_directory:
-            raise SystemExit(
-                "Please use the -db argument to provide a valid database for fetch operations."
-            )
+            logger.error(f"Database not found in given project {config.result_files_directory}. Please use a valid project directory or use the -db argument to provide a valid database for fetch operations.")
         index_database(config.database_directory)
         output_operator(config)
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-from typing import List, Sequence, Tuple, Any
+from typing import List, Sequence, Any
 
 from hmsss.core.config import (
     Config, PathsCfg,
@@ -12,8 +12,8 @@ from hmsss.core.config import (
     CliCsb, CliFlow, CliLimiter, CliOperators, CliProcess,
 )
 from hmsss.cli import paths as paths
-#from hmsss.core.options import Hmsss as Options
-from hmsss.db import project as project
+from hmsss.db.database import fetch_genome_statistic
+
 
 # ---------------------------------------------------------------------------
 # Hilfsroutinen (ersetzen die bisher in myUtil verwendeten argparse-Validatoren)
@@ -762,6 +762,14 @@ def build_config_from_namespace(ns) -> Config:
     return cfg
 
 def _needs_stage_100(ns: argparse.Namespace) -> bool:
+    """ Prüfe ob redo taxonomy angefordert wurde"""
+    redo_taxonomy_requested = any([
+        bool(getattr(ns, "redo_taxonomy", False)),
+    ])
+
+    return redo_taxonomy_requested
+
+def _needs_stage_101(ns: argparse.Namespace) -> bool:
     """ Prüfe ob ein prozess oder fetch argument oder taxonomie addition vorgebracht wurde """
     # (1) Fetch aus Datenbank angefordert?
     fetch_requested = any([
@@ -786,10 +794,8 @@ def _needs_stage_100(ns: argparse.Namespace) -> bool:
         bool(getattr(ns, "create_gene_cluster_dataset", None)),
     ])
 
-    # (3) redo taxonomy?
-    redo_tax = bool(getattr(ns, "redo_taxonomy", False))
 
-    return fetch_requested or processing_requested or redo_tax
+    return fetch_requested or processing_requested
 
 def _apply_runtime_defaults(ns: argparse.Namespace) -> argparse.Namespace:
     """
@@ -820,7 +826,11 @@ def _apply_runtime_defaults(ns: argparse.Namespace) -> argparse.Namespace:
     if normalized > 5: normalized = 5
 
     if _needs_stage_100(ns):
+        # Required for redo taxonomy command
         setattr(ns, "stage", 100)
+    if _needs_stage_101(ns):
+        # Required for all dataset, output and processing commands
+        setattr(ns, "stage", 101)
     else:
         setattr(ns, "stage", normalized)
 
@@ -830,10 +840,10 @@ def parse_to_config(argv: list[str] | None = None) -> Config:
     """
     Komfort-Funktion: parst argv und liefert direkt eine fertige Config.
     """
-    ns = parse_cli(argv)  # deine bestehende Routine
-    ns = _apply_runtime_defaults(ns)
-
-    return build_config_from_namespace(ns)
+    namespace = parse_cli(argv)  # deine bestehende Routine
+    namespace = _apply_runtime_defaults(namespace)
+    config = build_config_from_namespace(namespace)
+    return config
 
 """
 Hier werden die Argumente von argparse bzw die default werte dieser Argumente addiert

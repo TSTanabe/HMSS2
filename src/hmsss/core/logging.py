@@ -45,7 +45,7 @@ def setup_logging(
         "%(asctime)s | %(levelname)-8s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
     )
     file_format = logging.Formatter(
-        "%(asctime)s | %(levelname)-8s | %(name)s: %(message)s",
+        "%(asctime)s | %(levelname)-8s | %(filename)s:%(lineno)d | %(name)s: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
@@ -85,7 +85,7 @@ def print_header(
     Write headers into logfile
     """
     log = logger or get_logger(__name__)
-    text: str = 3 * char + " " + text + " " + 3 * char
+    text: str = 5 * char + f" {text} " + 5 * char
     log.info(text)
 
 
