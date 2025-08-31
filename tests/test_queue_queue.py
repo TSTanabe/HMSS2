@@ -13,6 +13,7 @@ from hmsss.io.queue import get_genome_id_files_dict, _parallel_decompress
 # Hilfen für den Test
 # -----------------------------------------------------------
 
+
 class Options:
     def __init__(self, fasta_file_directory: str, cores: Optional[int] = 4):
         self.fasta_file_directory = fasta_file_directory
@@ -26,6 +27,7 @@ class Options:
         self.missing_gff_genomes: Set[str] = set()
         self.faa_missing_gff: Dict[str, str] = {}
 
+
 # Minimale, robuste GenomeID-Extraktion:
 # Nimmt den gesamten Basename ohne die angegebene Endung; bei .gz wird die vorletzte Endung entfernt.
 def _strip_ext_for_genome_id(path: Path, extension: str) -> str:
@@ -38,6 +40,7 @@ def _strip_ext_for_genome_id(path: Path, extension: str) -> str:
     stem = name.split(".", 1)[0]
     return stem
 
+
 def impl_get_genome_id_files_dict(root: str, extension: str = ".faa") -> Dict[str, str]:
     rootp = Path(root)
     out: Dict[str, str] = {}
@@ -48,6 +51,7 @@ def impl_get_genome_id_files_dict(root: str, extension: str = ".faa") -> Dict[st
             gid = _strip_ext_for_genome_id(p, extension)
             out[gid] = str(p)
     return out
+
 
 def impl_parallel_decompress(paths: Set[str], cores: Optional[int] = None) -> None:
     # "Entpackt" *.gz -> legt einfach die ungezippte Datei an (leer oder Inhalt kopiert).
@@ -66,10 +70,12 @@ def impl_parallel_decompress(paths: Set[str], cores: Optional[int] = None) -> No
         with open(out_path, "wb") as f_out:
             f_out.write(data)
 
+
 # Dummy-Logger
 class DummyLog:
     def info(self, *args, **kwargs):
         pass
+
 
 log = DummyLog()
 
@@ -81,11 +87,12 @@ log = DummyLog()
 # die wir im Test per monkeypatch ersetzen.
 # -----------------------------------------------------------
 
+
 def queue_fna_inputs(options) -> dict[str, str]:
     root = options.fasta_file_directory
     fna_gz_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".fna.gz")
-    fna_files: Dict[str, str]    = get_genome_id_files_dict(root, extension=".fna")
-    faa_files: Dict[str, str]    = get_genome_id_files_dict(root, extension=".faa")
+    fna_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".fna")
+    faa_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".faa")
     faa_gz_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".faa.gz")
 
     faa_all_genomes: Set[str] = set(faa_files) | set(faa_gz_files)
@@ -116,8 +123,8 @@ def queue_protein_annotation_inputs(options) -> None:
 
     faa_gz_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".faa.gz")
     gff_gz_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".gff.gz")
-    faa_files: Dict[str, str]    = get_genome_id_files_dict(root, extension=".faa")
-    gff_files: Dict[str, str]    = get_genome_id_files_dict(root, extension=".gff")
+    faa_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".faa")
+    gff_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".gff")
 
     decompress_targets: Set[str] = set()
     for gid, gz_path in faa_gz_files.items():
@@ -133,13 +140,17 @@ def queue_protein_annotation_inputs(options) -> None:
 
     faa_files = get_genome_id_files_dict(root, extension=".faa")
     gff_files = get_genome_id_files_dict(root, extension=".gff")
-    hmmreport_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".hmmreport")
+    hmmreport_files: Dict[str, str] = get_genome_id_files_dict(
+        root, extension=".hmmreport"
+    )
 
     common_ids: Set[str] = set(faa_files) & set(gff_files)
 
     faa_files = {gid: path for gid, path in faa_files.items() if gid in common_ids}
     gff_files = {gid: path for gid, path in gff_files.items() if gid in common_ids}
-    hmmreport_files = {gid: path for gid, path in hmmreport_files.items() if gid in common_ids}
+    hmmreport_files = {
+        gid: path for gid, path in hmmreport_files.items() if gid in common_ids
+    }
 
     options.queued_genomes = common_ids
     options.faa_files = faa_files
@@ -175,9 +186,7 @@ def queue_faa_without_gff(options) -> dict[str, str]:
     faa_files = get_genome_id_files_dict(root, extension=".faa")
 
     faa_missing_gff: Dict[str, str] = {
-        gid: faa_files[gid]
-        for gid in missing_gff_genomes
-        if gid in faa_files
+        gid: faa_files[gid] for gid in missing_gff_genomes if gid in faa_files
     }
 
     log.info(f"Queued {len(faa_missing_gff)} faa files without gff for transcription.")
@@ -188,10 +197,13 @@ def queue_faa_without_gff(options) -> dict[str, str]:
 # Pytest Fixtures
 # -----------------------------------------------------------
 
+
 @pytest.fixture
 def patched_helpers(monkeypatch):
     # monkeypatch globale Namen, die in den Routinen referenziert werden
-    monkeypatch.setitem(globals(), "get_genome_id_files_dict", impl_get_genome_id_files_dict)
+    monkeypatch.setitem(
+        globals(), "get_genome_id_files_dict", impl_get_genome_id_files_dict
+    )
     monkeypatch.setitem(globals(), "_parallel_decompress", impl_parallel_decompress)
     # optional: echten Logger ersetzen, falls gewünscht
     monkeypatch.setitem(globals(), "log", DummyLog())
@@ -217,12 +229,18 @@ def example_tree(tmp_path: Path):
     """
     files = [
         "A.fna.gz",
-        "B.fna.gz", "B.faa.gz",
+        "B.fna.gz",
+        "B.faa.gz",
         "C.fna",
-        "D.faa", "D.gff", "D.hmmreport",
-        "E.faa.gz", "E.gff",
-        "F.faa", "F.gff.gz",
-        "G.faa.gz", "G.gff.gz",
+        "D.faa",
+        "D.gff",
+        "D.hmmreport",
+        "E.faa.gz",
+        "E.gff",
+        "F.faa",
+        "F.gff.gz",
+        "G.faa.gz",
+        "G.gff.gz",
         "H.faa",
         "I.faa.gz",
         "J.gff",
@@ -246,6 +264,7 @@ def example_tree(tmp_path: Path):
 # Tests
 # -----------------------------------------------------------
 
+
 def test_queue_fna_inputs(example_tree, patched_helpers):
     opts = Options(str(example_tree))
 
@@ -257,7 +276,11 @@ def test_queue_fna_inputs(example_tree, patched_helpers):
     # Erwartung: A und L werden entpackt (A.fna, L.fna), C bleibt;
     # B.fna(.gz) wird NICHT in fna_files gelistet (weil FAA existiert)
     got_ids = set(opts.fna_files.keys())
-    assert got_ids == {"A", "C", "sub/L"} or got_ids == {"A", "C", "L"}  # je nach GenomeID-Extraktion; hier rechnen wir mit "sub/L"
+    assert got_ids == {"A", "C", "sub/L"} or got_ids == {
+        "A",
+        "C",
+        "L",
+    }  # je nach GenomeID-Extraktion; hier rechnen wir mit "sub/L"
 
     # Entpackte Dateien existieren?
     assert (example_tree / "A.fna").exists()

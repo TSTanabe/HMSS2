@@ -5,9 +5,16 @@ import sys
 from pathlib import Path
 import argparse
 import pytest
+
 # ganz oben
 from pathlib import Path
-from typing import Any, Mapping, Iterable, Optional, Tuple  # <- Optional, Tuple ergänzen
+from typing import (
+    Any,
+    Mapping,
+    Iterable,
+    Optional,
+    Tuple,
+)  # <- Optional, Tuple ergänzen
 
 
 # ---------------- Import/Fixtures wie in deinen anderen Tests ----------------
@@ -22,6 +29,7 @@ def _add_src_to_syspath() -> None:
 def parse_mod():
     _add_src_to_syspath()
     from hmsss.cli import parse  # type: ignore
+
     return parse
 
 
@@ -29,6 +37,7 @@ def parse_mod():
 def project_mod():
     _add_src_to_syspath()
     from hmsss.db import project  # type: ignore
+
     return project
 
 
@@ -43,7 +52,8 @@ def fake_project(tmp_path: Path) -> dict[str, Path]:
     (root / "data" / "RefSeqs").mkdir(parents=True, exist_ok=True)
     (root / "results").mkdir(parents=True, exist_ok=True)
     (root / "src" / "hmsss").mkdir(parents=True, exist_ok=True)
-    genomes = root / "genomes"; genomes.mkdir(parents=True, exist_ok=True)
+    genomes = root / "genomes"
+    genomes.mkdir(parents=True, exist_ok=True)
     # optionale Ordner, die parse/build_config ggf. als Defaults setzt:
     for sub in ("Thresholds", "Patterns", "Cooccurrence", "Exclusion_singletons"):
         (root / "data" / sub).mkdir(parents=True, exist_ok=True)
@@ -111,7 +121,8 @@ def _mk_existing_project_tree(base: Path) -> dict[str, Path]:
     base.mkdir(parents=True, exist_ok=True)
     db = base / "database.db"  # passe Name ggf. an (z.B. hmsss.sqlite)
     db.write_text("", encoding="utf-8")
-    csb_dir = base / "CSB"; csb_dir.mkdir(parents=True, exist_ok=True)
+    csb_dir = base / "CSB"
+    csb_dir.mkdir(parents=True, exist_ok=True)
     (base / "global_report.hmmreport").write_text("", encoding="utf-8")
     (base / "global_trusted_hits.hmmreport").write_text("", encoding="utf-8")
     (base / "global_intermediate_hits.hmmreport").write_text("", encoding="utf-8")
@@ -129,6 +140,7 @@ def _mk_existing_project_tree(base: Path) -> dict[str, Path]:
 
 
 # ================================ TESTS ======================================
+
 
 def test_prepare_default_results_dir(parse_mod, project_mod, set_paths):
     """
@@ -166,8 +178,11 @@ def test_prepare_empty_custom_results_dir(parse_mod, project_mod, set_paths, tmp
       * prepare_result_space richtet den Raum ein
       * DB-Ziel (falls gesetzt) liegt unterhalb von -r
     """
-    custom_res = tmp_path / "my_results"; custom_res.mkdir(parents=True, exist_ok=True)
-    cfg = parse_mod.parse_to_config(["-f", str(set_paths["genomes"]), "-r", str(custom_res)])
+    custom_res = tmp_path / "my_results"
+    custom_res.mkdir(parents=True, exist_ok=True)
+    cfg = parse_mod.parse_to_config(
+        ["-f", str(set_paths["genomes"]), "-r", str(custom_res)]
+    )
 
     project_mod.prepare_result_space(cfg)
 
@@ -180,15 +195,19 @@ def test_prepare_empty_custom_results_dir(parse_mod, project_mod, set_paths, tmp
         assert str(db).startswith(str(res_dir))
 
 
-def test_prepare_results_with_db_in_subdirectory(parse_mod, project_mod, set_paths, tmp_path):
+def test_prepare_results_with_db_in_subdirectory(
+    parse_mod, project_mod, set_paths, tmp_path
+):
     """
     -r zeigt auf ein Verzeichnis, in dessen *Unterordner* bereits eine Datenbank liegt.
     Erwartung:
       * prepare_result_space erkennt die DB unterhalb von -r
       * DB-Pfad im Config zeigt auf die gefundene Datei (unterhalb -r)
     """
-    root = tmp_path / "existing_parent"; root.mkdir(parents=True, exist_ok=True)
-    sub = root / "run1"; sub.mkdir(parents=True, exist_ok=True)
+    root = tmp_path / "existing_parent"
+    root.mkdir(parents=True, exist_ok=True)
+    sub = root / "run1"
+    sub.mkdir(parents=True, exist_ok=True)
     dbfile = sub / "database.db"  # ggf. anpassen, falls deine DB anders heißt
     dbfile.write_text("", encoding="utf-8")
 
@@ -207,7 +226,9 @@ def test_prepare_results_with_db_in_subdirectory(parse_mod, project_mod, set_pat
     assert db.name in ("database.db", "hmsss.sqlite", "hmsss.db")  # zur Not anpassen
 
 
-def test_prepare_results_points_to_existing_project(parse_mod, project_mod, set_paths, tmp_path):
+def test_prepare_results_points_to_existing_project(
+    parse_mod, project_mod, set_paths, tmp_path
+):
     """
     -r zeigt direkt auf einen vorhandenen Projektordner (mit DB + Standard-Files).
     Erwartung:
@@ -216,7 +237,9 @@ def test_prepare_results_points_to_existing_project(parse_mod, project_mod, set_
     existing = tmp_path / "existing_project"
     files = _mk_existing_project_tree(existing)
 
-    cfg = parse_mod.parse_to_config(["-f", str(set_paths["genomes"]), "-r", str(existing)])
+    cfg = parse_mod.parse_to_config(
+        ["-f", str(set_paths["genomes"]), "-r", str(existing)]
+    )
 
     project_mod.prepare_result_space(cfg)
 
@@ -233,4 +256,6 @@ def test_prepare_results_points_to_existing_project(parse_mod, project_mod, set_
         assert Path(cfg.project.gene_clusters_file) == files["gene_clusters"]
         assert Path(cfg.project.glob_report) == files["glob_report"]
         assert Path(cfg.project.glob_trusted_hitreport) == files["glob_trusted"]
-        assert Path(cfg.project.glob_intermediate_hitreport) == files["glob_intermediate"]
+        assert (
+            Path(cfg.project.glob_intermediate_hitreport) == files["glob_intermediate"]
+        )

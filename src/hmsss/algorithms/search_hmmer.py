@@ -3,9 +3,8 @@
 import os
 
 from multiprocessing import Pool, Value, Lock
-from typing import Any, Dict
 
-
+from hmsss.cli.config import Config
 from hmsss.core.logging import get_logger
 from hmsss.utils.myUtil import get_genome_id
 
@@ -21,7 +20,7 @@ counter_lock = None
 ########################################################################################################
 
 
-def consecutive_hmm_search(options: Any, processes: int = 4) -> list[str]:
+def consecutive_hmm_search(config: Config, processes: int = 4) -> list[str]:
     """
     Executes a parallelized HMM search across multiple genome protein files and processes the results.
 
@@ -43,27 +42,27 @@ def consecutive_hmm_search(options: Any, processes: int = 4) -> list[str]:
     Returns:
     - dict: Mapping from genome ID to the corresponding '.hmmreport' file path, where domain hit IDs have been prefixed.
     """
-    total = len(options.queued_genomes)
+    total = len(config.queued_genomes)
 
     # Prepare arguments for Pool processing
     args = []
-    for genomeID in options.queued_genomes:
-        faa_path = options.faa_files[genomeID]
-        hmmreport_path = options.hmmreport_files.get(genomeID)
+    for genomeID in config.queued_genomes:
+        faa_path = config.faa_files[genomeID]
+        hmmreport_path = config.hmmreport_files.get(genomeID)
+
+        # Fill with hmmreport filename
         if not hmmreport_path:
             hmmreport_path = os.path.splitext(faa_path)[0] + ".hmmreport"
 
-
-
         # append if report is missing oder overwrite is allowed
-        if not os.path.isfile(hmmreport_path) or options.clean_reports:
+        if not os.path.isfile(hmmreport_path) or config.clean_reports:
             args.append(
                 (
                     faa_path,
-                    options.library,
+                    config.library,
                     hmmreport_path,  # future report
-                    options.thrs_score,
-                    options.clean_reports,
+                    config.thrs_score,
+                    config.clean_reports,
                     total,
                 )
             )
@@ -194,4 +193,3 @@ def prefix_domtblout_hits(
         os.remove(domtblout_path)
 
     return hmmreport_path
-

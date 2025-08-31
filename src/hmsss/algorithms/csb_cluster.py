@@ -6,7 +6,7 @@ import heapq
 from collections import defaultdict, Counter
 from typing import Dict, List, Set, Tuple, Any
 
-from hmsss.core.config import Config
+from hmsss.cli.config import Config
 from src.hmsss.algorithms import csb_mp_algorithm
 
 
@@ -78,14 +78,14 @@ def csb_prediction(config: Config) -> dict[Any, set[Any]]:
     )
 
     # Reduce redundancy in the keys
-    computed_instances_dict = csb_collapse_to_longest_pattern(
-        computed_instances_dict
-    )
+    computed_instances_dict = csb_collapse_to_longest_pattern(computed_instances_dict)
 
     return computed_instances_dict
 
-def csb_jaccard(options: Any, computed_instances_dict: dict[Any, set[Any]], jaccard_distance: float) -> dict[str, set[
-    Any]]:
+
+def csb_jaccard(
+    options: Any, computed_instances_dict: dict[Any, set[Any]], jaccard_distance: float
+) -> dict[str, set[Any]]:
     """
     Agglomerative clustering of CSBs based on Jaccard similarity.
 

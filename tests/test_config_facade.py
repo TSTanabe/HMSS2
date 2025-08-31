@@ -2,7 +2,8 @@
 from pathlib import Path
 import pytest
 
-from hmsss.core.config import Config, PathsCfg  # basiert auf deiner config.py
+from hmsss.cli.config import Config, PathsCfg  # basiert auf deiner config.py
+
 
 @pytest.fixture
 def cfg(tmp_path) -> Config:

@@ -81,14 +81,11 @@ def ressource_preparation(config) -> None:
     _require_path_exists(config.patterns_file, "Patterns")
     _require_path_exists(config.cooccurrence_file, "Cooccurrence")
     _require_path_exists(config.exclusion_singletons, "Exclusion_singletons")
-    _require_path_exists(config.paths.refseq , "Reference sequences")
+    _require_path_exists(config.paths.refseq, "Reference sequences")
 
     # ---- Ableitungen & Artefakte in options hinterlegen ----
     config.cross_check_directory = cross_dir
-    config.glob_trusted_hitreport = str(Path(reports_dir) / "trusted.hmmreport")
-    config.glob_intermediate_hitreport = str(
-        Path(reports_dir) / "intermediate.hmmreport"
-    )
+
     config.csb_output_file = str(
         Path(config.result_files_directory) / f"{config.name}_csb.tsv"
     )

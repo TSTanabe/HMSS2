@@ -27,6 +27,7 @@ import pytest
 # Hilfs-Funktionen / -Fixtures
 # ------------------------------------------------------------
 
+
 def _add_src_to_syspath():
     """
     Sorgt dafür, dass 'from hmsss.cli import parse' funktioniert, ohne Paket zu installieren.
@@ -45,6 +46,7 @@ def parse_module():
     """
     _add_src_to_syspath()
     from hmsss.cli import parse  # type: ignore
+
     return parse
 
 
@@ -111,7 +113,9 @@ def patched_defaults(parse_module, fake_project, monkeypatch):
     data = fake_project["data"]
 
     # 1) Versuche die alte Helper-Funktion in parse zu patchen (falls vorhanden)
-    monkeypatch.setattr(parse_module, "_project_root_from_this_file", lambda: str(root), raising=False)
+    monkeypatch.setattr(
+        parse_module, "_project_root_from_this_file", lambda: str(root), raising=False
+    )
 
     # 2) Neue Pfad-API verwenden, falls vorhanden
     try:
@@ -130,6 +134,7 @@ def patched_defaults(parse_module, fake_project, monkeypatch):
     #    b) im alten utils.paths-Modul (falls parse "from hmsss.utils.paths import DATA_ROOT" verwendet)
     try:
         from hmsss.utils import paths as utils_paths_mod
+
         monkeypatch.setattr(utils_paths_mod, "DATA_ROOT", data, raising=False)
     except Exception:
         pass
@@ -145,6 +150,7 @@ def patched_defaults(parse_module, fake_project, monkeypatch):
 import sys
 import inspect
 
+
 def _call_parse(parse_module, args):
     """
     Ruft die Parser-Funktion robust auf:
@@ -158,7 +164,9 @@ def _call_parse(parse_module, args):
 
     # 2) parse_arguments – Signatur prüfen
     if not hasattr(parse_module, "parse_arguments"):
-        raise AttributeError("Neither parse_to_config nor parse_arguments found in hmsss.cli.parse")
+        raise AttributeError(
+            "Neither parse_to_config nor parse_arguments found in hmsss.cli.parse"
+        )
 
     fn = parse_module.parse_arguments
     sig = inspect.signature(fn)
@@ -176,6 +184,7 @@ def _call_parse(parse_module, args):
 # ------------------------------------------------------------
 # Tests
 # ------------------------------------------------------------
+
 
 def test_minimal_args_defaults(parse_module, patched_defaults, fake_project):
     """
@@ -208,7 +217,9 @@ def test_minimal_args_defaults(parse_module, patched_defaults, fake_project):
     assert opts.verbose == 1  # aus parse.py Defaults
 
 
-def test_custom_results_dir_disables_new_project(parse_module, patched_defaults, fake_project, tmp_path):
+def test_custom_results_dir_disables_new_project(
+    parse_module, patched_defaults, fake_project, tmp_path
+):
     """
     Wenn -r ein benutzerdefiniertes Results-Verzeichnis ist, dann ist new_project=False,
     und der Pfad wird absolut normalisiert.
@@ -223,7 +234,9 @@ def test_custom_results_dir_disables_new_project(parse_module, patched_defaults,
     assert opts.new_project is False
 
 
-def test_stage_101_when_process_or_fetch_args(parse_module, patched_defaults, fake_project, tmp_path):
+def test_stage_101_when_process_or_fetch_args(
+    parse_module, patched_defaults, fake_project, tmp_path
+):
     """
     Sobald "process/fetch"-relevante Argumente gesetzt werden, soll Stage=101 erkannt werden.
     Beispiel 1: Fetch-Operatoren (-fd) → erfordern -db.
@@ -232,10 +245,11 @@ def test_stage_101_when_process_or_fetch_args(parse_module, patched_defaults, fa
     genomes = str(fake_project["genomes"])
 
     # --- Beispiel 1: Fetch (requires -db present, sonst sys.exit in parse) ---
-    db_path = tmp_path / "database.db"  # muss nicht existieren, -db wird nicht auf Existenz geprüft
+    db_path = (
+        tmp_path / "database.db"
+    )  # muss nicht existieren, -db wird nicht auf Existenz geprüft
     opts_fetch = _call_parse(
-        parse_module,
-        ["-f", genomes, "-db", str(db_path), "-fd", "DsrA", "DsrB"]
+        parse_module, ["-f", genomes, "-db", str(db_path), "-fd", "DsrA", "DsrB"]
     )
     assert opts_fetch.stage == 101
     assert opts_fetch.fetch is True
@@ -246,8 +260,7 @@ def test_stage_101_when_process_or_fetch_args(parse_module, patched_defaults, fa
     # -filter_fasta: drei Werte [FILE, MIN, MAX] → werden zu [str, int, int] gecastet
     out_file = tmp_path / "out.faa"
     opts_proc = _call_parse(
-        parse_module,
-        ["-f", genomes, "-filter_fasta", str(out_file), "100", "250"]
+        parse_module, ["-f", genomes, "-filter_fasta", str(out_file), "100", "250"]
     )
     assert opts_proc.stage == 101
     assert opts_proc.process is True
@@ -256,7 +269,9 @@ def test_stage_101_when_process_or_fetch_args(parse_module, patched_defaults, fa
     assert opts_proc.filter_fasta[1:] == [100, 250]
 
 
-def test_stage_100_taxonomy_only_mode(parse_module, patched_defaults, fake_project, tmp_path):
+def test_stage_100_taxonomy_only_mode(
+    parse_module, patched_defaults, fake_project, tmp_path
+):
     """
     Spezial-Stage 100: Wenn -taxonomy_info und -db gesetzt sind, aber KEIN -f,
     soll parse.py Stage=100 setzen (nur Taxonomy-Verarbeitung).
@@ -270,7 +285,9 @@ def test_stage_100_taxonomy_only_mode(parse_module, patched_defaults, fake_proje
     assert getattr(opts, "fasta_file_directory", None) in (None,)
 
 
-def test_hmms_csv_and_whitespace_list_parsing(parse_module, patched_defaults, fake_project):
+def test_hmms_csv_and_whitespace_list_parsing(
+    parse_module, patched_defaults, fake_project
+):
     """
     -hmms akzeptiert CSV ODER Whitespace. parse.py normalisiert das via _list_from_csv_or_repeat().
     """
@@ -285,7 +302,9 @@ def test_hmms_csv_and_whitespace_list_parsing(parse_module, patched_defaults, fa
     assert opts_ws.HMM_sets == ["A", "B", "C"]
 
 
-def test_result_dir_is_absolute_even_if_relative_given(parse_module, patched_defaults, fake_project, monkeypatch):
+def test_result_dir_is_absolute_even_if_relative_given(
+    parse_module, patched_defaults, fake_project, monkeypatch
+):
     """
     Wenn -r relativ übergeben wird, wandelt parse.py den Pfad in einen absoluten um.
     """

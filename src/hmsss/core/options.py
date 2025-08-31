@@ -6,6 +6,7 @@ from typing import Optional, List, Dict, Any
 from hmsss.cli import paths as p
 from hmsss.cli.paths import ROOT_DIR
 
+
 class Hmsss:
     """
     Zentrales Options-/Konfigurationsobjekt für HMSSS.
@@ -223,9 +224,7 @@ class Hmsss:
         # Pfade/Orte
         self.location = str(p.ROOT_DIR) if location is None else location
         self.reference_seq_dir = (
-            str(p.REFSEQ_DIR)
-            if reference_seq_dir is None
-            else reference_seq_dir
+            str(p.REFSEQ_DIR) if reference_seq_dir is None else reference_seq_dir
         )
         self.new_project = new_project  # wird in parse_arguments auf True/False gesetzt
 
@@ -246,7 +245,6 @@ class Hmsss:
             setattr(self, k, v)
 
 
-
 def make_options(ns: argparse.Namespace):
     """
     Übersetzt argparse.Namespace → Hmsss und setzt fehlende Defaults/Pfade.
@@ -259,12 +257,12 @@ def make_options(ns: argparse.Namespace):
 
     # 2) Fehlende CLI-Werte mit zentralen Defaults füllen
     result_dir = s("result_files_directory") or str(p.RESULTS_DIR)
-    library    = s("library")                 or str(p.HMMS_DIR)
-    thrs_file  = s("score_threshold_file")    or str(p.DATA_DIR / "Thresholds")
-    patt_file  = s("patterns_file")           or str(p.DATA_DIR / "Patterns")
-    cooc_file  = s("cooccurrence_file")       or str(p.DATA_DIR / "Cooccurrence")
-    excl_file  = s("exclusion_singletons")    or str(p.DATA_DIR / "Exclusion_singletons")
-    db_path    = s("database_directory")      # kann None sein → wird später ggf. gesetzt
+    library = s("library") or str(p.HMMS_DIR)
+    thrs_file = s("score_threshold_file") or str(p.DATA_DIR / "Thresholds")
+    patt_file = s("patterns_file") or str(p.DATA_DIR / "Patterns")
+    cooc_file = s("cooccurrence_file") or str(p.DATA_DIR / "Cooccurrence")
+    excl_file = s("exclusion_singletons") or str(p.DATA_DIR / "Exclusion_singletons")
+    db_path = s("database_directory")  # kann None sein → wird später ggf. gesetzt
 
     # 3) Options-Objekt bauen (Field-Namen ggf. anpassen, falls in Hmsss anders)
     opts = Hmsss(
@@ -300,8 +298,8 @@ def make_options(ns: argparse.Namespace):
 
     # „Neues Projekt?“ – z. B. wenn results == Default-RESULTS_DIR
     try:
-        opts.new_project = (
-            os.path.abspath(result_dir) == os.path.abspath(str(p.RESULTS_DIR))
+        opts.new_project = os.path.abspath(result_dir) == os.path.abspath(
+            str(p.RESULTS_DIR)
         )
     except Exception:
         opts.new_project = False

@@ -44,6 +44,7 @@ def parse_mod():
     """
     _add_src_to_syspath()
     from hmsss.cli import parse  # type: ignore
+
     return parse
 
 
@@ -123,6 +124,7 @@ def ns(**kwargs) -> argparse.Namespace:
 #       Testfälle
 # ===========================
 
+
 def test_defaults_are_filled_from_paths(parse_mod, set_paths):
     """
     Prüft, dass fehlende Pfade per paths/as_dict → PathsCfg befüllt werden
@@ -134,7 +136,9 @@ def test_defaults_are_filled_from_paths(parse_mod, set_paths):
         verbose=2,  # irgendein nicht-Default, damit wir sehen, dass Werte übernommen werden
     )
 
-    cfg = parse_mod.build_config_from_namespace(N)  # ruft cfg.validate() → Basisdirs müssen existieren  # :contentReference[oaicite:6]{index=6}
+    cfg = parse_mod.build_config_from_namespace(
+        N
+    )  # ruft cfg.validate() → Basisdirs müssen existieren  # :contentReference[oaicite:6]{index=6}
 
     # PathsCfg stammt aus hmsss.cli.paths.as_dict()
     assert Path(cfg.paths.root) == set_paths["root"]
@@ -152,14 +156,19 @@ def test_defaults_are_filled_from_paths(parse_mod, set_paths):
     assert Path(cfg.cli_input.library) == set_paths["hmms"]
     assert Path(cfg.cli_synteny.patterns_file) == set_paths["data"] / "Patterns"
     assert Path(cfg.cli_synteny.cooccurrence_file) == set_paths["data"] / "Cooccurrence"
-    assert Path(cfg.cli_synteny.exclusion_singletons) == set_paths["data"] / "Exclusion_singletons"
+    assert (
+        Path(cfg.cli_synteny.exclusion_singletons)
+        == set_paths["data"] / "Exclusion_singletons"
+    )
     assert Path(cfg.cli_input.score_threshold_file) == set_paths["data"] / "Thresholds"
 
     # unabhängige Felder: Defaults/übergebene Werte
     assert cfg.cli_input.verbose == 2
-    assert cfg.cli_params.stage == 0          # nicht gesetzt → Default in build_config
-    assert cfg.cli_resources.HMM_sets == []   # nicht gesetzt → Default
-    assert cfg.cli_csb.jaccard == 0.0         # nicht gesetzt → Default                 # :contentReference[oaicite:7]{index=7}
+    assert cfg.cli_params.stage == 0  # nicht gesetzt → Default in build_config
+    assert cfg.cli_resources.HMM_sets == []  # nicht gesetzt → Default
+    assert (
+        cfg.cli_csb.jaccard == 0.0
+    )  # nicht gesetzt → Default                 # :contentReference[oaicite:7]{index=7}
 
 
 def test_overrides_are_respected(parse_mod, set_paths, tmp_path):
@@ -185,7 +194,11 @@ def test_overrides_are_respected(parse_mod, set_paths, tmp_path):
         HMM_sets=["A", "B", "C"],
         keywords_connector="AND",
         jaccard=0.3,
-        filter_fasta=["out.faa", "100", "250"],  # build_config übernimmt die Liste wie gegeben  # :contentReference[oaicite:8]{index=8}
+        filter_fasta=[
+            "out.faa",
+            "100",
+            "250",
+        ],  # build_config übernimmt die Liste wie gegeben  # :contentReference[oaicite:8]{index=8}
     )
 
     cfg = parse_mod.build_config_from_namespace(N)
@@ -195,7 +208,9 @@ def test_overrides_are_respected(parse_mod, set_paths, tmp_path):
     assert Path(cfg.cli_input.library) == custom_library
     assert cfg.cli_params.name == "myproj"
     assert cfg.cli_params.threshold_type == 2
-    assert cfg.cli_params.thrs_score == 75.0   # build_config castet zu float                 # :contentReference[oaicite:9]{index=9}
+    assert (
+        cfg.cli_params.thrs_score == 75.0
+    )  # build_config castet zu float                 # :contentReference[oaicite:9]{index=9}
     assert cfg.cli_params.stage == 5
     assert cfg.cli_resources.HMM_sets == ["A", "B", "C"]
     assert cfg.cli_ops.keywords_connector == "AND"
@@ -212,10 +227,10 @@ def test_type_casts_and_defaults(parse_mod, set_paths):
     """
     N = ns(
         fasta_file_directory=str(set_paths["genomes"]),
-        thrs_score="60",          # als String → build_config → float(60)                 # :contentReference[oaicite:10]{index=10}
-        cores="8",                # als String → build_config → int(8)                   # :contentReference[oaicite:11]{index=11}
-        clean_reports=True,       # bool
-        individual_reports=False, # bool
+        thrs_score="60",  # als String → build_config → float(60)                 # :contentReference[oaicite:10]{index=10}
+        cores="8",  # als String → build_config → int(8)                   # :contentReference[oaicite:11]{index=11}
+        clean_reports=True,  # bool
+        individual_reports=False,  # bool
         fetch_proteins=["DsrA", "DsrB"],  # Liste
     )
 
@@ -250,7 +265,6 @@ def test_stage_changes_when_taxonomy_requested(parse_mod, set_paths, tmp_path, c
         taxonomy_file=str(taxonomy_file),
         redo_taxonomy=True,
         stage=100,
-
     )
 
     cfg = parse_mod.build_config_from_namespace(N)

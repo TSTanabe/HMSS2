@@ -12,7 +12,7 @@ import tempfile
 from multiprocessing import Pool
 from typing import Dict, List, Optional, TYPE_CHECKING
 
-from hmsss.core.config import Config
+from hmsss.cli.config import Config
 
 if TYPE_CHECKING:
     from hmsss.core.options import Hmsss
@@ -28,11 +28,10 @@ current_counter = None
 counter_lock = None
 
 
-
-
 ########################################################################################################
 #################### Filter the glob report to trusted hits and potential hits #########################
 ########################################################################################################
+
 
 def concatenate_hmmreports_cat_xargs(
     report_paths: dict[str, str],
@@ -93,6 +92,7 @@ def concatenate_hmmreports_cat_xargs(
 
         return output_path
 
+
 def make_threshold_dict(
     file_path: str, threshold_type: int = 1, default_score: float = 50.0
 ) -> Dict[str, float]:
@@ -137,6 +137,7 @@ def make_threshold_dict(
                 thresholds[key] = score
 
     return thresholds
+
 
 def filter_trusted_and_noise_hits(
     options: Hmsss, glob_report: str, processes: int = 4
@@ -186,9 +187,6 @@ def filter_trusted_and_noise_hits(
         pool.starmap(process_single_hmm, args)
 
     return os.path.abspath(output_dir)
-
-
-
 
 
 def process_single_hmm(
@@ -241,7 +239,6 @@ def process_single_hmm(
                 continue
 
             try:
-
                 if int(parts[10]) > 1:
                     # Domain Bit score is in column 13
                     score = float(parts[13])
@@ -288,70 +285,6 @@ def process_single_hmm(
     return
 
 
-def extract_fasta_per_intermediate_hitfile(
-    options: Hmsss, intermediate_hit_dir: str
-) -> None:
-    """Extracts protein sequences for every .intermediate_hits file and writes .intermediate_hit_faa files.
-
-    Args:
-        options (object): Configuration object containing:
-            - faa_files (Dict[str, str]): Mapping from genome ID to FASTA path.
-        intermediate_hit_dir (str): Directory containing .intermediate_hits files.
-
-    Returns:
-        None
-
-    Example:
-        >>> extract_fasta_per_intermediate_hitfile(options, '/tmp/xcheck')
-    """
-
-    for file in os.listdir(intermediate_hit_dir):
-        if not file.endswith(".intermediate_hits"):
-            continue
-
-        hmm_id = file.replace(".intermediate_hits", "")
-        hitfile_path = os.path.join(intermediate_hit_dir, file)
-        output_fasta = os.path.join(
-            intermediate_hit_dir, f"{hmm_id}.intermediate_hit_faa"
-        )
-
-        # IDs sammeln: genomeID → set(proteinIDs)
-        genome_hits = {}
-        with open(hitfile_path, "r") as f:
-            for line in f:
-                if line.startswith("#") or not line.strip():
-                    continue
-                parts = line.strip().split("\t")
-                full_id = parts[0]
-                if "___" not in full_id:
-                    continue
-                genome_id, protein_id = full_id.split("___", 1)
-                genome_hits.setdefault(genome_id, set()).add(protein_id)
-
-        # Write sequential files per genome
-        with open(output_fasta, "w") as out:
-            for genome_id, protein_ids in genome_hits.items():
-                faa_path = options.faa_files.get(genome_id)
-                if not faa_path or not os.path.isfile(faa_path):
-                    logger.warning(f".faa file not found for genome: {genome_id}")
-                    continue
-
-                with open(faa_path, "r") as faa:
-                    write = False
-
-
-                    for line in faa:
-                        if line.startswith(">"):
-                            header_id = line[1:].split()[0]
-                            write = header_id in protein_ids
-                            if write:
-                                out.write(f">{genome_id}___{header_id}\n")
-                        elif write:
-                            out.write(line)
-
-        print(f"[✓] {hmm_id} → {output_fasta}")
-
-
 def process_hitfile(
     hitfile_path: str,
     intermediate_hit_dir: str,
@@ -381,7 +314,6 @@ def process_hitfile(
     with open(output_fasta, "w") as out:
         for genome_id, protein_ids in genome_hits.items():
             faa_path = faa_files.get(genome_id)
-
 
             if not faa_path or not os.path.isfile(faa_path):
                 logger.warning(f"FASTA not found for {genome_id} {faa_path}")
@@ -418,9 +350,6 @@ def generate_faa_per_hitfile_parallel(
 
     Returns:
         None
-
-    Example:
-        >>> generate_faa_per_hitfile_parallel(config, '/tmp/xcheck', 2)
     """
 
     output_dir = intermediate_hit_dir  # same dir for output
@@ -562,6 +491,7 @@ def cross_check_candidates_with_reference_seqs(config) -> List[str]:
             continue
 
     return refseq_unavailable_list
+
 
 def process_crosscheck(hmm_id: str, crosscheck_dir: str) -> None:
     """Promotes intermediate hits to trusted hits if they are validated by crosschecking.

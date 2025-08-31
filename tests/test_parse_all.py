@@ -7,6 +7,7 @@ import pathlib
 from hmsss.cli.parse import _project_root_from_this_file
 from hmsss.cli.paths import PROJECT_DIR
 
+
 def test_project_root_from_this_file_returns_absolute_path():
     root = _project_root_from_this_file()
     print(root)

@@ -14,8 +14,8 @@ def main(argv: list[str] | None = None) -> None:
     config = parse_to_config(argv)
 
     # zentrales Log
-    #log_file = os.path.join(opts.result_files_directory, "execution_logfile.txt")
-    #setup_logging(getattr(opts, "verbose", 1), log_file)
+    # log_file = os.path.join(opts.result_files_directory, "execution_logfile.txt")
+    # setup_logging(getattr(opts, "verbose", 1), log_file)
 
     run_pipeline(config)
 

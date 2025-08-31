@@ -20,7 +20,9 @@ from hmsss.io.queue import queue_protein_annotation_inputs
 from hmsss.db.database import index_database
 from hmsss.io.output import print_file_content
 from hmsss.core.logging import setup_logging, print_header, get_logger
+
 logger = get_logger(__name__)
+
 
 def run_pipeline(config) -> None:
     """
@@ -51,7 +53,6 @@ def run_pipeline(config) -> None:
     if config.stage < 6:
         print_header("Initializing resources")
         ressource_preparation(config)
-
 
     # --- Stage 1: FASTA/Prodigal ---
     if config.stage <= 1 <= config.exit:
@@ -91,14 +92,16 @@ def run_pipeline(config) -> None:
         collect_taxonomy_information(config)
 
     if config.stage == 100:
-       print_header("Assigning taxonomy information (stage 100)")
-       collect_taxonomy_information(config)
+        print_header("Assigning taxonomy information (stage 100)")
+        collect_taxonomy_information(config)
 
     # --- Output-/Stats-/Processing-Operatoren ---
     if config.stage == 101:
         print_header("Output from database (fetch)")
         if not config.database_directory:
-            logger.error(f"Database not found in given project {config.result_files_directory}. Please use a valid project directory or use the -db argument to provide a valid database for fetch operations.")
+            logger.error(
+                f"Database not found in given project {config.result_files_directory}. Please use a valid project directory or use the -db argument to provide a valid database for fetch operations."
+            )
         index_database(config.database_directory)
         output_operator(config)
 

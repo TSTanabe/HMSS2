@@ -53,7 +53,9 @@ def test_prepare_result_space_new_project_sets_paths_and_subdirs(tmp_path: Path)
     assert opts.glob_intermediate_hitreport == str(
         rdir / "global_intermediate_hits_summary.hmmreport"
     )
-    assert opts.csb_output_file == str(rdir / "Collinear_syntenic_blocks" / "Csb_output.txt")
+    assert opts.csb_output_file == str(
+        rdir / "Collinear_syntenic_blocks" / "Csb_output.txt"
+    )
 
 
 def test_prepare_result_space_preserves_existing_glob_report(tmp_path: Path):

@@ -11,7 +11,7 @@ from src.hmsss.utils import myUtil
 logger = myUtil.log
 
 
-def parallel_translation(fna_files: dict[str,str], cores: int) -> None:
+def parallel_translation(fna_files: dict[str, str], cores: int) -> None:
     """
     Uses prodigal to translate all nucleotide fasta files in a directory to protein fasta (.faa).
 
@@ -41,7 +41,8 @@ def parallel_translation(fna_files: dict[str,str], cores: int) -> None:
 
     with multiprocessing.Pool(processes=cores) as pool:
         args_list = [
-            (fna_fasta, length, counter, lock, prodigal) for fna_fasta in fna_files.values()
+            (fna_fasta, length, counter, lock, prodigal)
+            for fna_fasta in fna_files.values()
         ]
         pool.map(translate_fasta, args_list)
     logger.info(f"Processing assembly {counter.value} of {length}")
@@ -65,7 +66,6 @@ def translate_fasta(
 
     string = f"{prodigal} -a {faa} -i {fasta} >/dev/null 2>&1"
     try:
-
         os.system(string)
     except Exception as e:
         logger.warning(f"Could not translate {fasta} - {e}")
@@ -86,7 +86,7 @@ def translate_fasta(
 ############################################################################
 
 
-def parallel_transcription(faa_files: dict[str,str], cores: int) -> None:
+def parallel_transcription(faa_files: dict[str, str], cores: int) -> None:
     """
     8.10.22
         Args:
@@ -107,7 +107,9 @@ def parallel_transcription(faa_files: dict[str,str], cores: int) -> None:
     length = len(faa_files)
 
     with multiprocessing.Pool(processes=cores) as pool:
-        args_list = [(faa_fasta, length, counter, lock) for faa_fasta in faa_files.values()]
+        args_list = [
+            (faa_fasta, length, counter, lock) for faa_fasta in faa_files.values()
+        ]
         pool.map(transcripe_fasta, args_list)
 
     logger.info(f"Generated corresponding gff files")

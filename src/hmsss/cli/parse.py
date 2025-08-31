@@ -6,13 +6,21 @@ import os
 import sys
 from typing import List, Sequence, Any
 
-from hmsss.core.config import (
-    Config, PathsCfg,
-    CliInput, CliSearchParams, CliResources, CliSynteny, CliInfo,
-    CliCsb, CliFlow, CliLimiter, CliOperators, CliProcess,
+from hmsss.cli.config import (
+    Config,
+    PathsCfg,
+    CliInput,
+    CliSearchParams,
+    CliResources,
+    CliSynteny,
+    CliInfo,
+    CliCsb,
+    CliFlow,
+    CliLimiter,
+    CliOperators,
+    CliProcess,
 )
 from hmsss.cli import paths as paths
-from hmsss.db.database import fetch_genome_statistic
 
 
 # ---------------------------------------------------------------------------
@@ -40,6 +48,7 @@ def path_str(p: str) -> str:
     """Nur Normalisierung: absoluter Pfad; Existenz wird NICHT geprüft (für -r/-db/Output-Ziele)."""
     return os.path.abspath(p)
 
+
 def _list_from_csv_or_repeat(values: List[str]) -> List[str]:
     """Erlaubt -hmms A B C oder -hmms A,B,C."""
     out: List[str] = []
@@ -53,7 +62,7 @@ def _list_from_csv_or_repeat(values: List[str]) -> List[str]:
 # ---------------------------------------------------------------------------
 
 
-def parse_arguments(*,show_all: bool = False) -> argparse.ArgumentParser:
+def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     """
     Baut den Argumentparser für das Programm
     """
@@ -624,11 +633,10 @@ def parse_arguments(*,show_all: bool = False) -> argparse.ArgumentParser:
         else argparse.SUPPRESS,
     )
 
-
     return parser
 
-def parse_cli(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
+def parse_cli(argv: Sequence[str] | None = None) -> argparse.Namespace:
     argv = list(argv) if argv is not None else sys.argv[1:]
     show_all = "--help-all" in argv
 
@@ -640,19 +648,26 @@ def parse_cli(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
     return parser.parse_args(argv)
 
+
 def _s(ns: Any, name: str) -> str | None:
     """Hilfsfunktion: CLI-Wert als String normalisieren (type= greift nicht auf Defaults)."""
     v = getattr(ns, name, None)
     return os.fspath(v) if v is not None else None
 
+
 def _paths_cfg_from_paths_module() -> PathsCfg:
-    """ Erzeugt ein config objekt mit den konstanten paths"""
+    """Erzeugt ein config objekt mit den konstanten paths"""
     d = paths.as_dict(str_paths=True)
     return PathsCfg(
-        root=d["ROOT_DIR"], bin=d["BIN_DIR"], data=d["DATA_DIR"],
-        hmms=d["HMMS_DIR"], refseq=d["REFSEQ_DIR"],
-        results=d["RESULTS_DIR"], package=d["PACKAGE_DIR"],
+        root=d["ROOT_DIR"],
+        bin=d["BIN_DIR"],
+        data=d["DATA_DIR"],
+        hmms=d["HMMS_DIR"],
+        refseq=d["REFSEQ_DIR"],
+        results=d["RESULTS_DIR"],
+        package=d["PACKAGE_DIR"],
     )
+
 
 def build_config_from_namespace(ns) -> Config:
     """
@@ -664,7 +679,8 @@ def build_config_from_namespace(ns) -> Config:
     # ---------- CLI-Blöcke ----------
     cli_input = CliInput(
         fasta_file_directory=_s(ns, "fasta_file_directory"),
-        score_threshold_file=_s(ns, "score_threshold_file") or os.path.join(paths_cfg.data, "Thresholds"),
+        score_threshold_file=_s(ns, "score_threshold_file")
+        or os.path.join(paths_cfg.data, "Thresholds"),
         library=_s(ns, "library") or paths_cfg.hmms,
         result_files_directory=_s(ns, "result_files_directory") or paths_cfg.results,
         database_directory=_s(ns, "database_directory"),
@@ -689,13 +705,18 @@ def build_config_from_namespace(ns) -> Config:
         individual_reports=bool(getattr(ns, "individual_reports", True)),
         max_seqs_per_genome=int(getattr(ns, "max_seqs_per_genome", 4)),
         bool_cross_check=bool(getattr(ns, "bool_cross_check", True)),
-        optimized_cutoff_cross_check=bool(getattr(ns, "optimized_cutoff_cross_check", False)),
+        optimized_cutoff_cross_check=bool(
+            getattr(ns, "optimized_cutoff_cross_check", False)
+        ),
     )
 
     cli_synteny = CliSynteny(
-        patterns_file=_s(ns, "patterns_file") or os.path.join(paths_cfg.data, "Patterns"),
-        cooccurrence_file=_s(ns, "cooccurrence_file") or os.path.join(paths_cfg.data, "Cooccurrence"),
-        exclusion_singletons=_s(ns, "exclusion_singletons") or os.path.join(paths_cfg.data, "Exclusion_singletons"),
+        patterns_file=_s(ns, "patterns_file")
+        or os.path.join(paths_cfg.data, "Patterns"),
+        cooccurrence_file=_s(ns, "cooccurrence_file")
+        or os.path.join(paths_cfg.data, "Cooccurrence"),
+        exclusion_singletons=_s(ns, "exclusion_singletons")
+        or os.path.join(paths_cfg.data, "Exclusion_singletons"),
         min_completeness=float(getattr(ns, "min_completeness", 0.5)),
         glob_chunks=int(getattr(ns, "glob_chunks", 5000)),
     )
@@ -761,47 +782,56 @@ def build_config_from_namespace(ns) -> Config:
     cfg.validate()
     return cfg
 
+
 def _needs_stage_100(ns: argparse.Namespace) -> bool:
-    """ Prüfe ob redo taxonomy angefordert wurde"""
-    redo_taxonomy_requested = any([
-        bool(getattr(ns, "redo_taxonomy", False)),
-    ])
+    """Prüfe ob redo taxonomy angefordert wurde"""
+    redo_taxonomy_requested = any(
+        [
+            bool(getattr(ns, "redo_taxonomy", False)),
+        ]
+    )
 
     return redo_taxonomy_requested
 
+
 def _needs_stage_101(ns: argparse.Namespace) -> bool:
-    """ Prüfe ob ein prozess oder fetch argument oder taxonomie addition vorgebracht wurde """
+    """Prüfe ob ein prozess oder fetch argument oder taxonomie addition vorgebracht wurde"""
     # (1) Fetch aus Datenbank angefordert?
-    fetch_requested = any([
-        bool(getattr(ns, "fetch_genomes", [])),
-        bool(getattr(ns, "fetch_proteins", [])),
-        bool(getattr(ns, "fetch_csbs", [])),
-        bool(getattr(ns, "fetch_keywords", [])),
-        bool(getattr(ns, "dataset_limit_lineage", None)),
-        bool(getattr(ns, "dataset_limit_taxon", None)),
-        getattr(ns, "dataset_limit_proteins", "0") not in (None, "0"),
-        getattr(ns, "dataset_limit_keywords", "0") not in (None, "0"),
-    ])
+    fetch_requested = any(
+        [
+            bool(getattr(ns, "fetch_genomes", [])),
+            bool(getattr(ns, "fetch_proteins", [])),
+            bool(getattr(ns, "fetch_csbs", [])),
+            bool(getattr(ns, "fetch_keywords", [])),
+            bool(getattr(ns, "dataset_limit_lineage", None)),
+            bool(getattr(ns, "dataset_limit_taxon", None)),
+            getattr(ns, "dataset_limit_proteins", "0") not in (None, "0"),
+            getattr(ns, "dataset_limit_keywords", "0") not in (None, "0"),
+        ]
+    )
 
     # (2) Änderungen an FASTA/Alignment?
-    processing_requested = any([
-        bool(getattr(ns, "merge_fasta", None)),
-        bool(getattr(ns, "filter_fasta", None)),              # list mit ["FILE","MIN","MAX"]
-        bool(getattr(ns, "concat_alignment", None)),
-        bool(getattr(ns, "add_taxonomy", None)),              # -add_taxonomy_to_alignment
-        bool(getattr(ns, "add_genomic_context", None)),
-        bool(getattr(ns, "create_type_range_dataset", None)),
-        bool(getattr(ns, "create_gene_cluster_dataset", None)),
-    ])
-
+    processing_requested = any(
+        [
+            bool(getattr(ns, "merge_fasta", None)),
+            bool(getattr(ns, "filter_fasta", None)),  # list mit ["FILE","MIN","MAX"]
+            bool(getattr(ns, "concat_alignment", None)),
+            bool(getattr(ns, "add_taxonomy", None)),  # -add_taxonomy_to_alignment
+            bool(getattr(ns, "add_genomic_context", None)),
+            bool(getattr(ns, "create_type_range_dataset", None)),
+            bool(getattr(ns, "create_gene_cluster_dataset", None)),
+        ]
+    )
 
     return fetch_requested or processing_requested
+
 
 def _apply_runtime_defaults(ns: argparse.Namespace) -> argparse.Namespace:
     """
     Füllt fehlende Pfad-Defaults aus hmsss.cli.paths und legt die Stage robust fest.
     (post-parse, damit type= Validierungen nicht auf „phantom defaults“ laufen)
     """
+
     # 1) Pfad-Defaults: nur setzen, wenn None/leer
     def _set_default(attr: str, value: str) -> None:
         v = getattr(ns, attr, None)
@@ -809,11 +839,11 @@ def _apply_runtime_defaults(ns: argparse.Namespace) -> argparse.Namespace:
             setattr(ns, attr, value)
 
     _set_default("score_threshold_file", str(paths.SRC_FILE_THRESHOLDS))
-    _set_default("library",               str(paths.SRC_FILE_HMM_LIBRARY))
-    _set_default("patterns_file",         str(paths.SRC_FILE_PATTERNS))
-    _set_default("cooccurrence_file",     str(paths.SRC_FILE_COOCCURRENCE))
-    _set_default("exclusion_singletons",  str(paths.SRC_FILE_EXCLUSION_SINGLETONS))
-    _set_default("result_files_directory",str(paths.RESULTS_DIR))
+    _set_default("library", str(paths.SRC_FILE_HMM_LIBRARY))
+    _set_default("patterns_file", str(paths.SRC_FILE_PATTERNS))
+    _set_default("cooccurrence_file", str(paths.SRC_FILE_COOCCURRENCE))
+    _set_default("exclusion_singletons", str(paths.SRC_FILE_EXCLUSION_SINGLETONS))
+    _set_default("result_files_directory", str(paths.RESULTS_DIR))
 
     # Stage normalisieren oder auf 100 forcieren
     raw_stage = getattr(ns, "stage", None)
@@ -822,8 +852,10 @@ def _apply_runtime_defaults(ns: argparse.Namespace) -> argparse.Namespace:
     except Exception:
         normalized = 0
     # clamp 0..5
-    if normalized < 0: normalized = 0
-    if normalized > 5: normalized = 5
+    if normalized < 0:
+        normalized = 0
+    if normalized > 5:
+        normalized = 5
 
     if _needs_stage_100(ns):
         # Required for redo taxonomy command
@@ -836,6 +868,7 @@ def _apply_runtime_defaults(ns: argparse.Namespace) -> argparse.Namespace:
 
     return ns
 
+
 def parse_to_config(argv: list[str] | None = None) -> Config:
     """
     Komfort-Funktion: parst argv und liefert direkt eine fertige Config.
@@ -844,6 +877,7 @@ def parse_to_config(argv: list[str] | None = None) -> Config:
     namespace = _apply_runtime_defaults(namespace)
     config = build_config_from_namespace(namespace)
     return config
+
 
 """
 Hier werden die Argumente von argparse bzw die default werte dieser Argumente addiert

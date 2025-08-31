@@ -89,5 +89,4 @@ def print_header(
     log.info(text)
 
 
-
 __all__ = ["setup_logging", "get_logger", "print_header"]

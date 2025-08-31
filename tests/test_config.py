@@ -1,16 +1,13 @@
 # tests/test_config_build_from_cli.py
 from __future__ import annotations
 
-import importlib
 from pathlib import Path
 from typing import Any, Dict
-
-import pytest
 
 # Module importieren
 from hmsss.cli import paths as p
 from hmsss.cli import parse as cli_parse
-from hmsss.core.config import (
+from hmsss.cli.config import (
     Config,
     PathsCfg,
     CliInput,
@@ -62,10 +59,14 @@ def _fill_config_from_namespace(ns) -> Config:
     # -------- CLI-Blöcke befüllen (nur die wichtigsten Felder; Rest bleibt per Default) --------
     cli_input = CliInput(
         fasta_file_directory=getattr(ns, "fasta_file_directory", None),
-        score_threshold_file=getattr(ns, "score_threshold_file", None) or str(Path(paths_cfg.data) / "Thresholds"),
+        score_threshold_file=getattr(ns, "score_threshold_file", None)
+        or str(Path(paths_cfg.data) / "Thresholds"),
         library=getattr(ns, "library", None) or paths_cfg.hmms,
-        result_files_directory=getattr(ns, "result_files_directory", None) or paths_cfg.results,
-        database_directory=getattr(ns, "database_directory", None),  # kann später via project gesetzt werden
+        result_files_directory=getattr(ns, "result_files_directory", None)
+        or paths_cfg.results,
+        database_directory=getattr(
+            ns, "database_directory", None
+        ),  # kann später via project gesetzt werden
         cores=int(getattr(ns, "cores", 4)),
         glob_report=getattr(ns, "glob_report", None),
         verbose=int(getattr(ns, "verbose", 1)),
@@ -87,13 +88,18 @@ def _fill_config_from_namespace(ns) -> Config:
         individual_reports=bool(getattr(ns, "individual_reports", True)),
         max_seqs_per_genome=int(getattr(ns, "max_seqs_per_genome", 4)),
         bool_cross_check=bool(getattr(ns, "bool_cross_check", True)),
-        optimized_cutoff_cross_check=bool(getattr(ns, "optimized_cutoff_cross_check", False)),
+        optimized_cutoff_cross_check=bool(
+            getattr(ns, "optimized_cutoff_cross_check", False)
+        ),
     )
 
     cli_synteny = CliSynteny(
-        patterns_file=getattr(ns, "patterns_file", None) or str(Path(paths_cfg.data) / "Patterns"),
-        cooccurrence_file=getattr(ns, "cooccurrence_file", None) or str(Path(paths_cfg.data) / "Cooccurrence"),
-        exclusion_singletons=getattr(ns, "exclusion_singletons", None) or str(Path(paths_cfg.data) / "Exclusion_singletons"),
+        patterns_file=getattr(ns, "patterns_file", None)
+        or str(Path(paths_cfg.data) / "Patterns"),
+        cooccurrence_file=getattr(ns, "cooccurrence_file", None)
+        or str(Path(paths_cfg.data) / "Cooccurrence"),
+        exclusion_singletons=getattr(ns, "exclusion_singletons", None)
+        or str(Path(paths_cfg.data) / "Exclusion_singletons"),
         min_completeness=float(getattr(ns, "min_completeness", 0.5)),
         glob_chunks=int(getattr(ns, "glob_chunks", 5000)),
     )
@@ -235,15 +241,24 @@ def test_build_config_with_custom_values_and_print(tmp_path, capsys):
     custom_results.mkdir(parents=True, exist_ok=True)
 
     argv = [
-        "-f", str(root / "inputs"),
-        "-r", str(custom_results),
-        "-c", "12",
-        "-cut_type", "2",
-        "-cut_score", "42",
-        "-jaccard", "0.25",
-        "-kc", "AND",
-        "-n", "projB",
-        "-s", "3",
+        "-f",
+        str(root / "inputs"),
+        "-r",
+        str(custom_results),
+        "-c",
+        "12",
+        "-cut_type",
+        "2",
+        "-cut_score",
+        "42",
+        "-jaccard",
+        "0.25",
+        "-kc",
+        "AND",
+        "-n",
+        "projB",
+        "-s",
+        "3",
     ]
     ns = cli_parse.parse_cli(argv)
     cfg = _fill_config_from_namespace(ns)

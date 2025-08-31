@@ -31,8 +31,6 @@ def initial_search(options: Hmsss) -> None:
     if options.glob_report and os.path.isfile(options.glob_report):
         log.info("Using existing global hmmreport: %s", options.glob_report)
     else:
-
-
         log.info("Running hmmsearch for each input genome")
         search_hmmer.consecutive_hmm_search(options, int(options.cores / 2))
 
@@ -44,7 +42,8 @@ def initial_search(options: Hmsss) -> None:
             options.hmmreport_files, options.glob_report
         )
 
-
     # Globale Auswertung in trusted/noise/intermediate
     log.info("Filtering hits into trusted, noise, and intermediate categories")
-    search_cross_reference.filter_trusted_and_noise_hits(options, options.glob_report, options.cores)
+    search_cross_reference.filter_trusted_and_noise_hits(
+        options, options.glob_report, options.cores
+    )

@@ -1175,7 +1175,7 @@ def output_distinct_fasta_reports(
         proteinlist = protein.get_protein_list()
         sequence = str(protein.protein_sequence).replace("*", "")
         for domain in domain_dict.values():
-            HMM = domain.HMM
+            HMM = domain.domain
             domain_sequence = sequence[domain.start : domain.end]
             filepath = os.path.join(directory, f"_fused_domain_{HMM}.faa")
             files.add(filepath)

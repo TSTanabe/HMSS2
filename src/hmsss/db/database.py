@@ -229,7 +229,7 @@ def insert_database_proteins(database: str, protein_dict: Dict[str, Any]) -> Non
                 for domain in domains.values():
                     domain_record = (
                         protein_id,
-                        domain.HMM,
+                        domain.domain,
                         domain.start,
                         domain.end,
                         domain.score,
@@ -524,7 +524,9 @@ def update_keywords(
     return
 
 
-def delete_keywords_from_csb(database: str, prefix: str = "csb-", suffix: str = "_") -> None:
+def delete_keywords_from_csb(
+    database: str, prefix: str = "csb-", suffix: str = "_"
+) -> None:
     """
     Remove keywords from the database that match the pattern options.csb_name_prefix + a number + options.csb_name_suffix.
 

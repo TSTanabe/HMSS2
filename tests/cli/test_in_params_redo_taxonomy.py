@@ -29,6 +29,7 @@ def _add_src_to_syspath() -> None:
 def parse_mod():
     _add_src_to_syspath()
     from hmsss.cli import parse  # type: ignore
+
     return parse
 
 

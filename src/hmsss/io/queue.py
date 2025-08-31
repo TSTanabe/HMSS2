@@ -15,6 +15,7 @@ from hmsss.utils import myUtil
 
 log = get_logger(__name__)
 
+
 def queue_fna_inputs(config) -> dict[str, str]:
     """
     Sammelt ausschließlich FNA-Inputs für die spätere Translation.
@@ -28,8 +29,8 @@ def queue_fna_inputs(config) -> dict[str, str]:
 
     # Aktuelle Lage erfassen
     fna_gz_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".fna.gz")
-    fna_files: Dict[str, str]    = get_genome_id_files_dict(root, extension=".fna")
-    faa_files: Dict[str, str]    = get_genome_id_files_dict(root, extension=".faa")
+    fna_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".fna")
+    faa_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".faa")
     faa_gz_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".faa.gz")
 
     faa_all_genomes: Set[str] = set(faa_files) | set(faa_gz_files)
@@ -78,8 +79,8 @@ def queue_protein_annotation_inputs(options) -> None:
     faa_gz_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".faa.gz")
     gff_gz_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".gff.gz")
 
-    faa_files: Dict[str, str]    = get_genome_id_files_dict(root, extension=".faa")
-    gff_files: Dict[str, str]    = get_genome_id_files_dict(root, extension=".gff")
+    faa_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".faa")
+    gff_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".gff")
 
     # Entpacken planen: .faa.gz / .gff.gz nur wenn das ungezippte Pendant fehlt
     decompress_targets: Set[str] = set()
@@ -97,7 +98,9 @@ def queue_protein_annotation_inputs(options) -> None:
     # Nach evtl. Entpacken erneut einlesen
     faa_files = get_genome_id_files_dict(root, extension=".faa")
     gff_files = get_genome_id_files_dict(root, extension=".gff")
-    hmmreport_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".hmmreport")
+    hmmreport_files: Dict[str, str] = get_genome_id_files_dict(
+        root, extension=".hmmreport"
+    )
 
     # Nur GenomeIDs behalten, die FAA UND GFF haben
     common_ids: Set[str] = set(faa_files) & set(gff_files)
@@ -105,7 +108,9 @@ def queue_protein_annotation_inputs(options) -> None:
     # Dictionaries auf common_ids beschränken
     faa_files = {gid: path for gid, path in faa_files.items() if gid in common_ids}
     gff_files = {gid: path for gid, path in gff_files.items() if gid in common_ids}
-    hmmreport_files = {gid: path for gid, path in hmmreport_files.items() if gid in common_ids}
+    hmmreport_files = {
+        gid: path for gid, path in hmmreport_files.items() if gid in common_ids
+    }
 
     options.queued_genomes = common_ids
     options.faa_files = faa_files
@@ -164,7 +169,6 @@ def queue_faa_without_gff(options) -> dict[str, str]:
 
     log.info(f"Queued {len(faa_missing_gff)} faa files without gff for transcription.")
     return faa_missing_gff
-
 
 
 def get_all_files_with_extension(directory: str, extension: str) -> Set[str]:

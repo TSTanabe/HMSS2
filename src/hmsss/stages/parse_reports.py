@@ -14,5 +14,5 @@ def parse_reports_to_database(options: Hmsss) -> None:
     """
     Aus __main__.py: Summary-HMMreport in die DB schreiben.
     """
-    print_header("Parse reports → database", logger=log)
+    print_header("Parse reports to database", logger=log)
     parse_reports.main_parse_summary_hmmreport(options)

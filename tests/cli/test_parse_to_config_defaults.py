@@ -28,20 +28,22 @@ def test_parse_to_config_sets_all_expected_defaults(tmp_path: Path):
     cfg = parse_to_config(argv)
 
     # Assert: Basis-Pfade (aus paths.py) sind korrekt übernommen
-    assert cfg.paths.root    == str(root)
-    assert cfg.paths.bin     == str(root / "bin")
-    assert cfg.paths.data    == str(root / "data")
-    assert cfg.paths.hmms    == str(root / "data" / "HMMs")
-    assert cfg.paths.refseq  == str(root / "data" / "RefSeqs")
+    assert cfg.paths.root == str(root)
+    assert cfg.paths.bin == str(root / "bin")
+    assert cfg.paths.data == str(root / "data")
+    assert cfg.paths.hmms == str(root / "data" / "HMMs")
+    assert cfg.paths.refseq == str(root / "data" / "RefSeqs")
     assert cfg.paths.results == str(root / "results")
     assert cfg.paths.package == str(root / "src" / "hmsss")
 
     # Assert: CLI-Defaults nach _apply_runtime_defaults (weil nicht übergeben)
     assert cfg.cli_input.score_threshold_file == str(root / "data" / "Thresholds")
-    assert cfg.cli_input.library              == str(root / "data" / "HMMlib")
-    assert cfg.cli_synteny.patterns_file      == str(root / "data" / "Patterns")
-    assert cfg.cli_synteny.cooccurrence_file  == str(root / "data" / "Cooccurrence")
-    assert cfg.cli_synteny.exclusion_singletons == str(root / "data" / "Exclusion_singletons")
+    assert cfg.cli_input.library == str(root / "data" / "HMMlib")
+    assert cfg.cli_synteny.patterns_file == str(root / "data" / "Patterns")
+    assert cfg.cli_synteny.cooccurrence_file == str(root / "data" / "Cooccurrence")
+    assert cfg.cli_synteny.exclusion_singletons == str(
+        root / "data" / "Exclusion_singletons"
+    )
     assert cfg.cli_input.result_files_directory == str(root / "results")
 
     # Stage: ohne Prozess-/Fetch-/Redo-Argumente kein Override → 0 (Default)

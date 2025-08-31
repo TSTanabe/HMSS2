@@ -101,9 +101,20 @@ def refresh_paths(base: str | Path | None = None) -> None:
     - base=None  → Autodetektion (wie oben)
     - base=Pfad  → Erzwingt HMSS2-Wurzel = base
     """
-    global ROOT_DIR, BIN_DIR, DATA_DIR, HMMS_DIR, REFSEQ_DIR, RESULTS_DIR, PACKAGE_DIR, \
-           SRC_FILE_HMM_LIBRARY, SRC_FILE_COOCCURRENCE, SRC_FILE_THRESHOLDS, \
-           SRC_FILE_PATTERNS, SRC_FILE_EXCLUSION_SINGLETONS, _paths
+    global \
+        ROOT_DIR, \
+        BIN_DIR, \
+        DATA_DIR, \
+        HMMS_DIR, \
+        REFSEQ_DIR, \
+        RESULTS_DIR, \
+        PACKAGE_DIR, \
+        SRC_FILE_HMM_LIBRARY, \
+        SRC_FILE_COOCCURRENCE, \
+        SRC_FILE_THRESHOLDS, \
+        SRC_FILE_PATTERNS, \
+        SRC_FILE_EXCLUSION_SINGLETONS, \
+        _paths
 
     root = Path(base).resolve() if base else _detect_root()
     _paths = _make_paths(root)
@@ -123,7 +134,9 @@ def refresh_paths(base: str | Path | None = None) -> None:
     SRC_FILE_EXCLUSION_SINGLETONS = _paths["SRC_FILE_EXCLUSION_SINGLETONS"]
 
 
-def as_dict(str_paths: bool = True, include_sources: bool = False) -> Dict[str, str | Path]:
+def as_dict(
+    str_paths: bool = True, include_sources: bool = False
+) -> Dict[str, str | Path]:
     """
     Gibt alle Pfade als Dict zurück (für Debug/Logs).
     - str_paths=True → Werte als Strings

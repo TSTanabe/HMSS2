@@ -50,7 +50,8 @@ def test_stage_remains_when_no_processing(tmp_path: Path):
 # -------------------------------------------
 def test_stage_100_on_merge_fasta(tmp_path: Path):
     root = tmp_path / "HMSS2"
-    _mk_fake_tree(root); p.refresh_paths(root)
+    _mk_fake_tree(root)
+    p.refresh_paths(root)
 
     merge_dir = root / "merge_in"
     merge_dir.mkdir(parents=True, exist_ok=True)
@@ -61,7 +62,8 @@ def test_stage_100_on_merge_fasta(tmp_path: Path):
 
 def test_stage_100_on_filter_fasta(tmp_path: Path):
     root = tmp_path / "HMSS2"
-    _mk_fake_tree(root); p.refresh_paths(root)
+    _mk_fake_tree(root)
+    p.refresh_paths(root)
 
     out_file = root / "filtered.faa"
     cfg = _cfg_for(root, ["-filter_fasta", str(out_file), "10", "1000"])
@@ -70,7 +72,8 @@ def test_stage_100_on_filter_fasta(tmp_path: Path):
 
 def test_stage_100_on_concat_alignment(tmp_path: Path):
     root = tmp_path / "HMSS2"
-    _mk_fake_tree(root); p.refresh_paths(root)
+    _mk_fake_tree(root)
+    p.refresh_paths(root)
 
     aln_dir = root / "aln_dir"
     aln_dir.mkdir(parents=True, exist_ok=True)
@@ -81,7 +84,8 @@ def test_stage_100_on_concat_alignment(tmp_path: Path):
 
 def test_stage_100_on_add_taxonomy_to_alignment(tmp_path: Path):
     root = tmp_path / "HMSS2"
-    _mk_fake_tree(root); p.refresh_paths(root)
+    _mk_fake_tree(root)
+    p.refresh_paths(root)
 
     tax_file = root / "taxonomy.tsv"
     tax_file.write_text("id\ttax\n", encoding="utf-8")
@@ -92,7 +96,8 @@ def test_stage_100_on_add_taxonomy_to_alignment(tmp_path: Path):
 
 def test_stage_100_on_add_genomic_context(tmp_path: Path):
     root = tmp_path / "HMSS2"
-    _mk_fake_tree(root); p.refresh_paths(root)
+    _mk_fake_tree(root)
+    p.refresh_paths(root)
 
     ctx_file = root / "context.faa"
     ctx_file.write_text(">seq\nM\n", encoding="utf-8")
@@ -103,7 +108,8 @@ def test_stage_100_on_add_genomic_context(tmp_path: Path):
 
 def test_stage_100_on_create_type_range_dataset(tmp_path: Path):
     root = tmp_path / "HMSS2"
-    _mk_fake_tree(root); p.refresh_paths(root)
+    _mk_fake_tree(root)
+    p.refresh_paths(root)
 
     out_ds = root / "type_range.tsv"
     cfg = _cfg_for(root, ["-create_type_range_dataset", str(out_ds)])
@@ -112,7 +118,8 @@ def test_stage_100_on_create_type_range_dataset(tmp_path: Path):
 
 def test_stage_100_on_create_gene_cluster_dataset(tmp_path: Path):
     root = tmp_path / "HMSS2"
-    _mk_fake_tree(root); p.refresh_paths(root)
+    _mk_fake_tree(root)
+    p.refresh_paths(root)
 
     out_gc = root / "gene_clusters.tsv"
     cfg = _cfg_for(root, ["-create_gene_cluster_dataset", str(out_gc)])
@@ -126,7 +133,8 @@ def test_stage_100_on_create_gene_cluster_dataset(tmp_path: Path):
 # ------------------------------------
 def test_stage_100_on_db_fetch_keywords(tmp_path: Path):
     root = tmp_path / "HMSS2"
-    _mk_fake_tree(root); p.refresh_paths(root)
+    _mk_fake_tree(root)
+    p.refresh_paths(root)
 
     cfg = _cfg_for(root, ["-fk", "sqr", "ddh"])
     assert cfg.cli_params.stage == 100
@@ -134,7 +142,8 @@ def test_stage_100_on_db_fetch_keywords(tmp_path: Path):
 
 def test_stage_100_on_db_fetch_lineage_taxon(tmp_path: Path):
     root = tmp_path / "HMSS2"
-    _mk_fake_tree(root); p.refresh_paths(root)
+    _mk_fake_tree(root)
+    p.refresh_paths(root)
 
     cfg = _cfg_for(root, ["-fl", "Phylum", "-ft", "Proteobacteria"])
     assert cfg.cli_params.stage == 100
@@ -142,7 +151,8 @@ def test_stage_100_on_db_fetch_lineage_taxon(tmp_path: Path):
 
 def test_stage_100_on_redo_taxonomy(tmp_path: Path):
     root = tmp_path / "HMSS2"
-    _mk_fake_tree(root); p.refresh_paths(root)
+    _mk_fake_tree(root)
+    p.refresh_paths(root)
 
     cfg = _cfg_for(root, ["-redo_taxonomy"])
     assert cfg.cli_params.stage == 100

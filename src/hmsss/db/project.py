@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Mapping, Iterable, Tuple, Optional
 
 from hmsss.core.logging import get_logger
+
 logger = get_logger(__name__)
 
 
@@ -39,7 +40,9 @@ def prepare_result_space(config, project: str = "project") -> None:
 
     else:
         # -r was given search for existing project
-        tuple_database_dir_database_path = find_database_in_directory(config.cli_result_dir_in)
+        tuple_database_dir_database_path = find_database_in_directory(
+            config.cli_result_dir_in
+        )
         if tuple_database_dir_database_path:
             # Existing database was found, first occurrence of .db is used
             database_dir, database_path = tuple_database_dir_database_path
@@ -47,7 +50,9 @@ def prepare_result_space(config, project: str = "project") -> None:
 
         else:
             # No existing was found, save new project to given location
-            config.result_files_directory = create_project(config.cli_result_dir_in, project)
+            config.result_files_directory = create_project(
+                config.cli_result_dir_in, project
+            )
             new_project = True
 
     # The project directory is now saved in config.result_files_directory
@@ -55,20 +60,18 @@ def prepare_result_space(config, project: str = "project") -> None:
     config.database_directory = config.result_files_directory + "/database.db"
     config.fasta_initial_hit_directory = config.result_files_directory + "/Hit_list"
     config.fasta_output_directory = config.result_files_directory + "/Sequences"
-    config.csb_directory = (
-            config.result_files_directory + "/Collinear_syntenic_blocks"
-    )
+    config.csb_directory = config.result_files_directory + "/Collinear_syntenic_blocks"
     config.cross_check_directory = config.result_files_directory + "/Filtered_hits"
 
     # Output files
     config.glob_report = os.path.join(
-            config.result_files_directory, "global_report.cat_hmmreport"
-        )
+        config.result_files_directory, "global_report.cat_hmmreport"
+    )
     config.glob_trusted_hitreport = (
-            config.result_files_directory + "/global_trusted_hits_summary.hmmreport"
+        config.result_files_directory + "/global_trusted_hits_summary.db"
     )
     config.glob_intermediate_hitreport = (
-            config.result_files_directory + "/global_intermediate_hits_summary.hmmreport"
+        config.result_files_directory + "/global_intermediate_hits_summary.db"
     )
     config.csb_output_file = config.csb_directory + "/Csb_output.txt"
     config.gene_clusters_file = config.csb_directory + "/All_gene_clusters.txt"
@@ -86,14 +89,14 @@ def prepare_result_space(config, project: str = "project") -> None:
     # Write down setting
     write_config_to_tsv(config, config.result_files_directory)
     # 5. If using a pre-existing project, force pipeline to start at stage 3
-    #if new_project and config.stage < 3:
+    # if new_project and config.stage < 3:
     #    logger.warning("Existing project directory detected. Setting start stage to 4.")
     #    config.stage = 4
 
     return
 
 
-def create_project(directory, projectname="project")-> str:
+def create_project(directory, projectname="project") -> str:
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")  # z. B. "2025-04-16_14-53-21"
     directory = os.path.join(directory, f"{timestamp}_{projectname}")
@@ -125,7 +128,8 @@ def find_database_in_directory(
 
     logger.warning(
         "No database file at expected location: %s. Searching recursively under %s.",
-        candidate, root,
+        candidate,
+        root,
     )
 
     # 2) Rekursiv suchen – erster Treffer
@@ -135,7 +139,6 @@ def find_database_in_directory(
 
     logger.warning("No database named %r found under %s.", db_name, root)
     return None
-
 
 
 def any_process_args_provided(args, default_values: dict) -> bool:
@@ -225,6 +228,7 @@ def _flatten_config(obj: Any, prefix: str = "") -> dict[str, str]:
 
 def _is_scalar(x: Any) -> bool:
     return isinstance(x, (str, bytes, int, float, bool, type(None), Path))
+
 
 def _to_str(x: Any) -> str:
     if isinstance(x, Path):
