@@ -1,8 +1,10 @@
 #!/usr/bin/python
-
+from itertools import chain
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from src.hmsss.utils import myUtil
+from hmsss.algorithms.csb_trie_algorithm import TrieIndex
+from hmsss.utils import myUtil
+from hmsss.algorithms import csb_trie_algorithm
 
 logger = myUtil.log
 
@@ -30,6 +32,7 @@ class Cluster:
         self.cluster_start: Optional[int] = None
         self.cluster_end: Optional[int] = None
 
+        # Necessary for the pattern matching
         self.type_to_proteins: Dict[
             str, Set[str]
         ] = {}  # Saves type => set(proteinID). Necessary to get proteinIDs with pattern matching types
@@ -73,6 +76,30 @@ class Cluster:
         self.keywords_dict[keyword_id] = Keyword(
             keyword, completeness, csb, missing, additional_elements, keyword_id
         )
+
+    def add_covered_types(self, covered_types: Set[str] | List[str] | tuple[str, ...]) -> Set[str]:
+        """
+        Given a set/list/tuple of covered protein 'types' (domain names),
+        look up their protein IDs via `type_to_proteins` and accumulate them
+        into `self.covered_protein_ids`.
+
+        Returns the set of IDs that were added on this call.
+        """
+        # Accept any iterable of strings; avoid accidental string-iteration
+        if isinstance(covered_types, str):
+            covered_types = {covered_types}
+        else:
+            covered_types = set(covered_types)
+
+        newly_added: Set[str] = set()
+        for typ in covered_types:
+            ids = self.type_to_proteins.get(typ)
+            if ids:
+                newly_added.update(ids)
+
+        # Accumulate into the cluster-level set
+        self.covered_protein_ids.update(newly_added)
+        return newly_added
 
     def get_keywords(self) -> List["Keyword"]:
         return list(self.keywords_dict.values())
@@ -381,3 +408,96 @@ def name_syntenic_blocks(
             #    print(pattern_set)
             #    print(missing_domains)
     return cluster_id_dict
+
+from typing import Dict, Any, List
+
+def name_syntenic_blocks_trie(
+    cluster_dict: Dict[str, Any],
+    index: TrieIndex,
+    *,
+    min_completeness: float = 0.5,
+    only_terminal_node_patterns: bool = False,   # True: nur exakte Patterns, die am Endknoten terminieren
+    include_partials: bool = True,       # True: zusätzlich auch Teiltreffer (unvollständige Patterns) aufnehmen
+) -> dict[str, Any]:
+    """
+    Benennt Syntenie-Cluster anhand des vorbereiteten TrieIndex.
+    - Completeness = k / |P|, wobei k die Tiefe des letzten erreichbaren Trie-Knotens ist.
+    - missing = Pattern − Cluster (Domänennamen)
+    - additional = Cluster − Pattern (Domänennamen, inkl. unbekannter Domains)
+
+    Effekt: schreibt die Keywords direkt in die Cluster-Objekte via cluster.add_keyword(...).
+
+    Args:
+        only_terminal_node_patterns (bool):
+    """
+
+    # Über alle Cluster iterieren, die annotiert werden sollen
+    for cluster_id, cluster in cluster_dict.items():  # <- alle Cluster einmal durchgehen
+        # Alle Domains (als Strings) aus dem Cluster holen
+        present_names: set[str] = set(cluster.get_protein_type_set())
+        if len(present_names) <= 1:
+            continue
+
+        # Cluster-Domains auf IDs der Trie-Ordnung abbilden; zusätzlich Originalnamen behalten
+        present_ids_sorted, present_mask, present_names_all, unknown_names = \
+            csb_trie_algorithm.map_present_to_sorted_ids(present_names, index)
+
+        # Im Trie so weit wie möglich entlang der vorhandenen Domains absteigen
+        best_k: dict[int, int] = sb_trie_matching.iter_candidates_anywhere_start(
+            index,
+            present_ids_sorted,
+            present_mask,
+
+        )
+
+        # Candidate pattern declaration
+        if only_terminal_node_patterns and not include_partials:
+            # Nur exakte Terminale: |P| == k
+            pids_k = {pid: k for pid, k in best_k.items() if index.pattern_meta[pid].length == k}
+        else:
+            # Return all pattern IDs (exact + incomplete) from the subtree
+            pids_k = best_k
+
+        covered_types = set() # needed for cluster object
+        # Über alle ausgewählten Pattern-Kandidaten iterieren
+        for pid, k in pids_k.items():
+            meta = index.pattern_meta[pid]
+            if meta.length == 0: # Leere Patterns (sollten praktisch nicht vorkommen) überspringen
+                continue
+
+            # Completeness berechnen:
+            covered = (meta.mask & present_mask).bit_count()
+            completeness = covered / meta.length
+
+
+
+
+            # Pattern-Domänen als NAMEN (nicht IDs)
+            pat_names = { index.id_to_domain[i] for i in meta.ids_sorted }
+
+            # Mindestschwelle anwenden – Patterns unterhalb werden nicht hinzugefügt
+            if completeness < min_completeness:
+                continue
+            # Fehlende Domänen = im Pattern, aber nicht im Cluster
+            missing = sorted(pat_names - present_names_all)
+
+            # Zusätzliche Domänen = im Cluster, aber nicht im Pattern
+            # (enthält bewusst auch unbekannte Domänen, da present_names_all Originalnamen umfasst)
+            additional = sorted(present_names_all - pat_names)
+
+            # >>> Direktes Hinzufügen ins Cluster-Objekt (ohne Zwischen-dict) <<<
+            covered_types.update(pat_names & present_names_all)
+
+            cluster.add_keyword(
+                keyword=meta.name,
+                completeness=completeness,
+                csb="0",  # falls du hier eine echte CSB-ID hast, setze sie entsprechend
+                missing=tuple(missing),
+                additional_elements=tuple(additional),
+                keyword_id=meta.name,  # oder eine echte ID, falls vorhanden
+            )
+        # Adds the domain types that are covered by the recognized patterns. Later used to remove low score hits
+        # from the cluster not matching a pattern
+        cluster.add_covered_types(covered_types)
+
+    return cluster_dict

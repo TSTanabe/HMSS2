@@ -9,7 +9,7 @@ from scipy.optimize import linear_sum_assignment
 
 from hmsss.algorithms.csb_finder import Keyword
 from hmsss.core.logging import get_logger
-from hmsss.io.parse_reports import Protein
+
 
 logger = get_logger(__name__)
 
@@ -99,7 +99,7 @@ def _find_best_keywords(cluster_dict: Dict[str, Any], pattern_dict: Dict[str, An
 
 def _find_possible_transitions(
     protein_id: str,
-    protein: Protein,
+    protein: object,
     current_domain: str,
     missing_domains: Set[str],
     transition_dict: Dict[str, Set[Tuple[str, float]]],

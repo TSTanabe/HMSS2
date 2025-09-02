@@ -2,6 +2,7 @@
 import os
 import re
 import subprocess
+import sys
 import traceback
 
 from multiprocessing import Pool, Manager
@@ -14,6 +15,8 @@ from hmsss.algorithms import csb_finder
 from hmsss.algorithms import search_cross_reference
 from hmsss.algorithms import pattern_completion_pathway
 from hmsss.algorithms import pattern_completion_synteny
+from hmsss.algorithms import csb_trie_algorithm
+from hmsss.algorithms.csb_trie_algorithm import TrieIndex
 from hmsss.core.logging import get_logger
 from hmsss.db import database
 from hmsss.db import report_db
@@ -535,6 +538,10 @@ def main_parse_summary_hmmreport(config):
     )
     exclusion_singletons = parse_exclusion_singletons(config.exclusion_singletons)
 
+    # Make csb naming index table
+    only_pattern_dict = {name: patset for name, (patset, _) in csb_patterns.items()}
+    index_trie = sb_trie_matching.build_trie_index(only_pattern_dict)
+
     # Insert genomeIDs in DB
     database.insert_database_genome_ids(config.database_directory, set(genome_ids))
 
@@ -558,6 +565,7 @@ def main_parse_summary_hmmreport(config):
                     cooccurrence_pattern,
                     exclusion_singletons,
                     threshold_dict,
+                    index_trie
                 )
                 for batch in genomeID_batches
             ]
@@ -618,6 +626,7 @@ def process_batch(
     cooccurrence_pattern,
     exclusion_singletons,
     threshold_dict,
+    index_trie,
 ):
     """
     Runs process_genome for each genome in the batch with all necessary arguments.
@@ -637,6 +646,7 @@ def process_batch(
                 cooccurrence_pattern=cooccurrence_pattern,
                 exclusion_singletons=exclusion_singletons,
                 threshold_dict=threshold_dict,
+                index_trie=index_trie,
             )
         except Exception as e:
             logger.warning(f"Failed to process genome '{genome_id}' — {str(e)}")
@@ -656,6 +666,7 @@ def process_genome(
     cooccurrence_pattern: dict[str, tuple[set[str], int]],
     exclusion_singletons: set[str],
     threshold_dict: dict[str, float],
+    index_trie: TrieIndex,
 ) -> None:
     """
     Main pipeline to process one genome:
@@ -667,6 +678,7 @@ def process_genome(
     - Returns (combined_protein_dict, cluster_dict) via queue
 
     Args:
+        index_trie: trie for the csb naming routine, for faster lookup
         cooccurrence_pattern (Dict[str, tuple[set[str],int]]):
         data_queue: Multiprocessing queue for result transport.
         genome_id: ID of the genome.
@@ -708,14 +720,15 @@ def process_genome(
         # Combine protein dictionaries
         combined_protein_dict = {**intermediate_protein_dict, **trusted_protein_dict}
 
-        with tick(f"Find and name syntenic blocks {genome_id}"):
+        with tick(f"Find syntenic blocks {genome_id}"):
             # Detect and annotate syntenic gene clusters
             cluster_dict = csb_finder.find_syntenic_blocks(
                 genome_id, combined_protein_dict, nucleotide_range
             )
-            cluster_dict = csb_finder.name_syntenic_blocks(
-                pattern_dict, cluster_dict, min_completeness
-            )
+        with tick(f"Name syntenic blocks {genome_id}"):
+
+            #cluster_dict = csb_finder.name_syntenic_blocks(pattern_dict, cluster_dict, min_completeness)
+            cluster_dict = csb_finder.name_syntenic_blocks_trie(cluster_dict, index_trie, min_completeness=min_completeness)
 
         with tick(f"Add selection comment trusted proteins {genome_id}"):
             # Attach the reason for selection to protein objects trusted cutoff/reference sequence
@@ -839,6 +852,8 @@ def remove_unassigned_intermediate_proteins(
         primary protein set or are covered by a recognized pattern in any cluster.
 
     """
+
+    # Update the trusted proteinIDs with the proteinIDs that are covered by recognized patterns
     for cluster in cluster_dict.values():
         proteinIDs.update(getattr(cluster, "covered_protein_ids", set()))
 

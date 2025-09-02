@@ -26,7 +26,7 @@ def csb_finder(config: Config) -> None:
 
     database.index_database(config.database_directory)
     database.delete_keywords_from_csb(
-        config.database_directory, config
+        config.database_directory
     )  # alte Schlüssel entfernen
     database.update_keywords(
         config.database_directory, csb_gene_cluster_dict

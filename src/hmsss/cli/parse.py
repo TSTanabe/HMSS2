@@ -306,7 +306,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         "-mc",
         dest="min_completeness",
         type=float,
-        default=0.5,
+        default=0.51,
         metavar="<float>",
         help="Minimal fraction of predefined csb to be recognized"
         if show_all
