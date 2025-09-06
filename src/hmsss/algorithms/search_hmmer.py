@@ -10,6 +10,14 @@ from hmsss.utils.myUtil import get_genome_id
 
 log = get_logger(__name__)
 
+"""
+HMMER-based search utilities.
+
+Implements parallel execution of HMMER `hmmsearch` across genomes,
+progress tracking via shared counters, and conversion of `domtblout`
+into `.hmmreport` files with genome-prefixed target IDs for global uniqueness.
+"""
+
 # Global shared variables
 current_counter = None
 counter_lock = None

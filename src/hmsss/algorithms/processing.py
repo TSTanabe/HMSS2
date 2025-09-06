@@ -6,6 +6,7 @@ import sqlite3  # For interacting with SQLite databases
 
 from Bio import SeqIO  # For reading and writing sequence files (FASTA format)
 
+from hmsss.cli.config import Config
 from src.hmsss.utils import myUtil
 
 
@@ -19,7 +20,7 @@ from src.hmsss.utils import myUtil
 ##############################################################
 
 
-def merge_fasta(options):
+def merge_fasta(config):
     """
     Concatenates all .faa files in a directory, ensuring all identifiers are unique using Biopython.
 
@@ -27,8 +28,8 @@ def merge_fasta(options):
         directory: Directory containing .faa files.
         output_file: Name of the output file for the concatenated sequences.
     """
-    directory = options.merge_fasta
-    output_file = options.merge_fasta + "/concat.faa"
+    directory = config.merge_fasta
+    output_file = config.merge_fasta + "/concat.faa"
     # Dictionary to store unique sequences by identifier
     unique_sequences = {}
 
@@ -522,179 +523,6 @@ def sort_gene_vicinity(input_file, output_file):
         writer.writerows(sorted_rows)
 
 
-def deprecated_add_genomic_context(database, filepath):
-    """
-    22.02.23
-        Args:
-            database for the sequence file
-            filepath with the file to be processed
-        This routine takes a fasta file, iterates through the sequences and
-        writes down the specific genomic context in which this was found together with
-        some genomic features
-
-        nicht schön aber funktioniert vielleicht so
-    """
-    cp_dict = {}
-    print("Adding genomic context")
-    with sqlite3.connect(database) as con:
-        cur = con.cursor()
-        query = "SELECT proteinID, clusterID FROM Proteins WHERE proteinID IN ({})"
-
-        # Group protein IDs into batches of 1000 for efficient querying
-        batch_size = 1000
-        protein_ids = [
-            f"'{record.id.split('-', 1)[-1]}'"
-            for record in SeqIO.parse(filepath, "fasta")
-        ]
-
-        for i in range(0, len(protein_ids), batch_size):
-            batch = ",".join(protein_ids[i : i + batch_size])
-            cur.execute(query.format(batch))
-            results = cur.fetchall()
-            for protein_id, cluster_id in results:
-                cp_dict[protein_id] = cluster_id
-
-        cur.execute("""PRAGMA foreign_keys = ON;""")
-        with open(filepath + "_gene_vicinity", "a") as writer:
-            writer.write(
-                "Index\tProteinID\tDomain(s)\tHit_score\thit_align\tcontig\tstart\tend\tstrand\tSuperkingdom\tClade\tPhylum\tClass\tOrdnung\tFamily\tGenus\tSpecies"
-            )
-
-        print(f"\tAssigning genetic environment:")
-        for current_proteinID, current_clusterID in cp_dict.items():
-            print(f"\tFetched: {current_proteinID} {current_clusterID}", end="\r")
-            protein_dict = dict()
-            fusion_protIDs = dict()
-            query = "SELECT DISTINCT Proteins.proteinID,Proteins.genomeID,Proteins.clusterID,contig,start,end,strand,sequence,domain,domStart,domEnd,score,dom_count from Proteins LEFT JOIN Domains ON Proteins.proteinID = Domains.proteinID WHERE Proteins.clusterID = ?"
-            cur.execute(
-                query,
-                [
-                    current_clusterID,
-                ],
-            )
-            # Fill the protein dict
-
-            for row in cur:
-                # 0 => proteinID, 1 => genomeID, 2 => clusterID, 3 => contig,
-                # 4 => start, 5 => end, 6 => strand, 7 => sequence,
-                # 8 => domain, 9 => domStart, 10 => domEnd, 11 => score,
-                if row[0] in protein_dict.keys():
-                    protein = protein_dict[row[0]]
-                    protein.add_domain(row[8], row[9], row[10], row[11])
-                else:
-                    protein = ParseReports.Protein(
-                        row[0], row[8], row[9], row[10], row[11]
-                    )
-                    protein.set_genomeID(row[1])
-                    protein.set_clusterID(row[2])
-                    protein.set_gene_contig(row[3])
-                    protein.set_gene_start(row[4])
-                    protein.set_gene_end(row[5])
-                    protein.set_gene_strand(row[6])
-                    protein_dict[row[0]] = protein
-
-                if row[12] > 1:
-                    fusion_protIDs[row[0]] = 1
-
-            # Also collect domains from fusion proteins
-
-            if fusion_protIDs:
-                count = 1
-                query = """SELECT DISTINCT proteinID,domain,domStart,domEnd,score FROM Domains WHERE proteinID = ? """
-                add_array = []
-                proteins_array = []
-                args = []
-
-                for proteinID in fusion_protIDs.keys():
-                    arguments = args.copy()
-                    arguments.insert(0, proteinID)
-                    cur.execute(query, arguments)
-                    for row in cur:
-                        print(f"\tFetched fused domains: {count}", end="\r")
-                        count = count + 1
-                        protein = protein_dict[row[0]]
-                        protein.add_domain(row[1], row[2], row[3], row[4])
-
-                print("")
-            # an diesem punkt haben wir ein vollständiges unsortiertes protein_dict aber keine txonomy information
-            # taxonomie info holen
-            taxon_dict = dict()
-            query = "SELECT genomeID,Superkingdom,Clade,Phylum,Class,Ordnung,Family,Genus,Species FROM Genomes WHERE genomeID = ? "
-            genomeID = current_proteinID.split("-")[0]
-            cur.execute(
-                query,
-                [
-                    genomeID,
-                ],
-            )
-            for row in cur:
-                taxon_dict[row[0]] = row[1:]
-
-            # create indices for the
-            proteinID_list = sorted(
-                protein_dict, key=lambda x: protein_dict[x].gene_start
-            )
-            try:
-                index = proteinID_list.index(current_proteinID) * -1
-            except:
-                index = 0
-            with open(filepath + "_gene_vicinity", "a") as writer:
-                for proteinID in proteinID_list:
-                    # Write each line includes all information about one protein
-                    protein = protein_dict[proteinID]
-                    proteinlist = (
-                        protein.get_protein_list()
-                    )  # list representation of a protein object
-
-                    out = (
-                        str(index)
-                        + "\t"
-                        + "\t".join(proteinlist)
-                        + "\t".join(taxon_dict[genomeID])
-                        + "\n"
-                    )
-                    index = index + 1
-                    writer.write(out)
-
-    # Specify input and output file names
-    input_file = filepath + "_gene_vicinity"
-    output_file = filepath + "_gene_vicinity_sorted"
-
-    # Specify the headers of the columns to sort onSuperkingdom,Clade,Phylum,Class,Ordnung,Family,Genus,Species
-    sort_headers = [
-        "Superkingdom",
-        "Phylum",
-        "Class",
-        "Ordnung",
-        "Family",
-        "Genus",
-        "Species",
-    ]
-
-    # Read in the input file and store the rows as a list of dictionaries
-    with open(input_file, "r", newline="") as f:
-        reader = csv.DictReader(f, delimiter="\t")
-        rows = [row for row in reader]
-
-    # Sort the rows hierarchically based on the sort columns
-    sorted_rows = sorted(
-        rows,
-        key=lambda x: (
-            x[sort_headers[0]],
-            x[sort_headers[1]],
-            x[sort_headers[2]],
-            x[sort_headers[3]],
-            x[sort_headers[4]],
-            x[sort_headers[5]],
-        ),
-    )
-
-    # Write the sorted rows to the output file
-    with open(output_file, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=reader.fieldnames, delimiter="\t")
-        writer.writeheader()
-        for row in sorted_rows:
-            writer.writerow(row)
 
 
 def help_routine_select_random_marker_set(database, filepath):

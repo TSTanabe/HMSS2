@@ -12,10 +12,25 @@ from hmsss.core.logging import get_logger
 
 logger = get_logger(__name__)
 
+"""
+Project setup and configuration utilities for HMSSS.
+
+Handles creation of result directories, discovery of existing databases,
+and export of configuration parameters to flat TSV files. Provides helpers
+to flatten nested dataclass/Namespace structures for logging or saving.
+"""
 
 def prepare_result_space(config, project: str = "project") -> None:
     """
     Creates and sets up the results directory for a project, including all needed subdirectories.
+    - If no custom `-r` result directory is given, creates a new timestamped
+      subdirectory under the default results path.
+    - If a result directory is given, checks for an existing database; if
+      found, reuses it; otherwise creates a new project directory there.
+    - Initializes subdirectories (Hit_list, Sequences, Collinear_syntenic_blocks,
+      Filtered_hits).
+    - Updates multiple attributes of `config` with new file and directory paths.
+    - Writes a TSV summary of the configuration parameters.
 
     Args:
         config (Options): Has .location, .result_files_directory, etc.
@@ -28,9 +43,6 @@ def prepare_result_space(config, project: str = "project") -> None:
         options.location = '/home/user/myproject'
         options.result_files_directory = '/home/user/myproject/results'
     """
-
-    now = datetime.now()
-    timestamp = str(datetime.timestamp(now))
 
     # Use standard result directory if -r was not used
     if config.paths.results == config.cli_result_dir_in:
@@ -97,6 +109,17 @@ def prepare_result_space(config, project: str = "project") -> None:
 
 
 def create_project(directory, projectname="project") -> str:
+    """Create a new project directory with a timestamped name.
+
+    Example: `2025-04-16_14-53-21_project`
+
+    Args:
+        directory: Parent directory where the project folder is created.
+        projectname: Project suffix (default: "project").
+
+    Returns:
+        Path of the created directory as string.
+    """
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")  # z. B. "2025-04-16_14-53-21"
     directory = os.path.join(directory, f"{timestamp}_{projectname}")
@@ -113,11 +136,17 @@ def find_database_in_directory(
     directory: str | Path,
     db_name: str = "database.db",
 ) -> Optional[Tuple[Path, Path]]:
-    """
-    Suche nach einer DB-Datei unterhalb von `directory`.
+    """Search for a database file under the given directory.
+
+    - First checks if `db_name` exists directly under `directory`.
+    - If not found, searches recursively and returns the first hit.
+
+    Args:
+        directory: Directory to search in.
+        db_name: Database filename to search for (default: "database.db").
 
     Returns:
-        (database_dir, database_path) oder None
+        Tuple of (database directory, database file path) if found, else None.
     """
     root = Path(directory).expanduser().resolve()
 
@@ -142,15 +171,14 @@ def find_database_in_directory(
 
 
 def any_process_args_provided(args, default_values: dict) -> bool:
-    """
-    Checks if any CLI/process arguments are different from their default values.
+    """Check if any process-related CLI arguments differ from their defaults.
 
     Args:
-        args: The argument object (e.g., argparse.Namespace)
-        default_values (dict): Mapping of argname -> default
+        args: Argument object (e.g. argparse.Namespace).
+        default_values: Mapping of argument name -> default value.
 
     Returns:
-        bool: True if any arg has a value different from default, else False.
+        True if any argument is not equal to its default, otherwise False.
     """
     for arg, default in default_values.items():
         if getattr(args, arg) != default:
@@ -165,15 +193,20 @@ def write_config_to_tsv(
     output_directory: str | os.PathLike,
     filename: str = "parameters_summary.tsv",
 ) -> str:
-    """
-    Schreibt ein (verschachteltes) Config-Objekt flach als TSV.
-    - Dataclasses werden rekursiv mit asdict() aufgelöst.
-    - Verschachtelte Strukturen werden mit Dot-Pfaden als Keys ausgegeben.
-    - Listen/Tuples/Sets werden kommasepariert.
-    - Path-Objekte werden zu Strings konvertiert.
+    """Write a (nested) Config object into a flat TSV file.
+
+    - Dataclasses are recursively converted using `asdict()`.
+    - Nested structures are flattened into dot-path keys.
+    - Lists/Tuples/Sets are serialized as comma-separated strings.
+    - Path objects are converted to strings.
+
+    Args:
+        config: Configuration object (possibly nested dataclasses).
+        output_directory: Directory where the TSV file is saved.
+        filename: Output filename (default: "parameters_summary.tsv").
 
     Returns:
-        Pfad zur geschriebenen TSV-Datei als String.
+        Path to the written TSV file as string.
     """
     os.makedirs(output_directory, exist_ok=True)
     output_path = os.path.join(output_directory, filename)
@@ -191,8 +224,17 @@ def write_config_to_tsv(
 
 
 def _flatten_config(obj: Any, prefix: str = "") -> dict[str, str]:
-    """
-    Rekursive Flachlegung nach 'dot path'-Schlüssel → String-Werte.
+    """Recursively flatten a configuration object into dot-path keys.
+
+    Handles dataclasses, argparse.Namespace, mappings, iterables, and scalars.
+    Paths are converted to strings. Non-scalar iterables fall back to `repr()`.
+
+    Args:
+        obj: Object to flatten.
+        prefix: Dot-path prefix used for recursion.
+
+    Returns:
+        Mapping from dot-path keys to stringified values.
     """
     # Dataclass → Dict (rekursiv)
     if is_dataclass(obj):
@@ -227,10 +269,17 @@ def _flatten_config(obj: Any, prefix: str = "") -> dict[str, str]:
 
 
 def _is_scalar(x: Any) -> bool:
+    """Return True if `x` is a scalar value (str, int, float, bool, None, Path)."""
     return isinstance(x, (str, bytes, int, float, bool, type(None), Path))
 
 
 def _to_str(x: Any) -> str:
+    """Convert supported objects to strings.
+
+    - Path → string
+    - None → empty string
+    - Otherwise → str(x)
+    """
     if isinstance(x, Path):
         return str(x)
     if x is None:

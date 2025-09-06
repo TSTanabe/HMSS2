@@ -10,17 +10,30 @@ from hmsss.utils import myUtil
 
 log = get_logger(__name__)
 
+"""
+Stage: Reference sequence cross-check.
+
+Validates intermediate hits by DIAMOND against reference sequences and
+promotes them to trusted. Remaining hits can be promoted by optimized cutoff.
+Finally, trusted and intermediate hit reports are summarized and stored.
+"""
 
 def reference_sequence_check(config: Config) -> None:
-    """
-    Aus __main__.py:
-    - Cross-check NC<score<TC mit RefSeq (Diamond)
-    - Cross-checked Hits promoten
-    - Rest per optimized cutoff promoten
-    - Alternative: nur optimized cutoff verwenden
+    """Perform reference sequence cross-check and cutoff promotion.
+
+    Workflow:
+      - Generate FAA files for intermediate hits.
+      - Cross-check with reference sequences using DIAMOND.
+      - Promote validated candidates to trusted hits.
+      - Promote remaining candidates by optimized cutoff.
+      - Alternatively: promote only by optimized cutoff.
 
     Args:
-        config (Config):
+        config: Pipeline configuration with cutoff settings and directories.
+
+    Side Effects:
+        Creates FAA, crosscheck, trusted, and intermediate hit files;
+        updates SQLite with summarized reports.
     """
     print_header("Reference sequence cross-check & cutoff promotion", logger=log)
 

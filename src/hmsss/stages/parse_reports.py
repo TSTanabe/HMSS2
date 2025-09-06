@@ -1,18 +1,22 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from hmsss.cli.config import Config
 from hmsss.core.logging import get_logger, print_header
 from hmsss.io import parse_reports as parse_reports
 
-if TYPE_CHECKING:
-    from hmsss.core.options import Hmsss
-
 log = get_logger(__name__)
 
+"""
+Stage: Parse reports.
 
-def parse_reports_to_database(options: Hmsss) -> None:
-    """
-    Aus __main__.py: Summary-HMMreport in die DB schreiben.
+Parses summary HMM reports and writes them into the SQLite database.
+"""
+def parse_reports_to_database(config: Config) -> None:
+    """Parse summary hmmreport and insert into the database.
+
+    Args:
+        options: Configuration with `.database_directory`
+            and report file paths.
     """
     print_header("Parse reports to database", logger=log)
-    parse_reports.main_parse_summary_hmmreport(options)
+    parse_reports.main_parse_summary_hmmreport(config)

@@ -6,6 +6,15 @@ import os
 import sys
 from typing import Optional
 
+"""
+Logging setup utilities for HMSSS.
+
+Provides a unified package logger (`hmsss`) with console and optional file
+handlers. Also offers convenience functions to get child loggers and to
+print formatted section headers into the logs.
+"""
+
+
 _LEVELS = {
     0: logging.WARNING,  # quiet
     1: logging.INFO,  # default
@@ -16,11 +25,19 @@ _LEVELS = {
 def setup_logging(
     verbosity: int = 1, logfile: Optional[str] = None, *, force: bool = False
 ) -> logging.Logger:
-    """
-    Initialisiert den Paket-Logger 'hmsss' mit Console- und optionalem File-Handler.
-    - verbosity: 0=WARNING, 1=INFO, 2=DEBUG
-    - logfile: Pfad zur Logdatei (wird im DEBUG-Level beschrieben)
-    - force: vorhandene Handler entfernen & neu aufbauen
+    """Initialize the package logger `hmsss`.
+
+    Sets up a console handler and, optionally, a file handler. Existing
+    handlers can be replaced if `force=True`.
+
+    Args:
+        verbosity: Logging level (0 = WARNING, 1 = INFO, 2 = DEBUG).
+        logfile: Path to a log file. If given, messages are always logged
+            at DEBUG level. The directory is created if it does not exist.
+        force: If True, remove existing handlers and rebuild the logger.
+
+    Returns:
+        Configured `logging.Logger` for the package root.
     """
     logger = logging.getLogger("hmsss")
 
@@ -68,11 +85,14 @@ def setup_logging(
 
 
 def get_logger(name: Optional[str] = None) -> logging.Logger:
-    """
-    Hole einen Child-Logger unterhalb 'hmsss' (z. B. 'hmsss.stages.initial_search').
+    """Return a child logger of the package logger.
+
+    Args:
+        name: Optional sub-name, e.g. `"stages.initial_search"`. If None,
+            returns the root logger `"hmsss"`.
 
     Returns:
-        logging.Logger:
+        Logger instance under `"hmsss"` namespace.
     """
     base = "hmsss" if not name else f"hmsss.{name}"
     return logging.getLogger(base)
@@ -81,8 +101,14 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
 def print_header(
     text: str, *, char: str = "=", logger: Optional[logging.Logger] = None
 ) -> None:
-    """
-    Write headers into logfile
+    """Log a formatted header line.
+
+    Useful to visually separate major steps in the logfile.
+
+    Args:
+        text: Header text to print.
+        char: Character used for framing the header (default: "=").
+        logger: Logger to use. Defaults to a child logger of `"hmsss"`.
     """
     log = logger or get_logger(__name__)
     text: str = 5 * char + f" {text} " + 5 * char

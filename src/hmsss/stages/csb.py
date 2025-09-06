@@ -7,13 +7,24 @@ from hmsss.core.logging import get_logger, print_header
 
 log = get_logger(__name__)
 
+"""
+Stage: Collinear syntenic block (CSB) detection.
+
+Predicts CSBs, clusters them by Jaccard similarity, and updates the database
+with new CSB keywords, replacing old ones.
+"""
 
 def csb_finder(config: Config) -> None:
-    """
-    Aus __main__.py:
-    - CSB-Vorhersage & Jaccard-Clustering
-    - DB-Index aktualisieren
-    - alte CSB-Keywords löschen, neue einspielen
+    """Run CSB prediction and update the database.
+
+    Steps:
+      - Predict collinear syntenic blocks via `csb_cluster.csb_prediction`.
+      - Cluster CSBs using Jaccard distance.
+      - Re-index database.
+      - Delete old CSB keywords and insert new ones.
+
+    Args:
+        config: Configuration with database path and clustering parameters.
     """
     print_header("CSB finder", logger=log)
 

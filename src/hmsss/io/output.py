@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Iterable
 
 from Bio import SeqIO
 
+from hmsss.cli.config import Config
 from hmsss.io import parse_reports
 from hmsss.algorithms import csb_finder
 from hmsss.utils import myUtil
@@ -20,13 +21,12 @@ logger = get_logger(__name__)
 
 
 def fetch_fasta_and_hit_data(
-    options: Any,
+    config: Config,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
     """Main output routine: creates hit tables and writes protein FASTA files.
 
     Args:
-        directory (str): Output directory path.
-        options (object): Configuration object with output and filter parameters.
+        config (object): Configuration object with output and filter parameters.
 
     Returns:
         Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
@@ -35,36 +35,36 @@ def fetch_fasta_and_hit_data(
             - taxon_dict: Maps genomeID to taxonomy string.
 
     Example:
-        >>> prot, clust, tax = print_fasta_and_hit_table("/out/", options)
+        >>> prot, clust, tax = fetch_fasta_and_hit_data(config)
     """
 
     # Limit the genomeIDs and fetch the lineage
     taxon_dict = dict()
-    if options.limiter:
-        taxon_dict = fetch_limiter_data(options)
+    if config.dataset_limit_lineage:
+        taxon_dict = fetch_limiter_data(config)
     # Fetch protein/cluster dict
-    if options.fetch_csbs:
-        logger.info(f"Collecting gene clusters containing {options.fetch_csbs}")
+    if config.fetch_csbs:
+        logger.info(f"Collecting gene clusters containing {config.fetch_csbs}")
         csb_listing = find_csbs_with_proteins_db(
-            options.database_directory, options.fetch_csbs, None
+            config.database_directory, config.fetch_csbs, ""
         )
         logger.debug(csb_listing)
         logger.info(
-            f"Found {len(csb_listing)} types of gene clusters containing {options.fetch_csbs}"
+            f"Found {len(csb_listing)} types of gene clusters containing {config.fetch_csbs}"
         )
         if len(csb_listing) == 0:
             sys.exit()
-        options.fetch_keywords.extend(csb_listing)
+        config.fetch_keywords.extend(csb_listing)
 
     logger.info("Collecting hits from local database")
     protein_dict, cluster_dict, taxon_dict = fetch_bulk_data(
-        options.database_directory,
-        options.fetch_genomes,
-        options.fetch_proteins,
-        options.fetch_keywords,
+        config.database_directory,
+        config.fetch_genomes,
+        config.fetch_proteins,
+        config.fetch_keywords,
         taxon_dict,
-        options.min_completeness,
-        options.dataset_divide_sign,
+        config.min_completeness,
+        config.dataset_divide_sign,
     )
     return protein_dict, cluster_dict, taxon_dict
 
@@ -83,7 +83,6 @@ def print_fasta_and_hit_outputs(
         protein_dict: Mapping proteinID -> proteinObj.
         cluster_dict: Mapping clusterID -> clusterObj.
         taxon_dict: Mapping genomeID -> taxonomy string.
-        taxon_divider: Separator used within taxonomy strings.
     """
 
     # Printing results
@@ -92,9 +91,9 @@ def print_fasta_and_hit_outputs(
     logger.info("Printing genome information output files")
 
     # Metadata for taxonomy and hits
-    hit_report = directory + "1_hit_table.txt"  # individual hit table in tsv file
-    taxonomy_report = directory + "1_taxonomy_table.txt"
-    taxonomy_summary = directory + "1_hit_taxonomy_counts.txt"
+    hit_report = os.path.join(directory, "1_hit_table.txt")  # individual hit table in tsv file
+    taxonomy_report = os.path.join(directory, "1_taxonomy_table.txt")
+    taxonomy_summary = os.path.join(directory, "1_hit_taxonomy_counts.txt")
 
     # Output hit report
     output_genome_report(hit_report, protein_dict, cluster_dict, taxon_dict)
@@ -108,7 +107,7 @@ def print_fasta_and_hit_outputs(
     # Proteine sequences
     logger.info(f"Printing protein fasta files to {directory}")
 
-    fasta_file_directory = directory + "2_Protein"  # protein fasta files
+    fasta_file_directory = os.path.join(directory, "2_Protein") # protein fasta files
     files = output_distinct_fasta_reports(
         fasta_file_directory, protein_dict, cluster_dict
     )  # Output per domain
@@ -355,13 +354,13 @@ def write_detail_to_protein_dict(
 
         else:
             protein = parse_reports.Protein(row[0], row[8], row[9], row[10], row[11])
-            protein.set_genomeID(row[1])
-            protein.set_clusterID(row[2])
-            protein.set_gene_contig(row[3])
-            protein.set_gene_start(row[4])
-            protein.set_gene_end(row[5])
-            protein.set_gene_strand(row[6])
-            protein.set_protein_sequence(row[7])
+            protein.genomeID = row[1]
+            protein.clusterID = row[2]
+            protein.gene_contig = row[3]
+            protein.gene_start = row[4]
+            protein.gene_end = row[5]
+            protein.gene_strand = row[6]
+            protein.protein_sequence = row[7]
             protein_dict[row[0]] = protein
 
         if not row[2] is None and not row[2] in cluster_dict:
@@ -376,12 +375,12 @@ def write_detail_to_protein_dict(
 #############################################################################################
 #############################################################################################
 
-
+# TODO diese routine erhalten als ausgabe für das inital parse
 def output_genome_report(
     output_filepath: str,
     protein_dict: Dict[str, Any],
     cluster_dict: Dict[str, Any],
-    taxon_dict: Dict[str, str] = {},
+    taxon_dict: Dict[str, str],
     genomeID: str = "",
     writemode: str = "w",
     taxon_divider: str = ".",
@@ -460,6 +459,8 @@ def output_genome_report(
                 out_clusterID = ""
 
             # Taxonomie in 7 Spalten
+            taxon_dict = {} if taxon_dict is None else taxon_dict
+
             gid = protein.genomeID
             taxon_levels = [""] * 8
             if gid in taxon_dict and taxon_dict[gid]:
@@ -567,7 +568,7 @@ def output_unique_taxonomy_table(
     unique_file = output_file.replace(".txt", "") + "_unique_taxonomies.txt"
 
     # Map from taxonomy tuple (7 ranks) -> representative genomeID
-    representative: Dict[Tuple[str, str, str, str, str, str, str], str] = {}
+    representative: Dict[Tuple[str, ...], str] = {}
 
     for gid, lineage_str in (taxon_dict or {}).items():
         if not lineage_str:
@@ -622,11 +623,11 @@ def output_unique_taxonomy_table(
 ##############################################################
 
 
-def fetch_limiter_data(options: object) -> Dict[str, str]:
+def fetch_limiter_data(config: Config) -> Dict[str, str]:
     """Fetch limiter data from the database based on specified conditions.
 
     Args:
-        options (object): Configuration object with attributes:
+        config (Config): Configuration object with attributes:
             - database_directory (str): Path to the SQLite database.
             - dataset_limit_lineage (str): Taxonomy field to restrict (e.g., 'Genus').
             - dataset_limit_taxon (str): Taxon name/value to match.
@@ -638,14 +639,14 @@ def fetch_limiter_data(options: object) -> Dict[str, str]:
         Dict[str, str]: Maps genomeID to taxonomy lineage string.
 
     Example:
-        >>> tax_dict = fetch_limiter_data(options)
+        >>> tax_dict = fetch_limiter_data(config)
     """
-    database: str = options.database_directory
-    lineage: str = options.dataset_limit_lineage
-    taxon: str = options.dataset_limit_taxon
-    proteins: Any = options.dataset_limit_proteins
-    keywords: Any = options.dataset_limit_keywords
-    trennzeichen: str = options.dataset_divide_sign
+    database: str = config.database_directory
+    lineage: str = config.dataset_limit_lineage
+    taxon: str = config.dataset_limit_taxon
+    proteins: Any = config.dataset_limit_proteins
+    keywords: Any = config.dataset_limit_keywords
+    trennzeichen: str = config.dataset_divide_sign
 
     taxon_dict: Dict[str, str] = {}
 
@@ -1146,7 +1147,7 @@ def output_distinct_fasta_reports(
 
     # Output: per domain class
     for HMM, proteinID_list in HMM_dict.items():
-        filepath = directory + f"_{HMM}.faa"
+        filepath = os.path.join(directory, f"_{HMM}.faa")
         files.add(filepath)
         with open(filepath, writemode) as writer:
             for proteinID in proteinID_list:
@@ -1217,23 +1218,24 @@ def singletons(directory, filepaths):
             genomeID = record.split("-")[0]
             genome_list.append(genomeID)
 
-        doublicate = set([x for x in genome_list if genome_list.count(x) > 1])
+        duplicate = set([x for x in genome_list if genome_list.count(x) > 1])
 
         path = os.path.splitext(filepath)[0]
         name = os.path.basename(path)
-        single = open(directory + f"/{name}_singleton.faa", "w")
-        double = open(directory + f"/{name}_doublicate.faa", "w")
 
-        for record in record_dict.keys():
-            # print(record_dict[record])
-            sequence = record_dict[record]
-            genomeID = record.split("-")[0]
-            if not genomeID in doublicate:
-                single.write(">" + sequence.description + "\n")
-                single.write(str(sequence.seq) + "\n")
-            else:
-                double.write(">" + sequence.description + "\n")
-                double.write(str(sequence.seq) + "\n")
+        single_path = os.path.join(directory, f"{name}_ortho.faa")
+        double_path = os.path.join(directory, f"{name}_paralog.faa")
+
+        with open(single_path, "w") as single, open(double_path, "w") as double:
+            for record in record_dict.keys():
+                sequence = record_dict[record]
+                genomeID = record.split("-")[0]
+                if genomeID not in duplicate:
+                    single.write(">" + sequence.description + "\n")
+                    single.write(str(sequence.seq) + "\n")
+                else:
+                    double.write(">" + sequence.description + "\n")
+                    double.write(str(sequence.seq) + "\n")
         single.close()
         double.close()
 

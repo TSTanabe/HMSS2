@@ -10,18 +10,27 @@ import shutil
 import tempfile
 
 from multiprocessing import Pool
-from typing import Dict, List, Optional, TYPE_CHECKING
+from typing import Dict, List, Optional
 
 from hmsss.cli.config import Config
-
-if TYPE_CHECKING:
-    from hmsss.core.options import Hmsss
 
 from hmsss.core.logging import get_logger
 from hmsss.utils.myUtil import find_executable
 
 logger = get_logger(__name__)
 
+"""
+Cross-reference utilities for HMM hits.
+
+Provides routines to:
+- Concatenate many `.hmmreport` files into a single global report
+  (via `xargs -0 cat` with a Python fallback).
+- Parse score cutoff tables into dictionaries.
+- Partition hits into trusted/intermediate/noise categories in parallel.
+- Extract candidate protein FASTA per HMM and cross-check with reference
+  sequences (DIAMOND).
+- Promote validated candidates and summarize trusted hits.
+"""
 
 # Global shared variables
 current_counter = None
@@ -37,16 +46,21 @@ def concatenate_hmmreports_cat_xargs(
     report_paths: dict[str, str],
     output_path: str = "global_report.cat_hmmreport",
 ) -> str:
-    """
-    Concatenate many .hmmreport files using `xargs -0 cat` to avoid argv limits.
-    Falls back to Python block-copy if xargs/cat fails.
+    """Concatenate multiple `.hmmreport` files into a single global file.
+
+    Uses a NULL-delimited list with `xargs -0 cat` to avoid argv limits;
+    falls back to a Python block-copy if the shell method fails.
 
     Args:
-        report_paths: genomeID -> hmmreport path
-        output_path: output file
+        report_paths: Mapping genome ID → hmmreport path.
+        output_path: Destination file path.
 
     Returns:
-        output_path
+        The `output_path` string.
+
+    Raises:
+        FileNotFoundError: If no valid input files are present.
+        RuntimeError: If the shell concatenation fails unexpectedly.
     """
     logger.info(f"Concatenate raw hit reports to {output_path}")
 
@@ -96,19 +110,18 @@ def concatenate_hmmreports_cat_xargs(
 def make_threshold_dict(
     file_path: str, threshold_type: int = 1, default_score: float = 50.0
 ) -> Dict[str, float]:
-    """Parses a tab-separated score threshold file into a dict.
+    """Parse a tab-separated cutoff table into a {hmm_id: threshold} dict.
+
+    Columns are interpreted as different threshold types; values like `-inf`
+    are mapped to a very high sentinel cutoff to mark them as unreachable.
 
     Args:
-        file_path (str): Path to thresholds TSV file.
-        threshold_type (int, optional): Which column (0-based) to use for score.
-        default_score (float, optional): Default fallback score if missing.
+        file_path: Path to thresholds TSV file.
+        threshold_type: Column (0-based) to read for the cutoff.
+        default_score: Fallback score if the row lacks the chosen column.
 
     Returns:
-        Dict[str, float]: Mapping from HMM ID to score threshold.
-
-    Example:
-        >>> make_threshold_dict('/tmp/thresholds.tsv', 1)
-        {'PF00001': 42.0, 'PF00002': 50.0}
+        Mapping from HMM ID to its score threshold.
     """
     thresholds: Dict[str, float] = {}
     with open(file_path, "r") as file:
@@ -140,36 +153,31 @@ def make_threshold_dict(
 
 
 def filter_trusted_and_noise_hits(
-    options: Hmsss, glob_report: str, processes: int = 4
+    config, glob_report: str, processes: int = 4
 ) -> str:
-    """Filters hits in a global report into trusted/intermediate categories and writes summary files.
+    """Split the global report into trusted and intermediate hits per HMM.
 
-    Uses score thresholds defined in options.score_threshold_file.
+    Builds trusted/noise cutoff dicts from `options.score_threshold_file`,
+    then processes each HMM ID in parallel to generate:
+      - `{hmm}.trusted_hits`
+      - `{hmm}.intermediate_hits`
 
     Args:
-        options (object): Configuration object containing:
-            - score_threshold_file (str): Path to tab-separated file with thresholds.
-            - threshold_type (int): Which column to use for score thresholds.
-            - thrs_score (float): Default fallback threshold.
-            - Cross_check_directory (str): Directory for output.
-        glob_report (str): Path to the concatenated global report file.
-        processes (int, optional): Number of worker processes.
+        config: Configuration with threshold table path and output directories.
+        glob_report: Path to the concatenated global report.
+        processes: Number of worker processes.
 
     Returns:
-        str: Absolute path to the output directory containing filtered hit files.
-
-    Example:
-        >>> filter_trusted_and_noise_hits(options, '/tmp/global.cat_hmmreport', 2)
-        '/tmp/xcheck'
+        Absolute path to the directory containing the filtered hit files.
     """
     trusted_dict = make_threshold_dict(
-        options.score_threshold_file, 2, options.thrs_score
+        config.score_threshold_file, 2, config.thrs_score
     )
     noise_dict = make_threshold_dict(
-        options.score_threshold_file, 3, options.thrs_score
+        config.score_threshold_file, 3, config.thrs_score
     )
 
-    output_dir = options.cross_check_directory
+    output_dir = config.cross_check_directory
     os.makedirs(output_dir, exist_ok=True)
 
     args = [
@@ -177,7 +185,7 @@ def filter_trusted_and_noise_hits(
             hmm_id,
             glob_report,
             trusted_dict[hmm_id],
-            noise_dict.get(hmm_id, options.thrs_score),
+            noise_dict.get(hmm_id, config.thrs_score),
             output_dir,
         )
         for hmm_id in trusted_dict
@@ -196,22 +204,17 @@ def process_single_hmm(
     noise_cutoff: float,
     output_dir: str,
 ) -> None:
-    """Processes hits for one HMM ID, separating trusted and intermediate hits.
+    """Extract hits for one HMM and split them by cutoff.
 
-    Writes two files: {hmm_id}.trusted_hits and {hmm_id}.intermediate_hits.
+    Writes `{hmm_id}.trusted_hits` and, if applicable,
+    `{hmm_id}.intermediate_hits`.
 
     Args:
-        hmm_id (str): HMM profile ID to extract.
-        glob_report (str): Path to the global cat_hmmreport file.
-        trusted_cutoff (float): Score threshold for trusted hits.
-        noise_cutoff (float): Lower bound for intermediate hits.
-        output_dir (str): Directory to write result files.
-
-    Returns:
-        None
-
-    Example:
-        >>> process_single_hmm('PF00001', '/tmp/global.cat_hmmreport', 42.0, 21.0, '/tmp/xcheck')
+        hmm_id: HMM profile identifier.
+        glob_report: Path to the global report (`cat_hmmreport`).
+        trusted_cutoff: Score threshold for trusted hits.
+        noise_cutoff: Lower bound for intermediate hits.
+        output_dir: Destination directory for outputs.
     """
 
     # Define output list for trusted and intermediate hits
@@ -291,6 +294,18 @@ def process_hitfile(
     faa_files: Dict[str, str],
     max_per_genome: int = 10,
 ) -> None:
+    """Write per-HMM candidate sequences as FASTA from genome FAA files.
+
+    Limits the number of sequences per genome to `max_per_genome`.
+    Produces `{hmm_id}.intermediate_hits_faa`.
+
+    Args:
+        hitfile_path: Path to `{hmm_id}.intermediate_hits`.
+        intermediate_hit_dir: Directory where outputs are written.
+        faa_files: Mapping genome ID → FAA path.
+        max_per_genome: Maximum sequences to extract per genome.
+    """
+
     hmm_id = os.path.basename(hitfile_path).replace(".intermediate_hits", "")
     output_fasta = os.path.join(intermediate_hit_dir, f"{hmm_id}.intermediate_hits_faa")
 
@@ -340,16 +355,12 @@ def process_hitfile(
 def generate_faa_per_hitfile_parallel(
     config: Config, intermediate_hit_dir: str, processes: int = 4
 ) -> None:
-    """Parallel extraction of FASTA for all .intermediate_hits files in a directory.
+    """Extract candidate FASTA for all `.intermediate_hits` files in parallel.
 
     Args:
-        config (object): Configuration object containing:
-            - faa_files (Dict[str, str]): Mapping from genome ID to FASTA path.
-        intermediate_hit_dir (str): Directory containing .intermediate_hits files.
-        processes (int, optional): Number of parallel workers.
-
-    Returns:
-        None
+        config: Configuration with `faa_files` mapping.
+        intermediate_hit_dir: Directory containing `.intermediate_hits`.
+        processes: Number of parallel workers.
     """
 
     output_dir = intermediate_hit_dir  # same dir for output
@@ -377,18 +388,14 @@ def generate_faa_per_hitfile_parallel(
 
 
 def find_refseq_file(base_dir: str, filename: str) -> Optional[str]:
-    """Recursively search a base directory for a file with a specific name.
+    """Find a file named `filename` under `base_dir` recursively.
 
     Args:
-        base_dir (str): Directory to search in.
-        filename (str): Name of the file to find.
+        base_dir: Search root directory.
+        filename: Target filename.
 
     Returns:
-        Optional[str]: Full path to the found file, or None if not found.
-
-    Example:
-        >>> find_refseq_file('/data', 'ref.fa')
-        '/data/refs/ref.fa'
+        Full path if found, otherwise `None`.
     """
 
     for root, _, files in os.walk(base_dir):
@@ -398,7 +405,21 @@ def find_refseq_file(base_dir: str, filename: str) -> Optional[str]:
 
 
 def cross_check_candidates_with_reference_seqs(config) -> List[str]:
-    """Cross-checks candidate hit sequences with reference sequences using DIAMOND with fallback for .faa search."""
+    """Validate candidates via DIAMOND against reference sequences.
+
+    For each `{hmm}.intermediate_hits_faa`, build or reuse a DIAMOND DB from
+    reference FASTA (`{hmm}.faa` or a fallback by suffix), run `blastp`, and
+    write `{hmm}.crosschecked.tsv` with the top hit (if any). Empty results
+    are removed. Returns a list of HMM IDs where reference sequences were
+    unavailable or the run failed.
+
+    Args:
+        config: Configuration with `paths.refseq`, `refseq_identity`, `cores`,
+            and `cross_check_directory`.
+
+    Returns:
+        List of HMM IDs that could not be cross-checked.
+    """
     logger.info("Cross check hit sequences with reference sequences")
 
     refseq_dir = config.paths.refseq
@@ -494,17 +515,14 @@ def cross_check_candidates_with_reference_seqs(config) -> List[str]:
 
 
 def process_crosscheck(hmm_id: str, crosscheck_dir: str) -> None:
-    """Promotes intermediate hits to trusted hits if they are validated by crosschecking.
+    """Promote cross-validated candidates to trusted hits.
+
+    Appends lines from `{hmm}.intermediate_hits` whose IDs occur in
+    `{hmm}.crosschecked.tsv` to `{hmm}.trusted_hits`.
 
     Args:
-        hmm_id (str): HMM ID to process.
-        crosscheck_dir (str): Directory containing .crosschecked.tsv, .intermediate_hits, .trusted_hits files.
-
-    Returns:
-        None
-
-    Example:
-        >>> process_crosscheck('PF00001', '/tmp/xcheck')
+        hmm_id: HMM profile identifier.
+        crosscheck_dir: Directory with crosscheck and hit files.
     """
     crosscheck_path = os.path.join(crosscheck_dir, f"{hmm_id}.crosschecked.tsv")
     intermediate_path = os.path.join(crosscheck_dir, f"{hmm_id}.intermediate_hits")
@@ -543,18 +561,11 @@ def process_crosscheck(hmm_id: str, crosscheck_dir: str) -> None:
 
 
 def promote_crosschecked_hits(crosscheck_dir: str, processes: int = 4) -> None:
-    """Parallelizes promoting of hits from .intermediate_hits to .trusted_hits
-    using the .crosschecked.tsv files in a directory.
+    """Parallelize promotion of cross-validated candidates for all HMMs.
 
     Args:
-        crosscheck_dir (str): Directory with crosscheck and hit files.
-        processes (int): Number of worker processes.
-
-    Returns:
-        None
-
-    Example:
-        >>> promote_crosschecked_hits('/tmp/xcheck', 4)
+        crosscheck_dir: Directory containing `.crosschecked.tsv` files.
+        processes: Number of workers.
     """
 
     hmm_ids = [
@@ -572,20 +583,19 @@ def promote_crosschecked_hits(crosscheck_dir: str, processes: int = 4) -> None:
 def summarize_trusted_hits(
     directory: str, crosscheck_dir: str, name: str, suffix: str = ".trusted_hits"
 ) -> str:
-    """Creates a summary file by concatenating all .trusted_hits files in a directory.
+    """Concatenate all trusted hit files into a single summary.
 
     Args:
-        directory (str): Directory to write the summary file to.
-        crosscheck_dir (str): Directory with .trusted_hits files.
-        name (str): Name of the summary file.
-        suffix (str, optional): File suffix to match (default '.trusted_hits').
+        directory: Output directory for the summary file.
+        crosscheck_dir: Directory where `{hmm}.trusted_hits` live.
+        name: Summary filename.
+        suffix: Filename suffix to match (default: `.trusted_hits`).
 
     Returns:
-        str: Path to the summary file.
+        Path to the summary file.
 
-    Example:
-        >>> summarize_trusted_hits('/tmp/results', '/tmp/xcheck', 'summary.txt')
-        '/tmp/results/summary.txt'
+    Raises:
+        SystemExit: If no trusted hit files are found.
     """
 
     summary_path = os.path.join(directory, name)
@@ -617,7 +627,7 @@ def summarize_trusted_hits(
 
 
 def promote_by_cutoff(
-    options: Hmsss,
+    config: Config,
     directory: str,
     processes: int = 4,
     hmm_ids: Optional[List[str]] = None,
@@ -625,7 +635,7 @@ def promote_by_cutoff(
     """Parallel promotion of intermediate hits to trusted hits based on thresholds.
 
     Args:
-        options (object): Configuration with threshold file and type.
+        config (Config): Configuration with threshold file and type.
         directory (str): Directory with .intermediate_hits files.
         processes (int, optional): Number of worker processes.
         hmm_ids (List[str] or None): List of HMM IDs, or 'all' for all present.
@@ -635,8 +645,8 @@ def promote_by_cutoff(
         None
 
     Example:
-        >>> promote_by_cutoff(options, '/tmp/xcheck', 4, hmm_ids=['PF00001', 'PF00002'])
-        >>> promote_by_cutoff(options, '/tmp/xcheck', 4, hmm_ids=["all"])
+        >>> promote_by_cutoff(config, '/tmp/xcheck', 4, hmm_ids=['PF00001', 'PF00002'])
+        >>> promote_by_cutoff(config, '/tmp/xcheck', 4, hmm_ids=["all"])
     """
     # If no hmm identifier were defined use all that are in
     if hmm_ids == ["all"]:
@@ -647,7 +657,7 @@ def promote_by_cutoff(
         ]
 
     optimized_dict = make_threshold_dict(
-        options.score_threshold_file, options.threshold_type, options.thrs_score
+        config.score_threshold_file, config.threshold_type, config.thrs_score
     )
 
     with Pool(processes=processes) as pool:

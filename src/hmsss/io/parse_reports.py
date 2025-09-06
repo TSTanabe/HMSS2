@@ -154,10 +154,16 @@ class Protein:
 
     def get_selection_comment_csv(self, sep: str = ",") -> str:
         """
-        Return the selection_comment set as a sorted, comma-separated string.
-        Sorting ensures stable output for logs/tables.
+        Return the selection_comment as a sep-separated string.
+        Accepts both set[str] (preferred) and str (fallback).
         """
-        return sep.join(sorted(self.selection_comment))
+        val = self.selection_comment
+        if not val:
+            return ""
+        if isinstance(val, str):
+            return val  # bereits CSV-String
+        # erwarteter Fall: Menge/Tokens
+        return sep.join(sorted(val))
 
     ##### Setter #####
 
@@ -495,7 +501,7 @@ def process_writer(queue, options):
                     options.fasta_initial_hit_directory,
                     str(genomeID) + ".hit_table_txt",
                 )
-                output.output_genome_report(filepath, protein_dict, cluster_dict)
+                output.output_genome_report(filepath, protein_dict, cluster_dict, {})
 
         # If batch size is reached, process the batch
         if batch_counter >= batch_size:
@@ -516,7 +522,7 @@ def process_writer(queue, options):
                     str(genomeID) + ".hit_table_txt",
                 )
 
-                output.output_genome_report(filepath, protein_dict, cluster_dict)
+                output.output_genome_report(filepath, protein_dict, cluster_dict, {})
     logger.info(f"Processed {batch_counter} genomes")
     return
 
@@ -528,6 +534,9 @@ def process_writer(queue, options):
 
 def main_parse_summary_hmmreport(config):
     genome_ids = list(config.queued_genomes)
+    print("Queued genomes:")
+    print(config.queued_genomes)
+
     genomeID_batches = split_into_batches(genome_ids, config.cores - 1)
 
     # Lade Patterns nur 1x im Hauptprozess
@@ -540,7 +549,7 @@ def main_parse_summary_hmmreport(config):
 
     # Make csb naming index table
     only_pattern_dict = {name: patset for name, (patset, _) in csb_patterns.items()}
-    index_trie = sb_trie_matching.build_trie_index(only_pattern_dict)
+    index_trie = csb_trie_algorithm.build_trie_index(only_pattern_dict)
 
     # Insert genomeIDs in DB
     database.insert_database_genome_ids(config.database_directory, set(genome_ids))

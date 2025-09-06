@@ -443,7 +443,7 @@ def name_syntenic_blocks_trie(
             csb_trie_algorithm.map_present_to_sorted_ids(present_names, index)
 
         # Im Trie so weit wie möglich entlang der vorhandenen Domains absteigen
-        best_k: dict[int, int] = sb_trie_matching.iter_candidates_anywhere_start(
+        best_k: dict[int, int] = csb_trie_algorithm.iter_candidates_anywhere_start(
             index,
             present_ids_sorted,
             present_mask,

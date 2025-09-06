@@ -23,13 +23,38 @@ from hmsss.cli.config import (
 from hmsss.cli import paths as paths
 
 
+"""
+Argument parsing and configuration assembly for HMSS2/HMSSS.
+
+This module builds the command-line interface (CLI), parses arguments,
+and converts them into a structured `Config` object used by the pipeline.
+It also injects runtime defaults that depend on the inferred project paths
+(`hmsss.cli.paths`).
+
+Typical usage:
+    ns = parse_cli(sys.argv[1:])
+    ns = _apply_runtime_defaults(ns)
+    cfg = build_config_from_namespace(ns)
+"""
+
+
 # ---------------------------------------------------------------------------
-# Hilfsroutinen (ersetzen die bisher in myUtil verwendeten argparse-Validatoren)
+# Utility routines
 # ---------------------------------------------------------------------------
 
 
 def dir_path(p: str) -> str:
-    """Verlangt ein existierendes Verzeichnis; gibt den absoluten Pfad zurück. Prüft die existenz des Pfads."""
+    """Validate that `p` is an existing directory and return its absolute path.
+
+    Args:
+        p: Directory path provided by the user.
+
+    Returns:
+        Absolute path to the directory.
+
+    Raises:
+        argparse.ArgumentTypeError: If the directory does not exist.
+    """
     ap = os.path.abspath(p)
     if not os.path.isdir(ap):
         raise argparse.ArgumentTypeError(f"directory does not exist: {p}")
@@ -37,7 +62,17 @@ def dir_path(p: str) -> str:
 
 
 def file_path(p: str) -> str:
-    """Verlangt existierenden Pfad (Datei ODER Verzeichnis); gibt den absoluten Pfad zurück. Prüft die existenz des Pfads."""
+    """Validate that `p` is an existing filesystem path (file or directory).
+
+    Args:
+        p: File or directory path provided by the user.
+
+    Returns:
+        Absolute path to the file or directory.
+
+    Raises:
+        argparse.ArgumentTypeError: If the path does not exist.
+    """
     ap = os.path.abspath(p)
     if not os.path.exists(ap):
         raise argparse.ArgumentTypeError(f"path does not exist: {p}")
@@ -45,12 +80,31 @@ def file_path(p: str) -> str:
 
 
 def path_str(p: str) -> str:
-    """Nur Normalisierung: absoluter Pfad; Existenz wird NICHT geprüft (für -r/-db/Output-Ziele)."""
+    """Validate that `p` is an existing filesystem path (file or directory).
+
+    Args:
+        p: File or directory path provided by the user.
+
+    Returns:
+        Absolute path to the file or directory.
+
+    Raises:
+        argparse.ArgumentTypeError: If the path does not exist.
+    """
     return os.path.abspath(p)
 
 
 def _list_from_csv_or_repeat(values: List[str]) -> List[str]:
-    """Erlaubt -hmms A B C oder -hmms A,B,C."""
+    """Split CLI values by comma and flatten whitespace-separated lists.
+
+    Supports both `-hmms A B C` and `-hmms A,B,C`.
+
+    Args:
+        values: Raw list of strings provided by argparse.
+
+    Returns:
+        A flattened list of items without empty entries.
+    """
     out: List[str] = []
     for v in values or []:
         out.extend([p for p in v.split(",") if p])
@@ -58,16 +112,24 @@ def _list_from_csv_or_repeat(values: List[str]) -> List[str]:
 
 
 # ---------------------------------------------------------------------------
-# Hauptfunktion: parse_arguments
+# Main function: parse_arguments
 # ---------------------------------------------------------------------------
 
 
 def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
-    """
-    Baut den Argumentparser für das Programm
-    """
+    """Construct the top-level argument parser for HMSS2/HMSSS.
 
-    # ---- Argument-Gruppen genau wie in deiner aktuellen main ----
+    The parser is organized into semantic groups (input, search, resources,
+    synteny, CSB prediction, flow/limiters, operators, processing). If
+    `show_all` is True, advanced/rarely used options are included in `--help`.
+
+    Args:
+        show_all: Include advanced options in help output.
+
+    Returns:
+        A fully configured `argparse.ArgumentParser` (no parsing yet).
+    """
+    # ---- Argument groups ----
     parser = argparse.ArgumentParser(
         description="HMSS2: Sulfur metabolism annotation",
         epilog=(
@@ -558,6 +620,14 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         if show_all
         else argparse.SUPPRESS,
     )
+    operators.add_argument(
+        "-fasta",
+        dest="print_fasta",
+        action="store_true",
+        help="Print protein sequence fasta files for retrieved hits"
+        if show_all
+        else argparse.SUPPRESS,
+    )
 
     # Alignment and sequence file processing
     process = parser.add_argument_group("Alignment and sequence file processing")
@@ -637,6 +707,16 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
 
 
 def parse_cli(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """Parse CLI arguments and return the argparse namespace.
+
+    If `--help-all` is present, help is printed and the process exits.
+
+    Args:
+        argv: Argument vector (defaults to `sys.argv[1:]`).
+
+    Returns:
+        Namespace with validated and typed CLI options.
+    """
     argv = list(argv) if argv is not None else sys.argv[1:]
     show_all = "--help-all" in argv
 
@@ -650,13 +730,25 @@ def parse_cli(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def _s(ns: Any, name: str) -> str | None:
-    """Hilfsfunktion: CLI-Wert als String normalisieren (type= greift nicht auf Defaults)."""
+    """Fetch an attribute from `namespace` and coerce it to a filesystem string.
+
+    Args:
+        ns: Parsed argparse namespace.
+        name: Attribute name to fetch.
+
+    Returns:
+        String path if present, otherwise `None`.
+    """
     v = getattr(ns, name, None)
     return os.fspath(v) if v is not None else None
 
 
 def _paths_cfg_from_paths_module() -> PathsCfg:
-    """Erzeugt ein config objekt mit den konstanten paths"""
+    """Build a `PathsCfg` from `hmsss.cli.paths` constants.
+
+    Returns:
+        A `PathsCfg` instance that centralizes project directories resolved at import time.
+    """
     d = paths.as_dict(str_paths=True)
     return PathsCfg(
         root=d["ROOT_DIR"],
@@ -670,9 +762,22 @@ def _paths_cfg_from_paths_module() -> PathsCfg:
 
 
 def build_config_from_namespace(ns) -> Config:
-    """
-    Übersetzt argparse.Namespace → Config (ohne Legacy).
-    Setzt fehlende Pfad-Defaults aus hmsss.cli.paths.
+    """Assemble the high-level `Config` object from parsed arguments.
+
+    This function maps argparse fields into structured dataclasses grouped
+    by concern (input, search params, resources, synteny, info, CSB, flow,
+    limiters, operators, processing). Path defaults are injected from
+    `hmsss.cli.paths` when missing.
+
+    Args:
+        ns: Argparse namespace produced by `parse_cli` / `_apply_runtime_defaults`.
+
+    Returns:
+        A validated `Config` instance ready for the pipeline.
+
+    Raises:
+        ValueError: If semantic constraints are violated.
+        FileNotFoundError: If required project directories are missing during validation.
     """
     paths_cfg = _paths_cfg_from_paths_module()
 
@@ -753,6 +858,7 @@ def build_config_from_namespace(ns) -> Config:
         fetch_csbs=list(getattr(ns, "fetch_csbs", [])),
         fetch_keywords=list(getattr(ns, "fetch_keywords", [])),
         keywords_connector=getattr(ns, "keywords_connector", "OR"),
+        print_fasta=getattr(ns, "print_fasta", False),
     )
 
     cli_process = CliProcess(
@@ -784,7 +890,11 @@ def build_config_from_namespace(ns) -> Config:
 
 
 def _needs_stage_100(ns: argparse.Namespace) -> bool:
-    """Prüfe ob redo taxonomy angefordert wurde"""
+    """Determine whether stage 100 (taxonomy redo) must be forced.
+
+    Returns:
+        True if any command implies a taxonomy re-computation.
+    """
     redo_taxonomy_requested = any(
         [
             bool(getattr(ns, "redo_taxonomy", False)),
@@ -795,8 +905,14 @@ def _needs_stage_100(ns: argparse.Namespace) -> bool:
 
 
 def _needs_stage_101(ns: argparse.Namespace) -> bool:
-    """Prüfe ob ein prozess oder fetch argument oder taxonomie addition vorgebracht wurde"""
-    # (1) Fetch aus Datenbank angefordert?
+    """Determine whether stage 101 is required for dataset/output/processing.
+
+    Stage 101 is used for database fetch operations and FASTA/alignment utilities.
+
+    Returns:
+        True if any fetch/output/processing option has been requested.
+    """
+    # Fetch from database
     fetch_requested = any(
         [
             bool(getattr(ns, "fetch_genomes", [])),
@@ -810,7 +926,7 @@ def _needs_stage_101(ns: argparse.Namespace) -> bool:
         ]
     )
 
-    # (2) Änderungen an FASTA/Alignment?
+    # Modify fasta/alignment files
     processing_requested = any(
         [
             bool(getattr(ns, "merge_fasta", None)),
@@ -827,12 +943,19 @@ def _needs_stage_101(ns: argparse.Namespace) -> bool:
 
 
 def _apply_runtime_defaults(ns: argparse.Namespace) -> argparse.Namespace:
-    """
-    Füllt fehlende Pfad-Defaults aus hmsss.cli.paths und legt die Stage robust fest.
-    (post-parse, damit type= Validierungen nicht auf „phantom defaults“ laufen)
-    """
+    """Inject runtime defaults for paths and normalize the `stage`.
 
-    # 1) Pfad-Defaults: nur setzen, wenn None/leer
+    This runs *after* parsing to avoid triggering argparse validators on
+    non-existent files that are meant to be created later. It also forces
+    `stage=100` or `stage=101` when the requested actions require it.
+
+    Args:
+        ns: Parsed argparse namespace.
+
+    Returns:
+        The mutated namespace with defaults applied and stage normalized.
+    """
+    # 1) default paths for undefined argparse paths
     def _set_default(attr: str, value: str) -> None:
         v = getattr(ns, attr, None)
         if v is None or (isinstance(v, str) and v.strip() == ""):
@@ -845,35 +968,40 @@ def _apply_runtime_defaults(ns: argparse.Namespace) -> argparse.Namespace:
     _set_default("exclusion_singletons", str(paths.SRC_FILE_EXCLUSION_SINGLETONS))
     _set_default("result_files_directory", str(paths.RESULTS_DIR))
 
-    # Stage normalisieren oder auf 100 forcieren
+    # Stage normalization
     raw_stage = getattr(ns, "stage", None)
     try:
-        normalized = int(raw_stage) if raw_stage is not None else 0
+        normalized_stage = int(raw_stage) if raw_stage is not None else 0
     except Exception:
-        normalized = 0
+        normalized_stage = 0
     # clamp 0..5
-    if normalized < 0:
-        normalized = 0
-    if normalized > 5:
-        normalized = 5
+    if normalized_stage < 0:
+        normalized_stage = 0
+    if normalized_stage > 5:
+        normalized_stage = 5
 
     if _needs_stage_100(ns):
         # Required for redo taxonomy command
         setattr(ns, "stage", 100)
-    if _needs_stage_101(ns):
+    elif _needs_stage_101(ns):
         # Required for all dataset, output and processing commands
         setattr(ns, "stage", 101)
     else:
-        setattr(ns, "stage", normalized)
+        setattr(ns, "stage", normalized_stage)
 
     return ns
 
 
 def parse_to_config(argv: list[str] | None = None) -> Config:
+    """Convenience wrapper: parse arguments, apply defaults, and build `Config`.
+
+    Args:
+        argv: Optional CLI arguments; defaults to `sys.argv[1:]`.
+
+    Returns:
+        A fully validated `Config` object.
     """
-    Komfort-Funktion: parst argv und liefert direkt eine fertige Config.
-    """
-    namespace = parse_cli(argv)  # deine bestehende Routine
+    namespace = parse_cli(argv)
     namespace = _apply_runtime_defaults(namespace)
     config = build_config_from_namespace(namespace)
     return config

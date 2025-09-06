@@ -5,14 +5,34 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Any
 from pathlib import Path
 
+"""
+Typed configuration model (dataclasses) for HMSS2/HMSSS.
 
-# =========================
-# Pfad-Block (aus paths.py)
-# =========================
+The `Config` aggregate captures:
+- CLI parameter groups (input, search, resources, synteny, info, CSB, flow,
+  limiters, operators, processing),
+- resolved project paths,
+- project-specific output fields,
+- runtime state that grows during the pipeline.
+
+It also provides convenience properties that proxy into nested dataclasses
+(e.g., `config.stage`, `config.patterns_file`) and a `validate()` method
+for basic consistency checks.
+"""
+
+
 @dataclass(slots=True)
 class PathsCfg:
-    """
-    Projektpfade (Single Source of Truth), typischerweise aus hmsss.cli.paths befüllt.
+    """Canonical project directories resolved from `hmsss.cli.paths`.
+
+    Attributes:
+        root: Project root directory.
+        bin:  Executables/tools directory.
+        data: Top-level data directory.
+        hmms: Directory containing HMM libraries.
+        refseq: Directory with reference sequences.
+        results: Default results directory.
+        package: Python package root (`src/hmsss`).
     """
 
     root: str
@@ -29,6 +49,18 @@ class PathsCfg:
 # ==========================================
 @dataclass(slots=True)
 class CliInput:
+    """Input and I/O related CLI options.
+
+    Attributes:
+        fasta_file_directory: Directory to search for genomes.
+        score_threshold_file: TSV file with optimized/trusted/noise cutoffs.
+        library: HMM library path.
+        result_files_directory: Output directory for results.
+        database_directory: Path to SQLite database (created if missing).
+        cores: Number of CPU cores to use.
+        glob_report: Path to global hmmreport.
+        verbose: Logging level (0=WARNING, 1=INFO, 2=DEBUG).
+    """
     fasta_file_directory: Optional[str] = None
     score_threshold_file: Optional[str] = None
     library: Optional[str] = None
@@ -41,6 +73,17 @@ class CliInput:
 
 @dataclass(slots=True)
 class CliSearchParams:
+    """Search parameters and global thresholds.
+
+    Attributes:
+        threshold_type: 1=optimized, 2=trusted, 3=noise.
+        thrs_score: Minimal global score cutoff.
+        taxonomy_file: Optional TSV with taxonomy.
+        refseq_identity: Minimal % identity vs. reference set.
+        name: Project name.
+        stage: Pipeline stage to start from.
+        exit: Pipeline stage to exit after.
+    """
     threshold_type: int = 1  # 1=optimized, 2=trusted, 3=noise
     thrs_score: float = 50.0
     taxonomy_file: Optional[str] = None
@@ -52,6 +95,16 @@ class CliSearchParams:
 
 @dataclass(slots=True)
 class CliResources:
+    """Resources and toggles for the search library and cross-checks.
+
+    Attributes:
+        HMM_sets: Optional subset of HMM sets to include.
+        clean_reports: Overwrite existing hmmsearch reports.
+        individual_reports: Write per-genome reports if True.
+        max_seqs_per_genome: Cap sequences per protein per genome (Diamond check).
+        bool_cross_check: Enable reference cross check via Diamond.
+        optimized_cutoff_cross_check: Use optimized cutoff instead of Diamond.
+    """
     HMM_sets: List[str] = field(default_factory=list)
     clean_reports: bool = False
     individual_reports: bool = True
@@ -62,6 +115,15 @@ class CliResources:
 
 @dataclass(slots=True)
 class CliSynteny:
+    """Synteny and pattern options for CSB naming.
+
+    Attributes:
+        patterns_file: Path to pattern definitions.
+        cooccurrence_file: Path to co-occurrence matrix/file.
+        exclusion_singletons: Proteins to exclude when unclustered.
+        min_completeness: Minimal fraction of CSB required for recognition.
+        glob_chunks: Chunk size for parsing `glob` results before DB insert.
+    """
     patterns_file: Optional[str] = None
     cooccurrence_file: Optional[str] = None
     exclusion_singletons: Optional[str] = None
@@ -71,6 +133,7 @@ class CliSynteny:
 
 @dataclass(slots=True)
 class CliInfo:
+    """Toggles to print auxiliary statistics."""
     stat_keywords: bool = False
     stat_csb: bool = False
     stat_genomes: bool = False
@@ -78,6 +141,17 @@ class CliInfo:
 
 @dataclass(slots=True)
 class CliCsb:
+    """Parameters for collinear syntenic block detection.
+
+    Attributes:
+        nucleotide_range: Max nucleotide distance for synteny.
+        insertions: Allowed insertions within a CSB.
+        occurence: Minimal occurrences to accept a CSB (spelling kept).
+        min_csb_size: Minimum number of genes per CSB.
+        max_csb_size: Maximum number of genes per CSB.
+        max_domain_repeats: Max repeats for a domain within a CSB.
+        jaccard: Dissimilarity threshold [0.0–1.0].
+    """
     nucleotide_range: int = 3500
     insertions: int = 1
     occurence: int = 1  # Schreibweise wie im Parser beibehalten
@@ -89,11 +163,21 @@ class CliCsb:
 
 @dataclass(slots=True)
 class CliFlow:
+    """Global flow modifiers (e.g., recompute taxonomy)."""
     redo_taxonomy: bool = False
 
 
 @dataclass(slots=True)
 class CliLimiter:
+    """Dataset filters to constrain DB output.
+
+    Attributes:
+        dataset_limit_lineage: Taxonomic rank name.
+        dataset_limit_taxon: Specific taxon string.
+        dataset_limit_proteins: Protein/domain filter expression.
+        dataset_limit_keywords: Keyword filter expression.
+        dataset_divide_sign: Separator used in taxonomy strings.
+    """
     dataset_limit_lineage: Optional[str] = None
     dataset_limit_taxon: Optional[str] = None
     dataset_limit_proteins: str = "0"
@@ -103,15 +187,37 @@ class CliLimiter:
 
 @dataclass(slots=True)
 class CliOperators:
+    """Operators controlling which entities are fetched from the DB.
+
+    Attributes:
+        fetch_genomes: List of genome identifiers.
+        fetch_proteins: Protein domain names.
+        fetch_csbs: CSB identifiers.
+        fetch_keywords: Cluster naming keywords.
+        keywords_connector: Logical connector for keyword filters ("AND"/"OR").
+    """
     fetch_genomes: List[str] = field(default_factory=list)
     fetch_proteins: List[str] = field(default_factory=list)
     fetch_csbs: List[str] = field(default_factory=list)
     fetch_keywords: List[str] = field(default_factory=list)
     keywords_connector: str = "OR"
+    print_fasta: bool = False
 
 
 @dataclass(slots=True)
 class CliProcess:
+    """FASTA/alignment processing utilities.
+
+    Attributes:
+        merge_fasta: Directory whose `.faa` files will be merged (no duplicates).
+        filter_fasta: Triplet [FILE, MIN, MAX] for length filtering.
+        concat_alignment: Directory with `.fasta_aln` files to concatenate.
+        add_taxonomy: Add taxonomy to alignment(s).
+        add_genomic_context: Add genomic context to sequences.
+        create_type_range_dataset: Build type-range dataset from FASTA.
+        create_gene_cluster_dataset: Build gene-cluster dataset from FASTA.
+        gaps: Add gaps for missing sequences on concatenation.
+    """
     merge_fasta: Optional[str] = None
     filter_fasta: Optional[List[str]] = None  # ["FILE","MIN","MAX"]
     concat_alignment: Optional[str] = None
@@ -123,12 +229,13 @@ class CliProcess:
 
 
 # ==================================================
-# 2) Ursprüngliche/„interne“ Felder (Laufzeit-State)
+# 2) Internal runtime states
 # ==================================================
 @dataclass(slots=True)
 class RuntimeState:
-    """
-    Laufzeit-Container, die während der Pipeline befüllt/ verändert werden.
+    """Mutable runtime state filled as the pipeline proceeds.
+
+    Tracks queued/finished genomes, discovered files, and redundancy sets/maps.
     """
 
     queued_genomes: Set[str] = field(default_factory=set)
@@ -145,11 +252,14 @@ class RuntimeState:
 
 
 # ==================================================
-# 3) Project-Felder (werden in project.py gesetzt)
+# 3) Project specific attributes
 # ==================================================
 @dataclass(slots=True)
 class ProjectFields:
-    # Verzeichnisse
+    """Project-derived output locations and filenames.
+
+    Populated by project setup code after parsing (in project.py)
+    """
     result_files_directory: Optional[str] = None  # finaler Projekt-Results-Pfad
     fasta_initial_hit_directory: Optional[str] = None
     fasta_output_directory: Optional[str] = None
@@ -186,8 +296,18 @@ def _cfg_set(obj: Any, path: str, value: Any) -> None:
 
 
 def prop(path: str) -> property:
-    """Erzeugt eine Property, die auf ein verschachteltes Feld zeigt (per 'dot path')."""
+    """Create a property proxy to a nested dataclass field using a dotted path.
 
+    Example:
+        `stage = prop("cli_params.stage")` makes `config.stage` access
+        `config.cli_params.stage`.
+
+    Args:
+        path: Dotted path to nested field.
+
+    Returns:
+        A Python `property` object that gets/sets the nested value.
+    """
     def fget(self):
         return _cfg_get(self, path)
 
@@ -199,9 +319,11 @@ def prop(path: str) -> property:
 
 @dataclass(slots=True)
 class Config:
-    """
-    Zentrales Konfigurationsobjekt für HMSS2.
-    Rein instanzbasiert: alle Felder sind Instanzattribute, keine Klassenvariablen.
+    """Central configuration aggregate for HMSS2/HMSSS.
+
+    This class holds all CLI groups, runtime state, and project fields.
+    It exposes convenience properties (created with `prop`) for frequently
+    accessed fields to avoid deep attribute chains in the pipeline code.
     """
 
     # Pflicht: Pfade müssen zur Initialisierung übergeben werden
@@ -275,6 +397,9 @@ class Config:
     fetch_keywords = prop(
         "cli_ops.fetch_keywords"
     )  # :contentReference[oaicite:19]{index=19}
+    print_fasta = prop(
+        "cli_ops.print_fasta"
+    )
 
     dataset_limit_lineage = prop(
         "cli_limiter.dataset_limit_lineage"
@@ -282,6 +407,8 @@ class Config:
     dataset_limit_taxon = prop(
         "cli_limiter.dataset_limit_taxon"
     )  # :contentReference[oaicite:21]{index=21}
+    dataset_limit_proteins = prop("cli_limiter.dataset_limit_proteins")
+    dataset_limit_keywords = prop("cli_limiter.dataset_limit_keywords")
     dataset_divide_sign = prop(
         "cli_limiter.dataset_divide_sign"
     )  # :contentReference[oaicite:22]{index=22}
@@ -383,9 +510,11 @@ class Config:
     redundancy_hash = prop("state.redundancy_hash")
 
     def validate(self) -> None:
-        """
-        Einfache Konsistenzchecks (optional erweitern).
-        Wirft ValueError bei offensichtlichen Inkonsistenzen.
+        """Run basic consistency checks and ensure required directories exist.
+
+        Raises:
+            ValueError: On invalid parameter ranges (e.g., `jaccard` not in [0,1]).
+            FileNotFoundError: If one of the canonical project directories is missing.
         """
         if self.cli_params.threshold_type not in (1, 2, 3):
             raise ValueError(
@@ -420,5 +549,5 @@ class Config:
         if missing:
             details = "\n - ".join(missing)
             raise FileNotFoundError(
-                "Required HMSS2 directories are missing:\n - " + details
+                "Required directories are missing:\n - " + details
             )

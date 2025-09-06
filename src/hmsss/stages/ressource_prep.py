@@ -2,35 +2,71 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from hmsss.core.logging import get_logger, print_header
 from hmsss.cli.paths import DATA_DIR
-
-# IO-Helfer
 from hmsss.io import queue as queue
 
 log = get_logger(__name__)
 
+"""
+Resource preparation stage for HMSSS.
+
+This stage sets up result subdirectories, ensures availability of HMM
+libraries, thresholds, patterns, and co-occurrence files, and initializes
+the cross-check directory. If resources are missing, they are concatenated
+from the bundled `DATA_DIR`. Raises `SystemExit` if required files are not found.
+"""
 
 def _ensure_dir(p: str | os.PathLike) -> str:
+    """Create a directory if it does not exist.
+
+    Args:
+        p: Path to the directory.
+
+    Returns:
+        Path as string.
+    """
     Path(p).mkdir(parents=True, exist_ok=True)
     return str(p)
 
 
 def _require_path_exists(p: str, desc: str) -> None:
+    """Ensure that a required path exists.
+
+    Args:
+        p: Path to check.
+        desc: Human-readable description of the resource.
+
+    Raises:
+        SystemExit: If the path does not exist.
+    """
     if not Path(p).exists():
         log.error("%s not found: %s", desc, p)
         raise SystemExit(f"Missing required resource: {desc} -> {p}")
 
 
 def ressource_preparation(config) -> None:
-    """
-    Aus __main__.py extrahiert:
-    - HMM-Library & Cutoffs zusammenbauen (ggf. nur selektierte Sets)
-    - Patterns / Cooccurrence normalisieren
-    - Cross-check / Reports-Ordner anlegen
-    - Abgeleitete Pfade am Options-Objekt setzen
+    """Prepare the result space and all required resources.
+
+    Steps performed:
+      - Create `reports` and `cross_check` subdirectories under results.
+      - Build the HMM library and cutoff files, restricted to selected sets
+        if specified.
+      - Concatenate default pattern and co-occurrence files if missing.
+      - Normalize pattern/co-occurrence files via `format_pattern_files_inplace`.
+      - Verify presence of HMM library, score thresholds, patterns,
+        co-occurrence, exclusion singletons, and reference sequences.
+      - Update `config` with paths to cross-check and CSB output files.
+
+    Args:
+        config: Configuration object with attributes for paths and resources.
+
+    Side Effects:
+        Creates directories and writes combined resource files as needed.
+
+    Raises:
+        SystemExit: If required resources are missing after preparation.
     """
     print_header("Preparing result space and resources", logger=log)
 
@@ -64,7 +100,7 @@ def ressource_preparation(config) -> None:
             str(DATA_DIR), "cooccurrence", ".txt", config.cooccurrence_file
         )
         queue.format_pattern_files_inplace(
-            config.cooccurrence_file, "cpb-", config.csb_name_suffix
+            config.cooccurrence_file, "cpb-", "_"
         )  # co-occurring protein blocks
 
     if not os.path.isfile(config.patterns_file):
@@ -72,7 +108,7 @@ def ressource_preparation(config) -> None:
             str(DATA_DIR), "patterns", ".txt", config.patterns_file
         )
         queue.format_pattern_files_inplace(
-            config.patterns_file, "dsb-", config.csb_name_suffix
+            config.patterns_file, "dsb-", "_"
         )  # defined syntenic blocks
 
     # ---- Existenz der Ressourcen sicherstellen ----

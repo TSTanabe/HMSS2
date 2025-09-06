@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import os
 
-
 from hmsss.db import project as project
+from hmsss.db.database import index_database
 
 from hmsss.stages.ressource_prep import ressource_preparation
 from hmsss.stages.fasta_preparation import fasta_preparation
@@ -17,30 +17,52 @@ from hmsss.stages.output_dataset import output_operator, output_statistics
 from hmsss.stages.process_seqfiles import process_operator
 
 from hmsss.io.queue import queue_protein_annotation_inputs
-from hmsss.db.database import index_database
 from hmsss.io.output import print_file_content
+
 from hmsss.core.logging import setup_logging, print_header, get_logger
 
 logger = get_logger(__name__)
 
+"""
+Pipeline runner for HMSSS.
+
+Defines `run_pipeline`, which orchestrates all pipeline stages
+(resource preparation, FASTA preprocessing, hmmsearch, cross-check,
+report parsing, CSB detection, taxonomy, and post-processing).
+
+Stages:
+    0: Resource preparation (always executed if stage < 100)
+    1: FASTA/Prodigal preparation
+    2: Hmmsearch (including queueing)
+    3: Cross-check / cutoff promotion
+    4: Parse reports into database
+    5: Collinear syntenic block (CSB) detection
+    6: Taxonomy information collection
+
+Special stages:
+    100: Taxonomy-only mode
+    101: Database fetch, output, and processing operators
+"""
+
 
 def run_pipeline(config) -> None:
-    """
-    Orchestriert die komplette HMSSS-Pipeline anhand von 'stage' / 'exit'
-    und den Mode-Flags (fetch / limiter / process).
+    """Execute the full HMSSS pipeline according to configuration.
 
-    Erwartete Stages:
-      0: Ressourcen vorbereiten (immer, wenn < 100)
-      1: FASTA/Prodigal-Vorbereitung
-      2: Hmmsearch (inkl. Queueing)
-      3: Cross-Check / Cutoff-Promotion
-      4: Reports parsen -> DB
-      5: CSB Finder
-      6: Taxonomy-Informationen sammeln
+    The pipeline proceeds from `config.stage` to `config.exit`, executing
+    the appropriate modules. Special stages 100 and 101 are handled for
+    taxonomy-only and fetch/processing modes, respectively.
 
-    Spezialstages:
-    100: Nur Taxonomie (wenn -taxonomy_info & -db & kein -f)
-    101: Operatoren/Fetch/Processing (wenn any_process_args_provided True)
+    Args:
+        config: A validated `Config` object containing all CLI parameters,
+            paths, and runtime state.
+
+    Side Effects:
+        - Creates result directories and initializes logging.
+        - Populates the SQLite database with parsed results.
+        - Produces output datasets, statistics, and processed files.
+
+    Raises:
+        RuntimeError: If database is missing for fetch operations.
     """
 
     # Ergebnisraum anlegen (Unterordner, Projektpfade, etc.)
@@ -77,6 +99,7 @@ def run_pipeline(config) -> None:
     # --- Stage 4: Reports -> DB ---
     if config.stage <= 4 <= config.exit:
         print_header("Parse trusted hits and recognized gene clusters into database")
+        queue_protein_annotation_inputs(config)
         parse_reports_to_database(config)
         config.stage = 4
 

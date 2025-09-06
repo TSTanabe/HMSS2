@@ -15,15 +15,31 @@ from hmsss.utils import myUtil
 
 log = get_logger(__name__)
 
+"""
+Queue and preprocessing utilities for genome input files.
+
+This module handles:
+- Collection and filtering of FNA/FAA/GFF input files by genome ID.
+- Parallel decompression of `.gz` archives when needed.
+- Construction of dictionaries mapping genome IDs to file paths.
+- Concatenation of HMM libraries, cutoff files, co-occurrence, and patterns.
+- Formatting of pattern/co-occurrence files with systematic prefixes.
+"""
 
 def queue_fna_inputs(config) -> dict[str, str]:
-    """
-    Sammelt ausschließlich FNA-Inputs für die spätere Translation.
-    - Entpackt .fna.gz NUR dann, wenn für die GenomeID KEIN .faa/.faa.gz existiert.
-    - Entfernt alle FNA-Einträge, für die bereits ein FAA existiert (gz oder ungezipped).
+    """Collect FNA inputs for translation.
 
-    Setzt auf `options`:
-      .fna_files (dict[genome_id -> .fna-Pfad])
+    - Decompress `.fna.gz` files only if no corresponding `.faa/.faa.gz` exists.
+    - Remove all FNA entries if a corresponding FAA already exists.
+
+    Args:
+        config: Configuration object with `.fasta_file_directory` and `.cores`.
+
+    Returns:
+        Mapping genome ID → `.fna` path. Also stored in `config.fna_files`.
+
+    Side Effects:
+        May decompress `.fna.gz` files in parallel.
     """
     root = config.fasta_file_directory
 
@@ -60,20 +76,24 @@ def queue_fna_inputs(config) -> dict[str, str]:
     return fna_files
 
 
-def queue_protein_annotation_inputs(options) -> None:
-    """
-    Behandelt FAA/GFF/HMMREPORT vollständig getrennt vom FNA-Teil.
-    - Entpackt .faa.gz/.gff.gz sofern ungezippte Pendants fehlen.
-    - Bildet gültige Paare (GenomeIDs mit BOTH: .faa UND .gff).
-    - Filtert .hmmreport auf diese Paare.
+def queue_protein_annotation_inputs(config) -> None:
+    """Collect FAA/GFF/HMMREPORT inputs, independent of FNA.
 
-    Setzt auf `options`:
-      .queued_genomes (set[str])
-      .faa_files (dict[genome_id -> .faa-Pfad])
-      .gff_files (dict[genome_id -> .gff-Pfad])
-      .hmmreport_files (dict[genome_id -> .hmmreport-Pfad])
+    - Decompress `.faa.gz` and `.gff.gz` if uncompressed counterparts are missing.
+    - Keep only genome IDs that have both FAA and GFF.
+    - Restrict HMMREPORT files to these genome IDs.
+
+    Args:
+        config: Object with `.fasta_file_directory` and `.cores`.
+
+    Side Effects:
+        Sets attributes on `config`:
+          - `queued_genomes` (set of genome IDs)
+          - `faa_files` (dict genome ID → FAA path)
+          - `gff_files` (dict genome ID → GFF path)
+          - `hmmreport_files` (dict genome ID → HMMREPORT path)
     """
-    root = options.fasta_file_directory
+    root = config.fasta_file_directory
 
     # Aktuelle Lage erfassen
     faa_gz_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".faa.gz")
@@ -92,10 +112,11 @@ def queue_protein_annotation_inputs(options) -> None:
             decompress_targets.add(gz_path)
 
     if decompress_targets:
-        log.info(f"[ANN] Planned to decompress {len(decompress_targets)} file(s).")
-        _parallel_decompress(decompress_targets, getattr(options, "cores", None))
-
-    # Nach evtl. Entpacken erneut einlesen
+        log.info(f"Planned to decompress {len(decompress_targets)} .gz file(s).")
+        _parallel_decompress(decompress_targets, getattr(config, "cores", None))
+    else:
+        log.info(f"All files are already decompressed.")
+    # Collect the faa and gff files to the dictionary
     faa_files = get_genome_id_files_dict(root, extension=".faa")
     gff_files = get_genome_id_files_dict(root, extension=".gff")
     hmmreport_files: Dict[str, str] = get_genome_id_files_dict(
@@ -112,25 +133,33 @@ def queue_protein_annotation_inputs(options) -> None:
         gid: path for gid, path in hmmreport_files.items() if gid in common_ids
     }
 
-    options.queued_genomes = common_ids
-    options.faa_files = faa_files
-    options.gff_files = gff_files
-    options.hmmreport_files = hmmreport_files
+    config.queued_genomes = common_ids
+    config.faa_files = faa_files
+    config.gff_files = gff_files
+    config.hmmreport_files = hmmreport_files
 
     log.info(f"Queued {len(common_ids)} faa/gff pairs.")
     log.info(f"Found {len(hmmreport_files)} existing hmmreports for faa/gff pairs.")
 
 
-def queue_faa_without_gff(options) -> dict[str, str]:
-    """
-    Sammelt alle FAA-Files, für die KEIN GFF existiert (weder .gff noch .gff.gz).
-    - Entpackt .faa.gz vor Aufnahme in die Queue (falls .faa fehlt).
+def queue_faa_without_gff(config) -> dict[str, str]:
+    """Collect FAA files for which no GFF exists.
 
-    Setzt auf `options`:
-      .missing_gff_genomes : set[str]
-      .faa_missing_gff     : dict[str, str]  # genomeID -> Pfad zu entpacktem .faa
+    - Includes both `.gff` and `.gff.gz` in the check.
+    - Decompress `.faa.gz` for target genomes if `.faa` is missing.
+
+    Args:
+        config: Object with `.fasta_file_directory` and `.cores`.
+
+    Returns:
+        Mapping genome ID → `.faa` path for genomes without GFF.
+
+    Side Effects:
+        Sets on `options`:
+          - `missing_gff_genomes` (set of genome IDs)
+          - `faa_missing_gff` (dict genome ID → FAA path)
     """
-    root = options.fasta_file_directory
+    root = config.fasta_file_directory
 
     # Ist-Zustand erfassen
     faa_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".faa")
@@ -155,7 +184,7 @@ def queue_faa_without_gff(options) -> dict[str, str]:
 
     if decompress_targets:
         log.info(f"Planned to decompress {len(decompress_targets)} file(s).")
-        _parallel_decompress(decompress_targets, getattr(options, "cores", None))
+        _parallel_decompress(decompress_targets, getattr(config, "cores", None))
 
     # Nach Entpacken FAA erneut einlesen
     faa_files = get_genome_id_files_dict(root, extension=".faa")
@@ -172,15 +201,14 @@ def queue_faa_without_gff(options) -> dict[str, str]:
 
 
 def get_all_files_with_extension(directory: str, extension: str) -> Set[str]:
-    """
-    Recursively find all files with a given extension inside a directory.
+    """Recursively find all files with a given extension.
 
     Args:
-        directory (str): Root directory to search.
-        extension (str): File extension to look for (with or without leading dot).
+        directory: Root directory to search.
+        extension: File extension to filter by (with or without leading dot).
 
     Returns:
-        Set[str]: Absolute file paths of matching files.
+        Set of absolute file paths.
     """
     root = Path(directory)
     if not root.is_dir():
@@ -198,10 +226,14 @@ def get_all_files_with_extension(directory: str, extension: str) -> Set[str]:
 
 
 def get_genome_id_files_dict(directory: str, extension: str) -> Dict[str, str]:
-    """
-    Returns a dictionary mapping genome identifiers to file paths.
-        Args: directory (str): Root directory to search.
-        extension (str): File extension to filter by.
+    """Map genome IDs to file paths for a given extension.
+
+    Args:
+        directory: Root directory to search.
+        extension: File extension to filter by.
+
+    Returns:
+        Dictionary genome ID → file path.
     """
 
     genome_id_files = {}
@@ -215,8 +247,13 @@ def get_genome_id_files_dict(directory: str, extension: str) -> Dict[str, str]:
 
 
 def unpackgz(path: str) -> str:
-    """
-    Decompresses a .gz file if not already extracted.
+    """Decompress a `.gz` file if not already extracted.
+
+    Args:
+        path: Path to a `.gz` file or plain file.
+
+    Returns:
+        Path to the decompressed file. If input is not `.gz`, returns unchanged.
     """
     if not path.endswith(".gz"):
         return path
@@ -231,9 +268,13 @@ def unpackgz(path: str) -> str:
 
 # --- kleine Helper-Routine: entpackt nur .gz, sonst no-op ---
 def _decompress_gz_only(path: str) -> str:
-    """
-    Entpackt NUR .gz-Dateien (no-op für andere Pfade).
-    Gibt den Pfad zur entpackten Datei zurück.
+    """Decompress `.gz` files only (no-op for others).
+
+    Args:
+        path: File path.
+
+    Returns:
+        Path to decompressed file or unchanged path if not `.gz`.
     """
     try:
         return unpackgz(path)
@@ -243,9 +284,14 @@ def _decompress_gz_only(path: str) -> str:
 
 
 def _parallel_decompress(paths, max_workers: Optional[int] = None) -> None:
-    """
-    Entpackt eine Menge von .gz-Dateien parallel. No-op für Nicht-.gz.
-    Keine Rückgabewerte
+    """Decompress a set of `.gz` files in parallel.
+
+    Args:
+        paths: Iterable of file paths.
+        max_workers: Number of worker processes (default: 4).
+
+    Returns:
+        None. Decompressed files are written in place.
     """
     if not paths:
         return
@@ -263,19 +309,18 @@ def concatenate_selected_hmms(
     suffix: str,
     output_library: str,
 ) -> None:
-    """
-    Concatenate .hmm files from subdirectories where at least one word in the dir name (split by '_')
-    is present in allowed_words list.
+    """Concatenate HMM files filtered by directory name.
+
+    - Searches subdirectories under `src_dir`.
+    - Includes only subdirectories where the name shares a token with `allowed_words`.
+    - Concatenates all files matching prefix+suffix pattern.
 
     Args:
-        src_dir (str): Parent directory to search (e.g., __location__ + "/data").
-        allowed_words (List[str]): List of allowed words (from whitespace-separated user input).
-        prefix (str): File prefix filter (e.g., 'grp').
-        suffix (str): File suffix filter (e.g., '.hmm').
-        output_library (str): Output concatenated library file path.
-
-    Returns:
-        None:
+        src_dir: Parent directory to search.
+        allowed_words: Tokens (from user input) to match against directory names.
+        prefix: Required file prefix (e.g., "grp").
+        suffix: Required file suffix (e.g., ".hmm").
+        output_library: Path to write the concatenated library.
     """
 
     files_to_concatenate = []
@@ -301,9 +346,16 @@ def concatenate_files_shell(
     allowed_suffix: str,
     output_file_path: str,
 ) -> None:
-    """
-    Rekursiv alle Files suchen, die mit allowed_prefix beginnen und allowed_suffix enden.
-    Diese zusammenführen und als output_file_path speichern.
+    """Concatenate files matching prefix and suffix into a single output file.
+
+    - Searches recursively in `search_directory`.
+    - Concatenates all files that start with `allowed_prefix` and end with `allowed_suffix`.
+
+    Args:
+        search_directory: Directory to search.
+        allowed_prefix: Required filename prefix.
+        allowed_suffix: Required filename suffix.
+        output_file_path: Path to write the concatenated output.
     """
     matched_files = []
     for root, _, files in os.walk(search_directory):
@@ -326,6 +378,16 @@ def concatenate_files_shell(
 
 
 def format_pattern_files_inplace(filename: str, prefix: str, suffix: str):
+    """Rewrite a pattern/co-occurrence file with systematic prefixes.
+
+    - Adds line numbers as IDs with given prefix/suffix.
+    - Replaces spaces with tabs.
+
+    Args:
+        filename: Path to the file to reformat.
+        prefix: Prefix string for IDs (e.g., "dsb-").
+        suffix: Suffix string for IDs (e.g., "_").
+    """
     tmpfile = tempfile.NamedTemporaryFile("w", delete=False)
     with open(filename, "r") as fin, tmpfile:
         for i, line in enumerate(fin, 1):
