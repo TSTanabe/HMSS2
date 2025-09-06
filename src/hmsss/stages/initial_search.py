@@ -54,7 +54,7 @@ def initial_search(config) -> None:
         log.info("Using existing global hmmreport: %s", config.glob_report)
     else:
         log.info("Running hmmsearch for each input genome")
-        search_hmmer.consecutive_hmm_search(config, int(config.cores / 2))
+        config.hmmreport_files = search_hmmer.consecutive_hmm_search(config, int(config.cores / 2))
 
         log.info("Concatenating hmmsearch results for cross reference check")
         config.glob_report = search_cross_reference.concatenate_hmmreports_cat_xargs(

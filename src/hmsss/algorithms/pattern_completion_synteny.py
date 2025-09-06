@@ -142,7 +142,7 @@ def _find_possible_transitions(
 
 
 def _solve_assignment(
-    cost_matrix: NDArray[np.float_],
+    cost_matrix: NDArray[np.float64],
     cluster_id: Optional[str] = None,
 ) -> Tuple[Optional[NDArray[np.int_]], Optional[NDArray[np.int_]]]:
     """
@@ -170,7 +170,7 @@ def _solve_assignment(
     valid_cols = ~np.all(np.isinf(cost_matrix), axis=0)
     reduced = cost_matrix[np.ix_(valid_rows, valid_cols)]
 
-    def _matrix_str(matrix: NDArray[np.float_]) -> str:
+    def _matrix_str(matrix: NDArray[np.float64]) -> str:
         with np.printoptions(precision=2, suppress=True, linewidth=120, nanstr="nan", infstr="inf"):
             return "\n" + "\n".join(" ".join(f"{x:7}" for x in row) for row in matrix)
 

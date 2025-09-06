@@ -28,7 +28,7 @@ counter_lock = None
 ########################################################################################################
 
 
-def consecutive_hmm_search(config: Config, processes: int = 4) -> list[str]:
+def consecutive_hmm_search(config: Config, processes: int = 4) -> dict[str, str]:
     """
     Executes a parallelized HMM search across multiple genome protein files and processes the results.
 
@@ -51,7 +51,7 @@ def consecutive_hmm_search(config: Config, processes: int = 4) -> list[str]:
     - dict: Mapping from genome ID to the corresponding '.hmmreport' file path, where domain hit IDs have been prefixed.
     """
     total = len(config.queued_genomes)
-
+    return_hmmreports: dict[str, str] = {}
     # Prepare arguments for Pool processing
     args = []
     for genomeID in config.queued_genomes:
@@ -59,13 +59,16 @@ def consecutive_hmm_search(config: Config, processes: int = 4) -> list[str]:
         hmmreport_path = config.hmmreport_files.get(genomeID)
 
         # Fill with hmmreport filename
-        if not hmmreport_path:
+        if hmmreport_path:
+            return_hmmreports[genomeID] = hmmreport_path
+        else:
             hmmreport_path = os.path.splitext(faa_path)[0] + ".hmmreport"
 
         # append if report is missing oder overwrite is allowed
         if not os.path.isfile(hmmreport_path) or config.clean_reports:
             args.append(
                 (
+                    genomeID,
                     faa_path,
                     config.library,
                     hmmreport_path,  # future report
@@ -84,7 +87,10 @@ def consecutive_hmm_search(config: Config, processes: int = 4) -> list[str]:
     ) as pool:
         results = pool.starmap(run_search, args)
 
-    return results
+        for genomeID, hmmreport_path in results:
+            return_hmmreports[genomeID] = hmmreport_path
+
+    return return_hmmreports
 
 
 def init_globals(counter: Value, lock: Lock) -> None:
@@ -95,6 +101,7 @@ def init_globals(counter: Value, lock: Lock) -> None:
 
 
 def run_search(
+    genomeID: str,
     faa_file: str,
     query_db: str,
     hmmreport_path: str,
@@ -131,7 +138,7 @@ def run_search(
     domtblout_path = hmm_search(faa_file, query_db, score, clean_reports, 2)
     hmmreport = prefix_domtblout_hits(domtblout_path, hmmreport_path, separator="___")
 
-    return hmmreport
+    return genomeID, hmmreport
 
 
 def hmm_search(
