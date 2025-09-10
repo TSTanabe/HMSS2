@@ -32,7 +32,7 @@ def initial_search(config) -> None:
       5) Split global hits into trusted / intermediate / noise via thresholds.
 
     Args:
-        options: Pipeline options/config with fields such as
+        config: Pipeline options/config with fields such as
             `database_directory`, `glob_report`, `cores`, `hmmreport_files`,
             and `score_threshold_file`.
 
