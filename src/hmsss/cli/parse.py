@@ -288,7 +288,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         nargs="+",
         dest="HMM_sets",
         type=str,
-        default=[],
+        default=["DHPS","DMS","Dsr","SQ", "transfer"],
         metavar="<list>",
         help="Limit to HMM sets (whitespace or CSV separated)"
         if show_all
