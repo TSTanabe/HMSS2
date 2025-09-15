@@ -5,7 +5,7 @@ from hmsss.db import database as database
 from hmsss.algorithms import csb_cluster as csb_cluster
 from hmsss.core.logging import get_logger, print_header
 
-log = get_logger(__name__)
+logger = get_logger(__name__)
 
 """
 Stage: Collinear syntenic block (CSB) detection.
@@ -26,14 +26,18 @@ def csb_finder(config: Config) -> None:
     Args:
         config: Configuration with database path and clustering parameters.
     """
-    print_header("CSB finder", logger=log)
+    csb_gene_cluster_dict = {}
+    print_header("CSB finder", logger=logger)
 
-    log.info("Running collinear syntenic block pattern prediction")
-    csb_instances = csb_cluster.csb_prediction(config)
+    logger.info("Running collinear syntenic block pattern prediction")
+    try:
+        csb_instances = csb_cluster.csb_prediction(config)
 
-    csb_gene_cluster_dict = csb_cluster.csb_jaccard(
-        config, computed_instances_dict=csb_instances, jaccard_distance=0.0
-    )  # 0.0: nur Clusterdict bilden
+        csb_gene_cluster_dict = csb_cluster.csb_jaccard(
+            config, computed_instances_dict=csb_instances, jaccard_distance=0.0
+        )  # 0.0: nur Clusterdict bilden
+    except Exception as err:
+        logger.error(f"CSB finder failed: \n {err}", logger=logger)
 
     database.index_database(config.database_directory)
     database.delete_keywords_from_csb(
