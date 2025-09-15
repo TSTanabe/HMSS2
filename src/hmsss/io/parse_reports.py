@@ -534,8 +534,6 @@ def process_writer(queue, options):
 
 def main_parse_summary_hmmreport(config):
     genome_ids = list(config.queued_genomes)
-    print("Queued genomes:")
-    print(config.queued_genomes)
 
     genomeID_batches = split_into_batches(genome_ids, config.cores - 1)
 

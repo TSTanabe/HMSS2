@@ -315,7 +315,17 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="max_seqs_per_genome",
         type=int,
         default=4,
-        help="Max. number of sequences per protein per genome for cross check via Diamond"
+        help="Max. number of initial hits per protein per genome forwarded to cross check via Diamond"
+        if show_all
+        else argparse.SUPPRESS,
+    )
+    resources.add_argument(
+        "-diamond_speed",
+        dest="diamond_speed_mode",
+        type=str,
+        choices=["faster", "fast", "mid-sensitive", "more-sensitive", "very-sensitive", "ultra-sensitive"],
+        default="faster",
+        help="DIAMOND blastp speed mode"
         if show_all
         else argparse.SUPPRESS,
     )
@@ -809,6 +819,7 @@ def build_config_from_namespace(ns) -> Config:
         clean_reports=bool(getattr(ns, "clean_reports", False)),
         individual_reports=bool(getattr(ns, "individual_reports", True)),
         max_seqs_per_genome=int(getattr(ns, "max_seqs_per_genome", 4)),
+        diamond_speed_mode=str(getattr(ns, "diamond_speed_mode", "faster")),
         bool_cross_check=bool(getattr(ns, "bool_cross_check", True)),
         optimized_cutoff_cross_check=bool(
             getattr(ns, "optimized_cutoff_cross_check", False)

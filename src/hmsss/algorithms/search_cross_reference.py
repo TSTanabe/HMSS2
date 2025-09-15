@@ -499,6 +499,7 @@ def cross_check_candidates_with_reference_seqs(config) -> List[str]:
                 "--threads",
                 str(config.cores),
                 "--quiet",
+                "--" + str(config.diamond_speed_mode), # Fastest mode for DIAMOND, only suitable for > 80 % identity
             ]
             logger.info(f"Verifying {hmm_id} hits with reference sequences")
             subprocess.run(cmd)
