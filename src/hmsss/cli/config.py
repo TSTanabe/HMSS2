@@ -109,6 +109,7 @@ class CliResources:
     clean_reports: bool = False
     individual_reports: bool = True
     max_seqs_per_genome: int = 4
+    diamond_speed_mode: str = "fast"
     bool_cross_check: bool = True
     optimized_cutoff_cross_check: bool = False
 
@@ -381,6 +382,7 @@ class Config:
     bool_cross_check = prop("cli_resources.bool_cross_check")
     individual_reports = prop("cli_resources.individual_reports")
     max_seqs_per_genome = prop("cli_resources.max_seqs_per_genome")
+    diamond_speed_mode = prop("cli_resources.diamond_speed_mode")
     optimized_cutoff_cross_check = prop("cli_resources.optimized_cutoff_cross_check")
 
     # Database operations
