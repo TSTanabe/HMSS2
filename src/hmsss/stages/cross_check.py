@@ -83,15 +83,3 @@ def reference_sequence_check(config: Config) -> None:
     load_hmmreports_to_sqlite(config.glob_intermediate_hitreport, intermediate_files)
 
     return
-    config.glob_trusted_hitreport = search_cross_reference.summarize_trusted_hits(
-        config.result_files_directory,
-        config.cross_check_directory,
-        "global_trusted_hits_summary.hmmreport",
-        ".trusted_hits",
-    )
-    config.glob_intermediate_hitreport = search_cross_reference.summarize_trusted_hits(
-        config.result_files_directory,
-        config.cross_check_directory,
-        "global_intermediate_hits_summary.hmmreport",
-        "intermediate_hits",
-    )
