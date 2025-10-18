@@ -1,7 +1,6 @@
 # tests/test_genomeID_files_dict.py
 from pathlib import Path
-import pytest
-import hmsss.io.queue as file_finder  # dein Modul mit den Funktionen
+import hmsss.core.queue as file_finder  # dein Modul mit den Funktionen
 
 
 def _ensure_myutil(monkeypatch):

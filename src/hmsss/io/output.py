@@ -8,8 +8,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Iterable
 from Bio import SeqIO
 
 from hmsss.cli.config import Config
-from hmsss.io import parse_reports
-from hmsss.algorithms import csb_finder
+from hmsss.parse_reports import parse_reports, csb_finder
 from hmsss.utils import myUtil
 from hmsss.core.logging import get_logger
 

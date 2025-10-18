@@ -2,19 +2,11 @@
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 import argparse
 import pytest
 
 # ganz oben
 from pathlib import Path
-from typing import (
-    Any,
-    Mapping,
-    Iterable,
-    Optional,
-    Tuple,
-)  # <- Optional, Tuple ergänzen
 
 
 # ---------------- Import/Fixtures wie in deinen anderen Tests ----------------
@@ -36,7 +28,7 @@ def parse_mod():
 @pytest.fixture(scope="session")
 def project_mod():
     _add_src_to_syspath()
-    from hmsss.db import project  # type: ignore
+    from hmsss.core import project
 
     return project
 

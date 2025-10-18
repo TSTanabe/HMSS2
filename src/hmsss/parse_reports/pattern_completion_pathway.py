@@ -1,23 +1,7 @@
 #!/usr/bin/python
-import os
-import re
-import subprocess
-import traceback
-from collections import defaultdict
-from multiprocessing import Pool, Manager
-from typing import Dict, Any, List, Set
+from typing import Dict, List, Set
 
-from contextlib import contextmanager
-from time import perf_counter
-
-import numpy as np
-from scipy.optimize import linear_sum_assignment
-
-from hmsss.algorithms import csb_finder
-from hmsss.algorithms import search_cross_reference
 from hmsss.core.logging import get_logger
-from hmsss.db import database
-from hmsss.io import output
 
 logger = get_logger(__name__)
 

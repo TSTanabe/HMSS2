@@ -5,7 +5,7 @@ from pathlib import Path
 
 from hmsss.core.logging import get_logger, print_header
 from hmsss.cli.paths import DATA_DIR
-from hmsss.io import queue as queue
+from hmsss.core import queue as queue
 
 log = get_logger(__name__)
 

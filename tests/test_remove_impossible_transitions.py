@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Tuple
 import pytest
 
 # import the function under test (FIX THIS PATH to your module!)
-from hmsss.algorithms.pattern_completion_synteny import _set_possible_transitions
+from hmsss.parse_reports.pattern_completion_synteny import _set_possible_transitions
 
 # bring in the mask type from your transition_mask module
 from hmsss.algorithms.transition_mask import TransitionMasks

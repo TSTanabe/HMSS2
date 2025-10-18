@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 
 from hmsss.core.logging import get_logger, print_header
-from hmsss.algorithms import processing as processing
+from hmsss.core import processing as processing
 from hmsss.io import datasets as datasets
 
 

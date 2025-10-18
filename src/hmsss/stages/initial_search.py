@@ -3,9 +3,8 @@ from __future__ import annotations
 import os
 
 from hmsss.core.logging import get_logger, print_header
-from hmsss.algorithms import search_hmmer as search_hmmer
-from hmsss.algorithms import search_cross_reference as search_cross_reference
-from hmsss.io.queue import queue_protein_annotation_inputs
+from hmsss.core import search_hmmer as search_hmmer
+from hmsss.cross_check import search_cross_reference as search_cross_reference
 from hmsss.db.database import create_database
 
 

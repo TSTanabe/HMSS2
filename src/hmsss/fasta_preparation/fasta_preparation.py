@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from hmsss.cli.config import Config
 from hmsss.core.logging import get_logger, print_header
-from hmsss.algorithms.translation import parallel_translation, parallel_transcription
-from hmsss.io.queue import queue_fna_inputs, queue_faa_without_gff
+from hmsss.fasta_preparation.translation import parallel_translation, parallel_transcription
+from hmsss.core.queue import queue_fna_inputs, queue_faa_without_gff
 
 logger = get_logger(__name__)
 

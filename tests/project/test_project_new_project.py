@@ -1,11 +1,8 @@
-import os
 from pathlib import Path
-
-import pytest
 
 # Passe die Importe ggf. an deine Paketstruktur an:
 from hmsss.core.options import Hmsss
-from hmsss.db.project import prepare_result_space
+from hmsss.core.project import prepare_result_space
 
 
 def test_prepare_result_space_new_project_sets_paths_and_subdirs(tmp_path: Path):

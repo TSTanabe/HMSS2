@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 import os
-import sys
 from datetime import datetime
 from typing import Tuple, Dict, Any
 
 from hmsss.cli.config import Config
 from hmsss.core.logging import get_logger, print_header
-from hmsss.io import output as output, print_reports
-from hmsss.io import datasets as datasets
-from hmsss.db import database as database, db_fetch_keywords, db_fetch_taxonomy, db_fetch_protein
+from hmsss.io import print_reports, db_fetch_taxonomy, output as output, db_fetch_protein
+from hmsss.db import database as database
 
 logger = get_logger(__name__)
 

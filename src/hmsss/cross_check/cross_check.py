@@ -4,8 +4,8 @@ import os
 
 from hmsss.cli.config import Config
 from hmsss.core.logging import get_logger, print_header
-from hmsss.algorithms import search_cross_reference as search_cross_reference
-from hmsss.db.report_db import load_hmmreports_to_sqlite
+from hmsss.cross_check import search_cross_reference as search_cross_reference
+from hmsss.cross_check.report_db import load_hmmreports_to_sqlite
 from hmsss.utils import myUtil
 
 log = get_logger(__name__)

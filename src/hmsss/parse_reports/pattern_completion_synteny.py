@@ -7,7 +7,7 @@ import numpy as np
 from numpy._typing import NDArray
 from scipy.optimize import linear_sum_assignment
 
-from hmsss.algorithms.csb_finder import Keyword
+from hmsss.parse_reports.csb_finder import Keyword
 from hmsss.core.logging import get_logger
 
 

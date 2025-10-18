@@ -1,10 +1,9 @@
 #!/usr/bin/python
-from itertools import chain
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from hmsss.algorithms.csb_trie_algorithm import TrieIndex
+from hmsss.parse_reports.csb_trie_algorithm import TrieIndex
 from hmsss.utils import myUtil
-from hmsss.algorithms import csb_trie_algorithm
+from hmsss.parse_reports import csb_trie_algorithm
 
 logger = myUtil.log
 

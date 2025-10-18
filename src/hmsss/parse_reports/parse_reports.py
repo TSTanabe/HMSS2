@@ -2,7 +2,6 @@
 import os
 import re
 import subprocess
-import sys
 import traceback
 
 from multiprocessing import Pool, Manager
@@ -11,15 +10,11 @@ from typing import Dict, Any, Set
 from contextlib import contextmanager
 from time import perf_counter
 
-from hmsss.algorithms import csb_finder
-from hmsss.algorithms import search_cross_reference
-from hmsss.algorithms import pattern_completion_pathway
-from hmsss.algorithms import pattern_completion_synteny
-from hmsss.algorithms import csb_trie_algorithm
-from hmsss.algorithms.csb_trie_algorithm import TrieIndex
+from hmsss.cross_check import search_cross_reference, report_db
+from hmsss.parse_reports import pattern_completion_synteny, pattern_completion_pathway, csb_finder, csb_trie_algorithm
+from hmsss.parse_reports.csb_trie_algorithm import TrieIndex
 from hmsss.core.logging import get_logger
 from hmsss.db import database
-from hmsss.db import report_db
 from hmsss.io import output
 
 logger = get_logger(__name__)
@@ -697,7 +692,7 @@ def process_genome(
         exclusion_singletons: Domains for singleton exclusion.
         threshold_dict: Score cutoffs per domain.
 
-        TODO dieser teil hier ist notorisch langsam für besonders große glob files
+        dieser teil hier ist notorisch langsam für besonders große glob files
         Der intermediate file sollte das gleiche sein wie der hmmreport, nur, dass hier
         auch die Tc mit drinstehen. Tc ist aber deutlich kleiner 300 MB vs 9.7 Gb
         Die 300 MB können aber trotzdem mal sortiert und indexiert werden für schnelleren lookup.

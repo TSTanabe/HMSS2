@@ -1,14 +1,11 @@
 # test_queue_routines.py
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Dict, Set, Optional
 import gzip
-import io
-import types
 import pytest
-from hmsss.io.queue import get_genome_id_files_dict, _parallel_decompress
+from hmsss.core.queue import get_genome_id_files_dict, _parallel_decompress
 # -----------------------------------------------------------
 # Hilfen für den Test
 # -----------------------------------------------------------

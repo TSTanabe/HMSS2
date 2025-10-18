@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from hmsss.cli.config import Config
 from hmsss.db import database as database
-from hmsss.algorithms import csb_cluster as csb_cluster
+from hmsss.csbfinder import csb_cluster as csb_cluster
 from hmsss.core.logging import get_logger, print_header
 
 logger = get_logger(__name__)

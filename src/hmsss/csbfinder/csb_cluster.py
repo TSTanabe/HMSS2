@@ -7,8 +7,7 @@ from collections import defaultdict, Counter
 from typing import Dict, List, Set, Tuple, Any
 
 from hmsss.cli.config import Config
-from src.hmsss.algorithms import csb_mp_algorithm
-
+from hmsss.csbfinder import csb_mp_algorithm
 
 from scipy.spatial import distance
 from sklearn.cluster import AgglomerativeClustering

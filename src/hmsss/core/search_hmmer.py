@@ -101,14 +101,14 @@ def init_globals(counter: Value, lock: Lock) -> None:
 
 
 def run_search(
-    genomeID: str,
+    genome_id: str,
     faa_file: str,
     query_db: str,
     hmmreport_path: str,
     score: float,
     clean_reports: bool,
     total: int,
-) -> str:
+) -> tuple[str, str]:
     """Runs hmmsearch for a single protein FASTA file and creates a prefixed report.
 
     This function calls HMMER's hmmsearch command on the given protein FASTA file,
@@ -138,7 +138,7 @@ def run_search(
     domtblout_path = hmm_search(faa_file, query_db, score, clean_reports, 2)
     hmmreport = prefix_domtblout_hits(domtblout_path, hmmreport_path, separator="___")
 
-    return genomeID, hmmreport
+    return genome_id, hmmreport
 
 
 def hmm_search(

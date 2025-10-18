@@ -1,12 +1,10 @@
 #!/usr/bin/python
 import os
-import sys
-import csv
 import sqlite3
 from typing import Any, Dict, List, Optional, Set, Tuple, Iterable
 
-from hmsss.db import db_fetch_taxonomy
-from hmsss.io import parse_reports
+from hmsss.io import db_fetch_taxonomy
+from hmsss.parse_reports import parse_reports
 from hmsss.utils import myUtil
 from hmsss.core.logging import get_logger
 

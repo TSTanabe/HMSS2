@@ -1,10 +1,7 @@
-import os
 from pathlib import Path
-import io
-import pytest
 
 # Passe den Importpfad ggf. an dein Projekt an
-from hmsss.algorithms.search_cross_reference import process_optimized_cutoff
+from hmsss.cross_check.search_cross_reference import process_optimized_cutoff
 
 
 def _write_intermediate(dirpath: Path, hmm_id: str) -> Path:
