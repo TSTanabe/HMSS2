@@ -330,7 +330,8 @@ def concatenate_selected_hmms(
         subdir_words = set(subdir_name.split("_"))
         if subdir_words & set(allowed_words):
             # If intersection is non-empty, at least one word matches
-            matched_files = glob.glob(os.path.join(subdir, f"{prefix}*{suffix}"))
+            # Finds everything below the subdir
+            matched_files = glob.glob(os.path.join(subdir, "**", f"{prefix}*{suffix}"))
             files_to_concatenate.extend(matched_files)
 
     # Concatenate files

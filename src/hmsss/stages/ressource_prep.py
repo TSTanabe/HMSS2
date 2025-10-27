@@ -111,6 +111,11 @@ def ressource_preparation(config) -> None:
             config.patterns_file, "dsb-", "_"
         )  # defined syntenic blocks
 
+    if not os.path.isfile(config.exclusion_singletons):
+        queue.concatenate_files_shell(
+            str(DATA_DIR), "exclusion_singletons", ".txt", config.exclusion_singletons
+        )
+
     # ---- Existenz der Ressourcen sicherstellen ----
     _require_path_exists(config.library, "HMM library")
     _require_path_exists(config.score_threshold_file, "Score thresholds")

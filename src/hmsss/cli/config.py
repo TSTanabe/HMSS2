@@ -544,7 +544,7 @@ class Config:
         _req_dir(self.paths.root, "ROOT_DIR")
         _req_dir(self.paths.bin, "BIN_DIR")
         _req_dir(self.paths.data, "DATA_DIR")
-        _req_dir(self.paths.hmms, "HMMS_DIR")
+        #_req_dir(self.paths.hmms, "HMMS_DIR")
         _req_dir(self.paths.refseq, "REFSEQ_DIR")
         _req_dir(self.paths.results, "RESULTS_DIR")
 

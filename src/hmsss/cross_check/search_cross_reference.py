@@ -403,6 +403,34 @@ def find_refseq_file(base_dir: str, filename: str) -> Optional[str]:
             return os.path.join(root, filename)
     return None
 
+def find_file_by_name_partial(root_dir: str, filename: str) -> list[str]:
+    """
+    Durchsucht ein Verzeichnis rekursiv nach Dateien, bei denen der Teil nach dem
+    ersten Unterstrich (_) mit dem im filename angegebenen Teil übereinstimmt.
+
+    Beispiel:
+        filename = "abc_target.faa" -> sucht nach Dateien, bei denen der Teil
+        nach dem ersten "_" gleich "target.faa" ist.
+
+    Args:
+        root_dir (str): Startverzeichnis für die Suche.
+        filename (str): Referenzdateiname (z. B. 'abc_target.faa').
+
+    Returns:
+        list[str]: Liste der vollständigen Pfade zu gefundenen Dateien.
+    """
+    matches = []
+    # Referenzsuffix = Teil nach erstem Unterstrich
+    ref_suffix = filename.split("_", 1)[1] if "_" in filename else filename
+
+    for dirpath, _, files in os.walk(root_dir):
+        for f in files:
+            file_suffix = f.split("_", 1)[1] if "_" in f else f
+            if file_suffix == ref_suffix:
+                matches.append(os.path.join(dirpath, f))
+
+    return matches
+
 
 def cross_check_candidates_with_reference_seqs(config) -> List[str]:
     """Validate candidates via DIAMOND against reference sequences.
@@ -423,6 +451,7 @@ def cross_check_candidates_with_reference_seqs(config) -> List[str]:
     logger.info("Cross check hit sequences with reference sequences")
 
     refseq_dir = config.paths.refseq
+    data_dir = config.paths.data
     refseq_unavailable_list = []
 
     cross_check_dir = config.cross_check_directory
@@ -451,28 +480,23 @@ def cross_check_candidates_with_reference_seqs(config) -> List[str]:
             # 1. Try exact match for .dmnd
             if not os.path.isfile(db_path):
                 # 2. Try exact match for .faa
-                exact_faa = os.path.join(refseq_dir, f"{hmm_id}.faa")
+
+                matches = find_file_by_name_partial(data_dir, f"{hmm_id}.faa")
+                if not matches:
+                    continue
+
+                exact_faa = matches[0] if len(matches) > 1 else matches[0]
 
                 if os.path.isfile(exact_faa):
                     faa_path = exact_faa
                     logger.debug(f"Found exact match: {exact_faa}")
                 else:
                     # 3. Fallback: any file ending with {hmm_type}.faa
-                    logger.debug(
-                        f"Exact match for {hmm_id} was not found. Now searching for {hmm_type}.faa"
+                    logger.warning(
+                        f"Skipping {hmm_id}: Reference sequence file not found."
                     )
-                    pattern = os.path.join(refseq_dir, f"**/*{hmm_type}.faa")
-                    backup_faa_files = glob.glob(pattern, recursive=True)
-
-                    if backup_faa_files:
-                        faa_path = backup_faa_files[0]
-                        logger.debug(f"Using backup match: {faa_path}")
-                    else:
-                        logger.warning(
-                            f"Skipping {hmm_id}: Reference sequence file not found."
-                        )
-                        refseq_unavailable_list.append(hmm_id)
-                        continue
+                    refseq_unavailable_list.append(hmm_id)
+                    continue
 
                 logger.debug(f"Creating Diamond DB from {faa_path} for {hmm_id}")
                 subprocess.run(
