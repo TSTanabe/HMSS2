@@ -610,6 +610,17 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help="Select only csb encoding the given proteins (whitespace separated)",
     )
     operators.add_argument(
+        "-fnd",
+        nargs="+",
+        dest="exclude_domains",
+        type=str,
+        default=[],
+        metavar="<list>",
+        help="Select gene cluster without these proteins (whitespace separated)"
+        if show_all
+        else argparse.SUPPRESS,
+    )
+    operators.add_argument(
         "-fk",
         nargs="+",
         dest="fetch_keywords",
@@ -867,6 +878,7 @@ def build_config_from_namespace(ns) -> Config:
         fetch_genomes=list(getattr(ns, "fetch_genomes", [])),
         fetch_proteins=list(getattr(ns, "fetch_proteins", [])),
         fetch_csbs=list(getattr(ns, "fetch_csbs", [])),
+        fetch_not_csb_with_these_domains=list(getattr(ns, "exclude_domains", [])),
         fetch_keywords=list(getattr(ns, "fetch_keywords", [])),
         keywords_connector=getattr(ns, "keywords_connector", "OR"),
         print_fasta=getattr(ns, "print_fasta", False),

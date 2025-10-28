@@ -16,6 +16,7 @@ def fetch_bulk_data(
     syntenic_domains: Optional[List[str]],
     limiter_dict: Optional[Dict[str, str]] = None,
     fetch_from_gene_clusters: bool = False,
+    excluded_domains: Optional[List[str]]=None,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, dict[str, str]]]:
     """
     Fetch bulk data from the database based on specified conditions, using batching
@@ -54,19 +55,23 @@ def fetch_bulk_data(
         cur.execute("PRAGMA foreign_keys = ON;")
         cur.execute("PRAGMA cache_size = 100000;")   # ~100k Pages (~100k * 1.5–2 KB je nach build)
         cur.execute("PRAGMA synchronous = OFF;")
+        #excluded_domains = ['sHdrB2']
 
         _prepare_required_domains_temp(cur, syntenic_domains)
+        _prepare_excluded_domains_temp(cur, excluded_domains)
         n = _prepare_limiter_genomes_temp(cur, limiter_dict)
+
+        #print(syntenic_domains)
+        #print(excluded_domains)
 
         if fetch_from_gene_clusters:
             sql, args = generate_fetch_query_covering_domains(
-                set(syntenic_domains), use_limiter=(n>1)
-            )
+                set(syntenic_domains), use_limiter=(n>1), use_exclusions=True
+            ) # Fetches all domains that are in a syntenic gene cluster, but not csb including the exclusion
         else:
-            sql, args = generate_fetch_query_domains_anywhere( set(syntenic_domains), use_limiter=(n>1))
+            #sql, args = generate_fetch_query_domains_anywhere( set(syntenic_domains), use_limiter=(n>1))
+            sql, args = generate_fetch_query_domains_anywhere_excluding_clusters(use_exclusions=True)
 
-        #print(sql)
-        #print(args)
 
         cur.execute(sql, args)
 
@@ -141,6 +146,15 @@ def _prepare_required_domains_temp(cur: sqlite3.Cursor, required_domains: "Itera
     cur.executemany("INSERT OR IGNORE INTO tmp_req_domains(domain) VALUES (?)", ((d,) for d in doms))
     return cur.rowcount or len(doms)
 
+def _prepare_excluded_domains_temp(cur: sqlite3.Cursor, excluded_domains: "Iterable[str] | None") -> int:
+    doms = {d for d in (excluded_domains or []) if d}
+    cur.execute("CREATE TEMP TABLE IF NOT EXISTS tmp_excl_domains (domain TEXT PRIMARY KEY);")
+    cur.execute("DELETE FROM tmp_excl_domains;")
+    if not doms:
+        return 0
+    cur.executemany("INSERT OR IGNORE INTO tmp_excl_domains(domain) VALUES (?)", ((d,) for d in doms))
+    return cur.rowcount or len(doms)
+
 def _prepare_limiter_genomes_temp(
     cur: sqlite3.Cursor, taxon_dict: Optional[Dict[str, Any]]
 ) -> int:
@@ -168,7 +182,7 @@ def _prepare_limiter_genomes_temp(
     return cur.rowcount or len(gids)
 
 def generate_fetch_query_covering_domains(
-    required_domains: Iterable[str], use_limiter: bool = True
+    required_domains: Iterable[str], use_limiter: bool = True, use_exclusions: bool=True,
 ) -> Tuple[str, List[Any]]:
     """
     Liefert ein SELECT, das ALLE Proteine (mit Domains) aus genau den Clustern zurückgibt,
@@ -192,6 +206,7 @@ def generate_fetch_query_covering_domains(
     )
     """
 
+    # CTE: alle Cluster, die das komplette erforderliche Domain-Set abdecken
     sql += """,
     clusters_covering AS (
         SELECT p.clusterID AS clusterID
@@ -202,6 +217,22 @@ def generate_fetch_query_covering_domains(
         GROUP BY p.clusterID
         HAVING COUNT(DISTINCT r.domain) = (SELECT COUNT(*) FROM req)
     )
+    """
+
+    # CTE: alle Cluster, die mindestens eine ausgeschlossene Domäne enthalten
+    if use_exclusions:
+        sql += """,
+    clusters_excluded AS (
+        SELECT p.clusterID AS clusterID
+        FROM Proteins p
+        {join_limiter2}
+        JOIN Domains d   ON d.proteinID = p.proteinID
+        JOIN tmp_excl_domains e ON e.domain = d.domain
+        GROUP BY p.clusterID
+    )
+    """
+
+    sql += """    
     SELECT
         p.proteinID        AS proteinID,
         p.genomeID         AS genomeID,
@@ -219,15 +250,24 @@ def generate_fetch_query_covering_domains(
         p.comment          AS comment,
         p.alternative_hit  AS alternative_hit
     FROM Proteins p
-        {join_limiter2}
+        {join_limiter3}
     JOIN clusters_covering c ON c.clusterID = p.clusterID
+    {left_join_excl}
     JOIN Domains d           ON d.proteinID = p.proteinID
+    {where_not_excluded}
     """
 
-    # Platzhalter fürs optionale JOIN ersetzen
     join_txt = "JOIN lim lg ON lg.genomeID = p.genomeID" if use_limiter else ""
-    sql = sql.format(join_limiter=join_txt, join_limiter2=join_txt)
+    left_join_excl = "LEFT JOIN clusters_excluded x ON x.clusterID = p.clusterID" if use_exclusions else ""
+    where_not_excluded = "WHERE x.clusterID IS NULL" if use_exclusions else ""
 
+    sql = sql.format(
+        join_limiter=join_txt,
+        join_limiter2=join_txt,
+        join_limiter3=join_txt,
+        left_join_excl=left_join_excl,
+        where_not_excluded=where_not_excluded,
+    )
     return sql, []
 
 def generate_fetch_query_domains_anywhere(
@@ -293,6 +333,114 @@ def generate_fetch_query_domains_anywhere(
     join_limiter = "JOIN lim lg ON lg.genomeID = p.genomeID" if use_limiter else ""
     sql = sql.format(join_limiter=join_limiter)
 
+    return sql, []
+# Testing routine
+def generate_fetch_query_domains_anywhere_excluding_clusters(
+    use_limiter: bool = False,
+    use_exclusions: bool = True,
+    require_all_domains_in_same_genome: bool = True,
+) -> tuple[str, list]:
+    """
+    Selektiert alle Domain-Hits aus tmp_req_domains, schließt aber Proteine aus
+    Clustern aus, in denen irgendeine Domäne aus tmp_excl_domains vorkommt.
+    Optional: nur Genomes zulassen, die *alle* gewünschten Domänen enthalten.
+
+    Erwartete TEMP-Tabellen:
+      - tmp_req_domains(domain TEXT)          (Pflicht)
+      - tmp_excl_domains(domain TEXT)         (wenn use_exclusions=True)
+      - tmp_req_genomes(genomeID TEXT)        (wenn use_limiter=True)
+    """
+    sql = """
+    WITH req AS (
+        SELECT domain FROM tmp_req_domains
+    )
+    """
+    if use_limiter:
+        sql += """,
+    lim AS (
+        SELECT genomeID FROM tmp_req_genomes
+    )
+    """
+
+    # 1) Genomes finden, die *alle* gewünschten Domänen haben (mind. je 1 Hit)
+    #    -> zählt DISTINCT req.domains pro genomeID
+    if require_all_domains_in_same_genome:
+        sql += """,
+    req_count AS (
+        SELECT COUNT(*) AS n_req FROM req
+    ),
+    genomes_ok AS (
+        SELECT p.genomeID
+        FROM Proteins p
+        {join_limiter0}
+        JOIN Domains d ON d.proteinID = p.proteinID
+        JOIN req r     ON r.domain    = d.domain
+        GROUP BY p.genomeID
+        HAVING COUNT(DISTINCT r.domain) = (SELECT n_req FROM req_count)
+    )
+    """.format(
+        join_limiter0=("JOIN lim lg0 ON lg0.genomeID = p.genomeID" if use_limiter else "")
+    )
+
+    # 2) Cluster ausschließen, die irgendeine Exklusionsdomäne enthalten
+    if use_exclusions:
+        sql += """,
+    clusters_excluded AS (
+        SELECT p.clusterID AS clusterID
+        FROM Proteins p
+        {join_limiter2}
+        JOIN Domains d   ON d.proteinID = p.proteinID
+        JOIN tmp_excl_domains e ON e.domain = d.domain
+        WHERE p.clusterID IS NOT NULL
+        GROUP BY p.clusterID
+    )
+    """.format(
+        join_limiter2=("JOIN lim lg2 ON lg2.genomeID = p.genomeID" if use_limiter else "")
+    )
+
+    # 3) Finale Auswahl
+    sql += """
+    SELECT
+        p.proteinID        AS proteinID,
+        p.genomeID         AS genomeID,
+        p.clusterID        AS clusterID,
+        p.contig           AS contig,
+        p.start            AS gene_start,
+        p.end              AS gene_end,
+        p.strand           AS gene_strand,
+        p.sequence         AS protein_sequence,
+        d.domain           AS domain,
+        d.domStart         AS domStart,
+        d.domEnd           AS domEnd,
+        d.score            AS score,
+        p.dom_count        AS dom_count,
+        p.comment          AS comment,
+        p.alternative_hit  AS alternative_hit
+    FROM Domains d
+    JOIN req r      ON r.domain    = d.domain
+    JOIN Proteins p ON p.proteinID = d.proteinID
+    {join_limiter3}
+    {join_genomes_ok}
+    {left_join_excl}
+    {where_clause}
+    ORDER BY p.genomeID, COALESCE(p.clusterID, -1), p.contig, p.start, d.domStart
+    """
+
+    join_limiter3 = "JOIN lim lg3 ON lg3.genomeID = p.genomeID" if use_limiter else ""
+    join_genomes_ok = "JOIN genomes_ok gok ON gok.genomeID = p.genomeID" if require_all_domains_in_same_genome else ""
+    left_join_excl = "LEFT JOIN clusters_excluded x ON x.clusterID = p.clusterID" if use_exclusions else ""
+
+    where_parts = []
+    if use_exclusions:
+        where_parts.append("x.clusterID IS NULL")
+    where_clause = f"WHERE {' AND '.join(where_parts)}" if where_parts else ""
+
+    sql = sql.format(
+        join_limiter3=join_limiter3,
+        join_genomes_ok=join_genomes_ok,
+        left_join_excl=left_join_excl,
+        where_clause=where_clause,
+    )
     return sql, []
 
 #

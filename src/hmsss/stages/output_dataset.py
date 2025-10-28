@@ -96,6 +96,8 @@ def fetch_fasta_and_hit_data(
 
     # Fetch keywords defined by the routines from the fc command
     required_proteins = set()
+    excluded_domains = config.fetch_not_csb_with_these_domains
+
     if config.fetch_csbs:
         logger.info(f"Collecting gene clusters containing {config.fetch_csbs}")
         fetch_from_gene_cluster = True
@@ -110,9 +112,10 @@ def fetch_fasta_and_hit_data(
     # Collect the data defined by the keywords and the limiter dictionary
     logger.info("Collecting hits from local database")
     protein_dict, cluster_dict, taxon_dict = db_fetch_protein.fetch_bulk_data(
-        config.database_directory,
-        required_proteins,
-        limiter_dict,
-        fetch_from_gene_cluster
+        database=config.database_directory,
+        syntenic_domains=required_proteins,
+        limiter_dict=limiter_dict,
+        fetch_from_gene_clusters=fetch_from_gene_cluster,
+        excluded_domains=excluded_domains
     )
     return protein_dict, cluster_dict, taxon_dict

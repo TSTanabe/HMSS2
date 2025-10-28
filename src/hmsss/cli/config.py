@@ -201,6 +201,7 @@ class CliOperators:
     fetch_proteins: List[str] = field(default_factory=list)
     fetch_csbs: List[str] = field(default_factory=list)
     fetch_keywords: List[str] = field(default_factory=list)
+    fetch_not_csb_with_these_domains: List[str] = field(default_factory=list)
     keywords_connector: str = "OR"
     print_fasta: bool = False
 
@@ -399,6 +400,8 @@ class Config:
     fetch_keywords = prop(
         "cli_ops.fetch_keywords"
     )  # :contentReference[oaicite:19]{index=19}
+    fetch_not_csb_with_these_domains = prop(
+        "cli_ops.fetch_not_csb_with_these_domains")
     print_fasta = prop(
         "cli_ops.print_fasta"
     )
