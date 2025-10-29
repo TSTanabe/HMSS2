@@ -1,0 +1,89 @@
+cpb-1_	LipS1	LipS2	LipT	sLplAB
+cpb-2_	LipS1	LipS2	LipT
+cpb-3_	LipS1	LipS2
+cpb-4_	LipS1	LipS2	sLplAB
+cpb-5_	LipS1	LipS2	LplA	LplB
+cpb-6_	TsdA
+cpb-7_	TsdA	TsdB
+cpb-8_	Tth
+cpb-9_	TusA	TusB	TusC	TusD	TusE
+cpb-10_	Otr
+cpb-11_	SOR
+cpb-12_	SQRI
+cpb-13_	SQRII
+cpb-14_	SQRIII
+cpb-15_	SQRIV
+cpb-16_	SQRV
+cpb-17_	SQRVI
+cpb-18_	SDOI
+cpb-19_	SDOII
+cpb-20_	SQRI	SDOI
+cpb-21_	SQRI	SDOII
+cpb-22_	SQRII	SDOI
+cpb-23_	SQRII	SDOII
+cpb-24_	SQRIII	SDOI
+cpb-25_	SQRIII	SDOII
+cpb-26_	SQRIV	SDOI
+cpb-27_	SQRIV	SDOII
+cpb-28_	SQRV	SDOI
+cpb-29_	SQRV	SDOII
+cpb-30_	SQRVI	SDOI
+cpb-31_	SQRVI	SDOII
+cpb-32_	RhdI	SQRI	SDOI
+cpb-33_	RhdI	SQRI	SDOII
+cpb-34_	RhdI	SQRII	SDOI
+cpb-35_	RhdI	SQRII	SDOII
+cpb-36_	RhdI	SQRIII	SDOI
+cpb-37_	RhdI	SQRIII	SDOII
+cpb-38_	RhdI	SQRIV	SDOI
+cpb-39_	RhdI	SQRIV	SDOII
+cpb-40_	RhdI	SQRV	SDOI
+cpb-41_	RhdI	SQRV	SDOII
+cpb-42_	RhdI	SQRVI	SDOI
+cpb-43_	RhdI	SQRVI	SDOII
+cpb-44_	Rhd442	SQRI	SDOI
+cpb-45_	Rhd442	SQRI	SDOII
+cpb-46_	Rhd442	SQRII	SDOI
+cpb-47_	Rhd442	SQRII	SDOII
+cpb-48_	Rhd442	SQRIII	SDOI
+cpb-49_	Rhd442	SQRIII	SDOII
+cpb-50_	Rhd442	SQRIV	SDOI
+cpb-51_	Rhd442	SQRIV	SDOII
+cpb-52_	Rhd442	SQRV	SDOI
+cpb-53_	Rhd442	SQRV	SDOII
+cpb-54_	Rhd442	SQRVI	SDOI
+cpb-55_	Rhd442	SQRVI	SDOII
+cpb-56_	SQRI	CstA	CstB	TauE
+cpb-57_	SQRII	CstA	CstB	TauE
+cpb-58_	SQRIII	CstA	CstB	TauE
+cpb-59_	SQRIV	CstA	CstB	TauE
+cpb-60_	SQRV	CstA	CstB	TauE
+cpb-61_	SQRVI	CstA	CstB	TauE
+cpb-62_	ACP	Spt	bCerS	CerR
+cpb-63_	ACP	fjoh2421	fjoh2419	fjoh1748	fjoh2557	fjoh4604
+cpb-64_	fjoh2421	fjoh2419	fjoh1748	fjoh2557	fjoh4604
+cpb-65_	fjoh2421	fjoh2419	fjoh1748	fjoh2557
+cpb-66_	fjoh2421	fjoh2419	fjoh2557	fjoh4604
+cpb-67_	fjoh2421	fjoh2419	fjoh1748	fjoh2557	fjoh4604
+cpb-68_	GldA	GldB	GldC	GldD	GldE	GldF	GldG	GldH	GldI	GldJ	GldK	GldL	GldM	GldN	GldO
+cpb-69_	SprA	SprB	SprC	SprD	SprE	SprF
+cpb-70_	SecE	SecG	SecYDmdA	DmdB	DmdC	DmdD
+cpb-71_	DmdA	DmdB	DmdC	DmdD	Mtox
+cpb-72_	DmdA	DmdB	DmdC	DmdD	MddA
+cpb-73_	DmdA	DmdB	DmdC	DmdD	MddH
+cpb-74_	DmdA	DmdB	DmdC	DmdD	DmoA
+cpb-75_	DmsA	DmsB	DmsC	DmsD
+cpb-76_	MsuC	MsuD	MsuE
+cpb-77_	DorC	DorA	DorD
+cpb-78_	SnfG	MsmA	MsmB	MsmC	MsmD
+cpb-79_	SnfG	MsuD	MsuE
+cpb-80_	DmoA	Mtox
+cpb-81_	DddA	DmoA	Mtox
+cpb-82_	DddL	DmoA	Mtox
+cpb-83_	DddP	DmoA	Mtox
+cpb-84_	DddD	DmoA	Mtox
+cpb-85_	DddP	DmoA	Mtox
+cpb-86_	DddQ	DmoA	Mtox
+cpb-87_	DddW	DmoA	Mtox
+cpb-88_	DddY	DmoA	Mtox
+cpb-89_	DdhA	DdhB	DdhC	DdhD

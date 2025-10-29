@@ -587,7 +587,7 @@ def print_hit_reports(
     unique_file = taxonomy_report.replace(".txt", "") + "_unique_taxonomies.txt"
     taxonomy_summary = os.path.join(directory, "summary_hit_taxonomy_counts.txt")
 
-    clsuter_overview_report = os.path.join(directory, "summary_genecluster_overview_table.txt")
+    cluster_overview_report = os.path.join(directory, "summary_genecluster_overview_table.txt")
 
     print(len(taxon_dict.keys()))
 
@@ -604,7 +604,7 @@ def print_hit_reports(
     _output_strain_variability_by_species(directory, protein_dict, taxon_dict, set(fetch_proteins))
 
     # Output all clusters containing target proteins
-    _output_cluster_overview_by_required(clsuter_overview_report, protein_dict, set(fetch_proteins))
+    _output_cluster_overview_by_required(cluster_overview_report, protein_dict, set(fetch_proteins))
 
 def print_fasta_files(directory, protein_dict, cluster_dict):
 

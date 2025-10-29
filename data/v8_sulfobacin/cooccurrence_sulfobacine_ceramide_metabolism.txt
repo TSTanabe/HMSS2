@@ -1,0 +1,9 @@
+ACP Spt bCerS CerR
+ACP fjoh2421 fjoh2419 fjoh1748 fjoh2557 fjoh4604
+fjoh2421 fjoh2419 fjoh1748 fjoh2557 fjoh4604
+fjoh2421 fjoh2419 fjoh1748 fjoh2557
+fjoh2421 fjoh2419 fjoh2557 fjoh4604
+fjoh2421 fjoh2419 fjoh1748 fjoh2557 fjoh4604
+GldA GldB GldC GldD GldE GldF GldG GldH GldI GldJ GldK GldL GldM GldN GldO
+SprA SprB SprC SprD SprE SprF
+SecE SecG SecY
