@@ -33,7 +33,7 @@ def _output_genome_report(
     output_filepath: str,
     protein_dict: Dict[str, Any],
     cluster_dict: Dict[str, Any],
-    taxon_dict: Dict[str, str],
+    taxon_dict: Dict[str, Any],
     genomeID: str = "",
     writemode: str = "w",
     taxon_divider: str = ".",
@@ -132,6 +132,66 @@ def _output_genome_report(
             writer.write("\t".join(map(str, row)) + "\n")
     return
 
+def output_protein_taxonomy(
+    output_filepath: str,
+    protein_dict: Dict[str, Any],
+    taxon_dict: Dict[str, Dict[str, str]],
+    writemode: str = "w",
+) -> None:
+    """
+    Writes a 2-column TSV file:
+      proteinID    taxonomy_lineage
+
+    Taxonomy lineage format:
+      k__Superkingdom; p__Phylum; c__Class; o__Order; f__Family; g__Genus; s__Species
+
+    Missing or 'NA' taxonomy entries are replaced with the proteinID.
+    """
+
+    header = "proteinID\ttaxonomy"
+
+    levels = [
+        ("Superkingdom", "k__"),
+        ("Phylum", "p__"),
+        ("Class", "c__"),
+        ("Order", "o__"),
+        ("Family", "f__"),
+        ("Genus", "g__"),
+        ("Species", "s__"),
+    ]
+
+    proteinID_list = sorted(
+        protein_dict,
+        key=lambda x: (
+            protein_dict[x].genomeID,
+            protein_dict[x].gene_contig,
+            protein_dict[x].gene_start,
+        ),
+    )
+
+    with open(output_filepath, writemode) as writer:
+        writer.write(header + "\n")
+
+        for proteinID in proteinID_list:
+            protein = protein_dict[proteinID]
+            gid = protein.genomeID
+
+            rec = taxon_dict.get(gid, {})
+
+            def get_tax_val(level: str) -> str:
+                val = rec.get(level)
+                # Replace None, empty string, or 'NA' (case-insensitive) with proteinID
+                if not val or str(val).strip().upper() == "NA":
+                    return proteinID
+                return val
+
+            lineage = "; ".join(
+                f"{prefix}{get_tax_val(level)}"
+                for level, prefix in levels
+            )
+
+            writer.write(f"{proteinID}\t{lineage}\n")
+
 
 def _output_taxonomy_summary(
     output_file: str,
@@ -187,6 +247,7 @@ def _output_taxonomy_summary(
 
 def _output_unique_taxonomy_table(
     output_file: str,
+    protein_dict: Dict[str, Any],
     taxon_dict: Dict[str, Dict[str, str]],
 ) -> str:
     """
@@ -208,7 +269,11 @@ def _output_unique_taxonomy_table(
 
     # Zähle Genome pro eindeutiger 7er-Linie
     counts: Dict[Tuple[str, ...], int] = {}
-    for gid, rec in (taxon_dict or {}).items():
+    hit_genomes = {p.genomeID for p in protein_dict.values()}
+    for gid, rec in taxon_dict.items():
+        if gid not in hit_genomes:
+            continue
+
         if not isinstance(rec, dict):
             continue
         tail7 = tuple(_norm(rec.get(k)) for k in tax_cols)
@@ -240,23 +305,14 @@ def _output_unique_taxonomy_table(
 def _output_strain_variability_by_species(
     directory: str,
     protein_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],   # neue Struktur
+    taxon_dict: Dict[str, Dict[str, str]],
     required_domains: Set[str],
     *,
     unknown_label: str = "Unknown",
 ) -> str:
-    """
-    Schreibt eine TSV-Zusammenfassung der Strain-Variabilität je **Species**.
-    Für jede Species:
-      - genomes_total
-      - genomes_with_all   (enthält alle `required_domains`)
-      - genomes_missing_any
-      - pct_complete
+    import os
+    from collections import defaultdict
 
-    Spezialfall:
-      Wenn Species == NA (leer oder "NA"), verwende statt dessen
-      DeepestValue + "_procaryote".
-    """
     os.makedirs(directory, exist_ok=True)
     outpath = os.path.join(directory, "summary_strain_variability_by_species.txt")
 
@@ -269,7 +325,7 @@ def _output_strain_variability_by_species(
             return f"{deepest}_prokaryote"
         return sp
 
-    # 1) Genome -> Species (nur Species-Feld, ggf. DeepestValue_prokaryote)
+    # 1) Genome -> Species
     genome_to_species: Dict[str, str] = {}
     species_to_genomes: Dict[str, Set[str]] = defaultdict(set)
     for gid, rec in (taxon_dict or {}).items():
@@ -277,7 +333,7 @@ def _output_strain_variability_by_species(
         genome_to_species[gid] = label
         species_to_genomes[label].add(gid)
 
-    # 2) Domain-Typen pro Genom sammeln
+    # 2) Domain-Typen pro Genom aus protein_dict
     genome_to_domains: Dict[str, Set[str]] = defaultdict(set)
     for prot in protein_dict.values():
         gid = getattr(prot, "genomeID", None)
@@ -288,16 +344,30 @@ def _output_strain_variability_by_species(
             if name:
                 genome_to_domains[gid].add(name)
 
-        # Genome ohne Taxonomie unter unknown_label gruppieren
         if gid not in genome_to_species:
             genome_to_species[gid] = unknown_label
             species_to_genomes[unknown_label].add(gid)
 
-    # 3) Zählen je Species
+    # Hilfsfunktion: Hat irgendein Genom der Spezies mindestens eine Required-Domain?
+    def _has_any_required(gids: Set[str]) -> bool:
+        if not required_domains:
+            return True  # nichts zu filtern, wenn keine Targets vorgegeben sind
+        for gid in gids:
+            if genome_to_domains.get(gid, set()) & required_domains:
+                return True
+        return False
+
+    # 3) Zählen je Species (mit Filter "komplett abwesend" überspringen)
     rows: list[Tuple[str, int, int, int, float]] = []
     for species, gids in species_to_genomes.items():
+        if not _has_any_required(gids):
+            continue  # Spezies komplett ohne Required-Hits -> nicht ausgeben
+
         total = len(gids)
-        with_all = sum(1 for gid in gids if required_domains.issubset(genome_to_domains.get(gid, set())))
+        with_all = sum(
+            1 for gid in gids
+            if required_domains.issubset(genome_to_domains.get(gid, set()))
+        )
         missing_any = total - with_all
         pct_complete = (with_all / total * 100.0) if total else 0.0
         rows.append((species, total, with_all, missing_any, pct_complete))
@@ -310,6 +380,7 @@ def _output_strain_variability_by_species(
             w.write(f"{species}\t{total}\t{with_all}\t{missing_any}\t{pct:.1f}\t{required_domains}\n")
 
     return outpath
+
 
 
 def _output_cluster_overview_by_required(
@@ -458,11 +529,11 @@ def _output_distinct_fasta_reports(
                 if cluster_id in cluster_dict:
                     cluster = cluster_dict[cluster_id]
                     cluster_list = cluster.get_cluster_list(",")
-                    out = f">{genome_id}-{' '.join(proteinlist[:-5])} {' '.join(cluster_list)}\n"
+                    out = f">{' '.join(proteinlist[:-5])} {' '.join(cluster_list)}\n"
                     writer.write(out)
                     writer.write(sequence + "\n")
                 else:
-                    out = f">{genome_id}-{' '.join(proteinlist[:-5])}\n"
+                    out = f">{' '.join(proteinlist[:-5])}\n"
                     writer.write(out)
                     writer.write(sequence + "\n")
 
@@ -583,22 +654,23 @@ def print_hit_reports(
     logger.info("Printing genome information output files")
     # Metadata for taxonomy and hits
     hit_report = os.path.join(directory, "summary_hit_table.txt")  # individual hit table in tsv file
-    taxonomy_report = os.path.join(directory, "summary_taxonomy_table.txt")
-    unique_file = taxonomy_report.replace(".txt", "") + "_unique_taxonomies.txt"
+    gene_taxonomy = os.path.join(directory, "summary_gene_taxonomy.txt")
+    unique_file = os.path.join(directory, "summary_unique_lineages.txt")
     taxonomy_summary = os.path.join(directory, "summary_hit_taxonomy_counts.txt")
 
     cluster_overview_report = os.path.join(directory, "summary_genecluster_overview_table.txt")
 
-    print(len(taxon_dict.keys()))
-
     # Output hit report
     _output_genome_report(hit_report, protein_dict, cluster_dict, taxon_dict)
 
+    # Output gene taxonomy report
+    output_protein_taxonomy(gene_taxonomy, protein_dict, taxon_dict)
+
     # Output unique taxonomy report
-    _output_unique_taxonomy_table(unique_file, taxon_dict)
+    _output_unique_taxonomy_table(unique_file, protein_dict, taxon_dict)
 
     # Output taxonomy summary
-    _output_taxonomy_summary(taxonomy_summary, taxon_dict)
+    #_output_taxonomy_summary(taxonomy_summary, taxon_dict)
 
     # Output strain variability summary
     _output_strain_variability_by_species(directory, protein_dict, taxon_dict, set(fetch_proteins))

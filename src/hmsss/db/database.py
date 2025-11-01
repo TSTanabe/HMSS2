@@ -423,8 +423,8 @@ def parse_taxonomy_line(line: str, na: str = "") -> List[str]:
 
     parts = line.rstrip("\n").split("\t")
     if len(parts) < 2:
-        raise ValueError(
-            "Line must contain at least two tab-separated fields: <ID> and <taxonomy>"
+        logger.error(
+            f"Line must contain at least two tab-separated fields: <ID> and <taxonomy>\nLine: {parts}"
         )
 
     genome_id = parts[0].strip()
