@@ -86,7 +86,7 @@ def ressource_preparation(config) -> None:
             str(DATA_DIR), allowed, "", ".hmm", config.library
         )
 
-    # ---- Library, Cutoffs, Cooccurrence, Patterns ggf. zusammenführen ----
+    # ---- Library, Cutoffs, Cooccurrence, Patterns, Metabolism ggf. zusammenführen ----
     if not os.path.isfile(config.library):
         queue.concatenate_files_shell(str(DATA_DIR), "grp", ".hmm", config.library)
 
@@ -116,6 +116,11 @@ def ressource_preparation(config) -> None:
             str(DATA_DIR), "exclusion_singletons", ".txt", config.exclusion_singletons
         )
 
+    if not os.path.isfile(config.metabolic_information):
+        queue.concatenate_files_shell(
+            str(DATA_DIR), "metabolic_information", ".txt", config.metabolic_information
+        )
+
     # ---- Existenz der Ressourcen sicherstellen ----
     _require_path_exists(config.library, "HMM library")
     _require_path_exists(config.score_threshold_file, "Score thresholds")
@@ -123,6 +128,7 @@ def ressource_preparation(config) -> None:
     _require_path_exists(config.cooccurrence_file, "Cooccurrence")
     _require_path_exists(config.exclusion_singletons, "Exclusion_singletons")
     _require_path_exists(config.paths.refseq, "Reference sequences")
+    _require_path_exists(config.metabolic_information, "Metabolism information")
 
     # ---- Ableitungen & Artefakte in options hinterlegen ----
     config.cross_check_directory = cross_dir

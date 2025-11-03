@@ -21,6 +21,34 @@ Fetch/export pipeline results to a timestamped directory:
 - Optionally print statistics
 """
 
+def _load_domain_annotations(tsv_path: str) -> Dict[str, Dict[str, str]]:
+    """
+    Liest Domain-Annotationen aus einer TSV:
+      Spalten (Header, Tab-getrennt):
+        domain    reaction    protein_description    system    metabolism
+    Gibt ein Dict: domain -> { 'reaction', 'protein_description', 'system', 'metabolism' }
+    """
+    ann: Dict[str, Dict[str, str]] = {}
+    with open(tsv_path, "r") as f:
+        header = f.readline().rstrip("\n").split("\t")
+        # Spaltenindizes robust bestimmen
+        idx = {name: header.index(name) for name in
+               ["domain", "reaction", "protein_description", "system", "metabolism"]}
+        for line in f:
+            if not line.strip():
+                continue
+            parts = line.rstrip("\n").split("\t")
+            d = parts[idx["domain"]].strip()
+            if not d:
+                continue
+            ann[d] = {
+                "reaction": parts[idx["reaction"]].strip() if idx["reaction"] < len(parts) else "",
+                "protein_description": parts[idx["protein_description"]].strip() if idx["protein_description"] < len(parts) else "",
+                "system": parts[idx["system"]].strip() if idx["system"] < len(parts) else "",
+                "metabolism": parts[idx["metabolism"]].strip() if idx["metabolism"] < len(parts) else "",
+            }
+    return ann
+
 def output_operator(config: Config) -> None:
     """Run output operators to fetch/export results.
 
@@ -46,9 +74,11 @@ def output_operator(config: Config) -> None:
 
     protein_dict, cluster_dict, taxon_dict = fetch_fasta_and_hit_data(config)
 
+    metabolic_dict = _load_domain_annotations(config.metabolic_information)
+
     requests = config.fetch_csbs + config.fetch_proteins # These are all domains from -fd and -fc
     print_reports.print_hit_reports(
-        directory, protein_dict, cluster_dict, taxon_dict, requests
+        directory, protein_dict, cluster_dict, taxon_dict, metabolic_dict, requests
     )
 
     if config.print_fasta:

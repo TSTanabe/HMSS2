@@ -138,7 +138,7 @@ class CliInfo:
     stat_keywords: bool = False
     stat_csb: bool = False
     stat_genomes: bool = False
-
+    metabolic_information: Optional[str] = None
 
 @dataclass(slots=True)
 class CliCsb:
@@ -513,6 +513,9 @@ class Config:
     redundant = prop("state.redundant")
     non_redundant = prop("state.non_redundant")
     redundancy_hash = prop("state.redundancy_hash")
+
+    # Metabolic information and statistics
+    metabolic_information = prop("cli_info.metabolic_information")
 
     def validate(self) -> None:
         """Run basic consistency checks and ensure required directories exist.

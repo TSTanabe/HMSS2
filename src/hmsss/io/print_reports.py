@@ -632,17 +632,123 @@ def _clean_empty_files(directory: str) -> None:
             logger.debug(f"Removed empty file: {file_path}")
 
 
+def output_domain_function_report(
+    output_filepath: str,
+    protein_dict: Dict[str, Any],
+    taxon_dict: Dict[str, Dict[str, str]],
+    domain_annotations: Dict[str, Dict[str, str]],
+    writemode: str = "w",
+) -> None:
+    """
+    Schreibt pro Protein/Domain Funktionszeilen:
+      genomeID, proteinID, domain, reaction, protein_description, system, metabolism,
+      Superkingdom, Phylum, Class, Order, Family, Genus, Species
+
+    Multi-Domain-Proteine:
+      - Wenn (reaction, protein_description, system, metabolism) für alle gefundenen Domains identisch sind,
+        schreibe nur EINE Zeile (domain = alle Domainnamen mit '-').
+      - Sonst schreibe eine Zeile pro Domain (nur für Domains, die in domain_annotations vorkommen).
+    """
+    tax_cols = ["Superkingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"]
+    header = "\t".join([
+        "genomeID", "proteinID", "domain",
+        "reaction", "protein_description", "system", "metabolism",
+        *tax_cols,
+    ])
+
+    # sortiere analog zu deinem Hauptreport (genomeID, contig, start)
+    proteinID_list = sorted(
+        protein_dict,
+        key=lambda x: (
+            protein_dict[x].genomeID,
+            protein_dict[x].gene_contig,
+            protein_dict[x].gene_start,
+        ),
+    )
+
+    with open(output_filepath, writemode) as w:
+        w.write(header + "\n")
+
+        for proteinID in proteinID_list:
+            p = protein_dict[proteinID]
+            gid = p.genomeID
+            rec = taxon_dict.get(gid, {}) or {}
+            tax_vals = [rec.get(k) for k in tax_cols]
+
+            # Domains extrahieren: bevorzugt String "A-B-C" aus get_domains(), sonst aus get_domains_dict()
+            dom_string = ""
+            try:
+                dom_string = p.get_domains() or ""
+            except Exception:
+                dom_string = ""
+
+            if dom_string:
+                dom_list = [d.strip() for d in dom_string.split("-") if d.strip()]
+            else:
+                dct = getattr(p, "get_domains_dict")()
+                dom_list = [getattr(d, "domain", "").strip() for d in dct.values() if getattr(d, "domain", "").strip()]
+
+            # Nur Domains berücksichtigen, die in den Annotationen vorkommen
+            dom_list = [d for d in dom_list if d in domain_annotations]
+            if not dom_list:
+                continue  # nichts zu schreiben
+
+            # Funktions-Tupel je Domain einsammeln
+            func_tuples: List[Tuple[str, str, str, str, str]] = []  # (domain, reaction, desc, system, metabolism)
+            for d in dom_list:
+                info = domain_annotations.get(d, {})
+                func_tuples.append((
+                    d,
+                    info.get("reaction", ""),
+                    info.get("protein_description", ""),
+                    info.get("system", ""),
+                    info.get("metabolism", ""),
+                ))
+
+            # Prüfen, ob alle Funktionswerte (ohne Domain) identisch sind
+            unique_payloads = {
+                (ft[1], ft[2], ft[3], ft[4])  # reaction, desc, system, metabolism
+                for ft in func_tuples
+            }
+
+            if len(unique_payloads) == 1:
+                # eine Zeile, Domainnamen zusammengeführt
+                reaction, desc, system, metab = next(iter(unique_payloads))
+                merged_domain = "-".join(dom_list)
+                row = [
+                    gid,
+                    p.proteinID if hasattr(p, "proteinID") else proteinID,
+                    merged_domain,
+                    reaction, desc, system, metab,
+                    *tax_vals,
+                ]
+                w.write("\t".join(map(str, row)) + "\n")
+            else:
+                # mehrere Zeilen, je Domain separat
+                for d, reaction, desc, system, metab in func_tuples:
+                    row = [
+                        gid,
+                        p.proteinID if hasattr(p, "proteinID") else proteinID,
+                        d,
+                        reaction, desc, system, metab,
+                        *tax_vals,
+                    ]
+                    w.write("\t".join(map(str, row)) + "\n")
+
+
 def print_hit_reports(
     directory: str,
     protein_dict: Dict[str, Any],
     cluster_dict: Dict[str, Any],
     taxon_dict: Dict[str, Dict[str,str]],
+    metabolic_dict: Dict[str, Any],
     fetch_proteins: List[str],
 ) -> None:
     """
     Main output routine: creates hit tables, taxonomy summaries, and protein FASTA files.
 
     Args:
+        metabolic_dict:
         fetch_proteins: input proteins from the CLI
         directory (str): Output directory path.
         protein_dict: Mapping proteinID -> proteinObj.
@@ -657,6 +763,7 @@ def print_hit_reports(
     gene_taxonomy = os.path.join(directory, "summary_gene_taxonomy.txt")
     unique_file = os.path.join(directory, "summary_unique_lineages.txt")
     taxonomy_summary = os.path.join(directory, "summary_hit_taxonomy_counts.txt")
+    metabolic_annotation = os.path.join(directory, "summary_metabolic_annotations.txt")
 
     cluster_overview_report = os.path.join(directory, "summary_genecluster_overview_table.txt")
 
@@ -669,6 +776,14 @@ def print_hit_reports(
     # Output unique taxonomy report
     _output_unique_taxonomy_table(unique_file, protein_dict, taxon_dict)
 
+    # Output domain annotation
+    output_domain_function_report(
+        output_filepath=metabolic_annotation,
+        protein_dict=protein_dict,
+        taxon_dict=taxon_dict,
+        domain_annotations=metabolic_dict,
+        writemode="w",
+    )
     # Output taxonomy summary
     #_output_taxonomy_summary(taxonomy_summary, taxon_dict)
 

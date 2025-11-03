@@ -852,6 +852,7 @@ def build_config_from_namespace(ns) -> Config:
         stat_keywords=bool(getattr(ns, "stat_keywords", False)),
         stat_csb=bool(getattr(ns, "stat_csb", False)),
         stat_genomes=bool(getattr(ns, "stat_genomes", False)),
+        metabolic_information=_s(ns, "metabolism_information"),
     )
 
     cli_csb = CliCsb(
@@ -989,6 +990,7 @@ def _apply_runtime_defaults(ns: argparse.Namespace) -> argparse.Namespace:
     _set_default("patterns_file", str(paths.SRC_FILE_PATTERNS))
     _set_default("cooccurrence_file", str(paths.SRC_FILE_COOCCURRENCE))
     _set_default("exclusion_singletons", str(paths.SRC_FILE_EXCLUSION_SINGLETONS))
+    _set_default("metabolism_information", str(paths.SRC_FILE_METABOLISM_INFORMATION))
     _set_default("result_files_directory", str(paths.RESULTS_DIR))
 
     # Stage normalization
