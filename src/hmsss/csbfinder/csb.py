@@ -37,7 +37,7 @@ def csb_finder(config: Config) -> None:
             config, computed_instances_dict=csb_instances, jaccard_distance=0.0
         )  # 0.0: nur Clusterdict bilden
     except Exception as err:
-        logger.error(f"CSB finder failed: \n {err}", logger=logger)
+        logger.error(f"CSB finder failed: \n {err}")
 
     database.index_database(config.database_directory)
     database.delete_keywords_from_csb(

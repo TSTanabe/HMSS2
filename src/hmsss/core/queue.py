@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import gzip
 import os
+import re
 
 import shutil
 import tempfile
@@ -375,8 +376,80 @@ def concatenate_files_shell(
         os.system(cat_command)
         log.debug(f"Concatenated {len(matched_files)} files into {output_file_path}")
     else:
-        log.error(f"No matching files found for concatenation in {search_directory}.")
+        log.error(f"No matching files found for concatenation in {search_directory} with prefix '{allowed_prefix}' and suffix '{allowed_suffix}'.")
 
+
+
+def concatenate_hmms_from_selected_metabolism_packages(
+    src_dir: str,
+    allowed_words: list[str],
+    output_library: str,
+) -> None:
+    """
+    Concatenate .hmm Dateien NUR aus den Paketen direkt unter `src_dir`,
+    deren Paketname (tokenisiert) mindestens ein Token mit `allowed_words` teilt.
+    Innerhalb eines Pakets werden ausschließlich Unterordner berücksichtigt,
+    deren Name "HMMs" (case-insensitive) enthält. Darunter wird rekursiv nach *.hmm gesucht.
+
+    Beispielstruktur:
+        data/
+          v8_Sulfur/
+            v8_HMMs_sqr_dsr/
+              grpX.hmm, ...
+          v8_Methan/
+            meta3_meta4/
+
+    allowed_words = ["Sulfur", "Nitrogen"]  -> nimmt nur v8_Sulfur und v8_Nitrogen
+    """
+
+    def _tokenize(name: str) -> set[str]:
+        """Tokenisiere Ordner-/Set-Namen robust (Unterstriche, Bindestriche, Ziffernblöcke)."""
+        return {t.lower() for t in re.findall(r"[A-Za-z0-9]+", name)}
+
+    base = Path(src_dir)
+    allowed_tokens = set().union(*(_tokenize(w) for w in allowed_words))
+    files_to_concat: list[str] = []
+
+    if not base.is_dir():
+        raise ValueError(f"Not a directory: {src_dir}")
+
+    # Nur Top-Level-Pakete (direkte Unterordner von src_dir)
+    for pkg in sorted(p for p in base.iterdir() if p.is_dir()):
+        pkg_tokens = _tokenize(pkg.name)
+        if not (pkg_tokens & allowed_tokens):
+            continue  # Paket nicht ausgewählt
+
+        # Nur Ordner innerhalb des Pakets, deren Name "HMMs" enthält
+        hmm_dirs: list[Path] = []
+        for root, dirs, _files in os.walk(pkg):
+            for d in dirs:
+                if "hmms" in d.lower():
+                    hmm_dirs.append(Path(root) / d)
+
+        # Rekursiv *.hmm aus allen passenden HMM-Ordnern einsammeln
+        for hmm_dir in hmm_dirs:
+            for path in hmm_dir.rglob("*.hmm"):
+                if path.is_file():
+                    files_to_concat.append(str(path))
+
+    # deterministische Reihenfolge
+    files_to_concat = sorted(set(files_to_concat))
+
+    if not files_to_concat:
+        log.warning(
+            "No HMM files found for selected packages in '%s' with hmm_sets=%s",
+            src_dir, allowed_words,
+        )
+        # absichtlich KEIN Schreiben -> ressource_preparation fällt dann auf den
+        # globalen Fallback zurück, falls konfiguriert.
+        return
+
+    os.makedirs(os.path.dirname(output_library) or ".", exist_ok=True)
+    with open(output_library, "w") as out:
+        for fp in files_to_concat:
+            with open(fp, "r") as fin:
+                shutil.copyfileobj(fin, out)
+    log.info("Concatenated %d HMMs into %s", len(files_to_concat), output_library)
 
 def format_pattern_files_inplace(filename: str, prefix: str, suffix: str):
     """Rewrite a pattern/co-occurrence file with systematic prefixes.

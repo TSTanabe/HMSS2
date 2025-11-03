@@ -76,15 +76,18 @@ def ressource_preparation(config) -> None:
 
     # ---- HMM-Sets (optional eingeschränkt) ----
     if config.hmm_sets:
+        log.info(f"For the library collecting HMMs with token {config.hmm_sets}")
         allowed = (
             config.hmm_sets
             if isinstance(config.hmm_sets, list)
             else config.hmm_sets.split()
         )
+
         # baut aus DATA_ROOT/<grp>/*.hmm eine Library
-        queue.concatenate_selected_hmms(
-            str(DATA_DIR), allowed, "", ".hmm", config.library
+        queue.concatenate_hmms_from_selected_metabolism_packages(
+            str(DATA_DIR), allowed, config.library
         )
+
 
     # ---- Library, Cutoffs, Cooccurrence, Patterns, Metabolism ggf. zusammenführen ----
     if not os.path.isfile(config.library):
@@ -128,7 +131,7 @@ def ressource_preparation(config) -> None:
     _require_path_exists(config.cooccurrence_file, "Cooccurrence")
     _require_path_exists(config.exclusion_singletons, "Exclusion_singletons")
     _require_path_exists(config.paths.refseq, "Reference sequences")
-    _require_path_exists(config.metabolic_information, "Metabolism information")
+    #_require_path_exists(config.metabolic_information, "Metabolism information")
 
     # ---- Ableitungen & Artefakte in options hinterlegen ----
     config.cross_check_directory = cross_dir
