@@ -42,6 +42,9 @@ def csb_prediction(config: Config) -> dict[Any, set[Any]]:
     """
     logger.info("Detecting and sorting gene clusters for with csb finder algorithm")
 
+    if not os.path.isfile(config.gene_clusters_file):
+        logger.info(f"There were not gene clusters detected")
+        return {}
     # Sort the all gene clusters that were detected in the search
     config.gene_clusters_file = sort_by_first_column_and_filter_csb(
         config.gene_clusters_file,

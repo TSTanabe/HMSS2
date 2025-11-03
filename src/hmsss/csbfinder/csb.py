@@ -32,7 +32,8 @@ def csb_finder(config: Config) -> None:
     logger.info("Running collinear syntenic block pattern prediction")
     try:
         csb_instances = csb_cluster.csb_prediction(config)
-
+        if not csb_instances:
+            return
         csb_gene_cluster_dict = csb_cluster.csb_jaccard(
             config, computed_instances_dict=csb_instances, jaccard_distance=0.0
         )  # 0.0: nur Clusterdict bilden
