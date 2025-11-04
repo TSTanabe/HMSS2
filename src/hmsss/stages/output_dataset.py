@@ -74,7 +74,8 @@ def output_operator(config: Config) -> None:
 
     protein_dict, cluster_dict, taxon_dict = fetch_fasta_and_hit_data(config)
 
-    metabolic_dict = _load_domain_annotations(config.metabolic_information)
+    #metabolic_dict = _load_domain_annotations(config.metabolic_information)
+    metabolic_dict= {}
 
     requests = config.fetch_csbs + config.fetch_proteins # These are all domains from -fd and -fc
     print_reports.print_hit_reports(

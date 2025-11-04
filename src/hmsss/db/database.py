@@ -435,7 +435,7 @@ def parse_taxonomy_line(line: str, na: str = "") -> List[str]:
 
     prefix_to_rank = {
         "d__": "domain",
-        "k__": "domain",
+        "k__": "kingdom",
         "p__": "phylum",
         "c__": "class",
         "o__": "order",
