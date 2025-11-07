@@ -124,7 +124,10 @@ def fetch_fasta_and_hit_data(
     limiter_dict = dict()
     if config.dataset_limit_lineage:
         limiter_dict = db_fetch_taxonomy.fetch_limiter_data_keys_only(config)
-
+    if config.fetch_genomes:
+        # leere Taxonomie als Platzhalter reicht; Schlüssel sind entscheidend
+        for gid in config.fetch_genomes:
+            limiter_dict.setdefault(gid, {})
     # Fetch keywords defined by the routines from the fc command
     required_proteins = set()
     excluded_domains = config.fetch_not_csb_with_these_domains

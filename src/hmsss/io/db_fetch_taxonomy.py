@@ -96,11 +96,10 @@ def fetch_limiter_data(config: Config) -> Dict[str, Dict[str,str]]:
             deepest_value = norm.get(deepest_level, "NA") if deepest_level != "NA" else "NA"
             norm["DeepestLevel"] = deepest_level
             norm["DeepestValue"] = deepest_value
-            print("THIS IS NORM")
-            print(norm)
-            sys.exit()
+
+
             taxon_dict[gid] = norm
-            print(taxon_dict)
+
     finally:
         con.close()
 

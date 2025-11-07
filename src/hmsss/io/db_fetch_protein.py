@@ -66,12 +66,16 @@ def fetch_bulk_data(
 
         if fetch_from_gene_clusters:
             sql, args = generate_fetch_query_covering_domains(
-                set(syntenic_domains), use_limiter=(n>1), use_exclusions=True
+                set(syntenic_domains), use_limiter=(n>0), use_exclusions=True
             ) # Fetches all domains that are in a syntenic gene cluster, but not csb including the exclusion
         else:
             #sql, args = generate_fetch_query_domains_anywhere( set(syntenic_domains), use_limiter=(n>1))
-            sql, args = generate_fetch_query_domains_anywhere_excluding_clusters(use_exclusions=True)
-
+            sql, args = generate_fetch_query_domains_anywhere_excluding_clusters(
+                use_limiter=(n > 0),  # -fg wirklich anwenden
+                use_exclusions=True,
+                require_all_domains_in_same_genome=bool(syntenic_domains)
+                # nur fordern, wenn explizite Domains übergeben wurden
+            )
 
         cur.execute(sql, args)
 
@@ -131,20 +135,37 @@ def _batched(iterable: Iterable[str], n: int):
             return
         yield chunk
 
+
 def _prepare_required_domains_temp(cur: sqlite3.Cursor, required_domains: "Iterable[str]") -> int:
     """
-    Erstellt/leer die TEMP-Tabelle tmp_req_domains(domain TEXT PRIMARY KEY)
-    und befüllt sie in einem Rutsch (executemany).
+    Legt die TEMP-Tabelle tmp_req_domains(domain TEXT PRIMARY KEY) an und befüllt sie.
+
+    Verhalten:
+    - Wenn required_domains leer oder None → es werden ALLE Domains aus der DB geladen.
+    - Sonst → nur die übergebenen Domains (entdoppelt, ohne leere Strings).
+
     Returns: Anzahl eingefügter unterschiedlicher Domains.
     """
-    doms = {d for d in required_domains if d}  # entdoppeln + leere raus
-    if not doms:
-        raise ValueError("required_domains must be a non-empty iterable of strings.")
 
+    # TEMP-Tabelle anlegen & leeren
     cur.execute("CREATE TEMP TABLE IF NOT EXISTS tmp_req_domains (domain TEXT PRIMARY KEY);")
     cur.execute("DELETE FROM tmp_req_domains;")
-    cur.executemany("INSERT OR IGNORE INTO tmp_req_domains(domain) VALUES (?)", ((d,) for d in doms))
+
+    # Domains normalisieren
+    doms = {d for d in (required_domains or []) if d}
+
+    if not doms:
+        # → keine Vorgabe: alle Domains holen
+        cur.execute("INSERT OR IGNORE INTO tmp_req_domains(domain) SELECT DISTINCT domain FROM Domains;")
+        return cur.rowcount
+
+    # → gewählte Domains einfügen
+    cur.executemany(
+        "INSERT OR IGNORE INTO tmp_req_domains(domain) VALUES (?)",
+        ((d,) for d in doms)
+    )
     return cur.rowcount or len(doms)
+
 
 def _prepare_excluded_domains_temp(cur: sqlite3.Cursor, excluded_domains: "Iterable[str] | None") -> int:
     doms = {d for d in (excluded_domains or []) if d}
