@@ -65,16 +65,17 @@ def fetch_bulk_data(
         #print(excluded_domains)
 
         if fetch_from_gene_clusters:
+            logger.info(f"Searching for syntenic {syntenic_domains}")
             sql, args = generate_fetch_query_covering_domains(
                 set(syntenic_domains), use_limiter=(n>0), use_exclusions=True
             ) # Fetches all domains that are in a syntenic gene cluster, but not csb including the exclusion
         else:
-            #sql, args = generate_fetch_query_domains_anywhere( set(syntenic_domains), use_limiter=(n>1))
+            logger.info(f"Searching for co-occuring {syntenic_domains}")
             sql, args = generate_fetch_query_domains_anywhere_excluding_clusters(
                 use_limiter=(n > 0),  # -fg wirklich anwenden
                 use_exclusions=True,
                 require_all_domains_in_same_genome=bool(syntenic_domains)
-                # nur fordern, wenn explizite Domains übergeben wurden
+                # nur fordern, wenn explizite Domains übergeben wurden. Kann leer sein, wenn komplettes genom gefordert
             )
 
         cur.execute(sql, args)

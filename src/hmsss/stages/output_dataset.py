@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from itertools import product
 from datetime import datetime
 from typing import Tuple, Dict, Any
 
@@ -101,6 +102,19 @@ def output_statistics(config: Config) -> None:
 
     database.fetch_genome_statistic(config.database_directory)
 
+def expand_required_proteins(raw: list[str]) -> list[list[str]]:
+    """
+    Beispiel:
+      ['a', 'b|c'] → [['a', 'b'], ['a', 'c']]
+      ['a', 'b|c', 'd|e|f'] → alle 6 Kombinationen.
+    """
+    # Jede Position in der Eingabe wird zu einer Liste von Alternativen
+    option_groups = [[p.strip() for p in token.split(":") if p.strip()] for token in raw]
+    # Alle Kombinationen bilden
+    combinations = [list(combo) for combo in product(*option_groups)]
+    return combinations
+
+
 def fetch_fasta_and_hit_data(
     config: Config,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
@@ -119,6 +133,9 @@ def fetch_fasta_and_hit_data(
         >>> prot, clust, tax = fetch_fasta_and_hit_data(config)
     """
     fetch_from_gene_cluster = False
+    sum_protein_dict = {}
+    sum_cluster_dict = {}
+    sum_taxon_dict = {}
 
     # Limit the genomeIDs and fetch the lineage
     limiter_dict = dict()
@@ -129,27 +146,37 @@ def fetch_fasta_and_hit_data(
         for gid in config.fetch_genomes:
             limiter_dict.setdefault(gid, {})
     # Fetch keywords defined by the routines from the fc command
-    required_proteins = set()
     excluded_domains = config.fetch_not_csb_with_these_domains
 
     if config.fetch_csbs:
         logger.info(f"Collecting gene clusters containing {config.fetch_csbs}")
         fetch_from_gene_cluster = True
-        required_proteins = config.fetch_csbs
+        raw_required_proteins = config.fetch_csbs
 
     # Fetch the protein domains from anywhere in the genome from fd command
     elif config.fetch_proteins:
-        logger.info(f"Collecting proteins containing {config.fetch_proteins}")
+        logger.info(f"Collecting proteins from genomes containing {config.fetch_proteins}")
         fetch_from_gene_cluster = False
-        required_proteins = config.fetch_proteins
+        raw_required_proteins = config.fetch_proteins
+    else:
+        raw_required_proteins = []
 
-    # Collect the data defined by the keywords and the limiter dictionary
-    logger.info("Collecting hits from local database")
-    protein_dict, cluster_dict, taxon_dict = db_fetch_protein.fetch_bulk_data(
-        database=config.database_directory,
-        syntenic_domains=required_proteins,
-        limiter_dict=limiter_dict,
-        fetch_from_gene_clusters=fetch_from_gene_cluster,
-        excluded_domains=excluded_domains
-    )
-    return protein_dict, cluster_dict, taxon_dict
+    # Alle Kombinationen erzeugen
+    required_combinations = expand_required_proteins(raw_required_proteins)
+    logger.info(f"Collecting {len(required_combinations)} combinations of required proteins")
+
+    for required_proteins in required_combinations:
+        # Collect the data defined by the keywords and the limiter dictionary
+        logger.info("Collecting hits from local database")
+        protein_dict, cluster_dict, taxon_dict = db_fetch_protein.fetch_bulk_data(
+            database=config.database_directory,
+            syntenic_domains=required_proteins,
+            limiter_dict=limiter_dict,
+            fetch_from_gene_clusters=fetch_from_gene_cluster,
+            excluded_domains=excluded_domains
+        )
+        # Dictionaries zusammenführen (spätere Werte überschreiben ggf.)
+        sum_protein_dict.update(protein_dict)
+        sum_cluster_dict.update(cluster_dict)
+        sum_taxon_dict.update(taxon_dict)
+    return sum_protein_dict, sum_cluster_dict, sum_taxon_dict
