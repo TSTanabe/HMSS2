@@ -78,39 +78,15 @@ def fetch_bulk_data(
                 # nur fordern, wenn explizite Domains übergeben wurden. Kann leer sein, wenn komplettes genom gefordert
             )
 
-        cur.execute(sql, args)
-
-        for index, row in enumerate(cur):
-            protein_id = row["proteinID"]
-            genome_id = row["genomeID"]
-            cluster_id = row["clusterID"]
-
-            domain = row["domain"]
-            dom_start = row["domStart"]
-            dom_end = row["domEnd"]
-            score = row["score"]
-
-            # Create-or-extend Protein object
-            if protein_id in protein_dict:
-                protein_dict[protein_id].add_domain(domain, dom_start, dom_end, score)
-            else:
-                p = parse_reports.Protein(protein_id, domain, dom_start, dom_end, score)
-                p.genomeID = genome_id
-                p.clusterID = cluster_id
-                p.gene_contig = row["contig"]
-                p.gene_start = row["gene_start"]
-                p.gene_end = row["gene_end"]
-                p.gene_strand = row["gene_strand"]
-                p.protein_sequence = row["protein_sequence"]
-                p.selection_comment = row["comment"]
-                p.alternative_hit = row["alternative_hit"]
-                protein_dict[protein_id] = p
-                genome_id_set.add(genome_id)
-
-            # Track proteins that appear to be fused (>=2 domains)
-            if row["dom_count"] >= 2:
-                fusion_prot_ids.add(protein_id)
-
+        fusion_prot_ids: Set[str] = set()
+        build_proteins_from_query(
+            cur=cur,
+            sql=sql,
+            args=args,
+            protein_dict=protein_dict,
+            genome_id_set=genome_id_set,
+            fusion_prot_ids=fusion_prot_ids,
+        )
         logger.info(f"Fetched {len(protein_dict)} proteins.")
 
     # 2) Add all domains for fused proteins (batched)
@@ -127,15 +103,6 @@ def fetch_bulk_data(
 ################
 ####   Generate fetch query
 ################
-
-def _batched(iterable: Iterable[str], n: int):
-    it = iter(iterable)
-    while True:
-        chunk = list([x for _, x in zip(range(n), it)])
-        if not chunk:
-            return
-        yield chunk
-
 
 def _prepare_required_domains_temp(cur: sqlite3.Cursor, required_domains: "Iterable[str]") -> int:
     """
@@ -467,71 +434,52 @@ def generate_fetch_query_domains_anywhere_excluding_clusters(
 
 #
 
-def build_proteins_from_rows(
-    rows: Iterable[sqlite3.Row],
-    protein_dict: Dict[str, "parse_reports.Protein"],
+def build_proteins_from_query(
+    cur: sqlite3.Cursor,
+    sql: str,
+    args: tuple | list | None,
+    protein_dict: Dict[str, parse_reports.Protein],
     genome_id_set: Set[str],
-) -> Tuple[int, int, Set[str]]:
+    fusion_prot_ids: Set[str] | None = None,
+) -> None:
     """
-    Baut/erweitert Protein-Objekte aus SQL-Zeilen.
+    Execute SQL and build Protein objects directly from the cursor iterator.
 
-    Erwartete Spalten je Row:
-      proteinID, genomeID, clusterID, contig, gene_start, gene_end, gene_strand,
-      protein_sequence, comment, alternative_hit, domain, domStart, domEnd, score, dom_count
-
-    Args:
-        rows: Iterable von sqlite3.Row (z.B. direkter Cursor nach cur.execute(...))
-        protein_dict: Ziel-Dict proteinID -> Protein-Objekt (wird in-place erweitert)
-        genome_id_set: Set der gesehenen genomeIDs (wird in-place erweitert)
-
-    Returns:
-        (rows_processed, proteins_new, fusion_prot_ids)
+    This avoids cur.fetchall() and processes rows as they stream from SQLite.
     """
-    log = logger
-    rows_processed = 0
-    proteins_new = 0
-    fusion_prot_ids: Set[str] = set()
+    cur.execute(sql, args)
 
-    for rows_processed, row in enumerate(rows, start=1):
+    for row in cur:  # streamed, no full result loaded
         protein_id = row["proteinID"]
-        genome_id  = row["genomeID"]
+        genome_id = row["genomeID"]
         cluster_id = row["clusterID"]
 
-        domain     = row["domain"]
-        dom_start  = row["domStart"]
-        dom_end    = row["domEnd"]
-        score      = row["score"]
+        domain = row["domain"]
+        dom_start = row["domStart"]
+        dom_end = row["domEnd"]
+        score = row["score"]
 
-        p = protein_dict.get(protein_id)
-        if p is not None:
-            p.add_domain(domain, dom_start, dom_end, score)
+        existing = protein_dict.get(protein_id)
+        if existing is not None:
+            existing.add_domain(domain, dom_start, dom_end, score)
         else:
             p = parse_reports.Protein(protein_id, domain, dom_start, dom_end, score)
-            p.genomeID          = genome_id
-            p.clusterID         = cluster_id
-            p.gene_contig       = row["contig"]
-            p.gene_start        = row["gene_start"]
-            p.gene_end          = row["gene_end"]
-            p.gene_strand       = row["gene_strand"]
-            p.protein_sequence  = row["protein_sequence"]
+            p.genomeID = genome_id
+            p.clusterID = cluster_id
+            p.gene_contig = row["contig"]
+            p.gene_start = row["gene_start"]
+            p.gene_end = row["gene_end"]
+            p.gene_strand = row["gene_strand"]
+            p.protein_sequence = row["protein_sequence"]
             p.selection_comment = row["comment"]
-            p.alternative_hit   = row["alternative_hit"]
+            p.alternative_hit = row["alternative_hit"]
             protein_dict[protein_id] = p
             genome_id_set.add(genome_id)
-            proteins_new += 1
 
-        dom_count = row["dom_count"]
-        if dom_count is not None and int(dom_count) >= 2:
-            fusion_prot_ids.add(protein_id)
-
-        if log and (rows_processed % 10000 == 0):
-            log.info(f"Processed rows: {rows_processed} | Proteins: {len(protein_dict)}")
-
-    if log:
-        log.info(f"Fetched {len(protein_dict)} proteins (processed {rows_processed} rows).")
-        log.info(f"Found {len(fusion_prot_ids)} fused proteins.")
-
-    return rows_processed, proteins_new, fusion_prot_ids
+        if fusion_prot_ids is not None:
+            dom_count = row["dom_count"]
+            if dom_count is not None and int(dom_count) >= 2:
+                fusion_prot_ids.add(protein_id)
 
 
 # Fused protein fetch

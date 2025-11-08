@@ -8,6 +8,7 @@ from hmsss.core.logging import get_logger
 
 logger = get_logger(__name__)
 
+
 def _get_cluster_info(clusterID, cluster_dict):
     csb_val = ""
     if clusterID:
@@ -29,14 +30,15 @@ def _get_cluster_info(clusterID, cluster_dict):
 
     return out_cluster_id, csb_val
 
+
 def _output_genome_report(
-    output_filepath: str,
-    protein_dict: Dict[str, Any],
-    cluster_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Any],
-    genomeID: str = "",
-    writemode: str = "w",
-    taxon_divider: str = ".",
+        output_filepath: str,
+        protein_dict: Dict[str, Any],
+        cluster_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Any],
+        genomeID: str = "",
+        writemode: str = "w",
+        taxon_divider: str = ".",
 ) -> None:
     """
     Writes the main genome hit table (TSV).
@@ -132,11 +134,12 @@ def _output_genome_report(
             writer.write("\t".join(map(str, row)) + "\n")
     return
 
-def output_protein_taxonomy(
-    output_filepath: str,
-    protein_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
-    writemode: str = "w",
+
+def _output_protein_taxonomy(
+        output_filepath: str,
+        protein_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
+        writemode: str = "w",
 ) -> None:
     """
     Writes a 2-column TSV file:
@@ -194,8 +197,8 @@ def output_protein_taxonomy(
 
 
 def _output_taxonomy_summary(
-    output_file: str,
-    taxon_dict: Dict[str, Dict[str, str]],
+        output_file: str,
+        taxon_dict: Dict[str, Dict[str, str]],
 ) -> None:
     """
     Print a full taxonomy listing:
@@ -245,10 +248,11 @@ def _output_taxonomy_summary(
 
     return
 
+
 def _output_unique_taxonomy_table(
-    output_file: str,
-    protein_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
+        output_file: str,
+        protein_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
 ) -> str:
     """
     Write a non-redundant taxonomy table from a structured taxonomy dict.
@@ -302,13 +306,14 @@ def _output_unique_taxonomy_table(
 
     return unique_file
 
+
 def _output_strain_variability_by_species(
-    directory: str,
-    protein_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
-    required_domains: Set[str],
-    *,
-    unknown_label: str = "Unknown",
+        directory: str,
+        protein_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
+        required_domains: Set[str],
+        *,
+        unknown_label: str = "Unknown",
 ) -> str:
     import os
     from collections import defaultdict
@@ -382,13 +387,12 @@ def _output_strain_variability_by_species(
     return outpath
 
 
-
 def _output_cluster_overview_by_required(
-    output_filepath: str,
-    protein_dict: Dict[str, Any],
-    required_domains: Set[str],
-    *,
-    writemode: str = "w",
+        output_filepath: str,
+        protein_dict: Dict[str, Any],
+        required_domains: Set[str],
+        *,
+        writemode: str = "w",
 ) -> None:
     """
     Eine Zeile pro Gencluster, der mindestens eines der `required_domains` enthält.
@@ -474,13 +478,11 @@ def _output_cluster_overview_by_required(
             writer.write(f"{genome_id}\t{cluster_id}\t{types_str}\t{occurrences[types_str]}\n")
 
 
-
-
 def _output_distinct_fasta_reports(
-    directory: str,
-    protein_dict: Dict[str, Any],
-    cluster_dict: Dict[str, Any],
-    writemode: str = "w",
+        directory: str,
+        protein_dict: Dict[str, Any],
+        cluster_dict: Dict[str, Any],
+        writemode: str = "w",
 ) -> Set[str]:
     """Writes all protein sequences into distinct FASTA files by domain class and for fusion domains.
 
@@ -516,7 +518,7 @@ def _output_distinct_fasta_reports(
 
     # Output: per domain type
     for domain_name, proteinID_list in proteine_type.items():
-        filepath = os.path.join(directory, f"{domain_name}.faa") # it is important to just concatenate
+        filepath = os.path.join(directory, f"{domain_name}.faa")  # it is important to just concatenate
         files.add(filepath)
         with open(filepath, writemode) as writer:
             for proteinID in proteinID_list:
@@ -546,7 +548,7 @@ def _output_distinct_fasta_reports(
         sequence = str(protein.protein_sequence).replace("*", "")
         for domain in domain_dict.values():
             domain_name = domain.domain
-            domain_sequence = sequence[domain.start : domain.end]
+            domain_sequence = sequence[domain.start: domain.end]
             filepath = os.path.join(directory, f"multi_domain_{domain_name}.faa")
             files.add(filepath)
             with open(filepath, "a") as writer:
@@ -564,7 +566,6 @@ def _output_distinct_fasta_reports(
     _singletons(directory, files)  # Output singleton per genome and duplicates
     _clean_empty_files(directory)
     return files
-
 
 
 def _singletons(directory, filepaths):
@@ -622,6 +623,88 @@ def _singletons(directory, filepaths):
                 else:
                     double.write(fasta_entry)
 
+def _output_cluster_context_report(
+        output_filepath: str,
+        context_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
+) -> None:
+    """
+    Write an extended cluster context table.
+
+    One row per protein in the provided context_dict.
+
+    Columns:
+        genomeID, clusterID, proteinID,
+        contig, start, end, strand,
+        domains,
+        Superkingdom, Phylum, Class, Order, Family, Genus, Species
+    """
+    header_cols = [
+        "genomeID",
+        "clusterID",
+        "proteinID",
+        "contig",
+        "start",
+        "end",
+        "strand",
+        "domains",
+        "Superkingdom",
+        "Phylum",
+        "Class",
+        "Order",
+        "Family",
+        "Genus",
+        "Species",
+    ]
+
+    # sort proteins for readability
+    def sort_key(p):
+        return (
+            getattr(p, "genomeID", ""),
+            getattr(p, "clusterID", ""),
+            getattr(p, "gene_contig", ""),
+            getattr(p, "gene_start", 0),
+        )
+
+    proteins_sorted = sorted(context_dict.values(), key=sort_key)
+
+    with open(output_filepath, "w") as fh:
+        fh.write("\t".join(header_cols) + "\n")
+
+        for p in proteins_sorted:
+            gid = getattr(p, "genomeID", "")
+            rec = taxon_dict.get(gid, {}) or {}
+
+            # domains as comma-separated list
+            domains = ""
+            doms = getattr(p, "domains", None)
+            if doms:
+                # domains is typically a list of tuples: (domain, start, end, score)
+                try:
+                    domains = ",".join(str(d[0]) for d in doms if d)
+                except TypeError:
+                    print(doms)
+            row = [
+                str(gid),
+                str(getattr(p, "clusterID", "")),
+                str(getattr(p, "proteinID", "")),
+                str(getattr(p, "gene_contig", "")),
+                str(getattr(p, "gene_start", "")),
+                str(getattr(p, "gene_end", "")),
+                str(getattr(p, "gene_strand", "")),
+                domains,
+                str(rec.get("Superkingdom", "")),
+                str(rec.get("Phylum", "")),
+                str(rec.get("Class", "")),
+                str(rec.get("Order", "")),
+                str(rec.get("Family", "")),
+                str(rec.get("Genus", "")),
+                str(rec.get("Species", "")),
+            ]
+
+            fh.write("\t".join(row) + "\n")
+
+    #logger.info("Wrote cluster context report: %s", output_filepath)
 
 def _clean_empty_files(directory: str) -> None:
     """Removes all empty files in a given directory."""
@@ -632,12 +715,12 @@ def _clean_empty_files(directory: str) -> None:
             logger.debug(f"Removed empty file: {file_path}")
 
 
-def output_domain_function_report(
-    output_filepath: str,
-    protein_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
-    domain_annotations: Dict[str, Dict[str, str]],
-    writemode: str = "w",
+def _output_domain_function_report(
+        output_filepath: str,
+        protein_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
+        domain_annotations: Dict[str, Dict[str, str]],
+        writemode: str = "w",
 ) -> None:
     """
     Schreibt pro Protein/Domain Funktionszeilen:
@@ -737,12 +820,13 @@ def output_domain_function_report(
 
 
 def print_hit_reports(
-    directory: str,
-    protein_dict: Dict[str, Any],
-    cluster_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str,str]],
-    metabolic_dict: Dict[str, Any],
-    fetch_proteins: List[str],
+        directory: str,
+        protein_dict: Dict[str, Any],
+        cluster_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
+        metabolic_dict: Dict[str, Any],
+        context_dict: Dict[str, Any] | None,
+        fetch_proteins: List[str],
 ) -> None:
     """
     Main output routine: creates hit tables, taxonomy summaries, and protein FASTA files.
@@ -764,20 +848,19 @@ def print_hit_reports(
     unique_file = os.path.join(directory, "summary_unique_lineages.txt")
     taxonomy_summary = os.path.join(directory, "summary_hit_taxonomy_counts.txt")
     metabolic_annotation = os.path.join(directory, "summary_metabolic_annotations.txt")
-
     cluster_overview_report = os.path.join(directory, "summary_genecluster_overview_table.txt")
 
     # Output hit report
     _output_genome_report(hit_report, protein_dict, cluster_dict, taxon_dict)
 
     # Output gene taxonomy report
-    output_protein_taxonomy(gene_taxonomy, protein_dict, taxon_dict)
+    _output_protein_taxonomy(gene_taxonomy, protein_dict, taxon_dict)
 
     # Output unique taxonomy report
     _output_unique_taxonomy_table(unique_file, protein_dict, taxon_dict)
 
-    # Output domain annotation
-    output_domain_function_report(
+    # Output domain annotation for metabolism
+    _output_domain_function_report(
         output_filepath=metabolic_annotation,
         protein_dict=protein_dict,
         taxon_dict=taxon_dict,
@@ -790,14 +873,14 @@ def print_hit_reports(
     # Output strain variability summary
     _output_strain_variability_by_species(directory, protein_dict, taxon_dict, set(fetch_proteins))
 
-    # Output all clusters containing target proteins
-    _output_cluster_overview_by_required(cluster_overview_report, protein_dict, set(fetch_proteins))
+     # Output for each protein the genomic context
+    _output_cluster_overview_by_required(cluster_overview_report, context_dict, set(fetch_proteins))
+
+
 
 def print_fasta_files(directory, protein_dict, cluster_dict):
-
     logger.info("Writing fasta formated output files to disk")
     # Output fasta files for hits
     _output_distinct_fasta_reports(
         directory, protein_dict, cluster_dict
     )
-

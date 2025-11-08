@@ -607,7 +607,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=str,
         default=[],
         metavar="<list>",
-        help="Select only csb encoding the given proteins (whitespace separated)",
+        help="Select only csb encoding the given proteins (whitespace separated). The ':' without whitespace will be interpreted as logical OR",
     )
     operators.add_argument(
         "-fnd",
@@ -616,7 +616,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=str,
         default=[],
         metavar="<list>",
-        help="Select gene cluster without these proteins (whitespace separated)"
+        help="Select gene cluster without these proteins (whitespace separated). The ':' without whitespace will be interpreted as logical OR"
         if show_all
         else argparse.SUPPRESS,
     )

@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import os
-from itertools import product
 from datetime import datetime
-from typing import Tuple, Dict, Any
+from typing import Dict
 
 from hmsss.cli.config import Config
 from hmsss.core.logging import get_logger, print_header
-from hmsss.io import print_reports, db_fetch_taxonomy, output as output, db_fetch_protein
+from hmsss.io import print_reports, output as output
+from hmsss.io import db_fetch_data_general
+from hmsss.io import db_fetch_context
 from hmsss.db import database as database
+
 
 logger = get_logger(__name__)
 
@@ -73,14 +75,28 @@ def output_operator(config: Config) -> None:
 
     output.print_command_line_args(os.path.join(directory, "logged_fetch_command.txt"))
 
-    protein_dict, cluster_dict, taxon_dict = fetch_fasta_and_hit_data(config)
+    # The fetch function collects the protein_dict and taxon_dict, cluster_dict is empty
+    protein_dict, cluster_dict, taxon_dict = db_fetch_data_general.fetch_fasta_and_hit_data(config)
 
     #metabolic_dict = _load_domain_annotations(config.metabolic_information)
     metabolic_dict= {}
 
-    requests = config.fetch_csbs + config.fetch_proteins # These are all domains from -fd and -fc
+    cluster_context_dict = db_fetch_context.fetch_cluster_context_for_proteins(
+        database=config.database_directory,
+        base_protein_dict=protein_dict,
+        fetch_from_gene_clusters=bool(config.fetch_csbs),
+    )
+
+    # Combine CSB and protein requests, flattening any ':'-separated tokens
+    requests = [
+        token.strip()
+        for group in (config.fetch_csbs or []) + (config.fetch_proteins or [])
+        for token in group.split(":")
+        if token.strip()
+    ]
+
     print_reports.print_hit_reports(
-        directory, protein_dict, cluster_dict, taxon_dict, metabolic_dict, requests
+        directory, protein_dict, cluster_dict, taxon_dict, metabolic_dict, cluster_context_dict, requests
     )
 
     if config.print_fasta:
@@ -101,82 +117,3 @@ def output_statistics(config: Config) -> None:
 
 
     database.fetch_genome_statistic(config.database_directory)
-
-def expand_required_proteins(raw: list[str]) -> list[list[str]]:
-    """
-    Beispiel:
-      ['a', 'b|c'] → [['a', 'b'], ['a', 'c']]
-      ['a', 'b|c', 'd|e|f'] → alle 6 Kombinationen.
-    """
-    # Jede Position in der Eingabe wird zu einer Liste von Alternativen
-    option_groups = [[p.strip() for p in token.split(":") if p.strip()] for token in raw]
-    # Alle Kombinationen bilden
-    combinations = [list(combo) for combo in product(*option_groups)]
-    return combinations
-
-
-def fetch_fasta_and_hit_data(
-    config: Config,
-) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
-    """Main function is to acquire the data for the print routines
-
-    Args:
-        config (object): Configuration object with output and filter parameters.
-
-    Returns:
-        Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
-            - protein_dict: Maps proteinID to proteinObj.
-            - cluster_dict: Maps clusterID to clusterObj.
-            - limiter_dict: Maps genomeID to taxonomy string.
-
-    Example:
-        >>> prot, clust, tax = fetch_fasta_and_hit_data(config)
-    """
-    fetch_from_gene_cluster = False
-    sum_protein_dict = {}
-    sum_cluster_dict = {}
-    sum_taxon_dict = {}
-
-    # Limit the genomeIDs and fetch the lineage
-    limiter_dict = dict()
-    if config.dataset_limit_lineage:
-        limiter_dict = db_fetch_taxonomy.fetch_limiter_data_keys_only(config)
-    if config.fetch_genomes:
-        # leere Taxonomie als Platzhalter reicht; Schlüssel sind entscheidend
-        for gid in config.fetch_genomes:
-            limiter_dict.setdefault(gid, {})
-    # Fetch keywords defined by the routines from the fc command
-    excluded_domains = config.fetch_not_csb_with_these_domains
-
-    if config.fetch_csbs:
-        logger.info(f"Collecting gene clusters containing {config.fetch_csbs}")
-        fetch_from_gene_cluster = True
-        raw_required_proteins = config.fetch_csbs
-
-    # Fetch the protein domains from anywhere in the genome from fd command
-    elif config.fetch_proteins:
-        logger.info(f"Collecting proteins from genomes containing {config.fetch_proteins}")
-        fetch_from_gene_cluster = False
-        raw_required_proteins = config.fetch_proteins
-    else:
-        raw_required_proteins = []
-
-    # Alle Kombinationen erzeugen
-    required_combinations = expand_required_proteins(raw_required_proteins)
-    logger.info(f"Collecting {len(required_combinations)} combinations of required proteins")
-
-    for required_proteins in required_combinations:
-        # Collect the data defined by the keywords and the limiter dictionary
-        logger.info("Collecting hits from local database")
-        protein_dict, cluster_dict, taxon_dict = db_fetch_protein.fetch_bulk_data(
-            database=config.database_directory,
-            syntenic_domains=required_proteins,
-            limiter_dict=limiter_dict,
-            fetch_from_gene_clusters=fetch_from_gene_cluster,
-            excluded_domains=excluded_domains
-        )
-        # Dictionaries zusammenführen (spätere Werte überschreiben ggf.)
-        sum_protein_dict.update(protein_dict)
-        sum_cluster_dict.update(cluster_dict)
-        sum_taxon_dict.update(taxon_dict)
-    return sum_protein_dict, sum_cluster_dict, sum_taxon_dict
