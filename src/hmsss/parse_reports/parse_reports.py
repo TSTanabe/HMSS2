@@ -16,7 +16,6 @@ from hmsss.parse_reports.csb_finder import Cluster
 from hmsss.parse_reports.csb_trie_algorithm import TrieIndex
 from hmsss.core.logging import get_logger
 from hmsss.db import database
-from hmsss.io import output
 
 logger = get_logger(__name__)
 

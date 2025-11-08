@@ -15,7 +15,7 @@ from hmsss.stages import output_dataset # import output_operator, output_statist
 from hmsss.stages import process_seqfiles # import process_operator
 
 from hmsss.core import queue, project as project, ressource_prep
-from hmsss.io import output, print_command_args
+from hmsss.io import print_command_args
 
 from hmsss.core.logging import setup_logging, print_header, get_logger
 
