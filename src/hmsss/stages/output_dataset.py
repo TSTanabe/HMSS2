@@ -6,7 +6,7 @@ from typing import Dict
 
 from hmsss.cli.config import Config
 from hmsss.core.logging import get_logger, print_header
-from hmsss.io import print_reports, output as output
+from hmsss.io import print_reports, print_command_args
 from hmsss.io import db_fetch_data_general
 from hmsss.io import db_fetch_context
 from hmsss.db import database as database
@@ -73,7 +73,7 @@ def output_operator(config: Config) -> None:
     directory = os.path.join(config.result_files_directory, f"fetch_{ts}")
     os.makedirs(directory, exist_ok=True)
 
-    output.print_command_line_args(os.path.join(directory, "logged_fetch_command.txt"))
+    print_command_args.print_command_line_args(os.path.join(directory, "logged_fetch_command.txt"))
 
     # The fetch function collects the protein_dict and taxon_dict, cluster_dict is empty
     protein_dict, cluster_dict, taxon_dict = db_fetch_data_general.fetch_fasta_and_hit_data(config)

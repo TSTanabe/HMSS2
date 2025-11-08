@@ -307,7 +307,7 @@ class Domain:
 #########################################
 
 
-def parseGFFfile(filepath: str, protein_dict: Dict[str, Protein]) -> Dict[str, Protein]:
+def parse_gff_file(filepath: str, protein_dict: Dict[str, Protein]) -> Dict[str, Protein]:
     """
     3.9.22
     Adds GFF attributes to each Protein object in the dictionary.
@@ -437,8 +437,120 @@ def get_locustag(locustag_pattern: re.Pattern, string: str) -> str:
     match = locustag_pattern.search(string)
     return match.group(1) if match else ""
 
-
 ###############################################################################################################
+###############################################################################################################
+
+def output_genome_report(
+    output_filepath: str,
+    protein_dict: Dict[str, Any],
+    cluster_dict: Dict[str, Any],
+    taxon_dict: Dict[str, str],
+    genomeID: str = "",
+    writemode: str = "w",
+    taxon_divider: str = ".",
+) -> None:
+    """
+    Writes the main genome hit table (TSV).
+
+    Columns:
+      genomeID, proteinID, domains, dom_scores, dom_coords, contig, gene_start, gene_end,
+      gene_strand, locustag, clusterID, csb,
+      Superkingdom, Phylum, Class, Order, Family, Genus, Species
+    """
+    taxon_cols = [
+        "genomeID",
+        "Superkingdom",
+        "Phylum",
+        "Class",
+        "Order",
+        "Family",
+        "Genus",
+        "Species",
+    ]
+    header_cols = [
+        "genomeID",
+        "proteinID",
+        "domains",
+        "dom_scores",
+        "dom_coords",
+        "contig",
+        "gene_start",
+        "gene_end",
+        "gene_strand",
+        "locustag",
+        "selection_comment",
+        "alternative hit",
+        "clusterID",
+        *taxon_cols,
+    ]
+    header = "\t".join(header_cols)
+
+    # sortiert nach genomeID, contig, start
+    proteinID_list = sorted(
+        protein_dict,
+        key=lambda x: (
+            protein_dict[x].genomeID,
+            protein_dict[x].gene_contig,
+            protein_dict[x].gene_start,
+        ),
+    )
+
+    with open(output_filepath, writemode) as writer:
+        writer.write(header + "\n")
+
+        for proteinID in proteinID_list:
+            protein = protein_dict[proteinID]
+            # protein.get_protein_list() erwartete Reihenfolge laut Docstring:
+            # [proteinID, get_domains(), get_domain_scores(), get_domain_coordinates(),
+            #  gene_contig, gene_start, gene_end, gene_strand, gene_locustag]
+            pl = protein.get_protein_list()
+
+            # clusterID + csb (ohne keyword/completeness)
+            clusterID = protein.clusterID
+            csb_val = ""
+            if clusterID:
+                if clusterID in cluster_dict:
+                    # cluster.get_cluster_list(",") liefert i. d. R. [clusterID, keyword, completeness, csb]
+                    cl = cluster_dict[clusterID].get_cluster_list(",")
+                    # defensiv extrahieren:
+                    out_clusterID = cl[0] if len(cl) >= 1 else clusterID
+                    csb_val = (
+                        cl[3] if len(cl) >= 4 else (cl[-1] if len(cl) >= 2 else "")
+                    )
+                else:
+                    out_clusterID = clusterID
+            else:
+                out_clusterID = ""
+
+            # Taxonomie in 7 Spalten
+            taxon_dict = {} if taxon_dict is None else taxon_dict
+
+            gid = protein.genomeID
+            taxon_levels = [""] * 8
+            if gid in taxon_dict and taxon_dict[gid]:
+                parts = [p.strip() for p in str(taxon_dict[gid]).split(taxon_divider)]
+                for i in range(min(8, len(parts))):
+                    taxon_levels[i] = parts[i]
+            row = [
+                protein.genomeID,  # genomeID
+                pl[0],  # proteinID
+                pl[1],  # domains
+                pl[2],  # dom_scores
+                pl[3],  # dom_coords
+                pl[4],  # contig
+                pl[5],  # gene_start
+                pl[6],  # gene_end
+                pl[7],  # gene_strand
+                pl[8],  # locustag
+                protein.get_selection_comment_csv(),
+                protein.alternative_hit,
+                out_clusterID,
+                csb_val,
+                *taxon_levels,
+            ]
+            writer.write("\t".join(map(str, row)) + "\n")
+    return
+
 ###############################################################################################################
 ###############################################################################################################
 
@@ -491,7 +603,7 @@ def process_writer(queue, options):
                     options.fasta_initial_hit_directory,
                     str(genomeID) + ".hit_table_txt",
                 )
-                output.output_genome_report(filepath, protein_dict, cluster_dict, {})
+                output_genome_report(filepath, protein_dict, cluster_dict, {})
 
         # If batch size is reached, process the batch
         if batch_counter >= batch_size:
@@ -512,7 +624,7 @@ def process_writer(queue, options):
                     str(genomeID) + ".hit_table_txt",
                 )
 
-                output.output_genome_report(filepath, protein_dict, cluster_dict, {})
+                output_genome_report(filepath, protein_dict, cluster_dict, {})
     logger.info(f"Processed {batch_counter} genomes")
     return
 
@@ -722,14 +834,14 @@ def process_genome(
             intermediate_protein_dict = parse_bulk_HMMreport_genomize(
                 genome_id, intermediate_hmmreport
             )
-            parseGFFfile(gff_file, intermediate_protein_dict)
+            parse_gff_file(gff_file, intermediate_protein_dict)
 
         with tick(f"read concatenated intermediate hmmreport {genome_id}"):
             # Primary protein hits
             trusted_protein_dict = parse_bulk_HMMreport_genomize(
                 genome_id, trusted_hmmreport_path
             )
-            parseGFFfile(gff_file, trusted_protein_dict)
+            parse_gff_file(gff_file, trusted_protein_dict)
 
         # Combine protein dictionaries
         combined_protein_dict = {**intermediate_protein_dict, **trusted_protein_dict}

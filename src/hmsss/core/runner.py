@@ -15,7 +15,7 @@ from hmsss.stages import output_dataset # import output_operator, output_statist
 from hmsss.stages import process_seqfiles # import process_operator
 
 from hmsss.core import queue, project as project, ressource_prep
-from hmsss.io import output
+from hmsss.io import output, print_command_args
 
 from hmsss.core.logging import setup_logging, print_header, get_logger
 
@@ -135,10 +135,10 @@ def run_pipeline(config) -> None:
         process_seqfiles.process_operator(config)
 
     if getattr(config, "stat_keywords", False):
-        output.print_file_content(config.patterns_file)
+        print_command_args.print_file_content(config.patterns_file)
 
     if getattr(config, "stat_csb", False):
-        output.print_file_content(config.csb_output_file)
+        print_command_args.print_file_content(config.csb_output_file)
 
 
 __all__ = ["run_pipeline"]
