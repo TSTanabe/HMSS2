@@ -15,7 +15,6 @@ Funktionen in diesem Modul:
 
 from itertools import product
 from typing import Any, Dict, List, Tuple
-import re
 
 from hmsss.cli.config import Config
 from hmsss.core.logging import get_logger
@@ -136,23 +135,21 @@ def fetch_fasta_and_hit_data(
         raw_required = config.fetch_proteins
         logger.info(f"Collecting proteins containing: {raw_required}")
 
-    # Falls nichts angefordert ist → leere Dicts zurückgeben
+    # Keine Angabe von domains, daher alles für die gewünschten Genome
     if not raw_required:
-        logger.warning(
-            "No fetch_csbs or fetch_proteins specified for fetch_fasta_and_hit_data; "
-            "returning empty dictionaries."
+        logger.info(f"Fetching all hits for genomes {limiter_dict.keys()}")
+        protein_dict, cluster_dict, taxon_dict = db_fetch_protein.fetch_bulk_data(
+            database=config.database_directory,
+            syntenic_domains=raw_required,
+            limiter_dict=limiter_dict,
+            fetch_from_gene_clusters=False,
+            excluded_domains=excluded_domains,
         )
-        return {}, {}, {}
+        return protein_dict, cluster_dict, taxon_dict
+
 
     # Alle Kombinationen der OR-Gruppen bauen
     required_combinations = expand_required_proteins(raw_required)
-    if not required_combinations:
-        logger.warning(
-            "No valid protein/CSB combinations could be derived from input tokens; "
-            "returning empty dictionaries."
-        )
-        return {}, {}, {}
-
     if len(required_combinations) == 1:
         logger.info(
             f"Fetching data for 1 combination of required domains: "
