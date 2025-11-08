@@ -6,7 +6,6 @@ import os
 from hmsss.db.database import index_database
 from hmsss.parse_reports import parse_reports
 
-from hmsss.stages import ressource_prep #ressource_preparation
 from hmsss.fasta_preparation import fasta_preparation
 from hmsss.stages import initial_search # import initial_search
 from hmsss.cross_check import cross_check
@@ -15,7 +14,7 @@ from hmsss.stages import taxonomy # import collect_taxonomy_information
 from hmsss.stages import output_dataset # import output_operator, output_statistics
 from hmsss.stages import process_seqfiles # import process_operator
 
-from hmsss.core import queue, project as project
+from hmsss.core import queue, project as project, ressource_prep
 from hmsss.io import output
 
 from hmsss.core.logging import setup_logging, print_header, get_logger

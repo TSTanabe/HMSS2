@@ -73,6 +73,7 @@ def ressource_preparation(config) -> None:
     # Ergebnis-Unterordner
     reports_dir = _ensure_dir(Path(config.result_files_directory) / "reports")
     cross_dir = _ensure_dir(Path(config.result_files_directory) / "cross_check")
+    config.paths.refseq = _ensure_dir(config.paths.refseq)
 
     # ---- HMM-Sets (optional eingeschränkt) ----
     if config.hmm_sets:
