@@ -166,6 +166,9 @@ class CliCsb:
 class CliFlow:
     """Global flow modifiers (e.g., recompute taxonomy)."""
     redo_taxonomy: bool = False
+    use_synteny_completion: bool = True
+    use_remove_unassigned_intermediates: bool = True
+    use_remove_exclusion_singletons: bool = True
 
 
 @dataclass(slots=True)
@@ -516,6 +519,12 @@ class Config:
 
     # Metabolic information and statistics
     metabolic_information = prop("cli_info.metabolic_information")
+
+    # Flow control for parsing and redo taxonomy
+    redo_taxonomy = prop("cli_flow.redo_taxonomy")
+    use_synteny_completion = prop("cli_flow.use_synteny_completion")
+    use_remove_unassigned_intermediates = prop("cli_flow.use_remove_unassigned_intermediates")
+    use_remove_unassigned_singletons = prop("cli_flow.use_remove_exclusion_singletons")
 
     def validate(self) -> None:
         """Run basic consistency checks and ensure required directories exist.

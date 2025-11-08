@@ -12,6 +12,7 @@ from time import perf_counter
 
 from hmsss.cross_check import search_cross_reference, report_db
 from hmsss.parse_reports import pattern_completion_synteny, pattern_completion_pathway, csb_finder, csb_trie_algorithm
+from hmsss.parse_reports.csb_finder import Cluster
 from hmsss.parse_reports.csb_trie_algorithm import TrieIndex
 from hmsss.core.logging import get_logger
 from hmsss.db import database
@@ -40,12 +41,12 @@ class Protein:
     All coordinates, scores, and HMM names are accessible as dash-separated strings.
 
     Args:
-        proteinID (str): Unique identifier.
-        HMM (str): Domain name.
+        protein_id (str): Unique identifier.
+        hmm (str): Domain name.
         start (int): Start coordinate.
         end (int): End coordinate.
         score (float): Domain bitscore.
-        genomeID (str): Genome identifier (optional).
+        genome_id (str): Genome identifier (optional).
         ident (int): Percent identity (default: 25).
         bsr (float): Blast score ratio (default: 1.0).
 
@@ -56,17 +57,17 @@ class Protein:
 
     def __init__(
         self,
-        proteinID: str,
-        HMM: str,
+        protein_id: str,
+        hmm: str,
         start: int = 0,
         end: int = 0,
         score: float = 1,
-        genomeID: str = "",
+        genome_id: str = "",
         ident: int = 25,
         bsr: float = 1.0,
     ):
-        self.proteinID: str = proteinID
-        self.genomeID: str = genomeID
+        self.proteinID: str = protein_id
+        self.genomeID: str = genome_id
         self.protein_sequence: str = ""
         self.gene_contig: str = ""
         self.gene_start: int = 0
@@ -79,7 +80,7 @@ class Protein:
         self.deleted_domains: Dict[
             str, Domain
         ] = {}  # Domain objects that have been removed
-        self.add_domain(HMM, start, end, score, ident, bsr)
+        self.add_domain(hmm, start, end, score, ident, bsr)
         self.selection_comment: Set[str] = set()  # Trusted cutoff Flag or cooccurrence
         self.alternative_hit: str = ""
 
@@ -130,16 +131,9 @@ class Protein:
 
     def get_protein_list(self):
         # 3.9.22 representation of the whole protein in one line
-        listing = []
-        listing.append(self.proteinID)
-        listing.append(self.get_domains())
-        listing.append(str(self.get_domain_scores()))
-        listing.append(str(self.get_domain_coordinates()))
-        listing.append(self.gene_contig)
-        listing.append(str(self.gene_start))
-        listing.append(str(self.gene_end))
-        listing.append(self.gene_strand)
-        listing.append(self.gene_locustag)
+        listing = [self.proteinID, self.get_domains(), str(self.get_domain_scores()),
+                   str(self.get_domain_coordinates()), self.gene_contig, str(self.gene_start), str(self.gene_end),
+                   self.gene_strand, self.gene_locustag]
         # d = self.get_protein_sequence()
         # string = f"{a} {b} {c} {d} {e} {f}"
         return listing
@@ -162,11 +156,12 @@ class Protein:
 
     ##### Setter #####
 
-    def check_domain_overlap(self, new_start, new_end, current_start, current_end):
+    @staticmethod
+    def check_domain_overlap(new_start, new_end, current_start, current_end):
         # 2.9.22
 
-        if (current_start <= new_start and new_start <= current_end) or (
-            current_start <= new_end and new_end <= current_end
+        if (current_start <= new_start <= current_end) or (
+                current_start <= new_end <= current_end
         ):
             # start oder endpunkt innerhalb er grenzen
             return 1
@@ -197,7 +192,7 @@ class Protein:
 
     def add_domain(
         self,
-        HMM: str,
+        hmm: str,
         start: int,
         end: int,
         score: float,
@@ -246,7 +241,7 @@ class Protein:
                 self.deleted_domains[key] = dom
 
         # neue Domäne eintragen (Schlüssel = start)
-        self.domains[start] = Domain(HMM, start, end, score, ident, bsr)
+        self.domains[start] = Domain(hmm, start, end, score, ident, bsr)
 
         return 1
 
@@ -325,7 +320,7 @@ def parseGFFfile(filepath: str, protein_dict: Dict[str, Protein]) -> Dict[str, P
         dict: Updated protein_dict.
     """
     locustag_pattern = re.compile(r"locus_tag=(\S*?)(?:[;\s]|$)")
-    geneID_pattern = re.compile(r"ID=(cds-)?(\S+?)(?:[;\s]|$)")
+    gene_id_pattern = re.compile(r"ID=(cds-)?(\S+?)(?:[;\s]|$)")
 
     grep_pattern = "|".join(protein_dict.keys())
     try:
@@ -344,7 +339,7 @@ def parseGFFfile(filepath: str, protein_dict: Dict[str, Protein]) -> Dict[str, P
             if not line:
                 continue
             gff = line.split("\t")
-            match = geneID_pattern.search(gff[-1])
+            match = gene_id_pattern.search(gff[-1])
             if not match:
                 continue
             match = match.group(2)
@@ -356,7 +351,7 @@ def parseGFFfile(filepath: str, protein_dict: Dict[str, Protein]) -> Dict[str, P
                 protein.gene_start = int(gff[3])
                 protein.gene_end = int(gff[4])
                 protein.gene_strand = str(gff[6])
-                locustag = getLocustag(locustag_pattern, line)
+                locustag = get_locustag(locustag_pattern, line)
                 protein.gene_locustag = str(locustag)
     except Exception as e:
         logger.warning(f"Error occurred while parsing GFF: {str(e)}")
@@ -397,7 +392,7 @@ def get_protein_sequence(filepath, protein_dict):
         header = None
         save_sequence = False
 
-        for line in reader:
+        for line in reader: # type: str
             line = line.strip()
             if line.startswith(">"):
                 if header and save_sequence and sequence:
@@ -428,7 +423,7 @@ def get_protein_sequence(filepath, protein_dict):
     return protein_dict
 
 
-def getLocustag(locustag_pattern: re.Pattern, string: str) -> str:
+def get_locustag(locustag_pattern: re.Pattern, string: str) -> str:
     """
     Extracts locus_tag from a string using a regex pattern.
 
@@ -567,7 +562,10 @@ def main_parse_summary_hmmreport(config):
                     cooccurrence_pattern,
                     exclusion_singletons,
                     threshold_dict,
-                    index_trie
+                    index_trie,
+                    config.use_synteny_completion,
+                    config.use_remove_unassigned_intermediates,
+                    config.use_remove_unassigned_singletons,
                 )
                 for batch in genomeID_batches
             ]
@@ -629,6 +627,9 @@ def process_batch(
     exclusion_singletons,
     threshold_dict,
     index_trie,
+    use_synteny_completion: bool,
+    use_remove_unassigned_intermediates: bool,
+    use_remove_unassigned_singletons: bool,
 ):
     """
     Runs process_genome for each genome in the batch with all necessary arguments.
@@ -649,6 +650,9 @@ def process_batch(
                 exclusion_singletons=exclusion_singletons,
                 threshold_dict=threshold_dict,
                 index_trie=index_trie,
+                use_synteny_completion=use_synteny_completion,
+                use_remove_unassigned_intermediates=use_remove_unassigned_intermediates,
+                use_remove_unassigned_singletons=use_remove_unassigned_singletons,
             )
         except Exception as e:
             logger.warning(f"Failed to process genome '{genome_id}' — {str(e)}")
@@ -669,6 +673,9 @@ def process_genome(
     exclusion_singletons: set[str],
     threshold_dict: dict[str, float],
     index_trie: TrieIndex,
+    use_synteny_completion: bool,
+    use_remove_unassigned_intermediates: bool,
+    use_remove_unassigned_singletons: bool,
 ) -> None:
     """
     Main pipeline to process one genome:
@@ -680,6 +687,11 @@ def process_genome(
     - Returns (combined_protein_dict, cluster_dict) via queue
 
     Args:
+        trusted_hmmreport_path:
+        intermediate_hmmreport:
+        use_synteny_completion:
+        use_remove_unassigned_intermediates (bool):
+        use_remove_unassigned_singletons:
         index_trie: trie for the csb naming routine, for faster lookup
         cooccurrence_pattern (Dict[str, tuple[set[str],int]]):
         data_queue: Multiprocessing queue for result transport.
@@ -740,9 +752,10 @@ def process_genome(
             )
 
         # Enhance cluster completeness if needed with synteny correction
-        # alters the combined_protein_dict TODO optional
-        with tick(f"Increase syntenic block completeness {genome_id}"):
-            pattern_completion_synteny.enhance_syntenic_block_completeness(cluster_dict, combined_protein_dict,
+        # Optional: alters the combined_protein_dict
+        if use_synteny_completion:
+            with tick(f"Increase syntenic block completeness {genome_id}"):
+                pattern_completion_synteny.enhance_syntenic_block_completeness(cluster_dict, combined_protein_dict,
                                                                            pattern_dict)
 
         with tick(f"Enhance pathway completeness {genome_id}"):
@@ -763,21 +776,22 @@ def process_genome(
                 singletons_with_complete_pathway_set
             )
 
-        with tick(f"Remove unassigned intermediate hits {genome_id}"):
-            # Remove unassigned intermediate proteins, but keep trusted ones TODO optional
-            combined_protein_dict = remove_unassigned_intermediate_proteins(
-                combined_protein_dict, trusted_protein_ids, cluster_dict
-            )
-
-        with tick(f"Remove unassigned singletons {genome_id}"):
-            # Remove genes that should not occur as singletons
-            # alters the combined_protein_dict but ignores singletons that complete pathway TODO optional
-            remove_exclusion_singletons(
-                combined_protein_dict,
-                cluster_dict,
-                exclusion_singletons,
-                singletons_with_complete_pathway_set,
-            )
+        if use_remove_unassigned_intermediates:
+            with tick(f"Remove unassigned intermediate hits {genome_id}"):
+                # Remove unassigned intermediate proteins, but keep trusted ones
+                combined_protein_dict = remove_unassigned_intermediate_proteins(
+                    combined_protein_dict, trusted_protein_ids, cluster_dict
+                )
+        if use_remove_unassigned_singletons:
+            with tick(f"Remove unassigned singletons {genome_id}"):
+                # Remove genes that should not occur as singletons
+                # alters the combined_protein_dict but ignores singletons that complete pathway
+                remove_exclusion_singletons(
+                    combined_protein_dict,
+                    cluster_dict,
+                    exclusion_singletons,
+                    singletons_with_complete_pathway_set,
+                )
 
         with tick(f"Attach protein sequences {genome_id}"):
             # Attach protein sequences

@@ -494,6 +494,24 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         action="store_true",
         help="Redo the taxonomy assignment*" if show_all else argparse.SUPPRESS,
     )
+    flow.add_argument(
+        "-no_synteny_completion",
+        dest="use_synteny_completion",
+        action="store_false",
+        help="Use syntenic block completeness enhancement",
+    )
+    flow.add_argument(
+        "-no_remove_intermediate",
+        dest="use_remove_unassigned_intermediates",
+        action="store_false",
+        help="Remove intermediate hits without genetic context",
+    )
+    flow.add_argument(
+        "-no_remove_exclusion_singletons",
+        dest="use_remove_exclusion_singletons",
+        action="store_false",
+        help="Remove genes that not occur as singletons",
+    )
 
     # Limiter (dataset conditions)
     limiter = parser.add_argument_group("Limit output to genomes with conditions *")
@@ -865,7 +883,18 @@ def build_config_from_namespace(ns) -> Config:
         jaccard=float(getattr(ns, "jaccard", 0.0)),
     )
 
-    cli_flow = CliFlow(redo_taxonomy=bool(getattr(ns, "redo_taxonomy", False)))
+    cli_flow = CliFlow(
+        redo_taxonomy=bool(getattr(ns, "redo_taxonomy", False)),
+        use_synteny_completion=bool(
+            getattr(ns, "use_synteny_completion", True)
+        ),
+        use_remove_unassigned_intermediates=bool(
+            getattr(ns, "use_remove_unassigned_intermediates", True)
+        ),
+        use_remove_exclusion_singletons=bool(
+            getattr(ns, "use_remove_exclusion_singletons", True)
+        ),
+    )
 
     cli_limiter = CliLimiter(
         dataset_limit_lineage=getattr(ns, "dataset_limit_lineage", None),
