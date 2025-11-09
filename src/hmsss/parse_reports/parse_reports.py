@@ -32,8 +32,14 @@ def tick(label: str):
 
 class Protein:
     """
-    The class Protein organizes protein domains. When constructed the firt domain has to be added and assigned to a proteinID. The proteinID and the list of domains are accessible from outside. Also the coordinates, scores and HMM names are accessible as strings separated by "-". When a domain is added after the construction it is checked for overlapping sequence coordinates. If coordinates overlap in any way the novel domain has to have a higher score than all overlapped domains. If new domain has a lower score than any previously added domain new domain is not added.
-    This follows the assumption that the HMM with highest domain is normally assigned to the protein. Here the additional information of other domains is added if it does not interfere with this assumption
+    The class Protein organizes protein domains. When constructed the firt domain has to be added and assigned
+    to a proteinID. The proteinID and the list of domains are accessible from outside. Also the coordinates, scores
+    and HMM names are accessible as strings separated by "-". When a domain is added after the construction it is
+    checked for overlapping sequence coordinates. If coordinates overlap in any way the novel domain has to have
+    a higher score than all overlapped domains. If new domain has a lower score than any previously added domain
+    new domain is not added.
+    This follows the assumption that the HMM with highest domain is normally assigned to the protein.
+    Here the additional information of other domains is added if it does not interfere with this assumption
 
     Organizes protein domains and related attributes for a protein.
     New domains are only added if they do not overlap with higher-scoring existing domains.
@@ -82,6 +88,7 @@ class Protein:
         self.add_domain(hmm, start, end, score, ident, bsr)
         self.selection_comment: Set[str] = set()  # Trusted cutoff Flag or cooccurrence
         self.alternative_hit: str = ""
+        self.valid_hit = True
 
     ##### Getter ####
 
@@ -889,7 +896,7 @@ def process_genome(
 
         if use_remove_unassigned_intermediates:
             with tick(f"Remove unassigned intermediate hits {genome_id}"):
-                # Remove unassigned intermediate proteins, but keep trusted ones
+                # Remove unassigned intermediate proteins, but keep trusted ones and hits in named gene clusters
                 combined_protein_dict = remove_unassigned_intermediate_proteins(
                     combined_protein_dict, trusted_protein_ids, cluster_dict
                 )
@@ -958,7 +965,7 @@ def remove_exclusion_singletons(
 
 
 def remove_unassigned_intermediate_proteins(
-    combined_protein_dict: Dict[str, Any], proteinIDs: set, cluster_dict: Dict[str, Any]
+    combined_protein_dict: Dict[str, Any], trusted_protein_ids: set, cluster_dict: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
     Remove proteins from combined_protein_dict that are not present in protein_dict
@@ -980,13 +987,23 @@ def remove_unassigned_intermediate_proteins(
 
     """
 
-    # Update the trusted proteinIDs with the proteinIDs that are covered by recognized patterns
+    # Update the trusted proteinIDs with the proteinIDs
+    # that are covered by recognized patterns
     for cluster in cluster_dict.values():
-        proteinIDs.update(getattr(cluster, "covered_protein_ids", set()))
+        trusted_protein_ids.update(getattr(cluster, "covered_protein_ids", set()))
+
+    # New 091125 mark up the intermediate hits instead of remove
+    for pid, protein in combined_protein_dict.items():
+        if pid in trusted_protein_ids:
+            protein.valid_hit = True
+        else: # was not in trusted hits nor in a recognized gene cluster
+            protein.valid_hit = False
+
+    return combined_protein_dict
 
     # Remove any protein in combined_protein_dict that is not in proteinIDs
     for protein_id in list(combined_protein_dict.keys()):
-        if protein_id not in proteinIDs:
+        if protein_id not in trusted_protein_ids:
             del combined_protein_dict[protein_id]
 
     # Remove unassigned genes and update clusters accordingly

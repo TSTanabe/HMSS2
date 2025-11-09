@@ -74,6 +74,7 @@ def create_database(database: str) -> None:
         comment     varchar(12)                     DEFAULT NULL,
         alternative_hit     varchar(64)                     DEFAULT NULL,
         dom_count   smallint(6)                     DEFAULT NULL,
+        valid_hit       tinyint(1)                  DEFAULT 0,
         sequence    varchar(4096)                   DEFAULT NULL,
         UNIQUE(proteinID,genomeID),
         CONSTRAINT fk_genomeID FOREIGN KEY (genomeID) REFERENCES Genomes(genomeID) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -222,6 +223,7 @@ def insert_database_proteins(database: str, protein_dict: Dict[str, Any]) -> Non
                     protein.alternative_hit,
                     len(domains),
                     protein.get_sequence(),
+                    protein.valid_hit,
                 )
                 protein_records.append(protein_record)
 
@@ -241,8 +243,8 @@ def insert_database_proteins(database: str, protein_dict: Dict[str, Any]) -> Non
             # Batch insert for proteins
             cur.executemany(
                 """INSERT OR IGNORE INTO Proteins
-                (proteinID, genomeID, locustag, contig, start, end, strand, comment, alternative_hit, dom_count, sequence)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (proteinID, genomeID, locustag, contig, start, end, strand, comment, alternative_hit, dom_count, valid_hit, sequence)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 protein_records,
             )
 
