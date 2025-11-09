@@ -996,8 +996,10 @@ def remove_unassigned_intermediate_proteins(
     for pid, protein in combined_protein_dict.items():
         if pid in trusted_protein_ids:
             protein.valid_hit = True
+            protein.add_selection_comment("Sc")
         else: # was not in trusted hits nor in a recognized gene cluster
             protein.valid_hit = False
+            protein.add_selection_comment("Nc")
 
     return combined_protein_dict
 
