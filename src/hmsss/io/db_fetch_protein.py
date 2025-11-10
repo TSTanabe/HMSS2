@@ -17,6 +17,7 @@ def fetch_bulk_data(
     limiter_dict: Optional[Dict[str, str]] = None,
     fetch_from_gene_clusters: bool = False,
     excluded_domains: Optional[List[str]]=None,
+    use_valid_hits: bool = True,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, dict[str, str]]]:
     """
     Fetch bulk data from the database based on specified conditions, using batching
@@ -63,19 +64,25 @@ def fetch_bulk_data(
 
         #print(syntenic_domains)
         #print(excluded_domains)
-
+        # Delete row if sqliteDB downwards compatibility is not an issue anymore
+        valid_hit_column_available = has_column(cur, "Proteins", "valid_hit")
         if fetch_from_gene_clusters:
             logger.info(f"Searching for syntenic {syntenic_domains}")
             sql, args = generate_fetch_query_covering_domains(
-                set(syntenic_domains), use_limiter=(n>0), use_exclusions=True
+                set(syntenic_domains),
+                use_limiter=(n>0),
+                use_exclusions=True,
+                use_valid_hits=use_valid_hits, # Default True
+                valid_hit_column_available = valid_hit_column_available
             ) # Fetches all domains that are in a syntenic gene cluster, but not csb including the exclusion
         else:
             logger.info(f"Searching for co-occuring {syntenic_domains}")
             sql, args = generate_fetch_query_domains_anywhere_excluding_clusters(
                 use_limiter=(n > 0),  # -fg wirklich anwenden
                 use_exclusions=True,
-                require_all_domains_in_same_genome=bool(syntenic_domains)
-                # nur fordern, wenn explizite Domains übergeben wurden. Kann leer sein, wenn komplettes genom gefordert
+                require_all_domains_in_same_genome=bool(syntenic_domains), # nur fordern, wenn explizite Domains übergeben wurden. Kann leer sein, wenn komplettes genom gefordert
+                use_valid_hits=use_valid_hits, # Default True
+                valid_hit_column_available = valid_hit_column_available
             )
 
         fusion_prot_ids: Set[str] = set()
@@ -170,8 +177,26 @@ def _prepare_limiter_genomes_temp(
     )
     return cur.rowcount or len(gids)
 
+def has_column(cur: sqlite3.Cursor, table_name: str, column_name: str) -> bool:
+    """
+    Prüft, ob eine bestimmte Spalte in einer Tabelle existiert.
+    Nutzt den bestehenden Cursor/Connection-Kontext.
+    """
+    try:
+        cur.execute(f"PRAGMA table_info({table_name});")
+        return any(row[1] == column_name for row in cur.fetchall())
+    except sqlite3.Error as e:
+        logger.warning(
+            f"Fehler bei Prüfung der Spalte '{column_name}' in Tabelle '{table_name}': {e}"
+        )
+        return False
+
 def generate_fetch_query_covering_domains(
-    required_domains: Iterable[str], use_limiter: bool = True, use_exclusions: bool=True,
+    required_domains: Iterable[str],
+    use_limiter: bool = True,
+    use_exclusions: bool=True,
+    use_valid_hits: bool = True,
+    valid_hit_column_available: bool = False,
 ) -> Tuple[str, List[Any]]:
     """
     Liefert ein SELECT, das ALLE Proteine (mit Domains) aus genau den Clustern zurückgibt,
@@ -243,19 +268,26 @@ def generate_fetch_query_covering_domains(
     JOIN clusters_covering c ON c.clusterID = p.clusterID
     {left_join_excl}
     JOIN Domains d           ON d.proteinID = p.proteinID
-    {where_not_excluded}
+    {where_clause}
     """
 
     join_txt = "JOIN lim lg ON lg.genomeID = p.genomeID" if use_limiter else ""
     left_join_excl = "LEFT JOIN clusters_excluded x ON x.clusterID = p.clusterID" if use_exclusions else ""
-    where_not_excluded = "WHERE x.clusterID IS NULL" if use_exclusions else ""
+
+    # flexible WHERE-Klausel
+    where_parts = []
+    if use_exclusions:
+        where_parts.append("x.clusterID IS NULL")
+    if use_valid_hits and valid_hit_column_available:
+        where_parts.append("p.valid_hit = 1")
+    where_clause = f"WHERE {' AND '.join(where_parts)}" if where_parts else ""
 
     sql = sql.format(
         join_limiter=join_txt,
         join_limiter2=join_txt,
         join_limiter3=join_txt,
         left_join_excl=left_join_excl,
-        where_not_excluded=where_not_excluded,
+        where_not_excluded=where_clause,
     )
     return sql, []
 
@@ -328,6 +360,8 @@ def generate_fetch_query_domains_anywhere_excluding_clusters(
     use_limiter: bool = False,
     use_exclusions: bool = True,
     require_all_domains_in_same_genome: bool = True,
+    use_valid_hits: bool = True,
+    valid_hit_column_available: bool = False,
 ) -> tuple[str, list]:
     """
     Selektiert alle Domain-Hits aus tmp_req_domains, schließt aber Proteine aus
@@ -422,6 +456,8 @@ def generate_fetch_query_domains_anywhere_excluding_clusters(
     where_parts = []
     if use_exclusions:
         where_parts.append("x.clusterID IS NULL")
+    if use_valid_hits and valid_hit_column_available:
+        where_parts.append("p.valid_hit = 1")
     where_clause = f"WHERE {' AND '.join(where_parts)}" if where_parts else ""
 
     sql = sql.format(

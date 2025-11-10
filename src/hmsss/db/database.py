@@ -222,8 +222,9 @@ def insert_database_proteins(database: str, protein_dict: Dict[str, Any]) -> Non
                     protein.get_selection_comment_csv(),
                     protein.alternative_hit,
                     len(domains),
-                    protein.get_sequence(),
                     protein.valid_hit,
+                    protein.get_sequence(),
+
                 )
                 protein_records.append(protein_record)
 

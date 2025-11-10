@@ -509,6 +509,9 @@ def output_genome_report(
             # protein.get_protein_list() erwartete Reihenfolge laut Docstring:
             # [proteinID, get_domains(), get_domain_scores(), get_domain_coordinates(),
             #  gene_contig, gene_start, gene_end, gene_strand, gene_locustag]
+            #if not protein.valid_hit:
+            #    continue
+
             pl = protein.get_protein_list()
 
             # clusterID + csb (ohne keyword/completeness)

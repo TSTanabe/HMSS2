@@ -144,6 +144,7 @@ def fetch_fasta_and_hit_data(
             limiter_dict=limiter_dict,
             fetch_from_gene_clusters=False,
             excluded_domains=excluded_domains,
+            use_valid_hits=config.use_valid_hits
         )
         return protein_dict, cluster_dict, taxon_dict
 
@@ -175,6 +176,7 @@ def fetch_fasta_and_hit_data(
             limiter_dict=limiter_dict,
             fetch_from_gene_clusters=fetch_from_gene_cluster,
             excluded_domains=excluded_domains,
+            use_valid_hits=config.use_valid_hits
         )
 
         # Merge-Strategie:

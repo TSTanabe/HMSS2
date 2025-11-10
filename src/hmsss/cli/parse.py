@@ -660,6 +660,12 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         else argparse.SUPPRESS,
     )
     operators.add_argument(
+        "-include_noise_cut_hits",
+        dest="use_valid_hits",
+        action="store_false",
+        help="Include distant homologs that are considered as noise",
+    )
+    operators.add_argument(
         "-fasta",
         dest="print_fasta",
         action="store_true",
@@ -912,6 +918,7 @@ def build_config_from_namespace(ns) -> Config:
         fetch_keywords=list(getattr(ns, "fetch_keywords", [])),
         keywords_connector=getattr(ns, "keywords_connector", "OR"),
         print_fasta=getattr(ns, "print_fasta", False),
+        use_valid_hits=bool(getattr(ns, "use_valid_hits", True)),
     )
 
     cli_process = CliProcess(

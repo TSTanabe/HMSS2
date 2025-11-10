@@ -207,6 +207,7 @@ class CliOperators:
     fetch_not_csb_with_these_domains: List[str] = field(default_factory=list)
     keywords_connector: str = "OR"
     print_fasta: bool = False
+    use_valid_hits: bool = True
 
 
 @dataclass(slots=True)
@@ -408,6 +409,7 @@ class Config:
     print_fasta = prop(
         "cli_ops.print_fasta"
     )
+    use_valid_hits = prop("cli_ops.use_valid_hits")
 
     dataset_limit_lineage = prop(
         "cli_limiter.dataset_limit_lineage"
