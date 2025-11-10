@@ -18,6 +18,7 @@ promotes them to trusted. Remaining hits can be promoted by optimized cutoff.
 Finally, trusted and intermediate hit reports are summarized and stored.
 """
 
+
 def reference_sequence_check(config: Config) -> None:
     """Perform reference sequence cross-check and cutoff promotion.
 

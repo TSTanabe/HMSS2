@@ -14,6 +14,7 @@ Predicts CSBs, clusters them by Jaccard similarity, and updates the database
 with new CSB keywords, replacing old ones.
 """
 
+
 def csb_finder(config: Config) -> None:
     """Run CSB prediction and update the database.
 

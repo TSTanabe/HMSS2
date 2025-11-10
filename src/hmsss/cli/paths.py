@@ -122,6 +122,7 @@ SRC_FILE_PATTERNS: Path = _paths["SRC_FILE_PATTERNS"]
 SRC_FILE_EXCLUSION_SINGLETONS: Path = _paths["SRC_FILE_EXCLUSION_SINGLETONS"]
 SRC_FILE_METABOLISM_INFORMATION: Path = _paths["SRC_FILE_METABOLISM_INFORMATION"]
 
+
 def refresh_paths(base: str | Path | None = None) -> None:
     """Reinitialize exported path constants (useful for tests).
 
@@ -195,7 +196,7 @@ def as_dict(
                 "SRC_FILE_THRESHOLDS": SRC_FILE_THRESHOLDS,
                 "SRC_FILE_PATTERNS": SRC_FILE_PATTERNS,
                 "SRC_FILE_EXCLUSION_SINGLETONS": SRC_FILE_EXCLUSION_SINGLETONS,
-                "SRC_FILE_METABOLISM_INFORMATION": SRC_FILE_METABOLISM_INFORMATION
+                "SRC_FILE_METABOLISM_INFORMATION": SRC_FILE_METABOLISM_INFORMATION,
             }
         )
     if str_paths:

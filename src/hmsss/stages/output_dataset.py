@@ -24,6 +24,7 @@ Fetch/export pipeline results to a timestamped directory:
 - Optionally print statistics
 """
 
+
 def _load_domain_annotations(tsv_path: str) -> Dict[str, Dict[str, str]]:
     """
     Liest Domain-Annotationen aus einer TSV:
@@ -35,8 +36,16 @@ def _load_domain_annotations(tsv_path: str) -> Dict[str, Dict[str, str]]:
     with open(tsv_path, "r") as f:
         header = f.readline().rstrip("\n").split("\t")
         # Spaltenindizes robust bestimmen
-        idx = {name: header.index(name) for name in
-               ["domain", "reaction", "protein_description", "system", "metabolism"]}
+        idx = {
+            name: header.index(name)
+            for name in [
+                "domain",
+                "reaction",
+                "protein_description",
+                "system",
+                "metabolism",
+            ]
+        }
         for line in f:
             if not line.strip():
                 continue
@@ -45,12 +54,21 @@ def _load_domain_annotations(tsv_path: str) -> Dict[str, Dict[str, str]]:
             if not d:
                 continue
             ann[d] = {
-                "reaction": parts[idx["reaction"]].strip() if idx["reaction"] < len(parts) else "",
-                "protein_description": parts[idx["protein_description"]].strip() if idx["protein_description"] < len(parts) else "",
-                "system": parts[idx["system"]].strip() if idx["system"] < len(parts) else "",
-                "metabolism": parts[idx["metabolism"]].strip() if idx["metabolism"] < len(parts) else "",
+                "reaction": parts[idx["reaction"]].strip()
+                if idx["reaction"] < len(parts)
+                else "",
+                "protein_description": parts[idx["protein_description"]].strip()
+                if idx["protein_description"] < len(parts)
+                else "",
+                "system": parts[idx["system"]].strip()
+                if idx["system"] < len(parts)
+                else "",
+                "metabolism": parts[idx["metabolism"]].strip()
+                if idx["metabolism"] < len(parts)
+                else "",
             }
     return ann
+
 
 def output_operator(config: Config) -> None:
     """Run output operators to fetch/export results.
@@ -73,13 +91,17 @@ def output_operator(config: Config) -> None:
     directory = os.path.join(config.result_files_directory, f"fetch_{ts}")
     os.makedirs(directory, exist_ok=True)
 
-    print_command_args.print_command_line_args(os.path.join(directory, "logged_fetch_command.txt"))
+    print_command_args.print_command_line_args(
+        os.path.join(directory, "logged_fetch_command.txt")
+    )
 
     # The fetch function collects the protein_dict and taxon_dict, cluster_dict is empty
-    protein_dict, cluster_dict, taxon_dict = db_fetch_data_general.fetch_fasta_and_hit_data(config)
+    protein_dict, cluster_dict, taxon_dict = (
+        db_fetch_data_general.fetch_fasta_and_hit_data(config)
+    )
 
-    #metabolic_dict = _load_domain_annotations(config.metabolic_information)
-    metabolic_dict= {}
+    # metabolic_dict = _load_domain_annotations(config.metabolic_information)
+    metabolic_dict = {}
 
     cluster_context_dict = db_fetch_context.fetch_cluster_context_for_proteins(
         database=config.database_directory,
@@ -96,15 +118,21 @@ def output_operator(config: Config) -> None:
     ]
 
     print_reports.print_hit_reports(
-        directory, protein_dict, cluster_dict, taxon_dict, metabolic_dict, cluster_context_dict, requests
+        directory,
+        protein_dict,
+        cluster_dict,
+        taxon_dict,
+        metabolic_dict,
+        cluster_context_dict,
+        requests,
     )
 
     if config.print_fasta:
         print_reports.print_fasta_files(directory, protein_dict, cluster_dict)
 
-    #datasets.main_binary_dataset(
+    # datasets.main_binary_dataset(
     #    config, directory, protein_dict, cluster_dict, taxon_dict
-    #)
+    # )
     logger.info("Generated binary dataset → %s", directory)
 
 
@@ -114,6 +142,5 @@ def output_statistics(config: Config) -> None:
     Args:
         config: Configuration with `.database_directory`.
     """
-
 
     database.fetch_genome_statistic(config.database_directory)

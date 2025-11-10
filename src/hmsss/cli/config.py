@@ -61,6 +61,7 @@ class CliInput:
         glob_report: Path to global hmmreport.
         verbose: Logging level (0=WARNING, 1=INFO, 2=DEBUG).
     """
+
     fasta_file_directory: Optional[str] = None
     score_threshold_file: Optional[str] = None
     library: Optional[str] = None
@@ -84,6 +85,7 @@ class CliSearchParams:
         stage: Pipeline stage to start from.
         exit: Pipeline stage to exit after.
     """
+
     threshold_type: int = 1  # 1=optimized, 2=trusted, 3=noise
     thrs_score: float = 50.0
     taxonomy_file: Optional[str] = None
@@ -105,6 +107,7 @@ class CliResources:
         bool_cross_check: Enable reference cross check via Diamond.
         optimized_cutoff_cross_check: Use optimized cutoff instead of Diamond.
     """
+
     HMM_sets: List[str] = field(default_factory=list)
     clean_reports: bool = False
     individual_reports: bool = True
@@ -125,6 +128,7 @@ class CliSynteny:
         min_completeness: Minimal fraction of CSB required for recognition.
         glob_chunks: Chunk size for parsing `glob` results before DB insert.
     """
+
     patterns_file: Optional[str] = None
     cooccurrence_file: Optional[str] = None
     exclusion_singletons: Optional[str] = None
@@ -135,10 +139,12 @@ class CliSynteny:
 @dataclass(slots=True)
 class CliInfo:
     """Toggles to print auxiliary statistics."""
+
     stat_keywords: bool = False
     stat_csb: bool = False
     stat_genomes: bool = False
     metabolic_information: Optional[str] = None
+
 
 @dataclass(slots=True)
 class CliCsb:
@@ -153,6 +159,7 @@ class CliCsb:
         max_domain_repeats: Max repeats for a domain within a CSB.
         jaccard: Dissimilarity threshold [0.0–1.0].
     """
+
     nucleotide_range: int = 3500
     insertions: int = 1
     occurence: int = 1  # Schreibweise wie im Parser beibehalten
@@ -165,6 +172,7 @@ class CliCsb:
 @dataclass(slots=True)
 class CliFlow:
     """Global flow modifiers (e.g., recompute taxonomy)."""
+
     redo_taxonomy: bool = False
     use_synteny_completion: bool = True
     use_remove_unassigned_intermediates: bool = True
@@ -182,6 +190,7 @@ class CliLimiter:
         dataset_limit_keywords: Keyword filter expression.
         dataset_divide_sign: Separator used in taxonomy strings.
     """
+
     dataset_limit_lineage: Optional[str] = None
     dataset_limit_taxon: Optional[str] = None
     dataset_limit_proteins: str = "0"
@@ -200,6 +209,7 @@ class CliOperators:
         fetch_keywords: Cluster naming keywords.
         keywords_connector: Logical connector for keyword filters ("AND"/"OR").
     """
+
     fetch_genomes: List[str] = field(default_factory=list)
     fetch_proteins: List[str] = field(default_factory=list)
     fetch_csbs: List[str] = field(default_factory=list)
@@ -224,6 +234,7 @@ class CliProcess:
         create_gene_cluster_dataset: Build gene-cluster dataset from FASTA.
         gaps: Add gaps for missing sequences on concatenation.
     """
+
     merge_fasta: Optional[str] = None
     filter_fasta: Optional[List[str]] = None  # ["FILE","MIN","MAX"]
     concat_alignment: Optional[str] = None
@@ -266,6 +277,7 @@ class ProjectFields:
 
     Populated by project setup code after parsing (in project.py)
     """
+
     result_files_directory: Optional[str] = None  # finaler Projekt-Results-Pfad
     fasta_initial_hit_directory: Optional[str] = None
     fasta_output_directory: Optional[str] = None
@@ -314,6 +326,7 @@ def prop(path: str) -> property:
     Returns:
         A Python `property` object that gets/sets the nested value.
     """
+
     def fget(self):
         return _cfg_get(self, path)
 
@@ -404,11 +417,8 @@ class Config:
     fetch_keywords = prop(
         "cli_ops.fetch_keywords"
     )  # :contentReference[oaicite:19]{index=19}
-    fetch_not_csb_with_these_domains = prop(
-        "cli_ops.fetch_not_csb_with_these_domains")
-    print_fasta = prop(
-        "cli_ops.print_fasta"
-    )
+    fetch_not_csb_with_these_domains = prop("cli_ops.fetch_not_csb_with_these_domains")
+    print_fasta = prop("cli_ops.print_fasta")
     use_valid_hits = prop("cli_ops.use_valid_hits")
 
     dataset_limit_lineage = prop(
@@ -525,7 +535,9 @@ class Config:
     # Flow control for parsing and redo taxonomy
     redo_taxonomy = prop("cli_flow.redo_taxonomy")
     use_synteny_completion = prop("cli_flow.use_synteny_completion")
-    use_remove_unassigned_intermediates = prop("cli_flow.use_remove_unassigned_intermediates")
+    use_remove_unassigned_intermediates = prop(
+        "cli_flow.use_remove_unassigned_intermediates"
+    )
     use_remove_unassigned_singletons = prop("cli_flow.use_remove_exclusion_singletons")
 
     def validate(self) -> None:
@@ -561,12 +573,10 @@ class Config:
         _req_dir(self.paths.root, "ROOT_DIR")
         _req_dir(self.paths.bin, "BIN_DIR")
         _req_dir(self.paths.data, "DATA_DIR")
-        #_req_dir(self.paths.hmms, "HMMS_DIR")
+        # _req_dir(self.paths.hmms, "HMMS_DIR")
         _req_dir(self.paths.refseq, "REFSEQ_DIR")
         _req_dir(self.paths.results, "RESULTS_DIR")
 
         if missing:
             details = "\n - ".join(missing)
-            raise FileNotFoundError(
-                "Required directories are missing:\n - " + details
-            )
+            raise FileNotFoundError("Required directories are missing:\n - " + details)

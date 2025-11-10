@@ -7,8 +7,10 @@ import math
 # Minimal-Implementierung (inline)
 # -----------------------------
 
+
 class Node:
     __slots__ = ("children", "terminals", "sub_lo", "sub_hi", "max_terminal_depth")
+
     def __init__(self):
         self.children = {}
         self.terminals = []
@@ -16,12 +18,14 @@ class Node:
         self.sub_hi = -1
         self.max_terminal_depth = 0
 
+
 @dataclass(frozen=True)
 class PatternMeta:
     name: str
     length: int
     mask: int
     ids_sorted: tuple[int, ...]
+
 
 @dataclass
 class TrieIndex:
@@ -32,18 +36,22 @@ class TrieIndex:
     id_to_domain: list[str]
     rank: list[int]
 
+
 def _build_domain_vocab(pattern_dict: dict[str, set[str]]):
     all_domains = sorted({d for pat in pattern_dict.values() for d in pat})
     domain_to_id = {d: i for i, d in enumerate(all_domains)}
     id_to_domain = all_domains
     return domain_to_id, id_to_domain
 
+
 def _domain_frequency_in_patterns(pattern_dict: dict[str, set[str]]):
     from collections import Counter
+
     c = Counter()
     for pat in pattern_dict.values():
         c.update(set(pat))
     return c
+
 
 def _build_rank(domain_to_id: dict[str, int], pattern_dict: dict[str, set[str]]):
     freq = _domain_frequency_in_patterns(pattern_dict)
@@ -55,11 +63,13 @@ def _build_rank(domain_to_id: dict[str, int], pattern_dict: dict[str, set[str]])
         rank[did] = name_to_rank[name]
     return rank
 
+
 def _encode_mask(ids):
     m = 0
     for i in ids:
-        m |= (1 << i)
+        m |= 1 << i
     return m
+
 
 def _build_pattern_meta(pattern_dict, domain_to_id, rank):
     pattern_meta = []
@@ -75,6 +85,7 @@ def _build_pattern_meta(pattern_dict, domain_to_id, rank):
         pattern_meta.append(meta)
     return pattern_meta
 
+
 def _insert_pattern(root: Node, ids_sorted: tuple[int, ...], pid: int):
     n = root
     depth = 0
@@ -85,6 +96,7 @@ def _insert_pattern(root: Node, ids_sorted: tuple[int, ...], pid: int):
     if depth > n.max_terminal_depth:
         n.max_terminal_depth = depth
 
+
 def _propagate_max_terminal_depth(root: Node):
     mtd = root.max_terminal_depth
     for child in root.children.values():
@@ -94,8 +106,10 @@ def _propagate_max_terminal_depth(root: Node):
     root.max_terminal_depth = mtd
     return mtd
 
+
 def _dfs_flatten_terminals(root: Node):
     TERMS: list[int] = []
+
     def dfs(n: Node):
         n.sub_lo = len(TERMS)
         if n.terminals:
@@ -103,12 +117,21 @@ def _dfs_flatten_terminals(root: Node):
         for d in sorted(n.children.keys()):
             dfs(n.children[d])
         n.sub_hi = len(TERMS)
+
     dfs(root)
     return TERMS
 
+
 def build_trie_index(pattern_dict: dict[str, set[str]]) -> TrieIndex:
     if not pattern_dict:
-        return TrieIndex(root=Node(), TERMS=[], pattern_meta=[], domain_to_id={}, id_to_domain=[], rank=[])
+        return TrieIndex(
+            root=Node(),
+            TERMS=[],
+            pattern_meta=[],
+            domain_to_id={},
+            id_to_domain=[],
+            rank=[],
+        )
     domain_to_id, id_to_domain = _build_domain_vocab(pattern_dict)
     rank = _build_rank(domain_to_id, pattern_dict)
     pattern_meta = _build_pattern_meta(pattern_dict, domain_to_id, rank)
@@ -119,8 +142,15 @@ def build_trie_index(pattern_dict: dict[str, set[str]]) -> TrieIndex:
         _insert_pattern(root, meta.ids_sorted, pid)
     _propagate_max_terminal_depth(root)
     TERMS = _dfs_flatten_terminals(root)
-    return TrieIndex(root=root, TERMS=TERMS, pattern_meta=pattern_meta,
-                     domain_to_id=domain_to_id, id_to_domain=id_to_domain, rank=rank)
+    return TrieIndex(
+        root=root,
+        TERMS=TERMS,
+        pattern_meta=pattern_meta,
+        domain_to_id=domain_to_id,
+        id_to_domain=id_to_domain,
+        rank=rank,
+    )
+
 
 def map_present_to_sorted_ids(present_domains: set[str], index: TrieIndex):
     """Gibt (ids_sorted, present_mask, present_names) zurück.
@@ -131,10 +161,11 @@ def map_present_to_sorted_ids(present_domains: set[str], index: TrieIndex):
     ids_sorted = sorted(ids, key=lambda x: rk[x])
     present_mask = 0
     for i in ids_sorted:
-        present_mask |= (1 << i)
+        present_mask |= 1 << i
     # WICHTIG: Originale Namen-Menge behalten (inkl. unbekannter)
     present_names = set(present_domains)
     return ids_sorted, present_mask, present_names
+
 
 def descend_last_reachable(root: Node, present_ids_sorted: list[int]):
     node = root
@@ -147,14 +178,17 @@ def descend_last_reachable(root: Node, present_ids_sorted: list[int]):
         k += 1
     return node, k
 
+
 def iter_subtree_pattern_ids(node: Node, TERMS: list[int]):
     if node.sub_lo < 0 or node.sub_hi < 0:
         return ()
-    return TERMS[node.sub_lo:node.sub_hi]
+    return TERMS[node.sub_lo : node.sub_hi]
+
 
 # -----------------------------
 # Der eigentliche Test
 # -----------------------------
+
 
 def test_trie_completeness_and_missing_additional():
     # 1) Pattern-Korpus
@@ -167,19 +201,21 @@ def test_trie_completeness_and_missing_additional():
 
     # 2) Cluster-Fälle (inkl. unbekannter Domänen X,Y)
     clusters = [
-        ("{A,B}",        {"A", "B"}),
-        ("{A,D}",        {"A", "D"}),
-        ("{A,B,E}",      {"A", "B", "E"}),
-        ("{C,E}",        {"C", "E"}),
-        ("{X,Y}",        {"X", "Y"}),             # komplett unbekannt
-        ("{A,B,X}",      {"A", "B", "X"}),        # teilweise unbekannt
-        ("{B,E}",        {"B", "E"}),             # Teilmenge von KW_A
-        ("{C}",          {"C"}),                  # Teilmenge von KW_C
+        ("{A,B}", {"A", "B"}),
+        ("{A,D}", {"A", "D"}),
+        ("{A,B,E}", {"A", "B", "E"}),
+        ("{C,E}", {"C", "E"}),
+        ("{X,Y}", {"X", "Y"}),  # komplett unbekannt
+        ("{A,B,X}", {"A", "B", "X"}),  # teilweise unbekannt
+        ("{B,E}", {"B", "E"}),  # Teilmenge von KW_A
+        ("{C}", {"C"}),  # Teilmenge von KW_C
     ]
 
     print("\n=== Ergebnisse ===")
     for label, present in clusters:
-        present_ids_sorted, present_mask, present_names = map_present_to_sorted_ids(present, index)
+        present_ids_sorted, present_mask, present_names = map_present_to_sorted_ids(
+            present, index
+        )
         node, k = descend_last_reachable(index.root, present_ids_sorted)
         pids = list(iter_subtree_pattern_ids(node, index.TERMS))
 
@@ -190,7 +226,7 @@ def test_trie_completeness_and_missing_additional():
 
         # Hilfsmenge: Pattern-Domänen als Namen
         def pattern_domains_as_names(meta: PatternMeta) -> set[str]:
-            return { index.id_to_domain[i] for i in meta.ids_sorted }
+            return {index.id_to_domain[i] for i in meta.ids_sorted}
 
         # Ausgabe sortiert nach Pattern-Namen
         for pid in sorted(pids, key=lambda p: index.pattern_meta[p].name):
@@ -200,12 +236,14 @@ def test_trie_completeness_and_missing_additional():
             pat_names = pattern_domains_as_names(meta)
 
             # NEU: missing/additional in **Namens-Logik** (inkl. unbekannter present-Namen)
-            missing_names    = sorted(pat_names - present_names)
+            missing_names = sorted(pat_names - present_names)
             additional_names = sorted(present_names - pat_names)
 
-            print(f"  Pattern {meta.name}: "
-                  f"completeness={completeness:.3f}, "
-                  f"missing={missing_names}, additional={additional_names}")
+            print(
+                f"  Pattern {meta.name}: "
+                f"completeness={completeness:.3f}, "
+                f"missing={missing_names}, additional={additional_names}"
+            )
 
     # -----------------
     # Assertions (Kernaussagen)
@@ -217,18 +255,18 @@ def test_trie_completeness_and_missing_additional():
     pids = list(iter_subtree_pattern_ids(node, index.TERMS))
     meta = index.pattern_meta[pids[0]]
     assert meta.name == "KW_A"
-    assert math.isclose(k / meta.length, 2/3, rel_tol=1e-9)
-    pat_names = { index.id_to_domain[i] for i in meta.ids_sorted }
+    assert math.isclose(k / meta.length, 2 / 3, rel_tol=1e-9)
+    pat_names = {index.id_to_domain[i] for i in meta.ids_sorted}
     assert sorted(pat_names - pnames) == ["E"]
-    assert sorted(pnames - pat_names) == []          # additional leer
+    assert sorted(pnames - pat_names) == []  # additional leer
 
     # {A,B,X} -> KW_A: additional enthält 'X'
     ids_sorted, pmask, pnames = map_present_to_sorted_ids({"A", "B", "X"}, index)
     node, k = descend_last_reachable(index.root, ids_sorted)
     pids = list(iter_subtree_pattern_ids(node, index.TERMS))
     meta = index.pattern_meta[pids[0]]
-    pat_names = { index.id_to_domain[i] for i in meta.ids_sorted }
-    assert "X" in (set(pnames) - pat_names)          # unknown zählt als additional
+    pat_names = {index.id_to_domain[i] for i in meta.ids_sorted}
+    assert "X" in (set(pnames) - pat_names)  # unknown zählt als additional
 
     # {X,Y} -> alle Patterns, completeness 0.0; additional = ['X','Y'] bei jedem Pattern
     ids_sorted, pmask, pnames = map_present_to_sorted_ids({"X", "Y"}, index)
@@ -237,5 +275,5 @@ def test_trie_completeness_and_missing_additional():
     for pid in pids:
         meta = index.pattern_meta[pid]
         assert math.isclose(k / meta.length, 0.0, rel_tol=1e-9)
-        pat_names = { index.id_to_domain[i] for i in meta.ids_sorted }
+        pat_names = {index.id_to_domain[i] for i in meta.ids_sorted}
         assert sorted(pnames - pat_names) == ["X", "Y"]

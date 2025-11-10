@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from hmsss.cli.config import Config
 from hmsss.core.logging import get_logger, print_header
-from hmsss.fasta_preparation.translation import parallel_translation, parallel_transcription
+from hmsss.fasta_preparation.translation import (
+    parallel_translation,
+    parallel_transcription,
+)
 from hmsss.core.queue import queue_fna_inputs, queue_faa_without_gff
 
 logger = get_logger(__name__)
@@ -13,6 +16,7 @@ Stage: FASTA preparation.
 Translates `.fna` files to `.faa`/`.gff` pairs using Prodigal
 and transcribes additional FAA files if no GFF is present.
 """
+
 
 def fasta_preparation(config: Config) -> None:
     """Prepare FASTA files for the pipeline.

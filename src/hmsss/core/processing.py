@@ -523,8 +523,6 @@ def sort_gene_vicinity(input_file, output_file):
         writer.writerows(sorted_rows)
 
 
-
-
 def help_routine_select_random_marker_set(database, filepath):
     print("Collecting genome identifier")
     level_dict = {}

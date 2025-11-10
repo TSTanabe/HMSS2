@@ -7,7 +7,6 @@ from hmsss.core import processing as processing
 from hmsss.io import datasets as datasets
 
 
-
 log = get_logger(__name__)
 
 """
@@ -21,6 +20,7 @@ Applies post-processing operators to sequence and alignment files:
 - Add genomic context
 - Create iTol datasets (gene cluster or type range)
 """
+
 
 def process_operator(config: Config) -> None:
     """Apply processing operators according to CLI options.

@@ -5,6 +5,7 @@ from typing import List
 With a given list of protein domains get all keywords that includes all these proteins 
 """
 
+
 def find_csbs_with_proteins_db(
     database: str,
     proteins: List[str],
@@ -49,8 +50,7 @@ def find_csbs_with_proteins_db(
     for typ in proteins:
         params.extend([typ, typ])
 
-    with (
-        sqlite3.connect(f"file:{database}?mode=ro&immutable=1", uri=True) as con):
+    with sqlite3.connect(f"file:{database}?mode=ro&immutable=1", uri=True) as con:
         con.execute("PRAGMA foreign_keys = ON;")
         con.execute("PRAGMA query_only = ON;")  # no writing
         con.execute("PRAGMA journal_mode = OFF;")  # no journal for read only

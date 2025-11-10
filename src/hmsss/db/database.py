@@ -224,7 +224,6 @@ def insert_database_proteins(database: str, protein_dict: Dict[str, Any]) -> Non
                     len(domains),
                     protein.valid_hit,
                     protein.get_sequence(),
-
                 )
                 protein_records.append(protein_record)
 

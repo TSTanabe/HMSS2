@@ -164,14 +164,15 @@ def _solve_assignment(
             - col_indices: indices into the original columns (or None if infeasible)
     """
 
-
     # Mask rows/cols that contain at least one feasible entry
     valid_rows = ~np.all(np.isinf(cost_matrix), axis=1)
     valid_cols = ~np.all(np.isinf(cost_matrix), axis=0)
     reduced = cost_matrix[np.ix_(valid_rows, valid_cols)]
 
     def _matrix_str(matrix: NDArray[np.float64]) -> str:
-        with np.printoptions(precision=2, suppress=True, linewidth=120, nanstr="nan", infstr="inf"):
+        with np.printoptions(
+            precision=2, suppress=True, linewidth=120, nanstr="nan", infstr="inf"
+        ):
             return "\n" + "\n".join(" ".join(f"{x:7}" for x in row) for row in matrix)
 
     # Infeasible if empty or any remaining row/col is still all inf
@@ -338,9 +339,7 @@ def get_all_optimized_transitions(
                 ] = chosen_transitions
 
         if possible_transitions:
-            transitions_per_cluster[cluster_id] = (
-                possible_transitions
-            )
+            transitions_per_cluster[cluster_id] = possible_transitions
 
     return transitions_per_cluster
 

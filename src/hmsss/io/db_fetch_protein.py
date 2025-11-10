@@ -16,7 +16,7 @@ def fetch_bulk_data(
     syntenic_domains: Optional[List[str]],
     limiter_dict: Optional[Dict[str, str]] = None,
     fetch_from_gene_clusters: bool = False,
-    excluded_domains: Optional[List[str]]=None,
+    excluded_domains: Optional[List[str]] = None,
     use_valid_hits: bool = True,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, dict[str, str]]]:
     """
@@ -54,35 +54,39 @@ def fetch_bulk_data(
 
         # Pragmas
         cur.execute("PRAGMA foreign_keys = ON;")
-        cur.execute("PRAGMA cache_size = 100000;")   # ~100k Pages (~100k * 1.5–2 KB je nach build)
+        cur.execute(
+            "PRAGMA cache_size = 100000;"
+        )  # ~100k Pages (~100k * 1.5–2 KB je nach build)
         cur.execute("PRAGMA synchronous = OFF;")
-        #excluded_domains = ['sHdrB2']
+        # excluded_domains = ['sHdrB2']
 
         _prepare_required_domains_temp(cur, syntenic_domains)
         _prepare_excluded_domains_temp(cur, excluded_domains)
         n = _prepare_limiter_genomes_temp(cur, limiter_dict)
 
-        #print(syntenic_domains)
-        #print(excluded_domains)
+        # print(syntenic_domains)
+        # print(excluded_domains)
         # Delete row if sqliteDB downwards compatibility is not an issue anymore
         valid_hit_column_available = has_column(cur, "Proteins", "valid_hit")
         if fetch_from_gene_clusters:
             logger.info(f"Searching for syntenic {syntenic_domains}")
             sql, args = generate_fetch_query_covering_domains(
                 set(syntenic_domains),
-                use_limiter=(n>0),
+                use_limiter=(n > 0),
                 use_exclusions=True,
-                use_valid_hits=use_valid_hits, # Default True
-                valid_hit_column_available = valid_hit_column_available
-            ) # Fetches all domains that are in a syntenic gene cluster, but not csb including the exclusion
+                use_valid_hits=use_valid_hits,  # Default True
+                valid_hit_column_available=valid_hit_column_available,
+            )  # Fetches all domains that are in a syntenic gene cluster, but not csb including the exclusion
         else:
             logger.info(f"Searching for co-occuring {syntenic_domains}")
             sql, args = generate_fetch_query_domains_anywhere_excluding_clusters(
                 use_limiter=(n > 0),  # -fg wirklich anwenden
                 use_exclusions=True,
-                require_all_domains_in_same_genome=bool(syntenic_domains), # nur fordern, wenn explizite Domains übergeben wurden. Kann leer sein, wenn komplettes genom gefordert
-                use_valid_hits=use_valid_hits, # Default True
-                valid_hit_column_available = valid_hit_column_available
+                require_all_domains_in_same_genome=bool(
+                    syntenic_domains
+                ),  # nur fordern, wenn explizite Domains übergeben wurden. Kann leer sein, wenn komplettes genom gefordert
+                use_valid_hits=use_valid_hits,  # Default True
+                valid_hit_column_available=valid_hit_column_available,
             )
 
         fusion_prot_ids: Set[str] = set()
@@ -107,11 +111,15 @@ def fetch_bulk_data(
 
     return protein_dict, cluster_dict, taxon_dict
 
+
 ################
 ####   Generate fetch query
 ################
 
-def _prepare_required_domains_temp(cur: sqlite3.Cursor, required_domains: "Iterable[str]") -> int:
+
+def _prepare_required_domains_temp(
+    cur: sqlite3.Cursor, required_domains: "Iterable[str]"
+) -> int:
     """
     Legt die TEMP-Tabelle tmp_req_domains(domain TEXT PRIMARY KEY) an und befüllt sie.
 
@@ -123,7 +131,9 @@ def _prepare_required_domains_temp(cur: sqlite3.Cursor, required_domains: "Itera
     """
 
     # TEMP-Tabelle anlegen & leeren
-    cur.execute("CREATE TEMP TABLE IF NOT EXISTS tmp_req_domains (domain TEXT PRIMARY KEY);")
+    cur.execute(
+        "CREATE TEMP TABLE IF NOT EXISTS tmp_req_domains (domain TEXT PRIMARY KEY);"
+    )
     cur.execute("DELETE FROM tmp_req_domains;")
 
     # Domains normalisieren
@@ -131,25 +141,34 @@ def _prepare_required_domains_temp(cur: sqlite3.Cursor, required_domains: "Itera
 
     if not doms:
         # → keine Vorgabe: alle Domains holen
-        cur.execute("INSERT OR IGNORE INTO tmp_req_domains(domain) SELECT DISTINCT domain FROM Domains;")
+        cur.execute(
+            "INSERT OR IGNORE INTO tmp_req_domains(domain) SELECT DISTINCT domain FROM Domains;"
+        )
         return cur.rowcount
 
     # → gewählte Domains einfügen
     cur.executemany(
-        "INSERT OR IGNORE INTO tmp_req_domains(domain) VALUES (?)",
-        ((d,) for d in doms)
+        "INSERT OR IGNORE INTO tmp_req_domains(domain) VALUES (?)", ((d,) for d in doms)
     )
     return cur.rowcount or len(doms)
 
 
-def _prepare_excluded_domains_temp(cur: sqlite3.Cursor, excluded_domains: "Iterable[str] | None") -> int:
+def _prepare_excluded_domains_temp(
+    cur: sqlite3.Cursor, excluded_domains: "Iterable[str] | None"
+) -> int:
     doms = {d for d in (excluded_domains or []) if d}
-    cur.execute("CREATE TEMP TABLE IF NOT EXISTS tmp_excl_domains (domain TEXT PRIMARY KEY);")
+    cur.execute(
+        "CREATE TEMP TABLE IF NOT EXISTS tmp_excl_domains (domain TEXT PRIMARY KEY);"
+    )
     cur.execute("DELETE FROM tmp_excl_domains;")
     if not doms:
         return 0
-    cur.executemany("INSERT OR IGNORE INTO tmp_excl_domains(domain) VALUES (?)", ((d,) for d in doms))
+    cur.executemany(
+        "INSERT OR IGNORE INTO tmp_excl_domains(domain) VALUES (?)",
+        ((d,) for d in doms),
+    )
     return cur.rowcount or len(doms)
+
 
 def _prepare_limiter_genomes_temp(
     cur: sqlite3.Cursor, taxon_dict: Optional[Dict[str, Any]]
@@ -169,13 +188,16 @@ def _prepare_limiter_genomes_temp(
     if not gids:
         return 0
 
-    cur.execute("CREATE TEMP TABLE IF NOT EXISTS tmp_req_genomes (genomeID TEXT PRIMARY KEY);")
+    cur.execute(
+        "CREATE TEMP TABLE IF NOT EXISTS tmp_req_genomes (genomeID TEXT PRIMARY KEY);"
+    )
     cur.execute("DELETE FROM tmp_req_genomes;")
     cur.executemany(
         "INSERT OR IGNORE INTO tmp_req_genomes(genomeID) VALUES (?)",
-        ((g,) for g in gids)
+        ((g,) for g in gids),
     )
     return cur.rowcount or len(gids)
+
 
 def has_column(cur: sqlite3.Cursor, table_name: str, column_name: str) -> bool:
     """
@@ -191,10 +213,11 @@ def has_column(cur: sqlite3.Cursor, table_name: str, column_name: str) -> bool:
         )
         return False
 
+
 def generate_fetch_query_covering_domains(
     required_domains: Iterable[str],
     use_limiter: bool = True,
-    use_exclusions: bool=True,
+    use_exclusions: bool = True,
     use_valid_hits: bool = True,
     valid_hit_column_available: bool = False,
 ) -> Tuple[str, List[Any]]:
@@ -272,7 +295,11 @@ def generate_fetch_query_covering_domains(
     """
 
     join_txt = "JOIN lim lg ON lg.genomeID = p.genomeID" if use_limiter else ""
-    left_join_excl = "LEFT JOIN clusters_excluded x ON x.clusterID = p.clusterID" if use_exclusions else ""
+    left_join_excl = (
+        "LEFT JOIN clusters_excluded x ON x.clusterID = p.clusterID"
+        if use_exclusions
+        else ""
+    )
 
     # flexible WHERE-Klausel
     where_parts = []
@@ -290,6 +317,7 @@ def generate_fetch_query_covering_domains(
         where_not_excluded=where_clause,
     )
     return sql, []
+
 
 def generate_fetch_query_domains_anywhere(
     required_domains: Iterable[str],
@@ -355,6 +383,8 @@ def generate_fetch_query_domains_anywhere(
     sql = sql.format(join_limiter=join_limiter)
 
     return sql, []
+
+
 # Testing routine
 def generate_fetch_query_domains_anywhere_excluding_clusters(
     use_limiter: bool = False,
@@ -402,8 +432,10 @@ def generate_fetch_query_domains_anywhere_excluding_clusters(
         HAVING COUNT(DISTINCT r.domain) = (SELECT n_req FROM req_count)
     )
     """.format(
-        join_limiter0=("JOIN lim lg0 ON lg0.genomeID = p.genomeID" if use_limiter else "")
-    )
+            join_limiter0=(
+                "JOIN lim lg0 ON lg0.genomeID = p.genomeID" if use_limiter else ""
+            )
+        )
 
     # 2) Cluster ausschließen, die irgendeine Exklusionsdomäne enthalten
     if use_exclusions:
@@ -418,8 +450,10 @@ def generate_fetch_query_domains_anywhere_excluding_clusters(
         GROUP BY p.clusterID
     )
     """.format(
-        join_limiter2=("JOIN lim lg2 ON lg2.genomeID = p.genomeID" if use_limiter else "")
-    )
+            join_limiter2=(
+                "JOIN lim lg2 ON lg2.genomeID = p.genomeID" if use_limiter else ""
+            )
+        )
 
     # 3) Finale Auswahl
     sql += """
@@ -450,8 +484,16 @@ def generate_fetch_query_domains_anywhere_excluding_clusters(
     """
 
     join_limiter3 = "JOIN lim lg3 ON lg3.genomeID = p.genomeID" if use_limiter else ""
-    join_genomes_ok = "JOIN genomes_ok gok ON gok.genomeID = p.genomeID" if require_all_domains_in_same_genome else ""
-    left_join_excl = "LEFT JOIN clusters_excluded x ON x.clusterID = p.clusterID" if use_exclusions else ""
+    join_genomes_ok = (
+        "JOIN genomes_ok gok ON gok.genomeID = p.genomeID"
+        if require_all_domains_in_same_genome
+        else ""
+    )
+    left_join_excl = (
+        "LEFT JOIN clusters_excluded x ON x.clusterID = p.clusterID"
+        if use_exclusions
+        else ""
+    )
 
     where_parts = []
     if use_exclusions:
@@ -468,7 +510,9 @@ def generate_fetch_query_domains_anywhere_excluding_clusters(
     )
     return sql, []
 
+
 #
+
 
 def build_proteins_from_query(
     cur: sqlite3.Cursor,
@@ -520,6 +564,7 @@ def build_proteins_from_query(
 
 # Fused protein fetch
 
+
 def hydrate_fused_protein_domains(
     db_path: str,
     fusion_prot_ids: "set[str] | list[str]",
@@ -544,14 +589,16 @@ def hydrate_fused_protein_domains(
         cur = con.cursor()
 
         # TEMP-Tabelle anlegen & leeren
-        cur.execute("CREATE TEMP TABLE IF NOT EXISTS tmp_fused_ids (proteinID TEXT PRIMARY KEY);")
+        cur.execute(
+            "CREATE TEMP TABLE IF NOT EXISTS tmp_fused_ids (proteinID TEXT PRIMARY KEY);"
+        )
         cur.execute("DELETE FROM tmp_fused_ids;")
 
         # Atomare Bulk-Inserts ohne manuelles BEGIN/COMMIT:
         # Der 'with con:' Kontext oben sorgt für Transaktion pro Block.
         cur.executemany(
             "INSERT OR IGNORE INTO tmp_fused_ids(proteinID) VALUES (?)",
-            ((pid,) for pid in fusion_prot_ids)
+            ((pid,) for pid in fusion_prot_ids),
         )
 
         # Domains in einem Rutsch joinen
@@ -577,9 +624,10 @@ def hydrate_fused_protein_domains(
                     logger.debug(f"Added fused domains rows: {i + 1}")
             # Wenn protein fehlt, silently skip (oder optional warnen)
 
-        logger.info(f"Added {added} fused-domain rows for {len(fusion_prot_ids)} proteins (single-pass).")
+        logger.info(
+            f"Added {added} fused-domain rows for {len(fusion_prot_ids)} proteins (single-pass)."
+        )
     return added
-
 
 
 def fetch_taxonomy_dict(
@@ -606,12 +654,13 @@ def fetch_taxonomy_dict(
         con.row_factory = sqlite3.Row
         cur = con.cursor()
 
-        cur.execute("CREATE TEMP TABLE IF NOT EXISTS tmp_tax_fetch (id TEXT PRIMARY KEY);")
+        cur.execute(
+            "CREATE TEMP TABLE IF NOT EXISTS tmp_tax_fetch (id TEXT PRIMARY KEY);"
+        )
         cur.execute("DELETE FROM tmp_tax_fetch;")
 
         cur.executemany(
-            "INSERT OR IGNORE INTO tmp_tax_fetch(id) VALUES (?)",
-            ((g,) for g in wanted)
+            "INSERT OR IGNORE INTO tmp_tax_fetch(id) VALUES (?)", ((g,) for g in wanted)
         )
 
         cur.execute("""
@@ -635,6 +684,7 @@ def fetch_taxonomy_dict(
             if (i + 1) % 10000 == 0:
                 logger.debug(f"fetch_taxonomy_dict: {i + 1} Zeilen verarbeitet.")
 
-
-        logger.info(f"fetch_taxonomy_dict: {added} Taxonomie-Zeilen für {len(wanted)} genomeIDs hinzugefügt.")
+        logger.info(
+            f"fetch_taxonomy_dict: {added} Taxonomie-Zeilen für {len(wanted)} genomeIDs hinzugefügt."
+        )
     return taxon_dict

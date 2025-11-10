@@ -80,7 +80,9 @@ def add_context_genes_from_gff_fast(
         flank_extension=flank_extension,
     )
     if not cluster_ranges:
-        logger.debug(f"[{genome_id}] No cluster intervals found, skipping context gene addition.")
+        logger.debug(
+            f"[{genome_id}] No cluster intervals found, skipping context gene addition."
+        )
         return
 
     # Precompile regex patterns
@@ -205,6 +207,7 @@ def _resolve_protein_class(combined_protein_dict: Dict[str, Any]):
     try:
         # Lazy import to avoid circular dependencies
         from hmsss.parse_reports.parse_reports import Protein  # type: ignore
+
         return Protein
     except Exception as e:
         logger.error(f"Could not resolve Protein class: {e}")

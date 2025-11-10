@@ -4,6 +4,7 @@ from hmsss.core.logging import get_logger
 
 logger = get_logger(__name__)
 
+
 def print_command_line_args(output_file: str) -> None:
     """Writes the command-line arguments to a file.
 

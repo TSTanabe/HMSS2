@@ -7,12 +7,12 @@ from hmsss.db.database import index_database
 from hmsss.parse_reports import parse_reports
 
 from hmsss.fasta_preparation import fasta_preparation
-from hmsss.stages import initial_search # import initial_search
+from hmsss.stages import initial_search  # import initial_search
 from hmsss.cross_check import cross_check
 from hmsss.csbfinder import csb
-from hmsss.stages import taxonomy # import collect_taxonomy_information
-from hmsss.stages import output_dataset # import output_operator, output_statistics
-from hmsss.stages import process_seqfiles # import process_operator
+from hmsss.stages import taxonomy  # import collect_taxonomy_information
+from hmsss.stages import output_dataset  # import output_operator, output_statistics
+from hmsss.stages import process_seqfiles  # import process_operator
 
 from hmsss.core import queue, project as project, ressource_prep
 from hmsss.io import print_command_args
@@ -104,10 +104,10 @@ def run_pipeline(config) -> None:
         config.stage = 4
 
     # --- Stage 5: CSB Finder ---
-    if config.stage <= 5 <= config.exit:
-        print_header("Searching for collinear syntenic blocks (CSB)")
-        csb.csb_finder(config)
-        config.stage = 5
+    # if config.stage <= 5 <= config.exit:
+    #    print_header("Searching for collinear syntenic blocks (CSB)")
+    #    csb.csb_finder(config)
+    #    config.stage = 5
 
     # --- Stage 6: Taxonomy ---
     if config.stage <= 6 <= config.exit:

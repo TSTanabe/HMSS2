@@ -288,7 +288,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         nargs="+",
         dest="HMM_sets",
         type=str,
-        default=["DHPS","DMS","Dsr","SQ", "transfer"],
+        default=["DHPS", "DMS", "Dsr", "SQ", "transfer"],
         metavar="<list>",
         help="Limit to HMM sets (whitespace or CSV separated)"
         if show_all
@@ -323,11 +323,16 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         "-diamond_speed",
         dest="diamond_speed_mode",
         type=str,
-        choices=["faster", "fast", "mid-sensitive", "more-sensitive", "very-sensitive", "ultra-sensitive"],
+        choices=[
+            "faster",
+            "fast",
+            "mid-sensitive",
+            "more-sensitive",
+            "very-sensitive",
+            "ultra-sensitive",
+        ],
         default="faster",
-        help="DIAMOND blastp speed mode"
-        if show_all
-        else argparse.SUPPRESS,
+        help="DIAMOND blastp speed mode" if show_all else argparse.SUPPRESS,
     )
     resources.add_argument(
         "-no_cross_check",
@@ -891,9 +896,7 @@ def build_config_from_namespace(ns) -> Config:
 
     cli_flow = CliFlow(
         redo_taxonomy=bool(getattr(ns, "redo_taxonomy", False)),
-        use_synteny_completion=bool(
-            getattr(ns, "use_synteny_completion", True)
-        ),
+        use_synteny_completion=bool(getattr(ns, "use_synteny_completion", True)),
         use_remove_unassigned_intermediates=bool(
             getattr(ns, "use_remove_unassigned_intermediates", True)
         ),
@@ -1015,6 +1018,7 @@ def _apply_runtime_defaults(ns: argparse.Namespace) -> argparse.Namespace:
     Returns:
         The mutated namespace with defaults applied and stage normalized.
     """
+
     # 1) default paths for undefined argparse paths
     def _set_default(attr: str, value: str) -> None:
         v = getattr(ns, attr, None)

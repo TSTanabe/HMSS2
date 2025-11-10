@@ -27,6 +27,7 @@ This module handles:
 - Formatting of pattern/co-occurrence files with systematic prefixes.
 """
 
+
 def queue_fna_inputs(config) -> dict[str, str]:
     """Collect FNA inputs for translation.
 
@@ -376,8 +377,9 @@ def concatenate_files_shell(
         os.system(cat_command)
         log.debug(f"Concatenated {len(matched_files)} files into {output_file_path}")
     else:
-        log.error(f"No matching files found for concatenation in {search_directory} with prefix '{allowed_prefix}' and suffix '{allowed_suffix}'.")
-
+        log.error(
+            f"No matching files found for concatenation in {search_directory} with prefix '{allowed_prefix}' and suffix '{allowed_suffix}'."
+        )
 
 
 def concatenate_hmms_from_selected_metabolism_packages(
@@ -438,7 +440,8 @@ def concatenate_hmms_from_selected_metabolism_packages(
     if not files_to_concat:
         log.warning(
             "No HMM files found for selected packages in '%s' with hmm_sets=%s",
-            src_dir, allowed_words,
+            src_dir,
+            allowed_words,
         )
         # absichtlich KEIN Schreiben -> ressource_preparation fällt dann auf den
         # globalen Fallback zurück, falls konfiguriert.
@@ -450,6 +453,7 @@ def concatenate_hmms_from_selected_metabolism_packages(
             with open(fp, "r") as fin:
                 shutil.copyfileobj(fin, out)
     log.info("Concatenated %d HMMs into %s", len(files_to_concat), output_library)
+
 
 def format_pattern_files_inplace(filename: str, prefix: str, suffix: str):
     """Rewrite a pattern/co-occurrence file with systematic prefixes.

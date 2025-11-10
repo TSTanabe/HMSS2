@@ -22,44 +22,56 @@ from typing import Dict, List, Tuple, Iterable, Optional, DefaultDict
 # Kern-Datenstrukturen
 # =========================
 
+
 class Node:
     """Leichter Trie-Knoten. Kinder über domain_id (int) -> Node."""
+
     __slots__ = ("children", "terminals", "sub_lo", "sub_hi", "max_terminal_depth")
+
     def __init__(self):
-        self.children: Dict[int, Node] = {} # Kanten zu Kindknoten, beschriftet mit domain ids
-        self.terminals: List[int] = []   # pattern_ids, die in diesem Konten enden
-        self.sub_lo: int = -1            # inklusiver Start-Index in TERMS
-        self.sub_hi: int = -1            # exklusiver End-Index in TERMS
-        self.max_terminal_depth: int = 0 # maximale Pattern-Länge im Teilbaum
+        self.children: Dict[
+            int, Node
+        ] = {}  # Kanten zu Kindknoten, beschriftet mit domain ids
+        self.terminals: List[int] = []  # pattern_ids, die in diesem Konten enden
+        self.sub_lo: int = -1  # inklusiver Start-Index in TERMS
+        self.sub_hi: int = -1  # exklusiver End-Index in TERMS
+        self.max_terminal_depth: int = 0  # maximale Pattern-Länge im Teilbaum
+
 
 @dataclass(frozen=True)
 class PatternMeta:
-    name: str #keyword
-    length: int #Länge des pattern
-    mask: int #bitset der domain
-    ids_sorted: Tuple[int, ...]   # Domain-IDs in globaler Ordnung
+    name: str  # keyword
+    length: int  # Länge des pattern
+    mask: int  # bitset der domain
+    ids_sorted: Tuple[int, ...]  # Domain-IDs in globaler Ordnung
+
 
 @dataclass
 class TrieIndex:
     # Persistierbare, read-only Struktur für die Laufzeit-Abfragen
     root: Node
-    TERMS: List[int]                   # globale Terminal-Liste (pattern_ids), DFS-Flattened
-    pattern_meta: List[PatternMeta]    # Metadaten je pattern_id
+    TERMS: List[int]  # globale Terminal-Liste (pattern_ids), DFS-Flattened
+    pattern_meta: List[PatternMeta]  # Metadaten je pattern_id
     domain_to_id: Dict[str, int]
     id_to_domain: List[str]
-    rank: List[int]                    # rank[domain_id] -> Ordnungsrang (kleiner = früher)
+    rank: List[int]  # rank[domain_id] -> Ordnungsrang (kleiner = früher)
     nodes_by_domain: Dict[int, List[Node]]  # Reverse-Index für Anywhere-Start
+
 
 # =========================
 # Hilfsfunktionen: Vokabular & Ordnung
 # =========================
 
-def _build_domain_vocab(pattern_dict: Dict[str, Iterable[str]]) -> Tuple[Dict[str,int], List[str]]:
+
+def _build_domain_vocab(
+    pattern_dict: Dict[str, Iterable[str]],
+) -> Tuple[Dict[str, int], List[str]]:
     """Vergibt dichte Integer-IDs für Domains in stabiler Reihenfolge (alphabetisch)."""
     all_domains = sorted({d for pat in pattern_dict.values() for d in pat})
     domain_to_id = {d: i for i, d in enumerate(all_domains)}
     id_to_domain = all_domains
     return domain_to_id, id_to_domain
+
 
 def _domain_frequency_in_patterns(pattern_dict: Dict[str, Iterable[str]]) -> Counter:
     """Häufigkeit je Domain über Patterns (Anzahl Patterns, die die Domain enthalten)."""
@@ -69,33 +81,39 @@ def _domain_frequency_in_patterns(pattern_dict: Dict[str, Iterable[str]]) -> Cou
         c.update(seen)
     return c
 
-def _build_rank(domain_to_id: Dict[str,int], pattern_dict: Dict[str, Iterable[str]]) -> List[int]:
+
+def _build_rank(
+    domain_to_id: Dict[str, int], pattern_dict: Dict[str, Iterable[str]]
+) -> List[int]:
     """Bestimmt globale Ordnung: seltener -> früher, bei Gleichstand alphabetisch stabil."""
     freq = _domain_frequency_in_patterns(pattern_dict)
     # (häufigkeit, domain_name) -> sortieren, dann auf IDs mappen
     ordered_names = sorted(domain_to_id.keys(), key=lambda d: (freq[d], d))
     name_to_rank = {name: r for r, name in enumerate(ordered_names)}
     # rank als Liste über domain_id
-    rank = [0]*len(domain_to_id)
+    rank = [0] * len(domain_to_id)
     for name, did in domain_to_id.items():
         rank[did] = name_to_rank[name]
     return rank
+
 
 # =========================
 # Pattern-Metadaten
 # =========================
 
+
 def _encode_mask(ids: Iterable[int]) -> int:
     m = 0
     for i in ids:
-        m |= (1 << i)
+        m |= 1 << i
     return m
+
 
 def _build_pattern_meta(
     pattern_dict: Dict[str, Iterable[str]],
-    domain_to_id: Dict[str,int],
-    rank: List[int]
-) -> Tuple[List[PatternMeta], Dict[str,int]]:
+    domain_to_id: Dict[str, int],
+    rank: List[int],
+) -> Tuple[List[PatternMeta], Dict[str, int]]:
     """Erzeugt PatternMeta pro Pattern und ein name->pid Mapping."""
     pattern_meta: List[PatternMeta] = []
     name_to_pid: Dict[str, int] = {}
@@ -112,11 +130,13 @@ def _build_pattern_meta(
         name_to_pid[name] = pid
     return pattern_meta, name_to_pid
 
+
 # =========================
 # Trie-Aufbau & Flattening
 # =========================
 
-def _insert_pattern(root: Node, ids_sorted: Tuple[int,...], pid: int) -> None:
+
+def _insert_pattern(root: Node, ids_sorted: Tuple[int, ...], pid: int) -> None:
     n = root
     depth = 0
     for d in ids_sorted:
@@ -125,6 +145,7 @@ def _insert_pattern(root: Node, ids_sorted: Tuple[int,...], pid: int) -> None:
     n.terminals.append(pid)
     if depth > n.max_terminal_depth:
         n.max_terminal_depth = depth
+
 
 def _propagate_max_terminal_depth(root: Node) -> int:
     """Falls Terminals nur im Blatt erfasst wurden: aggregiere max_terminal_depth nach oben."""
@@ -136,9 +157,11 @@ def _propagate_max_terminal_depth(root: Node) -> int:
     root.max_terminal_depth = mtd
     return mtd
 
+
 def _dfs_flatten_terminals(root: Node) -> List[int]:
     """Erstellt die globale TERMS-Liste und setzt an jedem Knoten (sub_lo, sub_hi)."""
     TERMS: List[int] = []
+
     def dfs(n: Node):
         n.sub_lo = len(TERMS)
         if n.terminals:
@@ -147,6 +170,7 @@ def _dfs_flatten_terminals(root: Node) -> List[int]:
         for d in sorted(n.children.keys()):
             dfs(n.children[d])
         n.sub_hi = len(TERMS)
+
     dfs(root)
     return TERMS
 
@@ -161,9 +185,11 @@ def _collect_nodes_by_domain(root: Node) -> Dict[int, List[Node]]:
             stack.append(child)
     return dict(bucket)
 
+
 # =========================
 # Öffentliche API
 # =========================
+
 
 def build_trie_index(pattern_dict: Dict[str, Iterable[str]]) -> TrieIndex:
     """
@@ -171,7 +197,14 @@ def build_trie_index(pattern_dict: Dict[str, Iterable[str]]) -> TrieIndex:
     """
     if not pattern_dict:
         # Leere Struktur
-        return TrieIndex(root=Node(), TERMS=[], pattern_meta=[], domain_to_id={}, id_to_domain=[], rank=[])
+        return TrieIndex(
+            root=Node(),
+            TERMS=[],
+            pattern_meta=[],
+            domain_to_id={},
+            id_to_domain=[],
+            rank=[],
+        )
 
     domain_to_id, id_to_domain = _build_domain_vocab(pattern_dict)
     rank = _build_rank(domain_to_id, pattern_dict)
@@ -201,9 +234,11 @@ def build_trie_index(pattern_dict: Dict[str, Iterable[str]]) -> TrieIndex:
         nodes_by_domain=nodes_by_domain,
     )
 
+
 # =========================
 # Laufzeit-Helfer (optional)
 # =========================
+
 
 def map_present_to_sorted_ids(present_domains: set[str], index: TrieIndex):
     """Mappt Cluster-Domainnamen -> sortierte IDs nach globaler Ordnung, gibt auch die Bitmaske zurück."""
@@ -213,14 +248,17 @@ def map_present_to_sorted_ids(present_domains: set[str], index: TrieIndex):
     ids_sorted = sorted(ids, key=lambda x: rk[x])
     present_mask = 0
     for i in ids_sorted:
-        present_mask |= (1 << i)
+        present_mask |= 1 << i
     # NEU: Original-Namen (inkl. unbekannter Domains) mit zurückgeben
     present_names = set(present_domains)
     # Optional: unknowns separat, falls du sie explizit loggen willst
     unknown_names = {d for d in present_domains if d not in did}
     return ids_sorted, present_mask, present_names, unknown_names
 
-def descend_last_reachable(root: Node, present_ids_sorted: List[int]) -> Tuple[Node, int]:
+
+def descend_last_reachable(
+    root: Node, present_ids_sorted: List[int]
+) -> Tuple[Node, int]:
     """
     Geht so tief wie möglich entlang der vorhandenen Domains.
     Liefert den letzten erreichbaren Knoten und dessen Tiefe (k = Trefferzahl).
@@ -236,11 +274,13 @@ def descend_last_reachable(root: Node, present_ids_sorted: List[int]) -> Tuple[N
         k += 1
     return node, k
 
+
 def iter_subtree_pattern_ids(node: Node, TERMS: List[int]) -> Iterable[int]:
     """Liefert alle pattern_ids im Teilbaum des Knotens (TERMS-Slice)."""
     if node.sub_lo < 0 or node.sub_hi < 0:
         return ()
-    return TERMS[node.sub_lo:node.sub_hi]
+    return TERMS[node.sub_lo : node.sub_hi]
+
 
 # + in csb_trie_algorithm.py
 def iter_candidates_anywhere_start(
@@ -281,13 +321,16 @@ def iter_candidates_anywhere_start(
 
     return best_k_by_pid
 
+
 # =========================
 # (Optionale) Persistenz
 # =========================
 
+
 def save_trie_index(index: TrieIndex, outdir: Path) -> None:
     """Speichert Index in einfachem, robustem Format (Pickle + NumPy)."""
     import pickle, json, numpy as np
+
     outdir.mkdir(parents=True, exist_ok=True)
 
     # Trie als Pickle
@@ -319,9 +362,11 @@ def save_trie_index(index: TrieIndex, outdir: Path) -> None:
     with open(outdir / "pattern_ids_sorted.pkl", "wb") as f:
         pickle.dump(ids_sorted, f, protocol=pickle.HIGHEST_PROTOCOL)
 
+
 def load_trie_index(indir: Path) -> TrieIndex:
     """Lädt den gespeicherten Index."""
     import pickle, json, numpy as np
+
     with open(indir / "trie.pkl", "rb") as f:
         root = pickle.load(f)
     TERMS = np.load(indir / "TERMS.npy", mmap_mode=None).tolist()
@@ -340,8 +385,12 @@ def load_trie_index(indir: Path) -> TrieIndex:
         ids_sorted_lists = pickle.load(f)
 
     pattern_meta = [
-        PatternMeta(name=names[i], length=int(lengths[i]),
-                    mask=int(masks[i]), ids_sorted=tuple(ids_sorted_lists[i]))
+        PatternMeta(
+            name=names[i],
+            length=int(lengths[i]),
+            mask=int(masks[i]),
+            ids_sorted=tuple(ids_sorted_lists[i]),
+        )
         for i in range(len(names))
     ]
     return TrieIndex(
@@ -350,5 +399,5 @@ def load_trie_index(indir: Path) -> TrieIndex:
         pattern_meta=pattern_meta,
         domain_to_id=domain_to_id,
         id_to_domain=id_to_domain,
-        rank=rank
+        rank=rank,
     )

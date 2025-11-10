@@ -18,6 +18,7 @@ the cross-check directory. If resources are missing, they are concatenated
 from the bundled `DATA_DIR`. Raises `SystemExit` if required files are not found.
 """
 
+
 def _ensure_dir(p: str | os.PathLike) -> str:
     """Create a directory if it does not exist.
 
@@ -89,7 +90,6 @@ def ressource_preparation(config) -> None:
             str(DATA_DIR), allowed, config.library
         )
 
-
     # ---- Library, Cutoffs, Cooccurrence, Patterns, Metabolism ggf. zusammenführen ----
     if not os.path.isfile(config.library):
         queue.concatenate_files_shell(str(DATA_DIR), "grp", ".hmm", config.library)
@@ -132,7 +132,7 @@ def ressource_preparation(config) -> None:
     _require_path_exists(config.cooccurrence_file, "Cooccurrence")
     _require_path_exists(config.exclusion_singletons, "Exclusion_singletons")
     _require_path_exists(config.paths.refseq, "Reference sequences")
-    #_require_path_exists(config.metabolic_information, "Metabolism information")
+    # _require_path_exists(config.metabolic_information, "Metabolism information")
 
     # ---- Ableitungen & Artefakte in options hinterlegen ----
     config.cross_check_directory = cross_dir

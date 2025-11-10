@@ -8,7 +8,6 @@ from hmsss.cross_check import search_cross_reference as search_cross_reference
 from hmsss.db.database import create_database
 
 
-
 log = get_logger(__name__)
 
 """
@@ -19,6 +18,7 @@ This stage ensures the project database exists, runs HMMER searches per genome
 global report, and partitions hits into trusted / intermediate / noise
 according to score thresholds.
 """
+
 
 def initial_search(config) -> None:
     """Run the initial hmmsearch stage and prepare global reports.
@@ -53,7 +53,9 @@ def initial_search(config) -> None:
         log.info("Using existing global hmmreport: %s", config.glob_report)
     else:
         log.info("Running hmmsearch for each input genome")
-        config.hmmreport_files = search_hmmer.consecutive_hmm_search(config, int(config.cores / 2))
+        config.hmmreport_files = search_hmmer.consecutive_hmm_search(
+            config, int(config.cores / 2)
+        )
 
         log.info("Concatenating hmmsearch results for cross reference check")
         config.glob_report = search_cross_reference.concatenate_hmmreports_cat_xargs(

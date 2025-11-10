@@ -22,6 +22,7 @@ from hmsss.io import db_fetch_taxonomy, db_fetch_protein
 
 logger = get_logger(__name__)
 
+
 def _split_or_token(token: str) -> List[str]:
     """
     Split a token by ':' into alternatives.
@@ -33,7 +34,6 @@ def _split_or_token(token: str) -> List[str]:
     if not token:
         return []
     return [p.strip() for p in token.split(":") if p.strip()]
-
 
 
 def expand_required_proteins(raw: List[str]) -> List[List[str]]:
@@ -144,10 +144,9 @@ def fetch_fasta_and_hit_data(
             limiter_dict=limiter_dict,
             fetch_from_gene_clusters=False,
             excluded_domains=excluded_domains,
-            use_valid_hits=config.use_valid_hits
+            use_valid_hits=config.use_valid_hits,
         )
         return protein_dict, cluster_dict, taxon_dict
-
 
     # Alle Kombinationen der OR-Gruppen bauen
     required_combinations = expand_required_proteins(raw_required)
@@ -176,7 +175,7 @@ def fetch_fasta_and_hit_data(
             limiter_dict=limiter_dict,
             fetch_from_gene_clusters=fetch_from_gene_cluster,
             excluded_domains=excluded_domains,
-            use_valid_hits=config.use_valid_hits
+            use_valid_hits=config.use_valid_hits,
         )
 
         # Merge-Strategie:

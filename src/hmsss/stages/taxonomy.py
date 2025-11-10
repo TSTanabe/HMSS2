@@ -7,7 +7,6 @@ from hmsss.core.logging import get_logger, print_header
 from hmsss.db import database as database
 
 
-
 log = get_logger(__name__)
 
 

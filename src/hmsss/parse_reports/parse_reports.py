@@ -11,8 +11,13 @@ from contextlib import contextmanager
 from time import perf_counter
 
 from hmsss.cross_check import search_cross_reference, report_db
-from hmsss.parse_reports import pattern_completion_synteny, pattern_completion_pathway, csb_finder, csb_trie_algorithm, \
-    pattern_flank_addition
+from hmsss.parse_reports import (
+    pattern_completion_synteny,
+    pattern_completion_pathway,
+    csb_finder,
+    csb_trie_algorithm,
+    pattern_flank_addition,
+)
 from hmsss.parse_reports.csb_finder import Cluster
 from hmsss.parse_reports.csb_trie_algorithm import TrieIndex
 from hmsss.core.logging import get_logger
@@ -138,9 +143,17 @@ class Protein:
 
     def get_protein_list(self):
         # 3.9.22 representation of the whole protein in one line
-        listing = [self.proteinID, self.get_domains(), str(self.get_domain_scores()),
-                   str(self.get_domain_coordinates()), self.gene_contig, str(self.gene_start), str(self.gene_end),
-                   self.gene_strand, self.gene_locustag]
+        listing = [
+            self.proteinID,
+            self.get_domains(),
+            str(self.get_domain_scores()),
+            str(self.get_domain_coordinates()),
+            self.gene_contig,
+            str(self.gene_start),
+            str(self.gene_end),
+            self.gene_strand,
+            self.gene_locustag,
+        ]
         # d = self.get_protein_sequence()
         # string = f"{a} {b} {c} {d} {e} {f}"
         return listing
@@ -168,7 +181,7 @@ class Protein:
         # 2.9.22
 
         if (current_start <= new_start <= current_end) or (
-                current_start <= new_end <= current_end
+            current_start <= new_end <= current_end
         ):
             # start oder endpunkt innerhalb er grenzen
             return 1
@@ -314,7 +327,9 @@ class Domain:
 #########################################
 
 
-def parse_gff_file(filepath: str, protein_dict: Dict[str, Protein]) -> Dict[str, Protein]:
+def parse_gff_file(
+    filepath: str, protein_dict: Dict[str, Protein]
+) -> Dict[str, Protein]:
     """
     3.9.22
     Adds GFF attributes to each Protein object in the dictionary.
@@ -399,7 +414,7 @@ def get_protein_sequence(filepath, protein_dict):
         header = None
         save_sequence = False
 
-        for line in reader: # type: str
+        for line in reader:  # type: str
             line = line.strip()
             if line.startswith(">"):
                 if header and save_sequence and sequence:
@@ -444,8 +459,10 @@ def get_locustag(locustag_pattern: re.Pattern, string: str) -> str:
     match = locustag_pattern.search(string)
     return match.group(1) if match else ""
 
+
 ###############################################################################################################
 ###############################################################################################################
+
 
 def output_genome_report(
     output_filepath: str,
@@ -560,6 +577,7 @@ def output_genome_report(
             ]
             writer.write("\t".join(map(str, row)) + "\n")
     return
+
 
 ###############################################################################################################
 ###############################################################################################################
@@ -863,8 +881,10 @@ def process_genome(
             )
 
         with tick(f"Name syntenic blocks {genome_id}"):
-            #cluster_dict = csb_finder.name_syntenic_blocks(pattern_dict, cluster_dict, min_completeness)
-            cluster_dict = csb_finder.name_syntenic_blocks_trie(cluster_dict, index_trie, min_completeness=min_completeness)
+            # cluster_dict = csb_finder.name_syntenic_blocks(pattern_dict, cluster_dict, min_completeness)
+            cluster_dict = csb_finder.name_syntenic_blocks_trie(
+                cluster_dict, index_trie, min_completeness=min_completeness
+            )
 
         with tick(f"Add selection comment trusted proteins {genome_id}"):
             # Attach the reason for selection to protein objects trusted cutoff/reference sequence
@@ -877,8 +897,9 @@ def process_genome(
         # Optional: alters the combined_protein_dict
         if use_synteny_completion:
             with tick(f"Increase syntenic block completeness {genome_id}"):
-                pattern_completion_synteny.enhance_syntenic_block_completeness(cluster_dict, combined_protein_dict,
-                                                                           pattern_dict)
+                pattern_completion_synteny.enhance_syntenic_block_completeness(
+                    cluster_dict, combined_protein_dict, pattern_dict
+                )
 
         with tick(f"Enhance pathway completeness {genome_id}"):
             # Collect trusted protein IDs: those with complete pathways and those in the main protein dict
@@ -980,7 +1001,9 @@ def remove_exclusion_singletons(
 
 
 def remove_unassigned_intermediate_proteins(
-    combined_protein_dict: Dict[str, Any], trusted_protein_ids: set, cluster_dict: Dict[str, Any]
+    combined_protein_dict: Dict[str, Any],
+    trusted_protein_ids: set,
+    cluster_dict: Dict[str, Any],
 ) -> Dict[str, Any]:
     """
     Remove proteins from combined_protein_dict that are not present in protein_dict
@@ -1012,7 +1035,7 @@ def remove_unassigned_intermediate_proteins(
         if pid in trusted_protein_ids:
             protein.valid_hit = True
             protein.add_selection_comment("Sc")
-        else: # was not in trusted hits nor in a recognized gene cluster
+        else:  # was not in trusted hits nor in a recognized gene cluster
             protein.valid_hit = False
             protein.add_selection_comment("Nc")
 

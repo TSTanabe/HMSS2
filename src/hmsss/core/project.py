@@ -20,6 +20,7 @@ and export of configuration parameters to flat TSV files. Provides helpers
 to flatten nested dataclass/Namespace structures for logging or saving.
 """
 
+
 def prepare_result_space(config, project: str = "project") -> None:
     """
     Creates and sets up the results directory for a project, including all needed subdirectories.

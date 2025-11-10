@@ -152,9 +152,7 @@ def make_threshold_dict(
     return thresholds
 
 
-def filter_trusted_and_noise_hits(
-    config, glob_report: str, processes: int = 4
-) -> str:
+def filter_trusted_and_noise_hits(config, glob_report: str, processes: int = 4) -> str:
     """Split the global report into trusted and intermediate hits per HMM.
 
     Builds trusted/noise cutoff dicts from `options.score_threshold_file`,
@@ -173,9 +171,7 @@ def filter_trusted_and_noise_hits(
     trusted_dict = make_threshold_dict(
         config.score_threshold_file, 2, config.thrs_score
     )
-    noise_dict = make_threshold_dict(
-        config.score_threshold_file, 3, config.thrs_score
-    )
+    noise_dict = make_threshold_dict(config.score_threshold_file, 3, config.thrs_score)
 
     output_dir = config.cross_check_directory
     os.makedirs(output_dir, exist_ok=True)
@@ -403,6 +399,7 @@ def find_refseq_file(base_dir: str, filename: str) -> Optional[str]:
             return os.path.join(root, filename)
     return None
 
+
 def find_file_by_name_partial(root_dir: str, filename: str) -> list[str]:
     """
     Durchsucht ein Verzeichnis rekursiv nach Dateien, bei denen der Teil nach dem
@@ -523,7 +520,10 @@ def cross_check_candidates_with_reference_seqs(config) -> List[str]:
                 "--threads",
                 str(config.cores),
                 "--quiet",
-                "--" + str(config.diamond_speed_mode), # Fastest mode for DIAMOND, only suitable for > 80 % identity
+                "--"
+                + str(
+                    config.diamond_speed_mode
+                ),  # Fastest mode for DIAMOND, only suitable for > 80 % identity
             ]
             logger.info(f"Verifying {hmm_id} hits with reference sequences")
             subprocess.run(cmd)
