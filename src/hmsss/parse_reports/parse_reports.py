@@ -11,7 +11,8 @@ from contextlib import contextmanager
 from time import perf_counter
 
 from hmsss.cross_check import search_cross_reference, report_db
-from hmsss.parse_reports import pattern_completion_synteny, pattern_completion_pathway, csb_finder, csb_trie_algorithm
+from hmsss.parse_reports import pattern_completion_synteny, pattern_completion_pathway, csb_finder, csb_trie_algorithm, \
+    pattern_flank_addition
 from hmsss.parse_reports.csb_finder import Cluster
 from hmsss.parse_reports.csb_trie_algorithm import TrieIndex
 from hmsss.core.logging import get_logger
@@ -749,7 +750,7 @@ def process_batch(
     threshold_dict,
     index_trie,
     use_synteny_completion: bool,
-    use_remove_unassigned_intermediates: bool,
+    add_flanking_genes: bool,
     use_remove_unassigned_singletons: bool,
 ):
     """
@@ -772,7 +773,7 @@ def process_batch(
                 threshold_dict=threshold_dict,
                 index_trie=index_trie,
                 use_synteny_completion=use_synteny_completion,
-                use_remove_unassigned_intermediates=use_remove_unassigned_intermediates,
+                add_flanking_genes=add_flanking_genes,
                 use_remove_unassigned_singletons=use_remove_unassigned_singletons,
             )
         except Exception as e:
@@ -795,7 +796,7 @@ def process_genome(
     threshold_dict: dict[str, float],
     index_trie: TrieIndex,
     use_synteny_completion: bool,
-    use_remove_unassigned_intermediates: bool,
+    add_flanking_genes: bool,
     use_remove_unassigned_singletons: bool,
 ) -> None:
     """
@@ -811,7 +812,7 @@ def process_genome(
         trusted_hmmreport_path:
         intermediate_hmmreport:
         use_synteny_completion:
-        use_remove_unassigned_intermediates (bool):
+        add_flanking_genes (bool):
         use_remove_unassigned_singletons:
         index_trie: trie for the csb naming routine, for faster lookup
         cooccurrence_pattern (Dict[str, tuple[set[str],int]]):
@@ -838,14 +839,14 @@ def process_genome(
         scheint auch ein fehler bei der erkennung von SQR SDO und co zu haben. die werden im intermediate nicht aufgeführt, was komisch ist.
     """
     try:
-        with tick(f"read concatenated trusted hmmreport {genome_id}"):
+        with tick(f"read concatenated intermediat hmmreport {genome_id}"):
             # Intermediate protein hits
             intermediate_protein_dict = parse_bulk_HMMreport_genomize(
                 genome_id, intermediate_hmmreport
             )
             parse_gff_file(gff_file, intermediate_protein_dict)
 
-        with tick(f"read concatenated intermediate hmmreport {genome_id}"):
+        with tick(f"read concatenated trusted hmmreport {genome_id}"):
             # Primary protein hits
             trusted_protein_dict = parse_bulk_HMMreport_genomize(
                 genome_id, trusted_hmmreport_path
@@ -860,8 +861,8 @@ def process_genome(
             cluster_dict = csb_finder.find_syntenic_blocks(
                 genome_id, combined_protein_dict, nucleotide_range
             )
-        with tick(f"Name syntenic blocks {genome_id}"):
 
+        with tick(f"Name syntenic blocks {genome_id}"):
             #cluster_dict = csb_finder.name_syntenic_blocks(pattern_dict, cluster_dict, min_completeness)
             cluster_dict = csb_finder.name_syntenic_blocks_trie(cluster_dict, index_trie, min_completeness=min_completeness)
 
@@ -897,12 +898,12 @@ def process_genome(
                 singletons_with_complete_pathway_set
             )
 
-        if use_remove_unassigned_intermediates:
-            with tick(f"Remove unassigned intermediate hits {genome_id}"):
-                # Remove unassigned intermediate proteins, but keep trusted ones and hits in named gene clusters
-                combined_protein_dict = remove_unassigned_intermediate_proteins(
-                    combined_protein_dict, trusted_protein_ids, cluster_dict
-                )
+        with tick(f"Hide ambiguous intermediate hits {genome_id}"):
+            # Marks unassigned intermediate proteins as non valid hits (usually hidden in fetch an report)
+            combined_protein_dict = remove_unassigned_intermediate_proteins(
+                combined_protein_dict, trusted_protein_ids, cluster_dict
+            )
+
         if use_remove_unassigned_singletons:
             with tick(f"Remove unassigned singletons {genome_id}"):
                 # Remove genes that should not occur as singletons
@@ -912,6 +913,17 @@ def process_genome(
                     cluster_dict,
                     exclusion_singletons,
                     singletons_with_complete_pathway_set,
+                )
+
+        # Addition of flanking genes for detected gene clusters as non-valid hits
+        if add_flanking_genes:
+            with tick(f"Add contextual genes (±1 kb) {genome_id}"):
+                pattern_flank_addition.add_context_genes_from_gff_fast(
+                    genome_id=genome_id,
+                    gff_file=gff_file,
+                    combined_protein_dict=combined_protein_dict,
+                    cluster_dict=cluster_dict,
+                    flank_extension=1000,
                 )
 
         with tick(f"Attach protein sequences {genome_id}"):
