@@ -314,7 +314,7 @@ def generate_fetch_query_covering_domains(
         join_limiter2=join_txt,
         join_limiter3=join_txt,
         left_join_excl=left_join_excl,
-        where_not_excluded=where_clause,
+        where_clause=where_clause,
     )
     return sql, []
 
