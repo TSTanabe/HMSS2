@@ -108,6 +108,12 @@ def fetch_bulk_data(
     taxon_dict = db_fetch_taxonomy.fetch_taxonomy_dict(
         db_path=db_path,
     )
+    # 5) Filter taxonomy entries to only include genomes present in protein_dict
+    genome_ids_in_proteins = {p.genomeID for p in protein_dict.values() if getattr(p, "genomeID", None)}
+    before = len(taxon_dict)
+    taxon_dict = {gid: rec for gid, rec in taxon_dict.items() if gid in genome_ids_in_proteins}
+    after = len(taxon_dict)
+    logger.info(f"Hits were present in {after} genome lineages of {before}.")
 
     return protein_dict, cluster_dict, taxon_dict
 

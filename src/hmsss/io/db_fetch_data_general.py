@@ -13,6 +13,8 @@ Funktionen in diesem Modul:
     * Zusammenführen der Ergebnisse über alle Kombinationen
 """
 
+import sys
+import re
 from itertools import product
 from typing import Any, Dict, List, Tuple
 
@@ -23,18 +25,35 @@ from hmsss.io import db_fetch_taxonomy, db_fetch_protein
 logger = get_logger(__name__)
 
 
+
 def _split_or_token(token: str) -> List[str]:
     """
-    Split a token by ':' into alternatives.
-    Example:
-        'A:B'   -> ['A', 'B']
-        'A:B:C' -> ['A', 'B', 'C']
+    Zerlegt einen Token anhand von ':' in Alternativen.
+
+    Semantik:
+      - 'A:B'  -> ['A', 'B']
+      - 'YihQ:' -> ['YihQ', '']   # '' bedeutet: diese Position kann auch entfallen
     """
     token = token.strip()
     if not token:
         return []
-    return [p.strip() for p in token.split(":") if p.strip()]
 
+    if ":" in token:
+        parts = [p.strip() for p in token.split(":")]
+
+        alts: List[str] = []
+        for i, p in enumerate(parts):
+            if p:
+                alts.append(p)
+            else:
+                # Leerer letzter Teil (trailing ':') => optional
+                # Beispiel: 'YihQ:' -> ['YihQ', '']
+                if i == len(parts) - 1:
+                    alts.append("")
+                # Leere mittlere Teile (z.B. 'A::B') ignorieren wir
+        return alts
+
+    return [token]
 
 def expand_required_proteins(raw: List[str]) -> List[List[str]]:
     """
@@ -64,20 +83,33 @@ def expand_required_proteins(raw: List[str]) -> List[List[str]]:
     if not raw:
         return []
 
-    option_groups: List[List[str]] = []
+    argument = " ".join(raw)
+    groups = [g.strip() for g in re.split(r"[\[\]]", argument) if g.strip()]
 
-    for token in raw:
-        alts = _split_or_token(token)
-        # Leere Tokens ignorieren
-        if not alts:
-            continue
-        option_groups.append(alts)
+    all_combos: List[List[str]] = []
 
-    if not option_groups:
-        return []
+    for group in groups:
+        tokens = group.split(" ")
 
-    # product(*option_groups) liefert Tupel mit je einer Alternative pro Position
-    return [list(combo) for combo in product(*option_groups)]
+        option_groups: List[List[str]] = []
+
+        for token in tokens:
+            alts = _split_or_token(token)
+            # Leere Tokens ignorieren
+            if not alts:
+                continue
+            option_groups.append(alts)
+
+        if not option_groups:
+            return []
+        # Kartesisches Produkt innerhalb der Gruppe
+        for combo in product(*option_groups):
+            # '' bedeutet "optional weglassen"
+            filtered = [x for x in combo if x != ""]
+            if filtered: # skip completely empty list
+                all_combos.append(filtered)
+
+    return all_combos
 
 
 def _build_limiter_dict(config: Config) -> Dict[str, Any]:
@@ -122,21 +154,32 @@ def fetch_fasta_and_hit_data(
     limiter_dict = _build_limiter_dict(config)
     excluded_domains = config.fetch_not_csb_with_these_domains
 
-    fetch_from_gene_cluster = False
     raw_required: List[str] = []
+    additional_proteins: List[str] = []
 
     # Quelle bestimmen: CSB oder Proteindomänen
-    if config.fetch_csbs:
+    if config.fetch_csbs and config.fetch_proteins:
         fetch_from_gene_cluster = True
         raw_required = config.fetch_csbs
+        required_combinations = expand_required_proteins(raw_required)
+        logger.info(f"Collecting gene clusters containing: {required_combinations}")
+
+        raw_required = config.fetch_proteins
+        additional_proteins = expand_required_proteins(raw_required)
+        logger.info(f"Adding proteins to genomes with these gene clusters: {additional_proteins}")
+
+    elif config.fetch_csbs:
+        fetch_from_gene_cluster = True
+        raw_required = config.fetch_csbs
+        required_combinations = expand_required_proteins(raw_required)
         logger.info(f"Collecting gene clusters containing: {raw_required}")
     elif config.fetch_proteins:
         fetch_from_gene_cluster = False
         raw_required = config.fetch_proteins
+        required_combinations = expand_required_proteins(raw_required)
         logger.info(f"Collecting proteins containing: {raw_required}")
-
-    # Keine Angabe von domains, daher alles für die gewünschten Genome
-    if not raw_required:
+    else:
+        # Keine Angabe von domains, daher alles für die gewünschten Genome
         logger.info(f"Fetching all hits for genomes {limiter_dict.keys()}")
         protein_dict, cluster_dict, taxon_dict = db_fetch_protein.fetch_bulk_data(
             database=config.database_directory,
@@ -148,18 +191,6 @@ def fetch_fasta_and_hit_data(
         )
         return protein_dict, cluster_dict, taxon_dict
 
-    # Alle Kombinationen der OR-Gruppen bauen
-    required_combinations = expand_required_proteins(raw_required)
-    if len(required_combinations) == 1:
-        logger.info(
-            f"Fetching data for 1 combination of required domains: "
-            f"{required_combinations[0]}"
-        )
-    else:
-        logger.info(
-            f"Fetching data for {len(required_combinations)} combinations of "
-            f"required domains (OR-groups expanded)."
-        )
 
     # Sammel-Container über alle Kombinationen
     sum_protein_dict: Dict[str, Any] = {}
@@ -189,10 +220,31 @@ def fetch_fasta_and_hit_data(
         if taxon_dict:
             sum_taxon_dict.update(taxon_dict)
 
+    # Addition von einzelnen proteinen
+    for combo in additional_proteins:
+        logger.debug(f"Fetching combination: {combo}")
+        protein_dict, cluster_dict, taxon_dict = db_fetch_protein.fetch_bulk_data(
+            database=config.database_directory,
+            syntenic_domains=combo,
+            limiter_dict=sum_taxon_dict,
+            fetch_from_gene_clusters=False,
+            excluded_domains=excluded_domains,
+            use_valid_hits=config.use_valid_hits,
+        )
+
+        # Merge-Strategie:
+        # - spätere Treffer überschreiben frühere bei gleichen Keys
+        #   (vermeidet Duplikate, einfaches Verhalten)
+        # - falls nötig, könnte man das später zu Aggregation anpassen
+        if protein_dict:
+            sum_protein_dict.update(protein_dict)
+        if cluster_dict:
+            sum_cluster_dict.update(cluster_dict)
+        if taxon_dict:
+            sum_taxon_dict.update(taxon_dict)
     logger.info(
-        "Fetch summary: %d proteins, %d clusters, %d taxa",
+        "Fetch summary: %d proteins, %d taxa",
         len(sum_protein_dict),
-        len(sum_cluster_dict),
         len(sum_taxon_dict),
     )
 
