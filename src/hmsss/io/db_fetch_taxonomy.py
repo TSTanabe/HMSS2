@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import os
 import sqlite3
-from typing import Any, Dict, List, Optional, Set, Tuple, Iterable
+from typing import Any, Dict
 
 from hmsss.cli.config import Config
 from hmsss.core.logging import get_logger
@@ -219,28 +218,6 @@ def fetch_limiter_data_keys_only(config: Config) -> Dict[str, Dict[str, str]]:
     if lineage and taxon:
         where.append(f"g.{lineage} LIKE ?")
         params.append(f"%{taxon}%")
-
-    if domains:
-        q_marks = ",".join(["?"] * len(domains))
-        where.append(f"""EXISTS (
-            SELECT 1
-            FROM Proteins p
-            JOIN Domains d ON d.proteinID = p.proteinID
-            WHERE p.genomeID = g.genomeID
-              AND d.domain IN ({q_marks})
-        )""")
-        params.extend(domains)
-
-    if keywords:
-        q_marks = ",".join(["?"] * len(keywords))
-        where.append(f"""EXISTS (
-            SELECT 1
-            FROM Clusters c
-            JOIN Keywords k ON k.clusterID = c.clusterID
-            WHERE c.genomeID = g.genomeID
-              AND k.keyword IN ({q_marks})
-        )""")
-        params.extend(keywords)
 
     sql = "SELECT g.genomeID FROM Genomes g " + (
         ("WHERE " + " AND ".join(where)) if where else ""
