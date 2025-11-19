@@ -19,6 +19,7 @@ from hmsss.cli.config import (
     CliLimiter,
     CliOperators,
     CliProcess,
+    CliReadMapping,
 )
 from hmsss.cli import paths as paths
 
@@ -491,6 +492,77 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         else argparse.SUPPRESS,
     )
 
+    # Read mapping workflow algorithm
+    readmap = parser.add_argument_group("Read mapping integration")
+
+    readmap.add_argument(
+        "--read-mapping",
+        dest="use_read_mapping",
+        action="store_true",
+        help="Enable read-mapping analysis for FASTQ files located in the -f directory.",
+    )
+
+    readmap.add_argument(
+        "--rm-threads",
+        dest="rm_threads",
+        type=int,
+        default=14,
+        metavar="<int>",
+        help="Number of threads to use (default: 14).",
+    )
+
+    readmap.add_argument(
+        "--rm-evalue",
+        dest="rm_evalue",
+        type=float,
+        default=1e-5,
+        metavar="<float>",
+        help="E-value threshold for homology search (default: 1e-5).",
+    )
+
+    readmap.add_argument(
+        "--rm-placements-cutoff",
+        dest="rm_placements_cutoff",
+        type=float,
+        default=0.75,
+        metavar="<float>",
+        help="Placement cutoff for phylogenetic placement (default: 0.75).",
+    )
+
+    readmap.add_argument(
+        "--rm-resolve-placements",
+        dest="rm_resolve_placements",
+        action="store_true",
+        help="Resolve ambiguous phylogenetic placements (default: False).",
+    )
+
+    readmap.add_argument(
+        "--rm-min-orf-length",
+        dest="rm_min_orf_length",
+        type=int,
+        default=96,
+        metavar="<int>",
+        help="Minimum ORF length (default: 96).",
+    )
+
+    readmap.add_argument(
+        "--rm-restrict-read-length",
+        dest="rm_restrict_read_length",
+        type=int,
+        default=None,
+        metavar="<int>",
+        help="Maximum read length (default: None).",
+    )
+
+    readmap.add_argument(
+        "--rm-translation-table",
+        dest="rm_translation_table",
+        type=int,
+        default=11,
+        metavar="<int>",
+        help="NCBI translation table to use (default: 11).",
+    )
+
     # Work step regulation
     flow = parser.add_argument_group("Work step regulation")
     flow.add_argument(
@@ -894,6 +966,17 @@ def build_config_from_namespace(ns) -> Config:
         jaccard=float(getattr(ns, "jaccard", 0.0)),
     )
 
+    cli_readmap = CliReadMapping(
+        use_read_mapping=bool(getattr(ns, "use_read_mapping", False)),
+        threads=ns.rm_threads,
+        evalue=ns.rm_evalue,
+        placements_cutoff=ns.rm_placements_cutoff,
+        resolve_placements=bool(getattr(ns, "rm_resolve_placements", False)),
+        min_orf_length=ns.rm_min_orf_length,
+        restrict_read_length=ns.rm_restrict_read_length,
+        translation_table=ns.rm_translation_table,
+    )
+
     cli_flow = CliFlow(
         redo_taxonomy=bool(getattr(ns, "redo_taxonomy", False)),
         use_synteny_completion=bool(getattr(ns, "use_synteny_completion", True)),
@@ -943,6 +1026,7 @@ def build_config_from_namespace(ns) -> Config:
         cli_synteny=cli_synteny,
         cli_info=cli_info,
         cli_csb=cli_csb,
+        cli_readmap=cli_readmap,
         cli_flow=cli_flow,
         cli_limiter=cli_limiter,
         cli_ops=cli_ops,

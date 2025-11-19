@@ -201,6 +201,33 @@ def queue_faa_without_gff(config) -> dict[str, str]:
     log.info(f"Queued {len(faa_missing_gff)} faa files without gff for transcription.")
     return faa_missing_gff
 
+def queue_graftm_fastq_inputs(config) -> dict[str, str]:
+    """
+    Sucht im FASTA/FASTQ-Inputverzeichnis und gibt ein Dictionary zurück:
+
+        { genome_id : full_path }
+
+    Falls genomeID sowohl in .fastq als auch in .fastq.gz vorkommt:
+        -> .fastq.gz gewinnt
+    """
+
+    root = config.fasta_file_directory
+
+    # Sammeln aller FASTQ-Dateien
+    fastq: Dict[str, str] = get_genome_id_files_dict(root, extension=".fastq")
+    fastq_gz: Dict[str, str] = get_genome_id_files_dict(root, extension=".fastq.gz")
+
+    # Merge:
+    # zuerst .fastq, dann .fastq.gz drüber -> gz überschreibt fastq bei Konflikt
+    merged: Dict[str, str] = {}
+    merged.update(fastq)
+    merged.update(fastq_gz)
+
+    # Speichern in Config
+    config.graftm_fastq_files = merged
+
+    return merged
+
 
 def get_all_files_with_extension(directory: str, extension: str) -> Set[str]:
     """Recursively find all files with a given extension.

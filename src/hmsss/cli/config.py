@@ -168,6 +168,21 @@ class CliCsb:
     max_domain_repeats: int = 4
     jaccard: float = 0.0
 
+@dataclass(slots=True)
+class CliReadMapping:
+    """CLI options for the hidden read-mapping module."""
+
+    use_read_mapping: bool = False
+
+    threads: int = 14
+    evalue: float = 1e-5
+    placements_cutoff: float = 0.75
+    resolve_placements: bool = False
+
+    min_orf_length: int = 96
+    restrict_read_length: Optional[int] = None
+    translation_table: int = 11
+
 
 @dataclass(slots=True)
 class CliFlow:
@@ -359,6 +374,7 @@ class Config:
     cli_limiter: CliLimiter = field(default_factory=CliLimiter)
     cli_ops: CliOperators = field(default_factory=CliOperators)
     cli_process: CliProcess = field(default_factory=CliProcess)
+    cli_readmap: CliReadMapping = field(default_factory=CliReadMapping)
 
     # Laufzeit-State & Projektfelder
     state: RuntimeState = field(default_factory=RuntimeState)
@@ -465,6 +481,17 @@ class Config:
         "cli_csb.max_domain_repeats"
     )  # :contentReference[oaicite:33]{index=33}
     jaccard = prop("cli_csb.jaccard")  # :contentReference[oaicite:34]{index=34}
+
+    # Read mapping (shortcuts)
+    use_read_mapping = prop("cli_readmap.use_read_mapping")
+    rm_threads = prop("cli_readmap.threads")
+    rm_evalue = prop("cli_readmap.evalue")
+    rm_placements_cutoff = prop("cli_readmap.placements_cutoff")
+    rm_resolve_placements = prop("cli_readmap.resolve_placements")
+    rm_min_orf_length = prop("cli_readmap.min_orf_length")
+    rm_restrict_read_length = prop("cli_readmap.restrict_read_length")
+    rm_translation_table = prop("cli_readmap.translation_table")
+
 
     merge_fasta = prop(
         "cli_process.merge_fasta"

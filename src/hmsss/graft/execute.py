@@ -30,7 +30,7 @@ __status__ = "Development"
 
 # This is the 'run' module from the graftM package, adjusted to am
 # minimal functionality. Only read detection and placement for a single
-# metagnome is possible and output was limited to the placeent of reads
+# metagnome is possible and output was limited to the placement of reads
 # Other outputs and functionalities of the package, except for the graftM graft
 # were removed
 

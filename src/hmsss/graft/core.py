@@ -1,4 +1,10 @@
 # src/hmsss/graft/core.py
+# This is the adaptor between the main program to
+# the implementation of graftM. GraftM code was adjusted. Now only
+# read identification and placement are done and minimal output
+# No other functionality including the package create is included
+# Packages have to be provided by the user or the /data
+
 
 from __future__ import annotations
 from types import SimpleNamespace

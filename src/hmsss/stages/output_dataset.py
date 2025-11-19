@@ -6,7 +6,7 @@ from typing import Dict
 
 from hmsss.cli.config import Config
 from hmsss.core.logging import get_logger, print_header
-from hmsss.io import print_reports, print_command_args
+from hmsss.io import print_reports, print_command_args, print_graphs
 from hmsss.io import db_fetch_data_general
 from hmsss.io import db_fetch_context
 from hmsss.db import database as database
@@ -130,6 +130,8 @@ def output_operator(config: Config) -> None:
     if config.print_fasta:
         print_reports.print_fasta_files(directory, protein_dict, cluster_dict)
 
+    if config.print_graphs:
+        print_graphs.print_graphs(directory, protein_dict, taxon_dict)
     # datasets.main_binary_dataset(
     #    config, directory, protein_dict, cluster_dict, taxon_dict
     # )
