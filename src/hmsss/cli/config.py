@@ -277,6 +277,7 @@ class RuntimeState:
     faa_files: Dict[str, str] = field(default_factory=dict)
     gff_files: Dict[str, str] = field(default_factory=dict)
     hmmreport_files: Dict[str, str] = field(default_factory=dict)
+    fastq_files: Dict[str, str] = field(default_factory=dict)
 
     redundant: Dict[str, List[str]] = field(default_factory=dict)
     non_redundant: Dict[str, str] = field(default_factory=dict)
