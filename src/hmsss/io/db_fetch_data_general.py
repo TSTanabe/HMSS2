@@ -25,7 +25,6 @@ from hmsss.io import db_fetch_taxonomy, db_fetch_protein
 logger = get_logger(__name__)
 
 
-
 def _split_or_token(token: str) -> List[str]:
     """
     Zerlegt einen Token anhand von ':' in Alternativen.
@@ -54,6 +53,7 @@ def _split_or_token(token: str) -> List[str]:
         return alts
 
     return [token]
+
 
 def expand_required_proteins(raw: List[str]) -> List[List[str]]:
     """
@@ -106,7 +106,7 @@ def expand_required_proteins(raw: List[str]) -> List[List[str]]:
         for combo in product(*option_groups):
             # '' bedeutet "optional weglassen"
             filtered = [x for x in combo if x != ""]
-            if filtered: # skip completely empty list
+            if filtered:  # skip completely empty list
                 all_combos.append(filtered)
 
     return all_combos
@@ -166,7 +166,9 @@ def fetch_fasta_and_hit_data(
 
         raw_required = config.fetch_proteins
         additional_proteins = expand_required_proteins(raw_required)
-        logger.info(f"Adding proteins to genomes with these gene clusters: {additional_proteins}")
+        logger.info(
+            f"Adding proteins to genomes with these gene clusters: {additional_proteins}"
+        )
 
     elif config.fetch_csbs:
         fetch_from_gene_cluster = True
@@ -190,7 +192,6 @@ def fetch_fasta_and_hit_data(
             use_valid_hits=config.use_valid_hits,
         )
         return protein_dict, cluster_dict, taxon_dict
-
 
     # Sammel-Container über alle Kombinationen
     sum_protein_dict: Dict[str, Any] = {}

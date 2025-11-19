@@ -1,13 +1,15 @@
-import logging
+from hmsss.core.logging import get_logger
 from hmsss.graft.diamond import Diamond
 from hmsss.graft.unpack_sequences import UnpackRawReads
 from hmsss.graft.sequence_search_results import SequenceSearchResult
 from hmsss.graft.sequence_extractor import SequenceExtractor
 
+logging = get_logger(__name__)
+
 
 class DecoyFilter:
     def __init__(self, proper_hits_diamond, decoy_diamond=None):
-        '''Create a new DecoyFilter.
+        """Create a new DecoyFilter.
 
         Parameters
         ----------
@@ -17,12 +19,12 @@ class DecoyFilter:
             Diamond object with db containing decoy sequences. If None, no
             searching against a decoy database is carried out.
 
-        '''
+        """
         self._decoy_diamond = decoy_diamond
         self._proper_hits_diamond = proper_hits_diamond
 
     def filter(self, candidate_sequences_fasta_path, filtered_output_fasta_path):
-        '''Filter the fasta file by only keeping sequences that hit a proper sequence
+        """Filter the fasta file by only keeping sequences that hit a proper sequence
         better than the decoy database.
 
         Parameters
@@ -36,15 +38,19 @@ class DecoyFilter:
         Returns
         -------
         False if no sequences remain after filtering, else True.
-        '''
+        """
         # Run query sequences against the proper database
         seq_ids_and_bitscores = {}
         logging.debug("Running diamond against the non-decoy sequences")
         pd = self._proper_hits_diamond.run(
-            candidate_sequences_fasta_path,
-            UnpackRawReads.PROTEIN_SEQUENCE_TYPE)
-        for res in pd.each([SequenceSearchResult.QUERY_ID_FIELD,
-                            SequenceSearchResult.ALIGNMENT_BIT_SCORE]):
+            candidate_sequences_fasta_path, UnpackRawReads.PROTEIN_SEQUENCE_TYPE
+        )
+        for res in pd.each(
+            [
+                SequenceSearchResult.QUERY_ID_FIELD,
+                SequenceSearchResult.ALIGNMENT_BIT_SCORE,
+            ]
+        ):
             seq = res[0]
             score = float(res[1])
             # Possible a single sequence gets 2 split up hits (maybe), so take
@@ -53,8 +59,10 @@ class DecoyFilter:
                 seq_ids_and_bitscores[seq] = score
 
         num_before_decoy_removal = len(seq_ids_and_bitscores)
-        logging.info("Found %i sequences which hit the non-decoy sequences" % \
-                     num_before_decoy_removal)
+        logging.info(
+            "Found %i sequences which hit the non-decoy sequences"
+            % num_before_decoy_removal
+        )
 
         if self._decoy_diamond is None:
             logging.debug("Not running against the decoy database")
@@ -63,20 +71,29 @@ class DecoyFilter:
             # list any sequences which hit better the decoy DB.
             logging.debug("Running diamond against decoy sequences")
             pd = self._decoy_diamond.run(
-                candidate_sequences_fasta_path,
-                UnpackRawReads.PROTEIN_SEQUENCE_TYPE)
-            for res in pd.each([SequenceSearchResult.QUERY_ID_FIELD,
-                                SequenceSearchResult.ALIGNMENT_BIT_SCORE]):
+                candidate_sequences_fasta_path, UnpackRawReads.PROTEIN_SEQUENCE_TYPE
+            )
+            for res in pd.each(
+                [
+                    SequenceSearchResult.QUERY_ID_FIELD,
+                    SequenceSearchResult.ALIGNMENT_BIT_SCORE,
+                ]
+            ):
                 seq = res[0]
                 score = float(res[1])
                 if seq in seq_ids_and_bitscores and seq_ids_and_bitscores[seq] < score:
-                    logging.debug("Removing sequence with better hit to the decoy database: %s" % seq)
+                    logging.debug(
+                        "Removing sequence with better hit to the decoy database: %s"
+                        % seq
+                    )
                     del seq_ids_and_bitscores[seq]
 
-            logging.info("Removed %i"
-                         " sequences which hit the decoy sequences better"
-                         " than the non-decoy sequences" % \
-                         (num_before_decoy_removal - len(seq_ids_and_bitscores)))
+            logging.info(
+                "Removed %i"
+                " sequences which hit the decoy sequences better"
+                " than the non-decoy sequences"
+                % (num_before_decoy_removal - len(seq_ids_and_bitscores))
+            )
 
         # Either all candidate hits were removed as decoys or no candidate hits were found
         if len(seq_ids_and_bitscores) == 0:
@@ -84,7 +101,9 @@ class DecoyFilter:
 
         # Extract the found sequences into the output file
         logging.debug("Extracting query sequences")
-        SequenceExtractor().extract(seq_ids_and_bitscores.keys(),
-                                    candidate_sequences_fasta_path,
-                                    filtered_output_fasta_path)
+        SequenceExtractor().extract(
+            seq_ids_and_bitscores.keys(),
+            candidate_sequences_fasta_path,
+            filtered_output_fasta_path,
+        )
         return True

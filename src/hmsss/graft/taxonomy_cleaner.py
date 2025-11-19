@@ -16,13 +16,14 @@
 #                                                                              #
 ################################################################################
 
-class TaxonomyCleaner:
 
-    meaningless_taxonomic_names = set([
-        'k__', 'd__', 'p__', 'c__', 'o__','f__', 'g__', 's__'])
+class TaxonomyCleaner:
+    meaningless_taxonomic_names = set(
+        ["k__", "d__", "p__", "c__", "o__", "f__", "g__", "s__"]
+    )
 
     def remove_empty_ranks(self, tax_list):
-        '''
+        """
         Removes empty rank prefixes
 
         Parameters
@@ -32,7 +33,7 @@ class TaxonomyCleaner:
         Returns
         -------
         A list of taxonomic ranks with empty prefixes removed.
-        '''
+        """
         new_tax_list = []
         for rank in tax_list:
             if rank not in self.meaningless_taxonomic_names:

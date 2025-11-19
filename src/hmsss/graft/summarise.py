@@ -1,58 +1,60 @@
-
 class Stats_And_Summary:
-
-    def __init__(self): pass
+    def __init__(self):
+        pass
 
     def coverage_of_hmm(self, hmm, count_table, coverage_table, avg_read_length):
-
         for line in open(hmm):
-
-            if line.startswith('LENG'):
+            if line.startswith("LENG"):
                 length = line.split()[1]
 
-        with open(coverage_table, 'w') as ct:
-            write = ['#ID     20110816_S1D    ConsensusLineage\n']
+        with open(coverage_table, "w") as ct:
+            write = ["#ID     20110816_S1D    ConsensusLineage\n"]
             for line in open(count_table):
+                if line.startswith("#"):
+                    continue
 
-                    if line.startswith('#'):
-                        continue
+                splt = line.split()
 
-                    splt = line.split()
+                cov = str(
+                    round((float(splt[1]) * float(avg_read_length)) / float(length), 3)
+                )
 
-                    cov = str(round((float(splt[1])*float(avg_read_length)) / float(length), 3))
-
-                    write.append("%s\t%s\t%s\n" % (
-                                    splt[0],
-                                    cov,
-                                    splt[2]))
+                write.append("%s\t%s\t%s\n" % (splt[0], cov, splt[2]))
             for entry in write:
                 ct.write(entry)
 
     def readTax(self, placements, output_path):
-        with open(output_path, 'w') as out:
+        with open(output_path, "w") as out:
             for read, tax in placements.items():
-                out.write("%s\t%s\n" % (read, '; '.join(tax)))
+                out.write("%s\t%s\n" % (read, "; ".join(tax)))
 
-    def build_basic_statistics(self, times, hit_read_count_list, placed_reads, base_list, output):
-
+    def build_basic_statistics(
+        self, times, hit_read_count_list, placed_reads, base_list, output
+    ):
         output_lines = ["Basic run statistics (count):"]
-        output_lines.append("Files:\t%s" % '\t'.join(base_list))
+        output_lines.append("Files:\t%s" % "\t".join(base_list))
         if any([x[0] for x in hit_read_count_list if x[0] > 0]):
-            output_lines.append("18S reads filtered:\t%s" % '\t'.join([str(x[0]) for x in hit_read_count_list]))
-        output_lines.append("reads detected:\t%s" % '\t'.join([str(x[1]) for x in hit_read_count_list]))
-        output_lines.append("reads placed in tree:\t%s" % '\t'.join([str(x) for x in placed_reads]))
+            output_lines.append(
+                "18S reads filtered:\t%s"
+                % "\t".join([str(x[0]) for x in hit_read_count_list])
+            )
+        output_lines.append(
+            "reads detected:\t%s" % "\t".join([str(x[1]) for x in hit_read_count_list])
+        )
+        output_lines.append(
+            "reads placed in tree:\t%s" % "\t".join([str(x) for x in placed_reads])
+        )
         output_lines.append("Runtime (seconds):")
         output_lines.append("Search step:\t%s" % times[0])
         output_lines.append("Alignment step:\t%s" % times[1])
         output_lines.append("Tree insertion step:\t%s" % times[2])
 
-
-        with open(output, 'w') as stats_file:
+        with open(output, "w") as stats_file:
             for line in output_lines:
-                stats_file.write(line + '\n')
+                stats_file.write(line + "\n")
 
     def _iterate_otu_table_rows(self, read_taxonomies):
-        '''yield that which is required for an OTU table: taxonomy, and
+        """yield that which is required for an OTU table: taxonomy, and
         count of that taxonomy in each sample as an array
 
         Parameters
@@ -70,25 +72,30 @@ class Stats_And_Summary:
 
         Return
         ------
-        Nothing, use this as an iterator'''
+        Nothing, use this as an iterator"""
 
         taxonomy_string_to_taxonomy_array = {}
         taxonomy_string_to_counts = {}
         sample_index = 0
         num_samples = len(read_taxonomies)
-        for read_to_taxonomy in read_taxonomies: # For each sample
-            for taxonomy_array in read_to_taxonomy.values(): # For each read
-                taxonomy_string = '; '.join(taxonomy_array)
+        for read_to_taxonomy in read_taxonomies:  # For each sample
+            for taxonomy_array in read_to_taxonomy.values():  # For each read
+                taxonomy_string = "; ".join(taxonomy_array)
                 if taxonomy_string in taxonomy_string_to_taxonomy_array:
-                    if taxonomy_string_to_taxonomy_array[taxonomy_string] != taxonomy_array:
-                        raise Exception("Programming error: two different taxonomies had same taxonomy string")
+                    if (
+                        taxonomy_string_to_taxonomy_array[taxonomy_string]
+                        != taxonomy_array
+                    ):
+                        raise Exception(
+                            "Programming error: two different taxonomies had same taxonomy string"
+                        )
                     try:
                         taxonomy_string_to_counts[taxonomy_string][sample_index] += 1
                     except KeyError:
                         taxonomy_string_to_counts[taxonomy_string][sample_index] = 1
                 else:
                     taxonomy_string_to_taxonomy_array[taxonomy_string] = taxonomy_array
-                    taxonomy_string_to_counts[taxonomy_string] = [0]*num_samples
+                    taxonomy_string_to_counts[taxonomy_string] = [0] * num_samples
                     taxonomy_string_to_counts[taxonomy_string][sample_index] = 1
             sample_index += 1
 
@@ -100,22 +107,23 @@ class Stats_And_Summary:
                     array.append(counts_array[i])
                 except IndexError:
                     array.append(0)
-            yield otu_id,\
-                taxonomy_string_to_taxonomy_array[tax_string],\
-                array
+            yield otu_id, taxonomy_string_to_taxonomy_array[tax_string], array
             otu_id += 1
 
-    def write_tabular_otu_table(self, sample_names, read_taxonomies, combined_output_otu_table_io):
-        '''A function that takes a hash of trusted placements, and compiles them
-        into an OTU-esque table.'''
-        delim = '\t'
-        combined_output_otu_table_io.write(delim.join(['#ID',
-                                                       delim.join(sample_names),
-                                                       'ConsensusLineage']))
+    def write_tabular_otu_table(
+        self, sample_names, read_taxonomies, combined_output_otu_table_io
+    ):
+        """A function that takes a hash of trusted placements, and compiles them
+        into an OTU-esque table."""
+        delim = "\t"
+        combined_output_otu_table_io.write(
+            delim.join(["#ID", delim.join(sample_names), "ConsensusLineage"])
+        )
         combined_output_otu_table_io.write("\n")
         for otu_id, tax, counts in self._iterate_otu_table_rows(read_taxonomies):
-            combined_output_otu_table_io.write(delim.join(\
-                (str(otu_id),
-                 delim.join([str(c) for c in counts]),
-                 '; '.join(tax)))+"\n")
-
+            combined_output_otu_table_io.write(
+                delim.join(
+                    (str(otu_id), delim.join([str(c) for c in counts]), "; ".join(tax))
+                )
+                + "\n"
+            )

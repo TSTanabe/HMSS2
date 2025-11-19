@@ -1,8 +1,10 @@
-from hmsss.graft.sequence_search_results import DiamondSearchResult
 import tempfile
 import subprocess
 import os
+
 from hmsss.graft.unpack_sequences import UnpackRawReads
+from hmsss.graft.sequence_search_results import DiamondSearchResult
+
 
 class Diamond:
     def __init__(self, database, threads=None, evalue=None):
@@ -10,8 +12,14 @@ class Diamond:
         self._threads = threads
         self._evalue = evalue
 
-    def run(self, input_sequence_file, input_sequence_type, daa_file_basename=None, extra_args=''):
-        '''Run input sequences in either blastp or blastx mode against the
+    def run(
+        self,
+        input_sequence_file,
+        input_sequence_type,
+        daa_file_basename=None,
+        extra_args="",
+    ):
+        """Run input sequences in either blastp or blastx mode against the
         database specified in __init__.
 
         Parameters
@@ -24,30 +32,32 @@ class Diamond:
         Returns
         -------
         DiamondSearchResult
-        '''
+        """
 
         cmd_list = ["diamond"]
         if input_sequence_type == UnpackRawReads.PROTEIN_SEQUENCE_TYPE:
-            cmd_list.append('blastp')
+            cmd_list.append("blastp")
         elif input_sequence_type == UnpackRawReads.NUCLEOTIDE_SEQUENCE_TYPE:
-            cmd_list.append('blastx')
+            cmd_list.append("blastx")
         else:
             raise Exception("Programming error")
 
         basename = daa_file_basename
         if basename is None:
-            with tempfile.NamedTemporaryFile(prefix='graftm_diamond') as t:
+            with tempfile.NamedTemporaryFile(prefix="graftm_diamond") as t:
                 # we are just stealing the name, don't need the file itself
                 basename = t.name
 
-        for c in ['-k 1',
-                  "-d",
-                    self._database,
-                    "-q",
-                    "%s" % input_sequence_file,
-                    "-a",
-                    basename,
-                    extra_args]:
+        for c in [
+            "-k 1",
+            "-d",
+            self._database,
+            "-q",
+            "%s" % input_sequence_file,
+            "-a",
+            basename,
+            extra_args,
+        ]:
             cmd_list.append(c)
         if self._threads:
             cmd_list.append("--threads")
@@ -56,7 +66,7 @@ class Diamond:
             cmd_list.append("--evalue")
             cmd_list.append(str(self._evalue))
 
-        cmd = ' '.join(cmd_list)
+        cmd = " ".join(cmd_list)
         subprocess.run(cmd, shell=True, check=True)
 
         daa_name = "%s.daa" % basename

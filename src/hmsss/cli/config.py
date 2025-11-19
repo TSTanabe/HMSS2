@@ -168,6 +168,7 @@ class CliCsb:
     max_domain_repeats: int = 4
     jaccard: float = 0.0
 
+
 @dataclass(slots=True)
 class CliReadMapping:
     """CLI options for the hidden read-mapping module."""
@@ -493,7 +494,6 @@ class Config:
     rm_restrict_read_length = prop("cli_readmap.restrict_read_length")
     rm_translation_table = prop("cli_readmap.translation_table")
 
-
     merge_fasta = prop(
         "cli_process.merge_fasta"
     )  # :contentReference[oaicite:35]{index=35}
@@ -552,6 +552,7 @@ class Config:
     fna_files = prop("state.fna_files")
     faa_files = prop("state.faa_files")
     gff_files = prop("state.gff_files")
+    fastq_files = prop("state.fastq_files")
     hmmreport_files = prop("state.hmmreport_files")
     redundant = prop("state.redundant")
     non_redundant = prop("state.non_redundant")

@@ -28,14 +28,15 @@ __maintainer__ = "Joel Boyd, Ben Woodcroft"
 __email__ = "joel.boyd near uq.net.au, b.woodcroft near uq.edu.au"
 __status__ = "Development"
 
-# This is the 'run' module from the graftM package, adjusted to am
+# 19.11.2025 This is the 'run' module from the graftM package, adjusted to am
 # minimal functionality. Only read detection and placement for a single
-# metagnome is possible and output was limited to the placement of reads
+# metagnome is possible and output was limited to the placement of reads.
 # Other outputs and functionalities of the package, except for the graftM graft
-# were removed
+# were removed.
 
 import os
-from hmsss.core.logging import get_logger, print_header
+from hmsss.core.logging import get_logger
+
 logger = get_logger(__name__)
 
 import tempfile
@@ -44,7 +45,8 @@ import shutil
 from hmsss.graft.housekeeping import HouseKeeping
 from hmsss.graft.summarise import Stats_And_Summary
 from hmsss.graft.graftm_package import GraftMPackage
-from hmsss.graft.sequence_search_results import SequenceSearchResult
+
+# from hmsss.graft.sequence_search_results import SequenceSearchResult
 from hmsss.graft.graftm_output_paths import GraftMFiles
 from hmsss.graft.search_table import SearchTableWriter
 from hmsss.graft.sequence_searcher import SequenceSearcher
@@ -55,8 +57,9 @@ from hmsss.graft.pplacer import Pplacer
 from hmsss.graft.unpack_sequences import UnpackRawReads
 from hmsss.graft.expand_searcher import ExpandSearcher
 from hmsss.graft.diamond import Diamond
-from hmsss.graft.getaxnseq import Getaxnseq # package not required?
-from hmsss.graft.sequence_io import SequenceIO
+
+# from hmsss.graft.getaxnseq import Getaxnseq  # package not required?
+# from hmsss.graft.sequence_io import SequenceIO
 from hmsss.graft.clusterer import Clusterer
 from hmsss.graft.external_program_suite import ExternalProgramSuite
 from hmsss.graft.decoy_filter import DecoyFilter
@@ -83,8 +86,10 @@ class Run:
 
     _MIN_VERBOSITY_FOR_ART = 3  # ab welcher verbosity das ASCII-Art gedruckt wird
 
-    PPLACER_TAXONOMIC_ASSIGNMENT = 'pplacer'
-    DIAMOND_TAXONOMIC_ASSIGNMENT = 'diamond'  # wird hier nicht aktiv benutzt, aber behalten für Kompatibilität
+    PPLACER_TAXONOMIC_ASSIGNMENT = "pplacer"
+    DIAMOND_TAXONOMIC_ASSIGNMENT = (
+        "diamond"  # wird hier nicht aktiv benutzt, aber behalten für Kompatibilität
+    )
 
     MIN_ALIGNED_FILTER_FOR_NUCLEOTIDE_PACKAGES = 95
     MIN_ALIGNED_FILTER_FOR_AMINO_ACID_PACKAGES = 30
@@ -104,31 +109,35 @@ class Run:
         self.hk = HouseKeeping()
         self.s = Stats_And_Summary()
 
-        if args.subparser_name != 'graft':
-            raise Exception(f"This class only supports subparser_name='graft', got: {args.subparser_name!r}")
+        if args.subparser_name != "graft":
+            # This should never happen
+            raise Exception(
+                f"This class only supports subparser_name='graft', got: {args.subparser_name!r}"
+            )
 
-        # Deine Vorgaben erzwingen:
-        # - immer hmmsearch+diamond
-        # - immer pplacer
-        # - Pflicht: gpkg + decoy_database
-        if not getattr(args, 'graftm_package', None):
+        # Prerequisite
+        # - always hmmsearch+diamond
+        # - always pplacer
+        # - always gpkg package
+        # gpkg + decoy_database + refreq database Q
+        if not getattr(args, "graftm_package", None):
             raise Exception("graftm_package is required for this Run implementation.")
 
-        if not getattr(args, 'decoy_database', None):
-            raise Exception("decoy_database is required for this Run implementation.")
-
         # Logging/externes Tool-Setup (ohne ktImportText, da keine Krona-Ausgabe)
-        commands = ExternalProgramSuite([
-            'orfm', 'nhmmer', 'hmmsearch',
-            'mfqe', 'pplacer',
-            'diamond',
-        ])
+        commands = ExternalProgramSuite(
+            [
+                "orfm",
+                "nhmmer",
+                "hmmsearch",
+                "mfqe",
+                "pplacer",
+                "diamond",
+            ]
+        )
 
         # Graft-spezifische Attribute setzen
         self.hk.set_attributes(self.args)
         self.hk.set_euk_hmm(self.args)
-        if args.euk_check:
-            self.args.search_hmm_files.append(self.args.euk_hmm_file)
 
         # SequenceSearcher-Objekt
         self.ss = SequenceSearcher(
@@ -141,16 +150,17 @@ class Run:
 
         if len(self.sequence_pair_list) != 1:
             raise Exception(
-                f"This Run implementation expects exactly one metagenome/sample, "
+                f"This implementation expects exactly one metagenome/sample, "
                 f"but got {len(self.sequence_pair_list)}."
             )
 
         # Pplacer vorbereiten, falls Referenzpaket aus gpkg bekannt
-        if hasattr(args, 'reference_package'):
+        if hasattr(args, "reference_package"):
             self.p = Pplacer(self.args.reference_package)
 
-    def summarise(self, base_list, trusted_placements, reverse_pipe, times,
-                  hit_read_count_list):
+    def summarise(
+        self, base_list, trusted_placements, reverse_pipe, times, hit_read_count_list
+    ):
         """
         Zusammenfassung für genau EIN Metagenom/Sample.
 
@@ -162,7 +172,10 @@ class Run:
         placements_list = []
 
         # 1) Gemeinsame read_tax.tsv im Output-Directory schreiben
-        read_tax_path = os.path.join(self.args.output_directory, "read_tax.tsv")
+        read_tax_path = os.path.join(
+            self.args.output_directory,
+            "{self.genome_id}__{self.package_name}__read_tax.tsv",
+        )
         logger.info("Writing read→taxonomy assignments to %s", read_tax_path)
 
         with open(read_tax_path, "w") as out:
@@ -184,18 +197,43 @@ class Run:
                     )
 
         # 2) combined_count_table.txt wie gehabt (eine Spalte = dein Sample)
-        logger.info('Writing summary table')
-        with open(self.gmf.combined_summary_table_output_path(), 'w') as f:
+        logger.info("Writing summary table")
+        sum_tax_path = os.path.join(
+            self.args.output_directory,
+            "{self.genome_id}__{self.package_name}__sum_tax.tsv",
+        )
+        with open(sum_tax_path, "w") as f:
             self.s.write_tabular_otu_table(base_list, placements_list, f)
 
         # Delete unnecessary files
-        logger.info('Cleaning up')
+        logger.info("Cleaning up")
         for base in base_list:
-            directions = ['forward', 'reverse']
+            directions = ["forward", "reverse"]
             if reverse_pipe:
                 for i in range(0, 2):
-                    self.gmf = GraftMFiles(base, self.args.output_directory, directions[i])
-                    self.hk.delete([
+                    self.gmf = GraftMFiles(
+                        base, self.args.output_directory, directions[i]
+                    )
+                    self.hk.delete(
+                        [
+                            self.gmf.for_aln_path(base),
+                            self.gmf.rev_aln_path(base),
+                            self.gmf.conv_output_rev_path(base),
+                            self.gmf.conv_output_for_path(base),
+                            self.gmf.euk_free_path(base),
+                            self.gmf.euk_contam_path(base),
+                            self.gmf.readnames_output_path(base),
+                            self.gmf.sto_output_path(base),
+                            self.gmf.orf_titles_output_path(base),
+                            self.gmf.orf_output_path(base),
+                            self.gmf.output_for_path(base),
+                            self.gmf.output_rev_path(base),
+                        ]
+                    )
+            else:
+                self.gmf = GraftMFiles(base, self.args.output_directory, False)
+                self.hk.delete(
+                    [
                         self.gmf.for_aln_path(base),
                         self.gmf.rev_aln_path(base),
                         self.gmf.conv_output_rev_path(base),
@@ -208,25 +246,10 @@ class Run:
                         self.gmf.orf_output_path(base),
                         self.gmf.output_for_path(base),
                         self.gmf.output_rev_path(base),
-                    ])
-            else:
-                self.gmf = GraftMFiles(base, self.args.output_directory, False)
-                self.hk.delete([
-                    self.gmf.for_aln_path(base),
-                    self.gmf.rev_aln_path(base),
-                    self.gmf.conv_output_rev_path(base),
-                    self.gmf.conv_output_for_path(base),
-                    self.gmf.euk_free_path(base),
-                    self.gmf.euk_contam_path(base),
-                    self.gmf.readnames_output_path(base),
-                    self.gmf.sto_output_path(base),
-                    self.gmf.orf_titles_output_path(base),
-                    self.gmf.orf_output_path(base),
-                    self.gmf.output_for_path(base),
-                    self.gmf.output_rev_path(base),
-                ])
+                    ]
+                )
 
-        logger.info('Done, thanks for using graftM!\n')
+        logger.info(f"Finished, read mapping for {self.args.package_name}\n")
 
     def main(self):
         """
@@ -252,7 +275,7 @@ class Run:
 
         # Diamond-Datenbank aus gpkg
         maximum_range = gpkg.maximum_range()
-        diamond_db = self.args.search_diamond_file # Prefer arugment diamond db
+        diamond_db = self.args.search_diamond_file  # Prefer argument diamond db
         if not diamond_db:
             # Fallback auf Diamond db aus gpkg
             diamond_db = gpkg.diamond_database_path()
@@ -273,13 +296,15 @@ class Run:
                 )
                 self.args.reverse = None
 
-        if self.args.merge_reads and not hasattr(self.args, 'reverse'):
+        if self.args.merge_reads and not hasattr(self.args, "reverse"):
             # If merge reads is specified, check that there are reverse reads to merge with
-            raise Exception("Programming error: merge_reads True but no reverse reads present")
+            raise Exception(
+                "Programming error: merge_reads True but no reverse reads present"
+            )
 
         # Output-Directory anlegen
-        logger.debug('Creating working directory: %s', self.args.output_directory)
-        self.hk.make_working_directory(self.args.output_directory, self.args.force)
+        logger.debug("Creating working directory: %s", self.args.output_directory)
+        # self.hk.make_working_directory(self.args.output_directory, self.args.force)
 
         # HMM-Typ bestimmen
         if self.args.search_only:
@@ -291,11 +316,11 @@ class Run:
             logger.debug("HMM type: %s Trusted Cutoff: %s", hmm_type, hmm_tc)
 
         if self.args.search_method == self.hk.HMMSEARCH_SEARCH_METHOD:
-            setattr(self.args, 'type', hmm_type)
+            setattr(self.args, "type", hmm_type)
             if hmm_tc:
-                setattr(self.args, 'evalue', '--cut_tc')
+                setattr(self.args, "evalue", "--cut_tc")
         else:
-            setattr(self.args, 'type', self.PIPELINE_AA)
+            setattr(self.args, "type", self.PIPELINE_AA)
 
         # Filter-Minimum setzen
         if self.args.filter_minimum is not None:
@@ -350,7 +375,7 @@ class Run:
         else:
             doing_decoy_search = False
 
-        logger.debug('Working with %i file(s)', len(self.sequence_pair_list))
+        logger.debug("Working with %i file(s)", len(self.sequence_pair_list))
 
         for pair in self.sequence_pair_list:
             # Dateityp raten falls nötig
@@ -360,7 +385,7 @@ class Run:
                 INTERLEAVED,
             )
             base = unpack.basename()
-            pair_direction = ['forward', 'reverse']
+            pair_direction = ["forward", "reverse"]
             logger.info("Working on %s", base)
 
             # Subdirectory für Base
@@ -380,11 +405,13 @@ class Run:
                     continue
 
                 if not os.path.isfile(read_file):
-                    logger.info('%s does not exist! Skipping this file..', read_file)
+                    logger.info("%s does not exist! Skipping this file..", read_file)
                     continue
 
                 if len(pair) == 2:
-                    direction = 'interleaved' if pair[1] is None else pair_direction.pop(0)
+                    direction = (
+                        "interleaved" if pair[1] is None else pair_direction.pop(0)
+                    )
                     logger.info("Working on %s reads", direction)
                     self.gmf = GraftMFiles(base, self.args.output_directory, direction)
                     self.hk.make_working_directory(
@@ -399,19 +426,21 @@ class Run:
                 if self.args.type == self.PIPELINE_AA:
                     logger.debug("Running protein pipeline")
                     try:
-                        search_time, (result, complement_information) = self.ss.aa_db_search(
-                            self.gmf,
-                            base,
-                            unpack,
-                            first_search_method,
-                            maximum_range,
-                            self.args.threads,
-                            self.args.evalue,
-                            self.args.min_orf_length,
-                            self.args.restrict_read_length,
-                            self.args.translation_table,
-                            diamond_db,
-                            self.args.diamond_performance_parameters,
+                        search_time, (result, complement_information) = (
+                            self.ss.aa_db_search(
+                                self.gmf,
+                                base,
+                                unpack,
+                                first_search_method,
+                                maximum_range,
+                                self.args.threads,
+                                self.args.evalue,
+                                self.args.min_orf_length,
+                                self.args.restrict_read_length,
+                                self.args.translation_table,
+                                diamond_db,
+                                self.args.diamond_performance_parameters,
+                            )
                         )
                     except NoInputSequencesException as e:
                         logger.error(
@@ -424,22 +453,24 @@ class Run:
                 # DNA-Pipeline
                 elif self.args.type == self.PIPELINE_NT:
                     logger.debug("Running nucleotide pipeline")
-                    search_time, (result, complement_information) = self.ss.nt_db_search(
-                        self.gmf,
-                        base,
-                        unpack,
-                        self.args.euk_check,
-                        self.args.search_method,
-                        maximum_range,
-                        self.args.threads,
-                        self.args.evalue,
+                    search_time, (result, complement_information) = (
+                        self.ss.nt_db_search(
+                            self.gmf,
+                            base,
+                            unpack,
+                            self.args.euk_check,
+                            self.args.search_method,
+                            maximum_range,
+                            self.args.threads,
+                            self.args.evalue,
+                        )
                     )
                 else:
                     raise Exception(f"Unexpected pipeline type: {self.args.type!r}")
 
                 reads_detected = True
                 if not result.hit_fasta() or os.path.getsize(result.hit_fasta()) == 0:
-                    logger.info('No reads found in %s', base)
+                    logger.info("No reads found in %s", base)
                     reads_detected = False
 
                 if self.args.search_only:
@@ -449,7 +480,9 @@ class Run:
 
                 # Decoy-Filter anwenden
                 if reads_detected and doing_decoy_search:
-                    with tempfile.NamedTemporaryFile(prefix="graftm_decoy", suffix='.fa') as f:
+                    with tempfile.NamedTemporaryFile(
+                        prefix="graftm_decoy", suffix=".fa"
+                    ) as f:
                         tmpname = f.name
                     any_remaining = decoy_filter.filter(
                         result.hit_fasta(),
@@ -463,7 +496,7 @@ class Run:
 
                 # pplacer-Placement vorbereiten
                 if self.args.assignment_method == self.PPLACER_TAXONOMIC_ASSIGNMENT:
-                    logger.info('aligning reads to reference package database')
+                    logger.info("aligning reads to reference package database")
                     hit_aligned_reads = self.gmf.aligned_fasta_output_path(base)
 
                     if reads_detected:
@@ -475,10 +508,10 @@ class Run:
                             filter_minimum,
                         )
                     else:
-                        aln_time = 'n/a'
+                        aln_time = "n/a"
 
                     if not os.path.exists(hit_aligned_reads):
-                        with open(hit_aligned_reads, 'w'):
+                        with open(hit_aligned_reads, "w"):
                             pass  # Datei „anfassen“
                     seqs_list.append(hit_aligned_reads)
 
@@ -496,7 +529,7 @@ class Run:
         )
 
         if self.args.search_only:
-            logger.info('Stopping before alignment and taxonomic assignment phase\n')
+            logger.info("Stopping before alignment and taxonomic assignment phase\n")
             exit(0)
 
         # Merge-Reads falls gewünscht
@@ -510,7 +543,9 @@ class Run:
                 fwd_seqs = seqs_list[0::2]
                 rev_seqs = seqs_list[1::2]
             merged_output = [
-                GraftMFiles(base, self.args.output_directory, False).aligned_fasta_output_path(base)
+                GraftMFiles(
+                    base, self.args.output_directory, False
+                ).aligned_fasta_output_path(base)
                 for base in base_list
             ]
             logger.debug("merged reads to %s", merged_output)
@@ -522,15 +557,15 @@ class Run:
             base_list = base_list[0::2]
 
         if self.args.search_and_align_only:
-            logger.info('Stopping before taxonomic assignment phase\n')
+            logger.info("Stopping before taxonomic assignment phase\n")
             exit(0)
         elif not any(base_list):
             logger.error(
-                'No hits in any of the provided files. Cannot continue with no reads to assign taxonomy to.\n'
+                "No hits in any of the provided files. Cannot continue with no reads to assign taxonomy to.\n"
             )
             exit(0)
 
-        self.gmf = GraftMFiles('', self.args.output_directory, False)
+        self.gmf = GraftMFiles("", self.args.output_directory, False)
 
         # pplacer-Assignment (immer, gemäß deiner Vorgabe)
         clusterer = Clusterer()

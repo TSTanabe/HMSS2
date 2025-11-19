@@ -2,14 +2,13 @@ import os
 
 
 class GraftMFiles:
-
     def __init__(self, old_title, outdir, direction):
-        if direction in ['forward', 'reverse', 'interleaved']:
-            self.basename = os.path.join(direction, old_title + '_' + direction)
+        if direction in ["forward", "reverse", "interleaved"]:
+            self.basename = os.path.join(direction, old_title + "_" + direction)
         elif direction == False:
             self.basename = old_title
         else:
-            raise Exception('Programming Error.')
+            raise Exception("Programming Error.")
 
         self.outdir = outdir
 
@@ -20,11 +19,11 @@ class GraftMFiles:
         return os.path.join(self.outdir, out_path, "%s.hmmout.txt" % self.basename)
 
     def diamond_search_output_basename(self, out_path):
-        '''Does not include the .daa part that diamond creates'''
+        """Does not include the .daa part that diamond creates"""
         return os.path.join(self.outdir, out_path, "%s_diamond_search" % self.basename)
 
     def diamond_assignment_output_basename(self, out_path):
-        '''Does not include the .daa part that diamond creates'''
+        """Does not include the .daa part that diamond creates"""
         return os.path.join(self.outdir, out_path, "%s_diamond_assignment" % out_path)
 
     def read_tax_output_path(self, out_path):

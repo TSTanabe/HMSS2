@@ -1,9 +1,11 @@
 from hmsss.core.logging import get_logger, print_header
+
 logging = get_logger(__name__)
 from hmsss.graft.sequence_search_results import SequenceSearchResult
 
+
 class SearchTableWriter:
-    '''
+    """
     Class for writing the search output OTU table. Basically a summary
     of hits to the HMM/Diamond searched in the following format:
 
@@ -15,10 +17,10 @@ class SearchTableWriter:
 
     You just need to specify a series of SequenceSearchResult objects, and an
     output path.
-    '''
+    """
 
     def _interpret_hits(self, results_list, base_list):
-        '''Sort reads that hit multiple HMMs to the databases to which they had
+        """Sort reads that hit multiple HMMs to the databases to which they had
         the highest bit score. Return a dictionary containing HMMs as keys, and
         number of hits as the values.
 
@@ -48,21 +50,25 @@ class SearchTableWriter:
                  ...
                 }
 
-        '''
+        """
         logging.debug("Sorting reads into HMMs by bit score")
 
         run_results = {}
 
         ########################################################################
         ################## - Sort reads to best hit db - #######################
-        for base, results in zip(base_list, results_list): # For each sample
+        for base, results in zip(base_list, results_list):  # For each sample
             search_results = {}
             for search in results():
                 search_list = list(
-                                   search.each([SequenceSearchResult.QUERY_ID_FIELD,
-                                                SequenceSearchResult.ALIGNMENT_BIT_SCORE,
-                                                SequenceSearchResult.HMM_NAME_FIELD])
-                                   )
+                    search.each(
+                        [
+                            SequenceSearchResult.QUERY_ID_FIELD,
+                            SequenceSearchResult.ALIGNMENT_BIT_SCORE,
+                            SequenceSearchResult.HMM_NAME_FIELD,
+                        ]
+                    )
+                )
                 for hit in search_list:
                     if hit[0] in search_results:
                         if float(hit[1]) > search_results[hit[0]][0]:
@@ -87,7 +93,7 @@ class SearchTableWriter:
         return db_count
 
     def _write_results(self, db_count, output_path):
-        '''Write the table to the output_path directory
+        """Write the table to the output_path directory
 
         db_count: dict
             Contains samples as entries. The value for each sample is another
@@ -102,7 +108,7 @@ class SearchTableWriter:
         output_path: str
             Path to output file to which the resultant output file will be
             written to.
-        '''
+        """
 
         logging.debug("Writing search otu table to file: %s" % output_path)
 
@@ -113,19 +119,19 @@ class SearchTableWriter:
                 if database in output_dict:
                     output_dict[database].append(str(count))
                 else:
-                    output_dict[database] = ['0']*idx + [str(count)]
+                    output_dict[database] = ["0"] * idx + [str(count)]
 
             for key, item in output_dict.items():
                 if len(item) == idx:
-                    output_dict[key].append('0')
+                    output_dict[key].append("0")
 
-        with open(output_path, 'w') as out:
-            out.write('\t'.join(["#ID"] + list(db_count.keys())) + '\n')
+        with open(output_path, "w") as out:
+            out.write("\t".join(["#ID"] + list(db_count.keys())) + "\n")
             for key, item in output_dict.items():
-                out.write("%s\t%s" % (key, '\t'.join(item)) + '\n' )
+                out.write("%s\t%s" % (key, "\t".join(item)) + "\n")
 
     def build_search_otu_table(self, search_results_list, base_list, output_path):
-        '''
+        """
         Build an OTU from SequenceSearchResult objects
 
         Parameters
@@ -140,9 +146,8 @@ class SearchTableWriter:
         output_path: str
             Path to output file to which the resultant output file will be
             written to.
-        '''
+        """
 
-        db_count = self._interpret_hits(search_results_list,
-                                        base_list)
+        db_count = self._interpret_hits(search_results_list, base_list)
 
         self._write_results(db_count, output_path)

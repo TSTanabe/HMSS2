@@ -1,15 +1,20 @@
-import logging
 import subprocess
+
+from hmsss.core.logging import get_logger
+
+logging = get_logger(__name__)
+
 
 class NoInputSequencesException(Exception):
     def __init__(self, command):
         """Instantiate with the command used that went amiss"""
         self.command = command
 
+
 class HmmSearcher:
     r"""Runs hmmsearch given one or many HMMs in a scalable and fast way"""
 
-    def __init__(self, num_cpus, extra_args=''):
+    def __init__(self, num_cpus, extra_args=""):
         r"""New
 
         Parameters
@@ -45,12 +50,14 @@ class HmmSearcher:
 
         # Check input and output paths are the same length
         if len(hmms) != len(output_files):
-            raise Exception("Programming error: number of supplied HMMs differs from the number of supplied output files")
+            raise Exception(
+                "Programming error: number of supplied HMMs differs from the number of supplied output files"
+            )
 
         # Create queue data structure
         queue = []
         for i, hmm in enumerate(hmms):
-            queue.append( [hmm, output_files[i]] )
+            queue.append([hmm, output_files[i]])
 
         # While there are more things left in the queue
         while len(queue) > 0:
@@ -63,7 +70,7 @@ class HmmSearcher:
             try:
                 subprocess.run(cmd, shell=True, check=True)
             except Exception as e:
-                if e.stderr == b'\nError: Sequence file - is empty or misformatted\n\n':
+                if e.stderr == b"\nError: Sequence file - is empty or misformatted\n\n":
                     raise NoInputSequencesException(cmd)
                 else:
                     raise e
@@ -88,11 +95,10 @@ class HmmSearcher:
                 for i, _ in enumerate(pairs_to_run):
                     pairs_to_run[i][1] += 1
                     num_cpus_left -= 1
-                    if num_cpus_left == 0: break
+                    if num_cpus_left == 0:
+                        break
 
         return pairs_to_run
-
-
 
     def _hmm_command(self, input_pipe, pairs_to_run):
         r"""INTERNAL method for getting cmdline for running a batch of HMMs.
@@ -109,31 +115,36 @@ class HmmSearcher:
         A string command to be run with bash
         """
         element = pairs_to_run.pop()
-        hmmsearch_cmd = self._individual_hmm_command(element[0][0],
-                                                      element[0][1],
-                                                      element[1])
+        hmmsearch_cmd = self._individual_hmm_command(
+            element[0][0], element[0][1], element[1]
+        )
         while len(pairs_to_run) > 0:
             element = pairs_to_run.pop()
-            hmmsearch_cmd = "tee >(%s) | %s" % (self._individual_hmm_command(element[0][0],
-                                                                              element[0][1],
-                                                                              element[1]),
-                                                hmmsearch_cmd)
+            hmmsearch_cmd = "tee >(%s) | %s" % (
+                self._individual_hmm_command(element[0][0], element[0][1], element[1]),
+                hmmsearch_cmd,
+            )
 
         # Run the actual command
         hmmsearch_cmd = "%s | %s" % (input_pipe, hmmsearch_cmd)
         return hmmsearch_cmd
 
     def _individual_hmm_command(self, hmm, output_file, num_cpus):
-        return "hmmsearch %s --cpu %s -o /dev/null --noali --domtblout %s %s -" % (self._extra_args,
-                                                                         num_cpus,
-                                                                         output_file,
-                                                                         hmm)
+        return "hmmsearch %s --cpu %s -o /dev/null --noali --domtblout %s %s -" % (
+            self._extra_args,
+            num_cpus,
+            output_file,
+            hmm,
+        )
+
 
 class NhmmerSearcher(HmmSearcher):
     r"""Runs nhmmer given one or many HMMs in a scalable and fast way"""
 
     def _individual_hmm_command(self, hmm, output_file, num_cpus):
-        return "nhmmer %s --cpu %s -o /dev/null --noali --tblout %s %s -" % (self._extra_args,
-                                                                   num_cpus,
-                                                                   output_file,
-                                                                   hmm)
+        return "nhmmer %s --cpu %s -o /dev/null --noali --tblout %s %s -" % (
+            self._extra_args,
+            num_cpus,
+            output_file,
+            hmm,
+        )

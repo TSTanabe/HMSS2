@@ -1,4 +1,3 @@
-
 class Deduplicator:
     r"""Deduplicates sequences"""
 
@@ -24,7 +23,7 @@ class Deduplicator:
         return list(sequence_to_groups.values())
 
     def lca_taxonomy(self, deduplicated_sequences, taxonomy_hash):
-        r'''Given a set of deduplicated sequences and a taxonomy hash,
+        r"""Given a set of deduplicated sequences and a taxonomy hash,
         return the respective LCAs of taxonomy
 
         Parameters
@@ -36,7 +35,7 @@ class Deduplicator:
 
         Returns
         -------
-        Array of taxonomy LCAs'''
+        Array of taxonomy LCAs"""
 
         to_return = []
         for dup_group in deduplicated_sequences:
@@ -47,11 +46,6 @@ class Deduplicator:
                         lca = lca[:i]
                         break
                 if len(lca) > len(taxonomy_hash[s.name]):
-                    lca = lca[:len(taxonomy_hash[s.name])]
+                    lca = lca[: len(taxonomy_hash[s.name])]
             to_return.append(lca)
         return to_return
-
-
-
-
-

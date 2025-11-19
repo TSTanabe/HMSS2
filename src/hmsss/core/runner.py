@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 
 from hmsss.db.database import index_database
+from hmsss.graft import adapter_core
 from hmsss.parse_reports import parse_reports
 
 from hmsss.fasta_preparation import fasta_preparation
@@ -104,6 +105,8 @@ def run_pipeline(config) -> None:
         config.stage = 4
 
     # --- Stage 5: CSB Finder ---
+    # Not necessary anymore because
+    # compared to precompiled csb clusters
     # if config.stage <= 5 <= config.exit:
     #    print_header("Searching for collinear syntenic blocks (CSB)")
     #    csb.csb_finder(config)
@@ -114,8 +117,15 @@ def run_pipeline(config) -> None:
         print_header("Assigning taxonomy information")
         taxonomy.collect_taxonomy_information(config)
 
+    if config.stage == 50:
+        print_header("Mapping reads to protein and nucleotide fasta files")
+        queue.queue_read_mapping_faa_inputs(config)
+        queue.queue_read_mapping_fna_inputs(config)
+        queue.queue_read_mapping_fastq_inputs(config)
+        adapter_core.read_mapping(config)
+
     if config.stage == 100:
-        print_header("Assigning taxonomy information (stage 100)")
+        print_header("Assigning taxonomy information")
         taxonomy.collect_taxonomy_information(config)
 
     # --- Output-/Stats-/Processing-Operatoren ---

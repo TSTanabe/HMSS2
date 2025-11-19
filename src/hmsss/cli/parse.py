@@ -1036,6 +1036,15 @@ def build_config_from_namespace(ns) -> Config:
     return cfg
 
 
+def _needs_stage_50(ns: argparse.Namespace) -> bool:
+    """Determine whether stage 50 (read mapping redo) must be forced.
+
+    Returns:
+        True if read mapping was requested.
+    """
+    return bool(getattr(ns, "use_read_mapping", False))
+
+
 def _needs_stage_100(ns: argparse.Namespace) -> bool:
     """Determine whether stage 100 (taxonomy redo) must be forced.
 
@@ -1135,6 +1144,9 @@ def _apply_runtime_defaults(ns: argparse.Namespace) -> argparse.Namespace:
     elif _needs_stage_101(ns):
         # Required for all dataset, output and processing commands
         setattr(ns, "stage", 101)
+    elif _needs_stage_50(ns):
+        # Required for read-mapping workflow
+        setattr(ns, "stage", 50)
     else:
         setattr(ns, "stage", normalized_stage)
 

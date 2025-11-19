@@ -2,8 +2,8 @@ import time
 
 
 class Timer:
-
-    def __init__(self): pass
+    def __init__(self):
+        pass
 
     def timeit(self, method):
         def timed(*args, **kw):
