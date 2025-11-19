@@ -89,7 +89,7 @@ class Classify:
                     try:
                         taxonomy_string=self.taxonomy[rank]
                     except KeyError:
-                        # TODO: Deal with null placements better.
+                        # TO DO: Deal with null placements better.
                         logging.warning("null placement encountered in group: %s" % ', '.join([x[0] for x in place_group]))
                         continue
                     seen[rank]={'c':confidence,
