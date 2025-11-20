@@ -750,6 +750,13 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         if show_all
         else argparse.SUPPRESS,
     )
+    operators.add_argument(
+        "--print-graphs",
+        dest="print_graphs",
+        action="store_true",
+        help="Print graphs for the selected output",
+    )
+
 
     # Alignment and sequence file processing
     process = parser.add_argument_group("Alignment and sequence file processing")
@@ -1004,6 +1011,7 @@ def build_config_from_namespace(ns) -> Config:
         fetch_keywords=list(getattr(ns, "fetch_keywords", [])),
         keywords_connector=getattr(ns, "keywords_connector", "OR"),
         print_fasta=getattr(ns, "print_fasta", False),
+        print_graphs=bool(getattr(ns, "print_graphs", False)),
         use_valid_hits=bool(getattr(ns, "use_valid_hits", True)),
     )
 

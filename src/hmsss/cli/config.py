@@ -233,6 +233,7 @@ class CliOperators:
     fetch_not_csb_with_these_domains: List[str] = field(default_factory=list)
     keywords_connector: str = "OR"
     print_fasta: bool = False
+    print_graphs: bool = False
     use_valid_hits: bool = True
 
 
@@ -437,6 +438,7 @@ class Config:
     )  # :contentReference[oaicite:19]{index=19}
     fetch_not_csb_with_these_domains = prop("cli_ops.fetch_not_csb_with_these_domains")
     print_fasta = prop("cli_ops.print_fasta")
+    print_graphs = prop("cli_ops.print_graphs")
     use_valid_hits = prop("cli_ops.use_valid_hits")
 
     dataset_limit_lineage = prop(
