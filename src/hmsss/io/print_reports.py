@@ -195,21 +195,27 @@ def _output_protein_taxonomy(
 
 def _output_taxonomy_summary(
     output_file: str,
+    protein_dict: Dict[str, Any],
     taxon_dict: Dict[str, Dict[str, str]],
 ) -> None:
     """
-    Print a full taxonomy listing:
-      - one row per entry in `taxon_dict`
-      - columns: GenomeID, Superkingdom..Species
-      - sorted by taxonomy columns (Superkingdom..Species), ignoring GenomeID
+    Summarise protein-type presence per taxonomic level and taxon.
 
-    Args:
-        output_file: Ziel-Datei
-        taxon_dict:  genomeID -> {
-                         "Superkingdom","Phylum","Class","Order",
-                         "Family","Genus","Species", ... }
+    Output format (TSV):
+        taxonomic_level    taxon_name    genome_count    <prot_type_1> ...
+
+    - taxonomic_level: one of Superkingdom, Phylum, Class, Order, Family, Genus, Species
+    - taxon_name: name at this level
+    - genome_count: number of distinct genomes that have at least one of the
+      considered proteins and are assigned to this taxon at this level.
+    - each subsequent column: number of genomes in this taxon that have at least
+      one protein of that type (presence/absence per genome).
+    - Protein types are derived from `protein_dict` and sorted alphabetically.
+    - Rows are sorted hierarchically by level (Superkingdom..Species), then
+      alphabetically by taxon_name.
     """
-    tax_cols = [
+
+    tax_levels = [
         "Superkingdom",
         "Phylum",
         "Class",
@@ -219,40 +225,129 @@ def _output_taxonomy_summary(
         "Species",
     ]
 
-    def _norm(v: str | None) -> str:
-        # leer/None -> "", " NA " -> "NA"
+    def _is_empty_or_na(v: str | None) -> bool:
         if v is None:
-            return ""
-        s = v.strip()
-        return s or ""
+            return True
+        s = str(v).strip()
+        return not s or s.upper() == "NA"
 
-    def _is_empty_or_na(s: str) -> bool:
-        s = (s or "").strip()
-        return s == "" or s.upper() == "NA"
+    def _norm(v: str | None) -> str:
+        return "" if v is None else str(v).strip()
 
-    def _sort_key(row: Tuple[str, ...]):
-        # sortiere nach den 7 Taxonomie-Spalten, leere/NA ans Ende
-        taxo = row[1:]  # ohne GenomeID
-        return tuple((_is_empty_or_na(x), (x or "").casefold()) for x in taxo)
+    def _protein_type(p: Any) -> str:
+        """
+        Derive a 'protein type' label from a Protein object.
 
-    # Zeilen aufbauen: (GenomeID, Superkingdom..Species)
-    rows: List[Tuple[str, ...]] = []
-    for gid, rec in (taxon_dict or {}).items():
-        if not gid or not isinstance(rec, dict):
+        Heuristik:
+          1. p.get_domains() wenn nicht leer
+          2. erster Domain-Name aus p.get_domains_dict()
+          3. sonst 'UNK'
+        """
+        # 1) get_domains()
+        dom_string = ""
+        try:
+            dom_string = p.get_domains() or ""
+        except Exception:
+            dom_string = ""
+        dom_string = dom_string.strip()
+        if dom_string:
+            return dom_string
+
+        # 2) erster Name aus get_domains_dict()
+        try:
+            dct = p.get_domains_dict()
+        except Exception:
+            dct = {}
+
+        for dom in dct.values():
+            name = getattr(dom, "domain", "") or ""
+            name = str(name).strip()
+            if name:
+                return name
+
+        # 3) Fallback
+        return "UNK"
+
+    # ------------------------------------------------------------------
+    # 1) Counts vorbereiten – jetzt PRESENCE pro Genom
+    # ------------------------------------------------------------------
+    # (level, taxon_name) -> { protein_type: set(genomeID) }
+    counts: Dict[Tuple[str, str], Dict[str, Set[str]]] = {}
+    # (level, taxon_name) -> set(genomeID)  (alle Genome in diesem Taxon)
+    genomes_per_taxon: Dict[Tuple[str, str], Set[str]] = {}
+
+    all_types: Set[str] = set()
+
+    for prot in protein_dict.values():
+        genome_id = getattr(prot, "genomeID", None)
+        if not genome_id:
             continue
-        vals = tuple(_norm(rec.get(k)) for k in tax_cols)
-        rows.append((gid, *vals))
 
-    rows_sorted = sorted(rows, key=_sort_key)
+        rec = taxon_dict.get(genome_id)
+        if not isinstance(rec, dict):
+            # keine Taxonomie für dieses Genom
+            continue
 
-    # Schreiben
+        ptype = _protein_type(prot) or "UNK"
+        all_types.add(ptype)
+
+        for level in tax_levels:
+            tax_name = _norm(rec.get(level))
+            if _is_empty_or_na(tax_name):
+                continue
+
+            key = (level, tax_name)
+
+            # Set aller Genome in diesem Taxon
+            gset_tax = genomes_per_taxon.setdefault(key, set())
+            gset_tax.add(genome_id)
+
+            # Presence pro Protein-Typ: set(genomeID)
+            level_counts = counts.setdefault(key, {})
+            gset_type = level_counts.setdefault(ptype, set())
+            gset_type.add(genome_id)
+
+    # Wenn gar keine Daten → minimale Datei mit Header
+    if not counts:
+        with open(output_file, "w", newline="") as out:
+            out.write("taxonomic_level\ttaxon_name\tgenome_count\n")
+        return
+
+    # ------------------------------------------------------------------
+    # 2) Protein-Spalten alphabetisch
+    # ------------------------------------------------------------------
+    protein_types: List[str] = sorted(all_types, key=lambda s: s.casefold())
+
+    # ------------------------------------------------------------------
+    # 3) Zeilen bauen und sortieren
+    # ------------------------------------------------------------------
+    rows: List[Tuple[str, str, int, Dict[str, Set[str]]]] = []
+    level_index = {lvl: i for i, lvl in enumerate(tax_levels)}
+
+    for (level, tax_name), level_counts in counts.items():
+        genome_count = len(genomes_per_taxon.get((level, tax_name), set()))
+        rows.append((level, tax_name, genome_count, level_counts))
+
+    # sortiert nach Level-Hierarchie, dann Taxon-Name alphabetisch
+    rows.sort(key=lambda r: (level_index.get(r[0], 999), r[1].casefold()))
+
+    # ------------------------------------------------------------------
+    # 4) Schreiben
+    # ------------------------------------------------------------------
+    header = ["taxonomic_level", "taxon_name", "genome_count", *protein_types]
     with open(output_file, "w", newline="") as out:
-        out.write("\t".join(["GenomeID", *tax_cols]) + "\n")
-        for row in rows_sorted:
-            out.write("\t".join(row) + "\n")
-
-    return
-
+        out.write("\t".join(header) + "\n")
+        for level, tax_name, genome_count, level_counts in rows:
+            # pro Protein-Typ: Anzahl Genome mit ≥1 Kopie dieses Typs
+            counts_per_type = [
+                str(len(level_counts.get(t, set()))) for t in protein_types
+            ]
+            out.write(
+                "\t".join(
+                    [level, tax_name, str(genome_count), *counts_per_type]
+                )
+                + "\n"
+            )
 
 def _output_unique_taxonomy_table(
     output_file: str,
@@ -269,7 +364,7 @@ def _output_unique_taxonomy_table(
     Returns:
         Path to the written file.
     """
-    unique_file = output_file.replace(".txt", "") + "_unique_taxonomies.txt"
+    unique_file = output_file.replace(".txt", "")
 
     tax_cols = [
         "Superkingdom",
@@ -931,7 +1026,7 @@ def print_hit_reports(
         writemode="w",
     )
     # Output taxonomy summary
-    # _output_taxonomy_summary(taxonomy_summary, taxon_dict)
+    _output_taxonomy_summary(taxonomy_summary, protein_dict, taxon_dict)
 
     # Output strain variability summary
     _output_strain_variability_by_species(
