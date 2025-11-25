@@ -1,4 +1,5 @@
 grp0_MddA	284.2	404.2	10
+grp0_DmdC	428.5	701.0	142.9
 grp1_DmdB	590.5	-inf	352.3
 grp2_AcuI	537.4	-inf	266.0
 grp2_AcuN	526.4	-inf	272.5
