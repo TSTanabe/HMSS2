@@ -69,6 +69,32 @@ def _load_domain_annotations(tsv_path: str) -> Dict[str, Dict[str, str]]:
             }
     return ann
 
+def _make_request_list(fetch_csbs, fetch_proteins):
+    """
+    Build an ordered list of request tokens from fetch_csbs and fetch_proteins.
+    - Removes '[' and ']'
+    - Splits groups on ':'
+    - Keeps first occurrence of each token (stable order)
+    """
+
+    # 1) Tokens extrahieren
+    raw_requests = [
+        token.strip().replace("[", "").replace("]", "")
+        for group in (fetch_csbs or []) + (fetch_proteins or [])
+        for token in group.split(":")
+        if token.strip()
+    ]
+
+    # 2) Duplikate entfernen (erstes Auftreten gewinnt)
+    seen = set()
+    requests = []
+    for r in raw_requests:
+        if r not in seen:
+            seen.add(r)
+            requests.append(r)
+
+    return requests
+
 
 def output_operator(config: Config) -> None:
     """Run output operators to fetch/export results.
@@ -109,33 +135,41 @@ def output_operator(config: Config) -> None:
         fetch_from_gene_clusters=bool(config.fetch_csbs),
     )
 
-    # Combine CSB and protein requests, flattening any ':'-separated tokens
-    requests = [
-        token.strip()
-        for group in (config.fetch_csbs or []) + (config.fetch_proteins or [])
-        for token in group.split(":")
-        if token.strip()
-    ]
+    # remove the brackets and double points from argument parsing and replicates
+    requests = _make_request_list(config.fetch_csbs, config.fetch_proteins)
 
     print_reports.print_hit_reports(
-        directory,
-        protein_dict,
-        cluster_dict,
-        taxon_dict,
-        metabolic_dict,
-        cluster_context_dict,
-        requests,
+        directory=directory,
+        protein_dict=protein_dict,
+        cluster_dict=cluster_dict,
+        taxon_dict=taxon_dict,
+        metabolic_dict=metabolic_dict,
+        context_dict=cluster_context_dict,
+        fetch_proteins=requests,
     )
 
     if config.print_fasta:
         print_reports.print_fasta_files(directory, protein_dict, cluster_dict)
 
     if config.print_graphs:
-        print_graphs.print_graphs(directory, protein_dict, taxon_dict)
+        taxonomy_levels: list[str] = config.graph_tax_levels
+        print_graphs.print_hit_graphs(
+            directory=directory,
+            protein_dict=protein_dict,
+            cluster_dict=cluster_dict,
+            taxon_dict=taxon_dict,
+            metabolic_dict=metabolic_dict,
+            context_dict=cluster_context_dict,
+            fetch_proteins=requests,
+            levels=taxonomy_levels,
+        )
+    # options. graph taxonomy levels for the taxonomy levels
     # datasets.main_binary_dataset(
     #    config, directory, protein_dict, cluster_dict, taxon_dict
     # )
-    logger.info("Generated binary dataset → %s", directory)
+    #
+
+    # logger.info("Generated binary dataset → %s", directory)
 
 
 def output_statistics(config: Config) -> None:

@@ -289,7 +289,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         nargs="+",
         dest="HMM_sets",
         type=str,
-        default=["DHPS", "DMS", "Dsr", "SQ", "transfer"],
+        default=["DHPS", "DMS", "Dsr", "SQ", "Sulfonates"],
         metavar="<list>",
         help="Limit to HMM sets (whitespace or CSV separated)"
         if show_all
@@ -756,7 +756,27 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         action="store_true",
         help="Print graphs for the selected output",
     )
-
+    operators.add_argument(
+        "--graph-tax-levels",
+        dest="graph_tax_levels",
+        nargs="+",
+        type=str,
+        metavar="<taxlevel>",
+        choices=[
+            "Superkingdom",
+            "Phylum",
+            "Class",
+            "Order",
+            "Family",
+            "Genus",
+            "Species",
+        ],
+        default=["Phylum"],
+        help=(
+            "Taxonomic levels to summarize in graphs. Multiple selection is possible. "
+            "[Superkingdom, Phylum, Class, Order, Family, Genus, Species]"
+        ),
+    )
 
     # Alignment and sequence file processing
     process = parser.add_argument_group("Alignment and sequence file processing")
@@ -1013,6 +1033,7 @@ def build_config_from_namespace(ns) -> Config:
         print_fasta=getattr(ns, "print_fasta", False),
         print_graphs=bool(getattr(ns, "print_graphs", False)),
         use_valid_hits=bool(getattr(ns, "use_valid_hits", True)),
+        graph_tax_levels=list(getattr(ns, "graph_tax_levels", ["Phylum"])),
     )
 
     cli_process = CliProcess(

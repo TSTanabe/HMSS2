@@ -1,9 +1,7 @@
 #!/usr/bin/python
 import os
 from collections import defaultdict, Counter
-
 from typing import Any, Dict, List, Optional, Set, Tuple, Iterable
-
 from hmsss.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -197,6 +195,8 @@ def _output_taxonomy_summary(
     output_file: str,
     protein_dict: Dict[str, Any],
     taxon_dict: Dict[str, Dict[str, str]],
+    allowed_types: Optional[List[str]] = None,
+    preferred_order: Optional[List[str]] = None,
 ) -> None:
     """
     Summarise protein-type presence per taxonomic level and taxon.
@@ -269,6 +269,14 @@ def _output_taxonomy_summary(
         return "UNK"
 
     # ------------------------------------------------------------------
+    # Normalize allowed_types
+    # ------------------------------------------------------------------
+    if allowed_types is not None:
+        # leeres Set bedeutet: "nichts filtern"
+        if len(allowed_types) == 0:
+            allowed_types = None  # treat as no filtering
+
+    # ------------------------------------------------------------------
     # 1) Counts vorbereiten – jetzt PRESENCE pro Genom
     # ------------------------------------------------------------------
     # (level, taxon_name) -> { protein_type: set(genomeID) }
@@ -289,6 +297,11 @@ def _output_taxonomy_summary(
             continue
 
         ptype = _protein_type(prot) or "UNK"
+
+        # Wenn Filtering aktiv: nur erlaubte Protein-Typen sammeln
+        if allowed_types is not None and ptype not in allowed_types:
+            continue
+
         all_types.add(ptype)
 
         for level in tax_levels:
@@ -314,9 +327,38 @@ def _output_taxonomy_summary(
         return
 
     # ------------------------------------------------------------------
-    # 2) Protein-Spalten alphabetisch
+    # 2) Protein-Spalten alphabetisch oder nach vorgabe
     # ------------------------------------------------------------------
-    protein_types: List[str] = sorted(all_types, key=lambda s: s.casefold())
+    if allowed_types is not None:
+        # expliziter Limiter: nur diese Typen, in genau dieser Reihenfolge
+        seen_cols: Set[str] = set()
+        protein_types: List[str] = []
+        for t in allowed_types:
+            if t in seen_cols:
+                continue
+            if t in all_types:
+                seen_cols.add(t)
+                protein_types.append(t)
+    else:
+        if preferred_order is not None:
+            # zuerst preferred_order (requests), dann Rest alphabetisch
+            seen_cols: Set[str] = set()
+            leading: List[str] = []
+            for t in preferred_order:
+                if t in seen_cols:
+                    continue
+                if t in all_types:
+                    seen_cols.add(t)
+                    leading.append(t)
+
+            remaining = sorted(
+                [t for t in all_types if t not in seen_cols],
+                key=lambda s: s.casefold(),
+            )
+            protein_types = leading + remaining
+        else:
+            # klassisch: alle beobachteten Typen alphabetisch
+            protein_types = sorted(all_types, key=lambda s: s.casefold())
 
     # ------------------------------------------------------------------
     # 3) Zeilen bauen und sortieren
@@ -343,11 +385,9 @@ def _output_taxonomy_summary(
                 str(len(level_counts.get(t, set()))) for t in protein_types
             ]
             out.write(
-                "\t".join(
-                    [level, tax_name, str(genome_count), *counts_per_type]
-                )
-                + "\n"
+                "\t".join([level, tax_name, str(genome_count), *counts_per_type]) + "\n"
             )
+
 
 def _output_unique_taxonomy_table(
     output_file: str,
@@ -1003,6 +1043,9 @@ def print_hit_reports(
     gene_taxonomy = os.path.join(directory, "summary_gene_taxonomy.txt")
     unique_file = os.path.join(directory, "summary_unique_lineages.txt")
     taxonomy_summary = os.path.join(directory, "summary_hit_taxonomy_counts.txt")
+    taxonomy_summary2 = os.path.join(
+        directory, "summary_requested_hit_taxonomy_counts.txt"
+    )
     metabolic_annotation = os.path.join(directory, "summary_metabolic_annotations.txt")
     cluster_overview_report = os.path.join(
         directory, "summary_genecluster_overview_table.txt"
@@ -1027,6 +1070,10 @@ def print_hit_reports(
     )
     # Output taxonomy summary
     _output_taxonomy_summary(taxonomy_summary, protein_dict, taxon_dict)
+
+    _output_taxonomy_summary(
+        taxonomy_summary2, protein_dict, taxon_dict, fetch_proteins
+    )
 
     # Output strain variability summary
     _output_strain_variability_by_species(

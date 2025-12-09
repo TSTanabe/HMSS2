@@ -104,7 +104,7 @@ class CliResources:
         clean_reports: Overwrite existing hmmsearch reports.
         individual_reports: Write per-genome reports if True.
         max_seqs_per_genome: Cap sequences per protein per genome (Diamond check).
-        bool_cross_check: Enable reference cross check via Diamond.
+        bool_cross_check: Enable reference cross-check via Diamond.
         optimized_cutoff_cross_check: Use optimized cutoff instead of Diamond.
     """
 
@@ -235,7 +235,7 @@ class CliOperators:
     print_fasta: bool = False
     print_graphs: bool = False
     use_valid_hits: bool = True
-
+    graph_tax_levels: List[str] = field(default_factory=lambda: ["Phylum"])
 
 @dataclass(slots=True)
 class CliProcess:
@@ -440,6 +440,7 @@ class Config:
     print_fasta = prop("cli_ops.print_fasta")
     print_graphs = prop("cli_ops.print_graphs")
     use_valid_hits = prop("cli_ops.use_valid_hits")
+    graph_tax_levels = prop("cli_ops.graph_tax_levels")
 
     dataset_limit_lineage = prop(
         "cli_limiter.dataset_limit_lineage"
