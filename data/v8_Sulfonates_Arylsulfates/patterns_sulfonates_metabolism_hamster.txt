@@ -1,0 +1,24 @@
+SsuA SsuB SsuC SsuD SsuE
+SsuA SsuB SsuC SsuD SsuE TauD
+SsuA SsuB SsuC SsuD SsuE TauD TauR
+SsuA SsuB SsuC SsuD SsuE TauR
+SsuA SsuB SsuC SsuD SsuE TauZ
+SsuA SsuB SsuC SsuD SsuE Toa
+SsuA SsuB SsuC SsuD SsuE Tpa
+SsuA SsuB SsuC SsuD SsuE Xsc
+SsuD SsuE
+DszA DszB
+DszA DszC DszD
+AtsA AtsB DszA
+DszA DszB
+DszA DszC DszD
+DszA DszC
+DszB DszC
+DszA DszB DszC
+AtsA AtsB
+SncA SncC
+SncA SncB
+SncA SncB SncC
+TcdH TcdS TcdT
+TcdH TcdT
+MarB MarD MarK MarH

@@ -156,6 +156,11 @@ DddT DmsA DmsB
 DddT DmsA DmsB DmsC DmsD
 DddT DmsA DmsB DmsD
 DddT MsuC MsuD SnfG
+DdhA DdhB DdhC DdhD
+DdhA DdhB DdhC
+DdhA DdhB
+DdhB DdhC DdhD
+DdhB DdhC
 DmdA DmdB DmdC DmdD
 DmdA DmdB DmdC DmdD MsuE
 DmdA DmdB DmdD

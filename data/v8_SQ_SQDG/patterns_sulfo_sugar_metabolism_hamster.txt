@@ -570,5 +570,11 @@ SmoE SmoF SmoG SmoH Sgald YihQ
 SmoE SmoF SmoG SmoH Sgald YihQ YihR
 Sgald Sqdh Sgl SqoL YihQ YihR
 Sgdh Sladh SmoE SmoF SmoG SmoH Sgald Sqdh Sgl SqoL YihQ
-
-
+SqdA SqdC SqdD
+SqdB SqdC SqdD
+SqdB SqdC
+SqdA SqdB SqdC SqdD
+SqdB SqdD
+SqdC SqdD
+SqdB SqdX
+SqdB SqdC SqdD

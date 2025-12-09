@@ -59,3 +59,8 @@ SQRIII CstA CstB TauE
 SQRIV CstA CstB TauE
 SQRV CstA CstB TauE
 SQRVI CstA CstB TauE
+DsrE3A
+DsrE3B
+DsrE3C
+DsrE2
+TusA
