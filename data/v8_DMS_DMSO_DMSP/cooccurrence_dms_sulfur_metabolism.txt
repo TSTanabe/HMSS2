@@ -19,3 +19,11 @@ DddW DmoA Mtox
 DddY DmoA Mtox
 DdhA DdhB DdhC DdhD
 DdhA DdhB DdhC
+DddA Mtox
+DddL Mtox
+DddP Mtox
+DddD Mtox
+DddP Mtox
+DddQ Mtox
+DddW Mtox
+DddY Mtox

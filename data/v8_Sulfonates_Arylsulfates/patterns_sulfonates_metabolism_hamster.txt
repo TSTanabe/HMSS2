@@ -22,3 +22,4 @@ SncA SncB SncC
 TcdH TcdS TcdT
 TcdH TcdT
 MarB MarD MarK MarH
+MarB MarD MarK MarH NflD NflK
