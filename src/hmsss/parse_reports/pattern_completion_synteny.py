@@ -375,6 +375,7 @@ def execute_pattern_completion(transition_dict, protein_dict):
                 # Save the original hit as comment
                 original_domains = protein.get_domains()
                 protein.add_selection_comment("Syc")
+                protein.valid_hit = True
                 protein.alternative_hit = original_domains
 
                 # Get alternative domain

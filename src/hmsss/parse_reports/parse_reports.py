@@ -1,41 +1,12 @@
 #!/usr/bin/python
-import os
+
 import re
 import subprocess
-import traceback
 
-from multiprocessing import Pool, Manager
 from typing import Dict, Any, Set
 
-from contextlib import contextmanager
-from time import perf_counter
-
-import hmsss.search.search_pyhmmer
-from hmsss.cross_check import report_db
-from hmsss.parse_reports import (
-    pattern_completion_synteny,
-    pattern_completion_pathway,
-    csb_finder,
-    csb_trie_algorithm,
-    pattern_flank_addition,
-)
-from hmsss.parse_reports.csb_finder import Cluster
-from hmsss.parse_reports.csb_trie_algorithm import TrieIndex
 from hmsss.core.logging import get_logger
-from hmsss.db import database
-
 logger = get_logger(__name__)
-
-
-@contextmanager
-def tick(label: str):
-    t0 = perf_counter()
-    try:
-        yield
-    finally:
-        dt = perf_counter() - t0
-        logger.info("[TIMER] %s took %.3f s", label, dt)
-
 
 class Protein:
     """
@@ -95,7 +66,7 @@ class Protein:
         self.add_domain(hmm, start, end, score, ident, bsr)
         self.selection_comment: Set[str] = set()  # Trusted cutoff Flag or cooccurrence
         self.alternative_hit: str = ""
-        self.valid_hit = True
+        self.valid_hit = False
 
     ##### Getter ####
 
@@ -402,11 +373,6 @@ def get_protein_sequence(filepath, protein_dict):
     dict
         The updated protein_dict with sequences added to the Protein objects.
 
-    Examples
-    --------
-    >>> protein_dict = {'WP_0001': Protein(...), 'WP_0002': Protein(...)}
-    >>> get_protein_sequence('proteins.faa', protein_dict)
-    {'WP_0001': <Protein with sequence>, 'WP_0002': <Protein with sequence>}
     """
     reader = None
     try:
@@ -503,6 +469,7 @@ def output_genome_report(
         "gene_end",
         "gene_strand",
         "locustag",
+        "valid hit",
         "selection_comment",
         "alternative hit",
         "clusterID",
@@ -570,6 +537,7 @@ def output_genome_report(
                 pl[6],  # gene_end
                 pl[7],  # gene_strand
                 pl[8],  # locustag
+                protein.valid_hit,
                 protein.get_selection_comment_csv(),
                 protein.alternative_hit,
                 out_clusterID,
@@ -580,425 +548,11 @@ def output_genome_report(
     return
 
 
-###############################################################################################################
-###############################################################################################################
-
-# Writer for hit reports
-
-
-def submit_batches(protein_batch, cluster_batch, options):
-    # Insert into the database
-    database.insert_database_proteins(options.database_directory, protein_batch)
-    database.insert_database_clusters(options.database_directory, cluster_batch)
-
-    # Append to the gene clusters file
-    with open(options.gene_clusters_file, "a") as file:
-        for clusterID, cluster in cluster_batch.items():
-            domains = cluster.get_domains()
-            file.write(clusterID + "\t" + "\t".join(domains) + "\n")
-
-
-def process_writer(queue, options):
-    # This routine handles the output of the search and writes it into the database
-    # It gets input from multiple workers as the database connection to sqlite is unique
-
-    global cluster_dict, protein_dict
-    protein_batch = {}
-    cluster_batch = {}
-    batch_size = options.glob_chunks
-    batch_counter = 0
-
-    while True:
-        tup = queue.get()
-        if tup is None:
-            break
-
-        else:
-            batch_counter += 1
-            logger.debug(f"Processed {batch_counter} genomes ")  #
-
-        protein_dict, cluster_dict = tup
-
-        # Concatenate the data
-        protein_batch.update(protein_dict)
-        cluster_batch.update(cluster_dict)
-
-        # Print text reports if desired
-        if options.individual_reports:
-            if protein_dict:  # Check if protein_dict is not empty
-                first_protein_key = next(iter(protein_dict))  # Get the first key
-                genomeID = protein_dict[first_protein_key].genomeID
-                filepath = os.path.join(
-                    options.fasta_initial_hit_directory,
-                    str(genomeID) + ".hit_table_txt",
-                )
-                output_genome_report(filepath, protein_dict, cluster_dict, {})
-
-        # If batch size is reached, process the batch
-        if batch_counter >= batch_size:
-            submit_batches(protein_batch, cluster_batch, options)
-            protein_batch = {}
-            cluster_batch = {}
-            batch_counter = 0
-
-    # Submit the remaining and file reports
-    if protein_batch or cluster_batch:
-        submit_batches(protein_batch, cluster_batch, options)
-        if options.individual_reports:
-            if protein_dict:
-                first_protein_key = next(iter(protein_dict))  # Get the first key
-                genomeID = protein_dict[first_protein_key].genomeID
-                filepath = os.path.join(
-                    options.fasta_initial_hit_directory,
-                    str(genomeID) + ".hit_table_txt",
-                )
-
-                output_genome_report(filepath, protein_dict, cluster_dict, {})
-    logger.info(f"Processed {batch_counter} genomes")
-    return
 
 
 #########################################################################################
 ################ Processing routines for parsing genome hits ############################
 #########################################################################################
-
-
-def main_parse_summary_hmmreport(config):
-    genome_ids = list(config.queued_genomes)
-
-    genomeID_batches = split_into_batches(genome_ids, config.cores - 1)
-
-    # Lade Patterns nur 1x im Hauptprozess
-    csb_patterns = csb_finder.make_pattern_dict(config.patterns_file)
-    cooccurrence_pattern = csb_finder.make_pattern_dict(config.cooccurrence_file)
-    threshold_dict = hmsss.search.search_pyhmmer.make_threshold_dict(
-        config.score_threshold_file, 3, config.thrs_score
-    )
-    exclusion_singletons = parse_exclusion_singletons(config.exclusion_singletons)
-
-    # Make csb naming index table
-    only_pattern_dict = {name: patset for name, (patset, _) in csb_patterns.items()}
-    index_trie = csb_trie_algorithm.build_trie_index(only_pattern_dict)
-
-    # Insert genomeIDs in DB
-    database.insert_database_genome_ids(config.database_directory, set(genome_ids))
-
-    with Manager() as manager:
-        data_queue = manager.Queue()
-
-        with Pool(processes=config.cores) as pool:
-            # Start writer
-            p_writer = pool.apply_async(process_writer, (data_queue, config))
-            args = [
-                (
-                    data_queue,
-                    batch,
-                    config.faa_files,
-                    config.gff_files,
-                    config.glob_trusted_hitreport,
-                    config.glob_intermediate_hitreport,
-                    config.nucleotide_range,
-                    config.min_completeness,
-                    csb_patterns,
-                    cooccurrence_pattern,
-                    exclusion_singletons,
-                    threshold_dict,
-                    index_trie,
-                    config.use_synteny_completion,
-                    config.use_remove_unassigned_intermediates,
-                    config.use_remove_unassigned_singletons,
-                )
-                for batch in genomeID_batches
-            ]
-
-            # Start readers
-            pool.starmap(process_batch, args)
-
-            # End writer
-            for _ in range(config.cores):
-                data_queue.put(None)
-
-            p_writer.get()
-    logger.info("Finished parsing of search results and writing to local database")
-
-
-def split_into_batches(data_list, num_batches):
-    if num_batches <= 0:
-        raise ValueError("Number of batches must be > 0.")
-    if len(data_list) == 0:
-        return [[] for _ in range(num_batches)]
-
-    batches = [[] for _ in range(num_batches)]
-    for idx, item in enumerate(data_list):
-        batches[idx % num_batches].append(item)
-    return batches
-
-
-def parse_exclusion_singletons(file_path: str) -> set:
-    """
-    Parse a tab-separated file and collect all words/tokens into a single set,
-    regardless of line count or number of tokens per line.
-
-    Args:
-        file_path (str): Path to the Exclusion_singletons file.
-
-    Returns:
-        Set[str]: All unique words found in the file.
-    """
-    singleton_set = set()
-    with open(file_path, "r", encoding="utf-8") as f:
-        for line in f:
-            # Split line by tab and extend set
-            tokens = line.strip().split("\t")
-            singleton_set.update(token for token in tokens if token)
-    return singleton_set
-
-
-def process_batch(
-    data_queue,
-    genome_ids,
-    faa_files,
-    gff_files,
-    trusted_hmmreport_path,
-    intermediate_hmmreport,
-    nucleotide_range,
-    min_completeness,
-    pattern_dict,
-    cooccurrence_pattern,
-    exclusion_singletons,
-    threshold_dict,
-    index_trie,
-    use_synteny_completion: bool,
-    add_flanking_genes: bool,
-    use_remove_unassigned_singletons: bool,
-):
-    """
-    Runs process_genome for each genome in the batch with all necessary arguments.
-    """
-    for genome_id in genome_ids:
-        try:
-            process_genome(
-                data_queue=data_queue,
-                genome_id=genome_id,
-                faa_file=faa_files[genome_id],
-                gff_file=gff_files[genome_id],
-                trusted_hmmreport_path=trusted_hmmreport_path,
-                intermediate_hmmreport=intermediate_hmmreport,
-                nucleotide_range=nucleotide_range,
-                min_completeness=min_completeness,
-                pattern_dict=pattern_dict,
-                cooccurrence_pattern=cooccurrence_pattern,
-                exclusion_singletons=exclusion_singletons,
-                threshold_dict=threshold_dict,
-                index_trie=index_trie,
-                use_synteny_completion=use_synteny_completion,
-                add_flanking_genes=add_flanking_genes,
-                use_remove_unassigned_singletons=use_remove_unassigned_singletons,
-            )
-        except Exception as e:
-            logger.warning(f"Failed to process genome '{genome_id}' — {str(e)}")
-            continue
-
-
-def process_genome(
-    data_queue: Any,
-    genome_id: str,
-    faa_file: str,
-    gff_file: str,
-    trusted_hmmreport_path: str,
-    intermediate_hmmreport: str,
-    nucleotide_range: int,
-    min_completeness: float,
-    pattern_dict: dict[str, tuple[set[str], int]],
-    cooccurrence_pattern: dict[str, tuple[set[str], int]],
-    exclusion_singletons: set[str],
-    threshold_dict: dict[str, float],
-    index_trie: TrieIndex,
-    use_synteny_completion: bool,
-    add_flanking_genes: bool,
-    use_remove_unassigned_singletons: bool,
-) -> None:
-    """
-    Main pipeline to process one genome:
-    - Parses protein and cluster data
-    - Annotates clusters
-    - Removes singleton proteins with specified domains outside clusters
-    - Removes unassigned intermediate hits, keeping trusted proteins
-    - Attaches protein sequences
-    - Returns (combined_protein_dict, cluster_dict) via queue
-
-    Args:
-        trusted_hmmreport_path:
-        intermediate_hmmreport:
-        use_synteny_completion:
-        add_flanking_genes (bool):
-        use_remove_unassigned_singletons:
-        index_trie: trie for the csb naming routine, for faster lookup
-        cooccurrence_pattern (Dict[str, tuple[set[str],int]]):
-        data_queue: Multiprocessing queue for result transport.
-        genome_id: ID of the genome.
-        faa_path, gff_path: Paths to input files (can be .gz).
-        trusted_hmmreport_path, intermediate_hmmreport: HMM report files.
-        nucleotide_range: Nucleotide window for cluster detection.
-        min_completeness: Minimum completeness for cluster pattern assignment.
-        pattern_dict: Patterns for cluster annotation.
-        exclusion_singletons: Domains for singleton exclusion.
-        threshold_dict: Score cutoffs per domain.
-
-        dieser teil hier ist notorisch langsam für besonders große glob files
-        Der intermediate file sollte das gleiche sein wie der hmmreport, nur, dass hier
-        auch die Tc mit drinstehen. Tc ist aber deutlich kleiner 300 MB vs 9.7 Gb
-        Die 300 MB können aber trotzdem mal sortiert und indexiert werden für schnelleren lookup.
-        Außerdem einmal den intermediate file auseinander nehmen und in die hmmreports schreiben .nc_hmmreport
-
-        Diese routinen sind etwa 10 mal langsamer als das lookup:
-        syntenic block completion
-        find and name sytenic block sind die langsamsten schritte
-
-        scheint auch ein fehler bei der erkennung von SQR SDO und co zu haben. die werden im intermediate nicht aufgeführt, was komisch ist.
-    """
-    try:
-        with tick(f"read concatenated intermediat hmmreport {genome_id}"):
-            # Intermediate protein hits
-            intermediate_protein_dict = parse_bulk_HMMreport_genomize(
-                genome_id, intermediate_hmmreport
-            )
-            parse_gff_file(gff_file, intermediate_protein_dict)
-
-        with tick(f"read concatenated trusted hmmreport {genome_id}"):
-            # Primary protein hits
-            trusted_protein_dict = parse_bulk_HMMreport_genomize(
-                genome_id, trusted_hmmreport_path
-            )
-            parse_gff_file(gff_file, trusted_protein_dict)
-
-        # Combine protein dictionaries
-        combined_protein_dict = {**intermediate_protein_dict, **trusted_protein_dict}
-
-        with tick(f"Find syntenic blocks {genome_id}"):
-            # Detect and annotate syntenic gene clusters
-            cluster_dict = csb_finder.find_syntenic_blocks(
-                genome_id, combined_protein_dict, nucleotide_range
-            )
-
-        with tick(f"Name syntenic blocks {genome_id}"):
-            # cluster_dict = csb_finder.name_syntenic_blocks(pattern_dict, cluster_dict, min_completeness)
-            cluster_dict = csb_finder.name_syntenic_blocks_trie(
-                cluster_dict, index_trie, min_completeness=min_completeness
-            )
-
-        with tick(f"Add selection comment trusted proteins {genome_id}"):
-            # Attach the reason for selection to protein objects trusted cutoff/reference sequence
-            trusted_cutoff_protein_ids = set(trusted_protein_dict.keys())
-            combined_protein_dict = add_selection_comment_to_many_proteins(
-                combined_protein_dict, trusted_cutoff_protein_ids, "Tc"
-            )
-
-        # Enhance cluster completeness if needed with synteny correction
-        # Optional: alters the combined_protein_dict
-        if use_synteny_completion:
-            with tick(f"Increase syntenic block completeness {genome_id}"):
-                pattern_completion_synteny.enhance_syntenic_block_completeness(
-                    cluster_dict, combined_protein_dict, pattern_dict
-                )
-
-        with tick(f"Enhance pathway completeness {genome_id}"):
-            # Collect trusted protein IDs: those with complete pathways and those in the main protein dict
-            singletons_with_complete_pathway_set = (
-                pattern_completion_pathway.enhance_pathway_completeness(
-                    combined_protein_dict, cooccurrence_pattern, threshold_dict
-                )
-            )
-
-        with tick(f"Comment selection criteria {genome_id}"):
-            # Attach the reason for selection to protein objects complete pathway
-            combined_protein_dict = add_selection_comment_to_many_proteins(
-                combined_protein_dict, singletons_with_complete_pathway_set, "Coo"
-            )
-
-            trusted_protein_ids = trusted_cutoff_protein_ids.union(
-                singletons_with_complete_pathway_set
-            )
-
-        with tick(f"Hide ambiguous intermediate hits {genome_id}"):
-            # Marks unassigned intermediate proteins as non valid hits (usually hidden in fetch an report)
-            combined_protein_dict = remove_unassigned_intermediate_proteins(
-                combined_protein_dict, trusted_protein_ids, cluster_dict
-            )
-
-        if use_remove_unassigned_singletons:
-            with tick(f"Remove unassigned singletons {genome_id}"):
-                # Remove genes that should not occur as singletons
-                # alters the combined_protein_dict but ignores singletons that complete pathway
-                remove_exclusion_singletons(
-                    combined_protein_dict,
-                    cluster_dict,
-                    exclusion_singletons,
-                    singletons_with_complete_pathway_set,
-                )
-
-        # Addition of flanking genes for detected gene clusters as non-valid hits
-        if add_flanking_genes:
-            with tick(f"Add contextual genes (±1 kb) {genome_id}"):
-                pattern_flank_addition.add_context_genes_from_gff_fast(
-                    genome_id=genome_id,
-                    gff_file=gff_file,
-                    combined_protein_dict=combined_protein_dict,
-                    cluster_dict=cluster_dict,
-                    flank_extension=1000,
-                )
-
-        with tick(f"Attach protein sequences {genome_id}"):
-            # Attach protein sequences
-            get_protein_sequence(faa_file, combined_protein_dict)
-
-        data_queue.put((combined_protein_dict, cluster_dict))
-
-    except Exception as e:
-        logger.error(f"Error: {genome_id} -> {e}")
-        logger.error(traceback.format_exc())
-
-
-def remove_exclusion_singletons(
-    combined_protein_dict: Dict[str, "Protein"],
-    cluster_dict: Dict[str, "Cluster"],
-    exclusion_singletons: Set[str],
-    trusted_protein_ids: Set[str],
-) -> None:
-    """
-    Removes from `combined_protein_dict` all Protein objects that:
-      - are NOT present in any cluster in `cluster_dict`
-      - AND have at least one domain whose name is in `exclusion_singletons`
-      - AND are NOT present in `trusted_protein_ids`
-
-    This function modifies `combined_protein_dict` in place.
-
-    Args:
-        combined_protein_dict: Mapping of proteinID to Protein object.
-        cluster_dict: Mapping of clusterID to Cluster object.
-        exclusion_singletons: Set of domain names for exclusion.
-        trusted_protein_ids: Set of proteinIDs to protect from removal.
-    """
-    proteins_in_clusters: Set[str] = set()
-    for cluster in cluster_dict.values():
-        proteins_in_clusters.update(cluster.genes)
-
-    to_remove: Set[str] = set()
-    for protein_id, protein in combined_protein_dict.items():
-        if (
-            protein_id not in proteins_in_clusters
-            and protein_id not in trusted_protein_ids
-        ):
-            for domain in protein.get_domain_listing():
-                if domain.get_domain() in exclusion_singletons:
-                    to_remove.add(protein_id)
-                    break
-
-    for protein_id in to_remove:
-        protein_obj = combined_protein_dict[protein_id]
-        domains = protein_obj.get_domains()  # Gibt z.B. 'HMM_A-HMM_B-HMM_C' zurück
-        logger.debug(f"Removed singleton {protein_id} with domains: {domains}")
-        del combined_protein_dict[protein_id]
 
 
 def remove_unassigned_intermediate_proteins(
@@ -1030,7 +584,6 @@ def remove_unassigned_intermediate_proteins(
     # that are covered by recognized patterns
     for cluster in cluster_dict.values():
         trusted_protein_ids.update(getattr(cluster, "covered_protein_ids", set()))
-
     # New 091125 mark up the intermediate hits instead of remove
     for pid, protein in combined_protein_dict.items():
         if protein.valid_hit is True:
@@ -1043,96 +596,3 @@ def remove_unassigned_intermediate_proteins(
             protein.add_selection_comment("Nc")
 
     return combined_protein_dict
-
-    # Remove any protein in combined_protein_dict that is not in proteinIDs
-    for protein_id in list(combined_protein_dict.keys()):
-        if protein_id not in trusted_protein_ids:
-            del combined_protein_dict[protein_id]
-
-    # Remove unassigned genes and update clusters accordingly
-    for clusterID in list(cluster_dict.keys()):  # list() so we can delete inside loop
-        cluster = cluster_dict[clusterID]
-        # Remove genes from cluster.genes and cluster.types that are not in combined_protein_dict
-        if hasattr(cluster, "genes"):
-            # Remove genes not present anymore
-            filtered_genes = []
-            filtered_types = []
-            for gene, typ in zip(cluster.genes, getattr(cluster, "types", [])):
-                if gene in combined_protein_dict:
-                    filtered_genes.append(gene)
-                    filtered_types.append(typ)
-            cluster.genes = filtered_genes
-            if hasattr(cluster, "types"):
-                cluster.types = filtered_types
-
-            # If the cluster now has fewer than two proteins, remove the cluster entirely
-            if len(cluster.genes) < 2:
-                # Also remove the clusterID from the corresponding proteins
-                for gene in cluster.genes:
-                    if gene in combined_protein_dict:
-                        combined_protein_dict[gene].clusterID = ""
-                del cluster_dict[clusterID]
-
-    return combined_protein_dict
-
-
-def add_selection_comment_to_many_proteins(
-    combined_protein_dict: Dict[str, "Protein"],
-    protein_ids_set: Set[str],
-    comment: str,
-) -> Dict[str, "Protein"]:
-    """
-    Add `comment` once to `selection_comment` for all proteins whose ID is in `protein_ids_set`.
-    - Creates `selection_comment` if missing.
-    - Preserves order and avoids duplicates.
-    - Skips empty/whitespace comments.
-    """
-    comment = (comment or "").strip()
-    if not comment:
-        return combined_protein_dict  # nothing to add
-
-    # Iterate over the IDs we actually want to update
-    for protein_id in protein_ids_set:
-        protein = combined_protein_dict.get(protein_id)
-        protein.add_selection_comment(comment)
-
-    return combined_protein_dict
-
-
-def parse_bulk_HMMreport_genomize(genomeID, database, protein_dict=None):
-    """
-    Parse for a single genomeID the results from raw hmmreport results database
-    Args:
-        genomeID:
-        database:
-        protein_dict:
-
-    Returns:
-
-    """
-    if protein_dict is None:
-        protein_dict = {}
-
-    results = report_db.get_hits_by_genome_from_report_db(database, genomeID)
-    ProteinClass = Protein  # lookup once
-
-    for (
-        combined_id,
-        genome_id,
-        protein_id,
-        query,
-        hit_bitscore,
-        hsp_start,
-        hsp_end,
-    ) in results:
-        protein = protein_dict.get(protein_id)
-        if protein is None:
-            protein = ProteinClass(
-                protein_id, query, hsp_start, hsp_end, hit_bitscore, genome_id
-            )
-            protein_dict[protein_id] = protein
-        else:
-            protein = protein_dict[protein_id]
-            protein.add_domain(query, hsp_start, hsp_end, hit_bitscore)
-
-    return protein_dict

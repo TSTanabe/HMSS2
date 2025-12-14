@@ -119,6 +119,30 @@ _G_CSB_PATTERNS = None
 _G_COOCCURRENCE: Dict[str, tuple[set, int]] = None
 _G_INDEX_TRIE: TrieIndex = None
 _G_CONFIG_LIGHT = None  # falls du einzelne Config-Flags brauchst
+_G_OPT_THRESH: dict[str, float] = {}
+
+def _build_optimized_suffix_thresholds(
+    threshold_dict: dict,
+) -> dict[str, float]:
+    """
+    Build optimized-cutoff dict keyed by suffix (after first '_').
+    If multiple HMMs map to the same suffix, keep the LOWER optimized cutoff.
+    """
+    opt_dict: dict[str, float] = {}
+
+    for hmm_id, thr in threshold_dict.items():
+        # optimized cutoff extrahieren (robust)
+        opt = thr.get("optimized")
+
+        parts = hmm_id.split("_", 1)
+        suffix = parts[1] if len(parts) == 2 else hmm_id
+
+        if suffix in opt_dict:
+            opt_dict[suffix] = min(opt_dict[suffix], opt)
+        else:
+            opt_dict[suffix] = opt
+
+    return opt_dict
 
 
 def _init_worker(hmm_path: str, threshold_dict: Dict[str, float], config_light: dict):
@@ -128,10 +152,11 @@ def _init_worker(hmm_path: str, threshold_dict: Dict[str, float], config_light: 
     - threshold_dict wird im Worker verfügbar gemacht
     - CSB naming index einmal bauen
     """
-    global _G_HMMS, _G_THRESH, _G_CSB_PATTERNS, _G_COOCCURRENCE, _G_INDEX_TRIE, _G_CONFIG_LIGHT
+    global _G_HMMS, _G_THRESH,_G_OPT_THRESH, _G_CSB_PATTERNS, _G_COOCCURRENCE, _G_INDEX_TRIE, _G_CONFIG_LIGHT
 
     _G_CONFIG_LIGHT = config_light
     _G_THRESH = threshold_dict
+    _G_OPT_THRESH = _build_optimized_suffix_thresholds(threshold_dict)
 
     # 1) HMMlib laden (einmal pro Worker)
     with pyhmmer.plan7.HMMFile(hmm_path) as hf:
@@ -153,9 +178,13 @@ def _init_worker(hmm_path: str, threshold_dict: Dict[str, float], config_light: 
         if noise is not None:
             # (seq, dom) beide auf denselben Wert, falls du keinen getrennten dom-noise hast
             hmm.cutoffs.noise = (float(noise), float(noise))
+        else:
+            logger.warning("There was not cutoff for {hmm_id} defined")
 
         if trusted is not None:
             hmm.cutoffs.trusted = (float(trusted), float(trusted))
+        else:
+            logger.warning("There was not cutoff for {hmm_id} defined")
 
     # 3) CSB Patterns + Trie einmal laden/bauen (wie in parse_reports.main_parse_summary_hmmreport) :contentReference[oaicite:4]{index=4}
     patterns_file = config_light["patterns_file"]
@@ -202,10 +231,10 @@ def add_pyhmmer_hits_to_protein_dict(
         if thr is None:
             # wenn ein HMM keine Thresholds hat: entweder skip oder defaults
             # ich nehme defaults=0 (noise) und "trusted" sehr hoch
-            #noise = 0.0
+            noise = 0.0
             trusted = 1000
         else:
-            #noise = float(thr["noise"])
+            noise = float(thr["noise"])
             trusted = float(thr["trusted"])
 
         for hit in tophits:
@@ -217,25 +246,30 @@ def add_pyhmmer_hits_to_protein_dict(
 
             # pyhmmer liefert Domains; hier nimmst du Domain-scores (passt zu deinem Protein.add_domain Modell)
             # "hit.domains" iteriert DomainHits
+            parts = hmm_id.split("_", 1)
+            hmm_name = parts[1] if len(parts) == 2 else hmm_id
+
             for dom in hit.domains:
                 score = float(dom.score)
+                if score < noise:
+                    continue
 
                 # Koordinaten: HMMER/pyhmmer nutzt i.d.R. 1-based inkl. Endpunkt
-                start = int(dom.alignment_from)
-                end = int(dom.alignment_to)
+                start = int(dom.env_from)
+                end = int(dom.env_to)
 
                 protein = protein_dict.get(prot_id)
                 if protein is None:
-                    protein = protein_object(prot_id, hmm_id, start, end, score, genome_id)
+                    protein = protein_object(prot_id, hmm_name, start, end, int(score), genome_id)
                     protein_dict[prot_id] = protein
                 else:
-                    protein.add_domain(hmm_id, start, end, score)
+                    protein.add_domain(hmm_name, start, end, int(score))
 
                 # directly marks trusted hits
                 if score >= trusted:
                     protein.add_selection_comment("Tc")
-                    protein.valid_hit = 1
-
+                    protein.valid_hit = True
+                    #print(f"Added to {protein.proteinID} the comment Tc and the value {protein.valid_hit}")
     return protein_dict
 
 # -----------------------------
@@ -262,8 +296,7 @@ def _process_batch(
             faa_in = faa_files[genome_id]
             gff_in = gff_files[genome_id]
 
-            with materialize_pair_gz_next_to_input(faa_in) as faa_file, \
-                    materialize_pair_gz_next_to_input(gff_in) as gff_file:
+            with materialize_pair_gz_next_to_input(faa_in, gff_in) as (faa_file, gff_file):
 
                 # load genome with all sequences into RAM
                 with pyhmmer.easel.SequenceFile(faa_file, "fasta", digital=True) as sf:
@@ -293,7 +326,7 @@ def _process_batch(
 
                 # --- 6) Co-occurrence patterns added to valid hits
                 pattern_completion_pathway.enhance_pathway_completeness(
-                        protein_dict, _G_COOCCURRENCE, {}
+                        protein_dict, _G_COOCCURRENCE, _G_OPT_THRESH
                     )
 
                 # --- 7) all named gene clusters are marked as valid hits --
@@ -352,7 +385,7 @@ def process_writer(queue, config):
             database.insert_database_clusters(config.database_directory, cluster_batch)
 
             # write the intermediate hits for cross check
-            generate_cross_check_fasta.write_intermediate_hits_faa(protein_batch, config.cross_check_directory, suffix=".intermediate_hits.faa", max_open_files=32)
+            generate_cross_check_fasta.write_intermediate_hits_faa(protein_batch, config.cross_check_directory, suffix=".intermediate_hits_faa", max_open_files=32)
 
             protein_batch.clear()
             cluster_batch.clear()
@@ -364,7 +397,7 @@ def process_writer(queue, config):
         database.insert_database_proteins(config.database_directory, protein_batch)
         database.insert_database_clusters(config.database_directory, cluster_batch)
         generate_cross_check_fasta.write_intermediate_hits_faa(protein_batch, config.cross_check_directory,
-                                                               suffix=".intermediate_hits.faa", max_open_files=32)
+                                                               suffix=".intermediate_hits_faa", max_open_files=32)
         logger.info(f"Processed {batch_counter} genomes")
     return
 

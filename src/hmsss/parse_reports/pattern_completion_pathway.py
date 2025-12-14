@@ -58,35 +58,45 @@ def enhance_pathway_completeness(
 
     for required_domains, pattern_length in pattern_dict.values():
         domain_hits: Dict[str, Set[str]] = {}
-        all_domains_above = True
+        all_domains_present = True
 
         for domain in required_domains:
             threshold = threshold_dict.get(domain, 0)
-            hits = {
-                protein_id
-                for protein_id, score in domain_to_protein.get(domain, [])
-                if score >= threshold
-            }
-            if not hits:
-                all_domains_above = False
-                break
-            domain_hits[domain] = hits
 
-        if all_domains_above:
-            # Format readable block
-            msg = f"Pattern complete: {', '.join(domain_hits.keys())}\n"
-            for domain in domain_hits:
-                proteins = ", ".join(sorted(domain_hits[domain]))
-                msg += f"  {domain}: {proteins}\n"
-            logger.debug(msg.rstrip())
-            for hits in domain_hits.values():
-                found_protein_ids.update(hits)
+            pairs = domain_to_protein.get(domain, [])
+            if not pairs:
+                all_domains_present = False
+                break
+
+            # hits above/equal threshold
+            hits_above = {pid for pid, score in pairs if score >= threshold}
+
+            if hits_above:
+                domain_hits[domain] = hits_above
+            else:
+                # Fallback: pick the best highest-scoring hit to "complete" the pattern
+                best_pid, best_score = max(pairs, key=lambda t: t[1])
+                domain_hits[domain] = {best_pid}
+                #print(f"Fallback: best_pid: {best_pid}, best_score: {best_score}")
+
+        if not all_domains_present:
+            continue
+
+        # debug
+        msg = f"Pattern complete (threshold+fallback-lowest): {', '.join(domain_hits.keys())}\n"
+        for d, pids in domain_hits.items():
+            msg += f"  {d}: {', '.join(sorted(pids))}\n"
+        logger.debug(msg.rstrip())
+
+        for hits in domain_hits.values():
+            found_protein_ids.update(hits)
 
     if mark_valid and found_protein_ids:
         for pid in found_protein_ids:
             p = protein_dict.get(pid)
+            if p is None:
+                continue
 
-            # Promote only; never demote
             if getattr(p, "valid_hit", False) is not True:
                 p.valid_hit = True
             p.add_selection_comment(selection_comment)

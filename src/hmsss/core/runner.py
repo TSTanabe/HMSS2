@@ -116,6 +116,10 @@ def run_pipeline(config) -> None:
         print_header("Assigning taxonomy information")
         taxonomy.collect_taxonomy_information(config)
 
+    if config.individual_reports or config.stage == 7:
+        print_header("Writing individual hit reports")
+
+
     if config.stage == 50:
         print_header("Mapping reads to protein and nucleotide fasta files")
         queue.queue_read_mapping_faa_inputs(config)

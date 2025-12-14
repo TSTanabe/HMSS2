@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 from hmsss.cli.config import Config
 from hmsss.core.logging import get_logger, print_header
 from hmsss.cross_check import search_cross_reference as search_cross_reference
@@ -40,8 +38,8 @@ def reference_sequence_check(config: Config) -> None:
     search_cross_reference.cross_check_candidates_with_reference_seqs(config)
 
     log.info("Promoting cross-checked hits to trusted list")
-    search_cross_reference.promote_crosschecked_hits(
-        config.cross_check_directory, config.cores
+    search_cross_reference.promote_crosschecked_hits_to_db(
+        crosscheck_dir=config.cross_check_directory, database_path=config.database_directory, processes= config.cores
     )
 
     return
