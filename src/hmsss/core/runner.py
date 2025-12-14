@@ -15,7 +15,7 @@ from hmsss.stages import output_dataset  # import output_operator, output_statis
 from hmsss.stages import process_seqfiles  # import process_operator
 
 from hmsss.core import queue, project as project, ressource_prep
-from hmsss.io import print_command_args
+from hmsss.io import print_command_args, db_fetch_genome_reports
 
 from hmsss.core.logging import setup_logging, print_header, get_logger
 
@@ -93,24 +93,6 @@ def run_pipeline(config) -> None:
             cross_check.reference_sequence_check(config)
         config.stage = 3
 
-    # --- Stage 4: Reports -> DB ---
-    # Not necessary anymore, mainly given to stage 2
-    #if config.stage <= 4 <= config.exit:
-    #    print_header("Parse trusted hits and recognized gene clusters into database")
-    #    queue.queue_protein_annotation_inputs(config)
-    #
-    #    print_header("Parse reports to database", logger=logger)
-    #    parse_reports.main_parse_summary_hmmreport(config)
-    #    config.stage = 4
-
-    # --- Stage 5: CSB Finder ---
-    # Not necessary anymore because
-    # compared to precompiled csb clusters
-    # if config.stage <= 5 <= config.exit:
-    #    print_header("Searching for collinear syntenic blocks (CSB)")
-    #    csb.csb_finder(config)
-    #    config.stage = 5
-
     # --- Stage 6: Taxonomy ---
     if config.stage <= 6 <= config.exit:
         print_header("Assigning taxonomy information")
@@ -118,7 +100,7 @@ def run_pipeline(config) -> None:
 
     if config.individual_reports or config.stage == 7:
         print_header("Writing individual hit reports")
-
+        db_fetch_genome_reports.write_individual_genome_reports(config)
 
     if config.stage == 50:
         print_header("Mapping reads to protein and nucleotide fasta files")

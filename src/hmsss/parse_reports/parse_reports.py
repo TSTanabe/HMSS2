@@ -438,7 +438,7 @@ def output_genome_report(
     taxon_dict: Dict[str, str],
     genomeID: str = "",
     writemode: str = "w",
-    taxon_divider: str = ".",
+    taxon_divider: str = "\t",
 ) -> None:
     """
     Writes the main genome hit table (TSV).
@@ -469,7 +469,7 @@ def output_genome_report(
         "gene_end",
         "gene_strand",
         "locustag",
-        "valid hit",
+        #"valid hit",
         "selection_comment",
         "alternative hit",
         "clusterID",
@@ -495,8 +495,8 @@ def output_genome_report(
             # protein.get_protein_list() erwartete Reihenfolge laut Docstring:
             # [proteinID, get_domains(), get_domain_scores(), get_domain_coordinates(),
             #  gene_contig, gene_start, gene_end, gene_strand, gene_locustag]
-            if not protein.valid_hit:
-                continue
+            #if not protein.valid_hit:
+            #    continue
 
             pl = protein.get_protein_list()
 
@@ -521,11 +521,11 @@ def output_genome_report(
             taxon_dict = {} if taxon_dict is None else taxon_dict
 
             gid = protein.genomeID
-            taxon_levels = [""] * 8
-            if gid in taxon_dict and taxon_dict[gid]:
-                parts = [p.strip() for p in str(taxon_dict[gid]).split(taxon_divider)]
-                for i in range(min(8, len(parts))):
-                    taxon_levels[i] = parts[i]
+            tax_levels = [""] * len(taxon_cols)
+
+            if taxon_dict and gid in taxon_dict and isinstance(taxon_dict[gid], dict):
+                for i, level in enumerate(taxon_cols):
+                    tax_levels[i] = taxon_dict[gid].get(level, "")
             row = [
                 protein.genomeID,  # genomeID
                 pl[0],  # proteinID
@@ -537,12 +537,12 @@ def output_genome_report(
                 pl[6],  # gene_end
                 pl[7],  # gene_strand
                 pl[8],  # locustag
-                protein.valid_hit,
+                #protein.valid_hit,
                 protein.get_selection_comment_csv(),
                 protein.alternative_hit,
                 out_clusterID,
                 csb_val,
-                *taxon_levels,
+                *tax_levels,
             ]
             writer.write("\t".join(map(str, row)) + "\n")
     return

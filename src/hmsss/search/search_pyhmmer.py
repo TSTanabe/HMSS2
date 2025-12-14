@@ -369,15 +369,15 @@ def process_writer(queue, config):
         cluster_batch.update(cluster_dict)
 
         # Print text reports if desired
-        if config.individual_reports:
-            if protein_dict:  # Check if protein_dict is not empty
-                first_protein_key = next(iter(protein_dict))  # Get the first key
-                genome_id = protein_dict[first_protein_key].genomeID
-                filepath = os.path.join(
-                    config.fasta_initial_hit_directory,
-                    str(genome_id) + ".hit_table_txt",
-                )
-                parse_reports.output_genome_report(filepath, protein_dict, cluster_dict, {})
+        #if config.individual_reports:
+        #    if protein_dict:  # Check if protein_dict is not empty
+        #        first_protein_key = next(iter(protein_dict))  # Get the first key
+        #        genome_id = protein_dict[first_protein_key].genomeID
+        #        filepath = os.path.join(
+        #            config.fasta_initial_hit_directory,
+        #            str(genome_id) + ".hit_table_txt",
+        #        )
+        #        parse_reports.output_genome_report(filepath, protein_dict, cluster_dict, {})
 
         # If batch size is reached, process the batch
         if batch_counter >= batch_size:
