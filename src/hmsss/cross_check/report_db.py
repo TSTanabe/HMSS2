@@ -72,64 +72,6 @@ def _iter_rows(path: str) -> Iterable[Tuple[str, str, str, str, str, str, str]]:
             yield (combined, genome, protein, query, c7, c17, c18)
 
 
-def load_hmmreports_to_sqlite(
-    db_path: str, report_files: List[str], batch: int = 100_000
-) -> None:
-    """
-    Lädt viele .hmmreport-Dateien (TSV) in eine SQLite-DB.
-    - query-Feld wird bereinigt: Prefix bis inkl. erstem '_' entfernt
-    - Surrogat-PK id (INTEGER PRIMARY KEY)
-    - combined_id ist NICHT eindeutig → Mehrfachvorkommen erlaubt
-    - Sekundärindizes werden NACH dem Bulk-Import gebaut
-    """
-    con = sqlite3.connect(db_path)
-    cur = con.cursor()
-    create_schema(con)
-
-    cur.execute("BEGIN IMMEDIATE;")
-    try:
-        insert_sql = """
-        INSERT INTO hmm_hits
-          (combined_id, genome_id, protein_id, query, score, start, end)
-        VALUES (?,?,?,?,?,?,?)
-        """
-        buf = []
-        push = cur.executemany
-
-        for path in report_files:
-            for row in _iter_rows(path):
-                # row = (combined_id, genome_id, protein_id, query, score, start, end)
-                row = list(row)  # mutable machen
-                if row[3]:
-                    # prefix bis erstem "_" abschneiden
-                    row[3] = row[3].split("_", 1)[-1]
-                buf.append(tuple(row))
-
-                if len(buf) >= batch:
-                    push(insert_sql, buf)
-                    buf.clear()
-
-        if buf:
-            push(insert_sql, buf)
-
-        con.commit()
-    except Exception:
-        con.rollback()
-        raise
-    finally:
-        # Nach Import auf robustere Defaults zurückstellen
-        cur.executescript("""
-        PRAGMA synchronous = NORMAL;
-        PRAGMA journal_mode = WAL;
-        """)
-        con.commit()
-        con.close()
-
-    # Indizes NACH dem Import bauen (viel schneller)
-    con = sqlite3.connect(db_path)
-    ensure_secondary_indexes(con)
-    con.close()
-
 
 def get_hits_by_genome_from_report_db(
     db_path: str,

@@ -8,9 +8,8 @@ from hmsss.graft import adapter_core
 from hmsss.parse_reports import parse_reports
 
 from hmsss.fasta_preparation import fasta_preparation
-from hmsss.stages import initial_search  # import initial_search
+from hmsss.search import initial_search
 from hmsss.cross_check import cross_check
-from hmsss.csbfinder import csb
 from hmsss.stages import taxonomy  # import collect_taxonomy_information
 from hmsss.stages import output_dataset  # import output_operator, output_statistics
 from hmsss.stages import process_seqfiles  # import process_operator
@@ -81,10 +80,8 @@ def run_pipeline(config) -> None:
         fasta_preparation.fasta_preparation(config)
 
     # --- Stage 2: Hmmsearch ---
+    # 2 und teile von 4 zusammen gelegt
     if config.stage <= 2 <= config.exit:
-        print_header("Queueing input files")
-        queue.queue_protein_annotation_inputs(config)
-
         print_header("Searching for homologous sequences (hmmsearch)")
         initial_search.initial_search(config)
         config.stage = 2
@@ -92,17 +89,19 @@ def run_pipeline(config) -> None:
     # --- Stage 3: Cross-Check / Cutoffs ---
     if config.stage <= 3 <= config.exit:
         print_header("Cross check with reference sequences / cutoff optimization")
-        cross_check.reference_sequence_check(config)
+        if config.bool_cross_check:
+            cross_check.reference_sequence_check(config)
         config.stage = 3
 
     # --- Stage 4: Reports -> DB ---
-    if config.stage <= 4 <= config.exit:
-        print_header("Parse trusted hits and recognized gene clusters into database")
-        queue.queue_protein_annotation_inputs(config)
-
-        print_header("Parse reports to database", logger=logger)
-        parse_reports.main_parse_summary_hmmreport(config)
-        config.stage = 4
+    # Not necessary anymore, mainly given to stage 2
+    #if config.stage <= 4 <= config.exit:
+    #    print_header("Parse trusted hits and recognized gene clusters into database")
+    #    queue.queue_protein_annotation_inputs(config)
+    #
+    #    print_header("Parse reports to database", logger=logger)
+    #    parse_reports.main_parse_summary_hmmreport(config)
+    #    config.stage = 4
 
     # --- Stage 5: CSB Finder ---
     # Not necessary anymore because

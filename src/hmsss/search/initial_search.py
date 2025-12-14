@@ -3,12 +3,12 @@ from __future__ import annotations
 import os
 
 from hmsss.core.logging import get_logger, print_header
-from hmsss.core import search_hmmer as search_hmmer
-from hmsss.cross_check import search_cross_reference as search_cross_reference
+from hmsss.core import queue
+from hmsss.search import search_pyhmmer
 from hmsss.db.database import create_database
 
 
-log = get_logger(__name__)
+logger = get_logger(__name__)
 
 """
 Initial search stage (hmmsearch) for HMSSS.
@@ -44,26 +44,20 @@ def initial_search(config) -> None:
         FileNotFoundError: If expected input files are missing during concatenation.
     """
 
-    print_header("Initial search (hmmsearch)", logger=log)
-    if not os.path.isfile(config.database_directory):
-        create_database(config.database_directory)
+    print_header("Initial search (hmmsearch)", logger=logger)
+    if os.path.isfile(config.database_directory):
 
-    # Falls bereits glob_report existiert, überspringen wir die Suche
-    if config.glob_report and os.path.isfile(config.glob_report):
-        log.info("Using existing global hmmreport: %s", config.glob_report)
+        queue.queue_protein_annotation_inputs(config)
+        removed = queue.remove_genomes_already_in_db_from_queue(config)
+        logger.info(
+            f"Removed {removed} genomes from queue because they are already in the database."
+        )
     else:
-        log.info("Running hmmsearch for each input genome")
-        config.hmmreport_files = search_hmmer.consecutive_hmm_search(
-            config, int(config.cores / 2)
-        )
+        create_database(config.database_directory)
+        queue.queue_protein_annotation_inputs(config)
 
-        log.info("Concatenating hmmsearch results for cross reference check")
-        config.glob_report = search_cross_reference.concatenate_hmmreports_cat_xargs(
-            config.hmmreport_files, config.glob_report
-        )
-
-    # Globale Auswertung in trusted/noise/intermediate
-    log.info("Filtering hits into trusted, noise, and intermediate categories")
-    search_cross_reference.filter_trusted_and_noise_hits(
-        config, config.glob_report, config.cores
-    )
+    if not config.queued_genomes:
+        logger.info("No genomes left to process after DB-filtering. Done.")
+        return
+    logger.info("Running pyhmmer search + parsing + cluster detection + DB write")
+    search_pyhmmer.consecutive_hmm_search(config, processes=int(config.cores / 2))

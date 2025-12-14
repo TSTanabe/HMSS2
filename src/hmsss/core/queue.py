@@ -12,6 +12,7 @@ from typing import List, Set, Dict, Optional
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from hmsss.core.logging import get_logger
+from hmsss.db import database
 from hmsss.utils import myUtil
 
 log = get_logger(__name__)
@@ -79,69 +80,57 @@ def queue_fna_inputs(config) -> dict[str, str]:
 
 
 def queue_protein_annotation_inputs(config) -> None:
-    """Collect FAA/GFF/HMMREPORT inputs, independent of FNA.
+    """
+    Collect FAA/GFF inputs for annotation (gz + plain), WITHOUT decompression.
 
-    - Decompress `.faa.gz` and `.gff.gz` if uncompressed counterparts are missing.
-    - Keep only genome IDs that have both FAA and GFF.
-    - Restrict HMMREPORT files to these genome IDs.
+    Rule:
+      - If both plain and gz exist for the same genomeID → plain WINS
+      - Genome is queued only if BOTH FAA and GFF exist (gz or plain)
 
-    Args:
-        config: Object with `.fasta_file_directory` and `.cores`.
-
-    Side Effects:
-        Sets attributes on `config`:
-          - `queued_genomes` (set of genome IDs)
-          - `faa_files` (dict genome ID → FAA path)
-          - `gff_files` (dict genome ID → GFF path)
-          - `hmmreport_files` (dict genome ID → HMMREPORT path)
+    Side effects:
+      - sets config.queued_genomes
+      - sets config.faa_files
+      - sets config.gff_files
+      - sets config.hmmreport_files (legacy)
     """
     root = config.fasta_file_directory
 
-    # Aktuelle Lage erfassen
-    faa_gz_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".faa.gz")
-    gff_gz_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".gff.gz")
+    # --- collect files ---
+    faa_plain = get_genome_id_files_dict(root, extension=".faa")
+    faa_gz    = get_genome_id_files_dict(root, extension=".faa.gz")
 
-    faa_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".faa")
-    gff_files: Dict[str, str] = get_genome_id_files_dict(root, extension=".gff")
+    gff_plain = get_genome_id_files_dict(root, extension=".gff")
+    gff_gz    = get_genome_id_files_dict(root, extension=".gff.gz")
 
-    # Entpacken planen: .faa.gz / .gff.gz nur wenn das ungezippte Pendant fehlt
-    decompress_targets: Set[str] = set()
-    for gid, gz_path in faa_gz_files.items():
-        if gid not in faa_files:
-            decompress_targets.add(gz_path)
-    for gid, gz_path in gff_gz_files.items():
-        if gid not in gff_files:
-            decompress_targets.add(gz_path)
+    # --- merge: gz first, then plain (plain wins) ---
+    faa_files = {}
+    faa_files.update(faa_gz)
+    faa_files.update(faa_plain)
 
-    if decompress_targets:
-        log.info(f"Planned to decompress {len(decompress_targets)} .gz file(s).")
-        _parallel_decompress(decompress_targets, getattr(config, "cores", None))
-    else:
-        log.info(f"All files are already decompressed.")
-    # Collect the faa and gff files to the dictionary
-    faa_files = get_genome_id_files_dict(root, extension=".faa")
-    gff_files = get_genome_id_files_dict(root, extension=".gff")
-    hmmreport_files: Dict[str, str] = get_genome_id_files_dict(
-        root, extension=".hmmreport"
-    )
+    gff_files = {}
+    gff_files.update(gff_gz)
+    gff_files.update(gff_plain)
 
-    # Nur GenomeIDs behalten, die FAA UND GFF haben
-    common_ids: Set[str] = set(faa_files) & set(gff_files)
+    # legacy / optional
+    hmmreport_files = get_genome_id_files_dict(root, extension=".hmmreport")
 
-    # Dictionaries auf common_ids beschränken
-    faa_files = {gid: path for gid, path in faa_files.items() if gid in common_ids}
-    gff_files = {gid: path for gid, path in gff_files.items() if gid in common_ids}
+    # --- keep only genomeIDs that have BOTH faa and gff ---
+    common_ids = set(faa_files) & set(gff_files)
+
+    faa_files = {gid: faa_files[gid] for gid in common_ids}
+    gff_files = {gid: gff_files[gid] for gid in common_ids}
     hmmreport_files = {
         gid: path for gid, path in hmmreport_files.items() if gid in common_ids
     }
 
-    config.queued_genomes = common_ids
+    config.queued_genomes = list(common_ids)
     config.faa_files = faa_files
     config.gff_files = gff_files
     config.hmmreport_files = hmmreport_files
 
-    log.info(f"Queued {len(common_ids)} faa/gff pairs.")
-    log.info(f"Found {len(hmmreport_files)} existing hmmreports for faa/gff pairs.")
+    log.info(
+        f"Queued {len(common_ids)} genomes with FAA and GFF."
+    )
 
 
 def queue_faa_without_gff(config) -> dict[str, str]:
@@ -275,6 +264,43 @@ def queue_read_mapping_fna_inputs(config) -> dict[str, str]:
     config.fna_files = merged
     return merged
 
+def remove_genomes_already_in_db_from_queue(config) -> int:
+    """
+    Entfernt Genome aus config.queued_genomes, die bereits in der DB existieren.
+    Passt außerdem die zugehörigen Dicts (faa_files, gff_files, hmmreport_files) an.
+
+    Returns:
+        Anzahl der entfernten Genome.
+    """
+    if not getattr(config, "database_directory", None):
+        return 0
+
+    # falls DB noch nicht existiert -> nichts entfernen
+    if not os.path.isfile(config.database_directory):
+        return 0
+
+    existing: Set[str] = database.fetch_genome_ids(config.database_directory)  # :contentReference[oaicite:3]{index=3}
+
+    queued = list(getattr(config, "queued_genomes", []))
+    if not queued:
+        return 0
+
+    # welche sollen raus?
+    to_remove = {gid for gid in queued if gid in existing}
+    if not to_remove:
+        return 0
+
+    # queued_genomes filtern (Reihenfolge beibehalten)
+    config.queued_genomes = [gid for gid in queued if gid not in to_remove]
+
+    # zugehörige Mappings filtern, falls vorhanden
+    for attr in ("faa_files", "gff_files", "hmmreport_files"):
+        d = getattr(config, attr, None)
+        if isinstance(d, dict) and d:
+            for gid in list(to_remove):
+                d.pop(gid, None)
+
+    return len(to_remove)
 
 def get_all_files_with_extension(directory: str, extension: str) -> Set[str]:
     """Recursively find all files with a given extension.

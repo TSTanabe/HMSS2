@@ -10,6 +10,9 @@ def enhance_pathway_completeness(
     protein_dict: Dict[str, "Protein"],
     pattern_dict: Dict[str, tuple[set, int]],
     threshold_dict: Dict[str, float],
+    *,
+    mark_valid: bool = True,
+    selection_comment: str = "Coo",
 ) -> Set[str]:
     """
     Identify proteins that contribute to fully complete pathway patterns.
@@ -29,9 +32,9 @@ def enhance_pathway_completeness(
     protein_dict : Dict[str, Protein]
         Mapping of protein IDs to Protein objects.
 
-    pattern_dict : Dict[str, List[str]]
+    pattern_dict : Dict[str, tuple[set, int]]
         Mapping of pattern names to lists of required domain names.
-                "PatternB": ["X", "Y"]
+                "PatternB": ["X", "Y"] int is the pattern length
 
     threshold_dict : Dict[str, float]
                 "A": 40.0,
@@ -56,6 +59,7 @@ def enhance_pathway_completeness(
     for required_domains, pattern_length in pattern_dict.values():
         domain_hits: Dict[str, Set[str]] = {}
         all_domains_above = True
+
         for domain in required_domains:
             threshold = threshold_dict.get(domain, 0)
             hits = {
@@ -77,5 +81,14 @@ def enhance_pathway_completeness(
             logger.debug(msg.rstrip())
             for hits in domain_hits.values():
                 found_protein_ids.update(hits)
+
+    if mark_valid and found_protein_ids:
+        for pid in found_protein_ids:
+            p = protein_dict.get(pid)
+
+            # Promote only; never demote
+            if getattr(p, "valid_hit", False) is not True:
+                p.valid_hit = True
+            p.add_selection_comment(selection_comment)
 
     return found_protein_ids

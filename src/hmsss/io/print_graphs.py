@@ -3,6 +3,7 @@ import os
 from typing import Dict, Any, Optional, Set, Tuple, List
 
 from hmsss.graphics import graph_presence_absence
+from hmsss.graphics import graph_occurence_network
 from hmsss.graphics import graph_gene_cluster
 from hmsss.core.logging import get_logger
 
@@ -51,6 +52,18 @@ def print_hit_graphs(
         directory, "summary_genecluster_overview_table.jpg"
     )
 
+    # Plots the network for presence absence
+    graph_occurence_network.plot_taxonomy_cooccurrence_network(
+        taxonomy_summary,
+        protein_dict,
+        taxon_dict,
+        allowed_types=None,  # oder Liste von Domain-Namen
+        allowed_levels={"Phylum"},
+        preferred_order=None,
+        min_cooccurrence=3,  # kannst du anpassen
+    )
+
+    sys.exit()
     # Plot includes all proteins that were fetched extended the requested ones
     graph_presence_absence.plot_taxonomy_summary_bubbles(
         taxonomy_summary,

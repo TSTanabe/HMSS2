@@ -10,7 +10,8 @@ from typing import Dict, Any, Set
 from contextlib import contextmanager
 from time import perf_counter
 
-from hmsss.cross_check import search_cross_reference, report_db
+import hmsss.search.search_pyhmmer
+from hmsss.cross_check import report_db
 from hmsss.parse_reports import (
     pattern_completion_synteny,
     pattern_completion_pathway,
@@ -670,7 +671,7 @@ def main_parse_summary_hmmreport(config):
     # Lade Patterns nur 1x im Hauptprozess
     csb_patterns = csb_finder.make_pattern_dict(config.patterns_file)
     cooccurrence_pattern = csb_finder.make_pattern_dict(config.cooccurrence_file)
-    threshold_dict = search_cross_reference.make_threshold_dict(
+    threshold_dict = hmsss.search.search_pyhmmer.make_threshold_dict(
         config.score_threshold_file, 3, config.thrs_score
     )
     exclusion_singletons = parse_exclusion_singletons(config.exclusion_singletons)
@@ -1032,6 +1033,8 @@ def remove_unassigned_intermediate_proteins(
 
     # New 091125 mark up the intermediate hits instead of remove
     for pid, protein in combined_protein_dict.items():
+        if protein.valid_hit is True:
+            continue # Skip proteins that are already recognized
         if pid in trusted_protein_ids:
             protein.valid_hit = True
             protein.add_selection_comment("Sc")
