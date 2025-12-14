@@ -5,7 +5,6 @@ import os
 
 from hmsss.db.database import index_database
 from hmsss.graft import adapter_core
-from hmsss.parse_reports import parse_reports
 
 from hmsss.fasta_preparation import fasta_preparation
 from hmsss.search import initial_search

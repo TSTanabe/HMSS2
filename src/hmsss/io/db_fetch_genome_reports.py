@@ -39,7 +39,7 @@ def write_individual_genome_reports(config) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     genome_ids = _list_all_genome_ids(config.database_directory)
-    logger.info("Stage 7: writing %d per-genome reports to %s", len(genome_ids), out_dir)
+    logger.info("Writing %d per-genome reports to %s", len(genome_ids), out_dir)
 
     # Taxonomie einmal holen (schnell) und pro Genom nur sub-setten
     db_uri = _db_uri_ro_immutable(config.database_directory)
@@ -75,4 +75,4 @@ def write_individual_genome_reports(config) -> None:
         if i % 250 == 0:
             logger.info("Individual report printing progress: %d / %d", i, len(genome_ids))
 
-    logger.info("Stage 7 finished: %d reports", len(genome_ids))
+    logger.info("Finished: %d reports", len(genome_ids))
