@@ -3,12 +3,17 @@
 import os
 import re
 import multiprocessing
+import gzip
+import shutil
+import tempfile
 from pathlib import Path
+
 from typing import Tuple, Set
 
-from src.hmsss.utils import myUtil
+from hmsss.core.logging import get_logger
+from hmsss.utils import myUtil
 
-logger = myUtil.log
+logger = get_logger(__name__)
 
 
 def parallel_translation(fna_files: dict[str, str], cores: int) -> None:
@@ -54,22 +59,49 @@ def translate_fasta(
 ) -> None:
     """
     Runs prodigal for a single fasta file.
-
-    Args:
-        args: Tuple of (fasta path, total length, shared counter, shared lock, prodigal_executable)
+    If fasta is .gz -> decompress to a temporary file first, then translate, then delete temp.
     """
     fasta, length, counter, lock, prodigal = args
 
-    # Run prodigal
-    output = os.path.splitext(fasta)[0]
-    faa = output + ".faa"
+    fasta_p = Path(fasta)
 
-    string = f"{prodigal} -a {faa} -i {fasta} >/dev/null 2>&1"
+    # output should be next to the source file, but WITHOUT the .gz suffix in the basename
+    # e.g. genome.fna.gz -> genome.faa
+    stem = fasta_p.name
+    if stem.endswith(".gz"):
+        stem = stem[:-3]  # remove .gz
+    output_base = fasta_p.with_name(Path(stem).stem)  # remove .fna or other last suffix
+    faa = str(output_base) + ".faa"
+
+    tmp_path = None
+    input_for_prodigal = str(fasta_p)
+
     try:
-        os.system(string)
+        if fasta_p.name.endswith(".gz"):
+            # decompress to temp file (same filesystem preferred; /tmp is fine too)
+            # suffix helps prodigal / debugging
+            with tempfile.NamedTemporaryFile(
+                mode="wb", suffix=".fna", delete=False
+            ) as tmp:
+                tmp_path = tmp.name
+                with gzip.open(str(fasta_p), "rb") as f_in:
+                    shutil.copyfileobj(f_in, tmp)
+
+            input_for_prodigal = tmp_path
+
+        cmd = f'{prodigal} -a "{faa}" -i "{input_for_prodigal}" >/dev/null 2>&1'
+        os.system(cmd)
+
     except Exception as e:
         logger.warning(f"Could not translate {fasta} - {e}")
         return
+
+    finally:
+        if tmp_path is not None:
+            try:
+                os.unlink(tmp_path)
+            except Exception:
+                pass
 
     with lock:
         counter.value += 1
@@ -115,30 +147,62 @@ def parallel_transcription(faa_files: dict[str, str], cores: int) -> None:
     logger.info(f"Generated corresponding gff files")
     return
 
+def _output_prefix_from_original(fasta_p: Path) -> str:
+    """
+    genome.faa      -> genome
+    genome.faa.gz   -> genome
+    """
+    name = fasta_p.name
+    if name.endswith(".gz"):
+        name = name[:-3]
+    return str(fasta_p.with_name(Path(name).stem))
 
 def transcripe_fasta(
     args: Tuple[str, int, multiprocessing.Value, multiprocessing.Lock],
 ) -> None:
-    """
-    Converts prodigal .faa to GFF3 format if prodigal header detected.
-
-    Args:
-        args: Tuple of (fasta path, total length, shared counter, shared lock)
-    """
     fasta, length, counter, lock = args
+    fasta_p = Path(fasta)
 
-    if check_prodigal_format(fasta):
-        prodigal_faa_to_gff(fasta)
+    tmp_path: str | None = None
+    input_for_processing = str(fasta_p)
 
-        with lock:
-            counter.value += 1
-            print(
-                f"Processing file {counter.value} of {length}",
-                end="\r",
-                flush=True,
-            )
+    # Output-GFF soll neben dem ORIGINAL liegen:
+    # genome.faa      -> genome.gff
+    # genome.faa.gz   -> genome.gff
+    out_base = fasta_p
+    if out_base.name.endswith(".gz"):
+        out_base = out_base.with_name(out_base.name[:-3])  # strip .gz
+    if out_base.name.endswith(".faa"):
+        out_gff = str(out_base.with_suffix(".gff"))
+    else:
+        out_gff = str(out_base) + ".gff"
 
-    return
+    try:
+        if fasta_p.name.endswith(".gz"):
+            with tempfile.NamedTemporaryFile(mode="wb", suffix=".faa", delete=False) as tmp:
+                tmp_path = tmp.name
+                with gzip.open(str(fasta_p), "rb") as f_in:
+                    shutil.copyfileobj(f_in, tmp)
+            input_for_processing = tmp_path
+
+        if check_prodigal_format(input_for_processing):
+            prodigal_faa_to_gff(input_for_processing, output_gff=out_gff)
+
+            with lock:
+                counter.value += 1
+                print(
+                    f"Processing file {counter.value} of {length}",
+                    end="\r",
+                    flush=True,
+                )
+
+    finally:
+        if tmp_path is not None:
+            try:
+                os.unlink(tmp_path)
+            except Exception:
+                pass
+
 
 
 def check_prodigal_format(gff_file: str) -> int:
@@ -164,61 +228,53 @@ def check_prodigal_format(gff_file: str) -> int:
     return 0
 
 
-def prodigal_faa_to_gff(filepath: str) -> str:
+def prodigal_faa_to_gff(filepath: str, *, output_gff: str | None = None) -> str:
     """
     Translates prodigal .faa to GFF3 format. Returns the GFF3 filename.
-
-    Args:
-        filepath (str): Path to prodigal .faa file.
-
-    Returns:
-        str: Path to generated .gff file.
     """
-    # Translates faa files from prodigal to normal gff3 formated files. returns the gff3 file name
-    dir_path = os.path.dirname(filepath)
-    filename_with_ext = os.path.basename(filepath)
+    if output_gff is None:
+        dir_path = os.path.dirname(filepath)
+        filename_with_ext = os.path.basename(filepath)
 
-    if filename_with_ext.endswith(".gz"):
-        filename_with_ext = os.path.splitext(filename_with_ext)[0]
+        if filename_with_ext.endswith(".gz"):
+            filename_with_ext = os.path.splitext(filename_with_ext)[0]
 
-    # Remove the .faa extension if present
-    if filename_with_ext.endswith(".faa"):
-        filename_without_ext = os.path.splitext(filename_with_ext)[0]
+        if filename_with_ext.endswith(".faa"):
+            filename_without_ext = os.path.splitext(filename_with_ext)[0]
+        else:
+            filename_without_ext = filename_with_ext
+
+        gff = os.path.join(dir_path, filename_without_ext + ".gff")
     else:
-        filename_without_ext = filename_with_ext
+        gff = output_gff
 
-    gff = dir_path + "/" + filename_without_ext + ".gff"
+    with open(gff, "w") as writer:
+        with open(filepath, "r") as reader:
+            genome_id = myUtil.get_genome_id(filepath)
+            for line in reader.readlines():
+                if line and line[0] == ">":
+                    try:
+                        line = line[1:]
+                        ar = line.split("#")
+                        contig = re.split(r"_\d+\W+$", ar[0])
+                        strand = "+" if ar[3] == " 1 " else "-"
+                        writer.write(
+                            contig[0]
+                            + "\tprodigal\tcds\t"
+                            + ar[1]
+                            + "\t"
+                            + ar[2]
+                            + "\t0.0\t"
+                            + strand
+                            + "\t0\tID=cds-"
+                            + ar[0]
+                            + ";Genome="
+                            + genome_id
+                            + "\n"
+                        )
+                    except Exception as e:
+                        logger.error(f"Missformated header\n {line} - {e}")
 
-    writer = open(gff, "w")
-
-    with open(filepath, "r") as reader:
-        genome_id = myUtil.get_genome_id(filepath)
-        for line in reader.readlines():
-            if line[0] == ">":
-                try:
-                    line = line[1:]
-                    ar = line.split("#")
-                    # print(ar)
-                    contig = re.split(r"_\d+\W+$", ar[0])
-                    # print(contig)
-                    strand = "+" if ar[3] == " 1 " else "-"
-                    writer.write(
-                        contig[0]
-                        + "\tprodigal\tcds\t"
-                        + ar[1]
-                        + "\t"
-                        + ar[2]
-                        + "\t0.0\t"
-                        + strand
-                        + "\t0\tID=cds-"
-                        + ar[0]
-                        + ";Genome="
-                        + genome_id
-                        + "\n"
-                    )
-                except Exception as e:
-                    logger.error(f"Missformated header\n {line} - {e}")
-    writer.close()
     return gff
 
 

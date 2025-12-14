@@ -22,26 +22,9 @@ according to score thresholds.
 
 def initial_search(config) -> None:
     """Run the initial hmmsearch stage and prepare global reports.
-
-    Steps:
-      1) Create the project SQLite database if missing.
-      2) If a global report already exists, reuse it.
-      3) Otherwise, run hmmsearch for each genome and collect per-genome reports.
-      4) Concatenate per-genome reports into a global report.
-      5) Split global hits into trusted / intermediate / noise via thresholds.
-
-    Args:
-        config: Pipeline options/config with fields such as
-            `database_directory`, `glob_report`, `cores`, `hmmreport_files`,
-            and `score_threshold_file`.
-
-    Side Effects:
-        - Creates database file and per-genome `.hmmreport` if needed.
-        - Writes a concatenated global report.
-        - Writes categorized hit files into the cross-check directory.
-
-    Raises:
-        FileNotFoundError: If expected input files are missing during concatenation.
+        If database is present genomeIDs in the database will be ignored.
+        Uses pyhmmer to reduce IO operations and processes everything except the cross-check
+        without writing extra external files
     """
 
     print_header("Initial search (hmmsearch)", logger=logger)
