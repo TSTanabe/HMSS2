@@ -1,10 +1,15 @@
 from __future__ import annotations
-
+import time
 import os
+import sys
+from multiprocessing.queues import SimpleQueue
+
 import pyhmmer
 
-from multiprocessing import Pool, Manager
-from typing import Dict, List, Union
+from itertools import repeat
+import multiprocessing
+from multiprocessing import Pool, Process
+from typing import Dict, List, Union, Optional, Any
 
 from hmsss.cli.config import Config
 from hmsss.cross_check import generate_cross_check_fasta
@@ -48,6 +53,10 @@ def make_threshold_dict(
     """
     thresholds: Dict[str, Union[float, Dict[str, float]]] = {}
 
+    def _parse(val: str) -> float:
+        if val == "-inf":
+            return 5000.0  # sentinel: unreachable
+        return float(val)
     with open(file_path, "r") as file:
         for line_number, line in enumerate(file, start=1):
             parts = line.rstrip("\n").split("\t")
@@ -56,10 +65,7 @@ def make_threshold_dict(
 
             hmm_id = parts[0]
 
-            def _parse(val: str) -> float:
-                if val == "-inf":
-                    return 5000.0  # sentinel: unreachable
-                return float(val)
+
 
             try:
                 # normalize columns
@@ -116,10 +122,18 @@ def split_into_batches(items: List[str], n_batches: int) -> List[List[str]]:
 _G_HMMS: list = []
 _G_THRESH: dict = {}
 _G_CSB_PATTERNS = None
-_G_COOCCURRENCE: Dict[str, tuple[set, int]] = None
+_G_COOCCURRENCE: Optional[Dict[str, tuple[set, int]]] = None
 _G_INDEX_TRIE: TrieIndex = None
 _G_CONFIG_LIGHT = None  # falls du einzelne Config-Flags brauchst
 _G_OPT_THRESH: dict[str, float] = {}
+
+_G_FAA_FILES: Optional[Dict[str, str]] = None
+_G_GFF_FILES: Optional[Dict[str, str]] = None
+
+_G_QUEUE: Optional[SimpleQueue] = None
+_G_NUCLEOTIDE_RANGE: Optional[int] = None
+_G_MIN_COMPLETENESS: Optional[float] = None
+_G_USE_SYNTENY_COMPLETION: Optional[bool] = None
 
 def _build_optimized_suffix_thresholds(
     threshold_dict: dict,
@@ -145,18 +159,34 @@ def _build_optimized_suffix_thresholds(
     return opt_dict
 
 
-def _init_worker(hmm_path: str, threshold_dict: Dict[str, float], config_light: dict):
+def _init_worker(
+    hmm_path: str,
+    threshold_dict: Dict[str, float],
+    config_light: dict,
+    faa_files: Dict[str, str],
+    gff_files: Dict[str, str],
+    nucleotide_range: int,
+    min_completeness: float,
+    use_synteny_completion: bool,
+):
     """
     Lädt schwere/konstante Daten einmal pro Worker.
     - HMMlib wird genau einmal in RAM gebracht
     - threshold_dict wird im Worker verfügbar gemacht
     - CSB naming index einmal bauen
     """
-    global _G_HMMS, _G_THRESH,_G_OPT_THRESH, _G_CSB_PATTERNS, _G_COOCCURRENCE, _G_INDEX_TRIE, _G_CONFIG_LIGHT
+    global _G_HMMS, _G_THRESH,_G_OPT_THRESH, _G_CSB_PATTERNS, _G_COOCCURRENCE, _G_INDEX_TRIE, _G_CONFIG_LIGHT, _G_FAA_FILES, _G_GFF_FILES, _G_NUCLEOTIDE_RANGE, _G_MIN_COMPLETENESS, _G_USE_SYNTENY_COMPLETION
 
     _G_CONFIG_LIGHT = config_light
     _G_THRESH = threshold_dict
     _G_OPT_THRESH = _build_optimized_suffix_thresholds(threshold_dict)
+
+    _G_FAA_FILES = faa_files
+    _G_GFF_FILES = gff_files
+
+    _G_NUCLEOTIDE_RANGE = nucleotide_range
+    _G_MIN_COMPLETENESS = min_completeness
+    _G_USE_SYNTENY_COMPLETION = use_synteny_completion
 
     # 1) HMMlib laden (einmal pro Worker)
     with pyhmmer.plan7.HMMFile(hmm_path) as hf:
@@ -194,8 +224,8 @@ def _init_worker(hmm_path: str, threshold_dict: Dict[str, float], config_light: 
     _G_COOCCURRENCE = csb_finder.make_pattern_dict(cooc_file)
 
     only_pattern_dict = {name: patset for name, (patset, _) in _G_CSB_PATTERNS.items()}
-    # falls du csb_trie_algorithm nutzt:
 
+    # Trie Index für pattern hierarchical tree
     _G_INDEX_TRIE = csb_trie_algorithm.build_trie_index(only_pattern_dict)
 
 
@@ -207,7 +237,6 @@ def add_pyhmmer_hits_to_protein_dict(
     *,
     genome_id: str,
     tophits_iter,
-    protein_dict: dict[str, Protein] | None = None,
 ) -> dict[str, Protein]:
     """
     Füllt protein_dict mit Domains aus pyhmmer hmmsearch.
@@ -215,8 +244,7 @@ def add_pyhmmer_hits_to_protein_dict(
     - setzt Tc für dom.score >= trusted (optional, wenn du das gleich markieren willst)
     - alle >= noise bleiben als Domains im Protein (wie im report-parser) :contentReference[oaicite:2]{index=2}
     """
-    if protein_dict is None:
-        protein_dict = {}
+    protein_dict = {}
 
     protein_object = Protein
 
@@ -226,16 +254,11 @@ def add_pyhmmer_hits_to_protein_dict(
             if isinstance(tophits.query.name, (bytes, bytearray))
             else str(tophits.query.name)
         )
+        parts = hmm_id.split("_", 1)
+        hmm_name = parts[1] if len(parts) == 2 else hmm_id
 
         thr = _G_THRESH.get(hmm_id)
-        if thr is None:
-            # wenn ein HMM keine Thresholds hat: entweder skip oder defaults
-            # ich nehme defaults=0 (noise) und "trusted" sehr hoch
-            noise = 0.0
-            trusted = 1000
-        else:
-            noise = float(thr["noise"])
-            trusted = float(thr["trusted"])
+        trusted = float(thr["trusted"]) if not thr is None else 1000
 
         for hit in tophits:
             prot_id = (
@@ -243,47 +266,33 @@ def add_pyhmmer_hits_to_protein_dict(
                 if isinstance(hit.name, (bytes, bytearray))
                 else str(hit.name)
             )
+            score = hit.score
 
-            # pyhmmer liefert Domains; hier nimmst du Domain-scores (passt zu deinem Protein.add_domain Modell)
-            # "hit.domains" iteriert DomainHits
-            parts = hmm_id.split("_", 1)
-            hmm_name = parts[1] if len(parts) == 2 else hmm_id
-
+            start,end = 0,1
             for dom in hit.domains:
-                score = float(dom.score)
-                if score < noise:
-                    continue
-
                 # Koordinaten: HMMER/pyhmmer nutzt i.d.R. 1-based inkl. Endpunkt
-                start = int(dom.env_from)
-                end = int(dom.env_to)
+                start = min(start, int(dom.env_from))
+                end = max(end, int(dom.env_to))
 
-                protein = protein_dict.get(prot_id)
-                if protein is None:
-                    protein = protein_object(prot_id, hmm_name, start, end, int(score), genome_id)
-                    protein_dict[prot_id] = protein
-                else:
-                    protein.add_domain(hmm_name, start, end, int(score))
+            protein = protein_dict.get(prot_id)
+            if protein is None:
+                protein = protein_object(prot_id, hmm_name, start, end, int(score), genome_id)
+                protein_dict[prot_id] = protein
+            else:
+                protein.add_domain(hmm_name, start, end, int(score))
+            if score >= trusted:
+                protein.add_selection_comment("Tc")
+                protein.valid_hit = True
 
-                # directly marks trusted hits
-                if score >= trusted:
-                    protein.add_selection_comment("Tc")
-                    protein.valid_hit = True
-                    #print(f"Added to {protein.proteinID} the comment Tc and the value {protein.valid_hit}")
     return protein_dict
+
 
 # -----------------------------
 # Worker: verarbeitet ein Batch
 # -----------------------------
-def _process_batch(
-    queue,
-    batch_genome_ids: List[str],
-    faa_files: Dict[str, str],
-    gff_files: Dict[str, str],
-    nucleotide_range: int,
-    min_completeness: float,
-    use_synteny_completion: bool,
-) -> None:
+def _process_genome1(
+    genome_id: str,
+) -> tuple[dict[str, Protein], dict[str, Any]] | None:
     """
     Pro Batch: pro Genom
       1) pyhmmer hmmsearch (HMMlib liegt global im Worker)
@@ -291,55 +300,138 @@ def _process_batch(
       3) gene cluster finden + benennen
       4) queue.put((protein_dict, cluster_dict))
     """
-    for genome_id in batch_genome_ids:
-        try:
-            faa_in = faa_files[genome_id]
-            gff_in = gff_files[genome_id]
 
-            with materialize_pair_gz_next_to_input(faa_in, gff_in) as (faa_file, gff_file):
+    try:
+        faa_in = _G_FAA_FILES[genome_id]
+        gff_in = _G_GFF_FILES[genome_id]
 
-                # load genome with all sequences into RAM
-                with pyhmmer.easel.SequenceFile(faa_file, "fasta", digital=True) as sf:
-                    seqs = sf.read_block()
+        with materialize_pair_gz_next_to_input(faa_in, gff_in) as (faa_file, gff_file):
 
-                tophits_iter = pyhmmer.hmmer.hmmsearch(_G_HMMS, seqs, cpus=2, bit_cutoffs="noise")
+            # load genome with all sequences into RAM
+            with pyhmmer.easel.SequenceFile(faa_file, "fasta", digital=True) as sf:
+                seqs = sf.read_block()
 
-                # -- 2) combined protein hits, includes intermdiates, valid hits = >trusted cutoff ---
-                protein_dict = add_pyhmmer_hits_to_protein_dict(
-                    genome_id=genome_id,
-                    tophits_iter=tophits_iter,
-                    protein_dict=None,
-                )
+            tophits_iter = pyhmmer.hmmer.hmmsearch(_G_HMMS, seqs, cpus=2, bit_cutoffs="noise")
 
-                # --- 3) GFF parsing + attach info to all proteins ---
-                parse_reports.parse_gff_file(gff_file, protein_dict)
+            # -- 2) combined protein hits, includes intermdiates, valid hits = >trusted cutoff ---
+            protein_dict = add_pyhmmer_hits_to_protein_dict(
+                genome_id=genome_id,
+                tophits_iter=tophits_iter,
+            )
 
-                # --- 4) Gene clusters finden + benennen ---
-                cluster_dict = csb_finder.find_syntenic_blocks(genome_id, protein_dict, nucleotide_range)
-                cluster_dict = csb_finder.name_syntenic_blocks_trie(cluster_dict, _G_INDEX_TRIE,
-                                                                    min_completeness=min_completeness)
+            # --- 3) GFF parsing + attach info to all proteins ---
+            parse_reports.parse_gff_file(gff_file, protein_dict)
 
-                # --- 5) Pattern completion mechanism ---
-                pattern_completion_synteny.enhance_syntenic_block_completeness(
-                    cluster_dict, protein_dict, _G_CSB_PATTERNS
-                )
+            # --- 4) Gene clusters finden + benennen ---
+            cluster_dict = csb_finder.find_syntenic_blocks(genome_id, protein_dict, _G_NUCLEOTIDE_RANGE)
+            cluster_dict = csb_finder.name_syntenic_blocks_trie(cluster_dict, _G_INDEX_TRIE,
+                                                                min_completeness=_G_MIN_COMPLETENESS)
 
-                # --- 6) Co-occurrence patterns added to valid hits
+            # --- 5) Pattern completion mechanism ---
+            pattern_completion_synteny.enhance_syntenic_block_completeness(
+                cluster_dict, protein_dict, _G_CSB_PATTERNS
+            )
+
+            # --- 6) Co-occurrence patterns added to valid hits
+            if _G_USE_SYNTENY_COMPLETION:
                 pattern_completion_pathway.enhance_pathway_completeness(
                         protein_dict, _G_COOCCURRENCE, _G_OPT_THRESH
                     )
 
-                # --- 7) all named gene clusters are marked as valid hits --
-                parse_reports.remove_unassigned_intermediate_proteins(protein_dict, set() , cluster_dict) # labelled alles was in gencluster liegt oder unter trusted fällt
+            # --- 7) all named gene clusters are marked as valid hits --
+            parse_reports.remove_unassigned_intermediate_proteins(protein_dict, set() , cluster_dict) # labelled alles was in gencluster liegt oder unter trusted fällt
 
-                # --- 8) add sequences to proteins
-                parse_reports.get_protein_sequence(faa_file, protein_dict)
+            # --- 8) add sequences to proteins
+            parse_reports.get_protein_sequence(faa_file, protein_dict)
 
-                # --- 9) an writer prozess geben ---
-                queue.put((protein_dict, cluster_dict))
-        except Exception as e:
-            logger.exception(f"Error processing {genome_id}: In search_pyhmmer _process_batch {e}")
-            continue
+            # --- 9) an writer prozess geben ---
+            #_G_QUEUE.put((protein_dict, cluster_dict))
+            return protein_dict, cluster_dict
+
+    except Exception as e:
+        logger.exception(f"Error processing {genome_id}: In search_pyhmmer _process_batch {e}")
+
+
+def _process_genome(genome_id: str) -> tuple[dict[str, Protein], dict[str, Any]] | None:
+    t_total0 = time.perf_counter()
+    try:
+        faa_in = _G_FAA_FILES[genome_id]
+        gff_in = _G_GFF_FILES[genome_id]
+
+        with materialize_pair_gz_next_to_input(faa_in, gff_in) as (faa_file, gff_file):
+
+            # 1) load sequences
+            t0 = time.perf_counter()
+            with pyhmmer.easel.SequenceFile(faa_file, "fasta", digital=True) as sf:
+                seqs = sf.read_block()
+            t_load = time.perf_counter() - t0
+
+            # 2) hmmsearch (NUR das)
+            t0 = time.perf_counter()
+            tophits_iter = pyhmmer.hmmer.hmmsearch(_G_HMMS, seqs, cpus=2, bit_cutoffs="noise")
+            # wichtig: Iterator materialisieren, sonst misst du später unabsichtlich hmmsearch mit
+            tophits_list = list(tophits_iter)
+            t_hmmsearch = time.perf_counter() - t0
+
+            # 3) parsing (NUR das)
+            t0 = time.perf_counter()
+            protein_dict = add_pyhmmer_hits_to_protein_dict(
+                genome_id=genome_id,
+                tophits_iter=tophits_list,
+                protein_dict=None,
+            )
+            t_parse_hits = time.perf_counter() - t0
+
+            # 4) Rest wie gehabt
+            t0 = time.perf_counter()
+            parse_reports.parse_gff_file(gff_file, protein_dict)
+            t_gff = time.perf_counter() - t0
+
+            t0 = time.perf_counter()
+            cluster_dict = csb_finder.find_syntenic_blocks(genome_id, protein_dict, _G_NUCLEOTIDE_RANGE)
+            cluster_dict = csb_finder.name_syntenic_blocks_trie(
+                cluster_dict, _G_INDEX_TRIE, min_completeness=_G_MIN_COMPLETENESS
+            )
+            t_csb = time.perf_counter() - t0
+
+            t0 = time.perf_counter()
+            pattern_completion_synteny.enhance_syntenic_block_completeness(
+                cluster_dict, protein_dict, _G_CSB_PATTERNS
+            )
+            t_syn = time.perf_counter() - t0
+
+            t_path = 0.0
+            if _G_USE_SYNTENY_COMPLETION:
+                t0 = time.perf_counter()
+                pattern_completion_pathway.enhance_pathway_completeness(
+                    protein_dict, _G_COOCCURRENCE, _G_OPT_THRESH
+                )
+                t_path = time.perf_counter() - t0
+
+            t0 = time.perf_counter()
+            parse_reports.remove_unassigned_intermediate_proteins(protein_dict, set(), cluster_dict)
+            t_rm = time.perf_counter() - t0
+
+            t0 = time.perf_counter()
+            parse_reports.get_protein_sequence(faa_file, protein_dict)
+            t_seq = time.perf_counter() - t0
+
+        t_total = time.perf_counter() - t_total0
+
+        # Beispiel: 1% sampling log (sonst zu viel)
+        if 0 == 0:
+            logger.info(
+                f"[timing {genome_id}] total={t_total:.3f}s "
+                f"load={t_load:.3f} hmmsearch={t_hmmsearch:.3f} parse_hits={t_parse_hits:.3f} "
+                f"gff={t_gff:.3f} csb={t_csb:.3f} syn={t_syn:.3f} path={t_path:.3f} "
+                f"rm={t_rm:.3f} seq={t_seq:.3f}"
+            )
+
+        return protein_dict, cluster_dict
+
+    except Exception as e:
+        logger.exception(f"Error processing {genome_id}: {e}")
+        return None
 
 # -----------------------------
 # Writer: SQLite insert (du hast das bereits)
@@ -347,6 +439,9 @@ def _process_batch(
 def process_writer(queue, config):
     # This routine handles the output of the search and writes it into the database
     # It gets input from multiple workers as the database connection to sqlite is unique
+    total_genomes = len(config.queued_genomes)
+    genomes_done = 0
+    log_step = max(1, total_genomes // 100)
 
     protein_batch = {}
     cluster_batch = {}
@@ -367,6 +462,11 @@ def process_writer(queue, config):
         # Concatenate the data
         protein_batch.update(protein_dict)
         cluster_batch.update(cluster_dict)
+
+        genomes_done += 1
+        if (genomes_done % log_step == 0) or (genomes_done == total_genomes):
+            pct = (genomes_done * 100) // max(1, total_genomes)
+            logger.info(f"[Genome progress] {genomes_done}/{total_genomes} ({pct}%) genomes processed")
 
         # Print text reports if desired
         #if config.individual_reports:
@@ -434,42 +534,71 @@ def consecutive_hmm_search(config: Config, processes: int = 4) -> None:
         "cooccurrence_file": config.cooccurrence_file,
     }
 
-    # Batches erstellen (z.B. processes-1 Worker + 1 Writer)
-    n_workers = int(max(2, processes - 1)/2)
-    batches = split_into_batches(genome_ids, n_workers)
+    n_genomes: int = len(genome_ids)
+    hmm_cpus = 2
+    worker_processes = max(1, (processes - 1) // hmm_cpus)
+    worker_processes = min(worker_processes, n_genomes)
+    #chunksize: int = 1 if n_genomes < 5 else 5
+    chunksize = 1
+
+    # Writer process that gets the dictionaries
+    #ctx = multiprocessing.get_context()  # nutzt default start method (fork auf Linux)
+    #q = ctx.SimpleQueue()
+    #writer = Process(target=process_writer, args=(q, config), daemon=True)
+    #writer.start()
 
 
-    with Manager() as manager:
-        q = manager.Queue()
+    # Batch buffers im Main
+    protein_batch: dict[str, Protein] = {}
+    cluster_batch: dict = {}
+    batch_size: int = config.glob_chunks
+    batch_counter = 0
 
-        with Pool(
-            processes=processes,
-            initializer=_init_worker,
-            initargs=(config.library, threshold_dict, config_light), # arguments for the init worker
-        ) as pool:
-            # 1) writer async starten (wie in main_parse_summary_hmmreport) :contentReference[oaicite:9]{index=9}
-            p_writer = pool.apply_async(process_writer, (q, config))
+    # Fortschritt
+    genomes_done = 0
+    log_step = max(1, n_genomes // 100)
 
-            # 2) worker args
-            worker_args = [
-                (
-                    q,
-                    batch,
-                    config.faa_files,
-                    config.gff_files,
-                    config.nucleotide_range,
-                    config.min_completeness,
-                    config.use_synteny_completion,
+    with Pool(
+        processes=worker_processes,
+        initializer=_init_worker,
+        initargs=(config.library, threshold_dict, config_light, config.faa_files, config.gff_files, config.nucleotide_range, config.min_completeness, config.use_synteny_completion), # arguments for the init worker
+    ) as pool:
+        for protein_dict, cluster_dict in pool.imap_unordered(_process_genome1, genome_ids, chunksize=chunksize):
+            genomes_done += 1
+            if (genomes_done % log_step == 0) or (genomes_done == n_genomes):
+                pct = (genomes_done * 100) // max(1, n_genomes)
+                logger.info(f"[Genome progress] {genomes_done}/{n_genomes} ({pct}%) genomes processed")
+
+            # Batch sammeln
+            protein_batch.update(protein_dict)
+            cluster_batch.update(cluster_dict)
+            batch_counter += 1
+
+            # Flush
+            if batch_counter >= batch_size:
+                database.insert_database_proteins(config.database_directory, protein_batch)
+                database.insert_database_clusters(config.database_directory, cluster_batch)
+                generate_cross_check_fasta.write_intermediate_hits_faa(
+                    protein_batch,
+                    config.cross_check_directory,
+                    suffix=".intermediate_hits_faa",
+                    max_open_files=32,
                 )
-                for batch in batches
-                if batch
-            ]
+                protein_batch.clear()
+                cluster_batch.clear()
+                batch_counter = 0
 
-            pool.starmap(_process_batch, worker_args)
+            # Rest flush
+        if protein_batch or cluster_batch:
+            database.insert_database_proteins(config.database_directory, protein_batch)
+            database.insert_database_clusters(config.database_directory, cluster_batch)
+            generate_cross_check_fasta.write_intermediate_hits_faa(
+                protein_batch,
+                config.cross_check_directory,
+                suffix=".intermediate_hits_faa",
+                max_open_files=32,
+            )
 
-            # 3) writer beenden (sentinel)
-            q.put(None)
-            p_writer.get()
 
     logger.info("Finished pyhmmer search + parsing + DB write.")
 

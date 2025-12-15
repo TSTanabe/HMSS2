@@ -43,4 +43,4 @@ def initial_search(config) -> None:
         logger.info("No genomes left to process after DB-filtering. Done.")
         return
     logger.info("Running pyhmmer search + parsing + cluster detection + DB write")
-    search_pyhmmer.consecutive_hmm_search(config, processes=int(config.cores / 2))
+    search_pyhmmer.consecutive_hmm_search(config, processes=int(config.cores))
