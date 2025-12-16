@@ -51,7 +51,7 @@ def write_individual_genome_reports(config) -> None:
     for i, gid in enumerate(genome_ids, start=1):
         # limiter_dict: genau dieses Genom
         limiter_dict = {gid: {}}
-
+        logger.info(f"Printing report for {gid}")
         protein_dict, cluster_dict, _taxon_dict_unused = db_fetch_protein.fetch_bulk_data(
             database=config.database_directory,
             syntenic_domains=None,                 # => "alles" für dieses Genom

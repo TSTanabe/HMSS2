@@ -308,7 +308,8 @@ def _process_genome1(
         with materialize_pair_gz_next_to_input(faa_in, gff_in) as (faa_file, gff_file):
 
             # load genome with all sequences into RAM
-            with pyhmmer.easel.SequenceFile(faa_file, "fasta", digital=True) as sf:
+            abc = pyhmmer.easel.Alphabet.amino()
+            with pyhmmer.easel.SequenceFile(faa_file, "fasta", digital=True, alphabet=abc) as sf:
                 seqs = sf.read_block()
 
             tophits_iter = pyhmmer.hmmer.hmmsearch(_G_HMMS, seqs, cpus=2, bit_cutoffs="noise")
@@ -349,7 +350,8 @@ def _process_genome1(
             return protein_dict, cluster_dict
 
     except Exception as e:
-        logger.exception(f"Error processing {genome_id}: In search_pyhmmer _process_batch {e}")
+        logger.exception(f"Error processing {genome_id}: In search_pyhmmer _process_genome1:\n {e}")
+        return {}, {}
 
 
 def _process_genome(genome_id: str) -> tuple[dict[str, Protein], dict[str, Any]] | None:
@@ -431,7 +433,7 @@ def _process_genome(genome_id: str) -> tuple[dict[str, Protein], dict[str, Any]]
 
     except Exception as e:
         logger.exception(f"Error processing {genome_id}: {e}")
-        return None
+        return {},{}
 
 # -----------------------------
 # Writer: SQLite insert (du hast das bereits)
