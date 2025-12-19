@@ -10,8 +10,8 @@ SsuD SsuE
 DszA DszB
 DszA DszC DszD
 AtsA AtsB DszA
-DszA DszB
-DszA DszC DszD
+DszA DszD
+DszB DszC DszD
 DszA DszC
 DszB DszC
 DszA DszB DszC
