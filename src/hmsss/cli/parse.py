@@ -16,9 +16,7 @@ from hmsss.cli.config import (
     CliInfo,
     CliCsb,
     CliFlow,
-    CliLimiter,
     CliOperators,
-    CliProcess,
     CliReadMapping,
 )
 from hmsss.cli import paths as paths
@@ -130,6 +128,9 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     Returns:
         A fully configured `argparse.ArgumentParser` (no parsing yet).
     """
+
+    never_show = False # Always hide these arguments, because currently unused
+
     # ---- Argument groups ----
     parser = argparse.ArgumentParser(
         description="HMSS2: Sulfur metabolism annotation",
@@ -153,26 +154,6 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help="Directory to be searched",
     )
     inputdef.add_argument(
-        "-t",
-        dest="score_threshold_file",
-        type=file_path,
-        default=None,
-        metavar="<filepath>",
-        help="Filepath to tab separated threshold file with optimized, trusted and noise cutoff"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    inputdef.add_argument(
-        "-l",
-        dest="library",
-        type=file_path,
-        default=None,
-        metavar="<filepath>",
-        help="Filepath to a custom HMM library for the hmmsearch"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    inputdef.add_argument(
         "-r",
         dest="result_files_directory",
         type=dir_path,
@@ -181,28 +162,12 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help="Directory for the result files",
     )
     inputdef.add_argument(
-        "-db",
-        dest="database_directory",
-        type=path_str,
-        metavar="<filepath>",
-        help="Filepath to sqlite database (created if missing)",
-    )
-    inputdef.add_argument(
         "-c",
         dest="cores",
         type=int,
         default=4,
         metavar="<int>",
         help="Allocated CPU cores" if show_all else argparse.SUPPRESS,
-    )
-    inputdef.add_argument(
-        "-glob_report",
-        dest="glob_report",
-        type=file_path,
-        metavar="<filepath>",
-        help="Filepath to glob hmmreport. Each report with one HMM queried against the concatenated genomes."
-        if show_all
-        else argparse.SUPPRESS,
     )
     parser.add_argument(
         "-v",
@@ -240,7 +205,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help="Global minimal score cutoff" if show_all else argparse.SUPPRESS,
     )
     parameters.add_argument(
-        "-taxonomy_info",
+        "-taxonomy",
         dest="taxonomy_file",
         type=file_path,
         default=None,
@@ -296,14 +261,6 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         else argparse.SUPPRESS,
     )
     resources.add_argument(
-        "-clean",
-        dest="clean_reports",
-        action="store_true",
-        help="Overwrite pre-existing hmmsearch report file"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    resources.add_argument(
         "-no_reports",
         dest="individual_reports",
         action="store_false",
@@ -348,70 +305,26 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="optimized_cutoff_cross_check",
         action="store_true",
         help="Use optimized cutoff instead of cross check with Diamond"
-        if show_all
+        if never_show
         else argparse.SUPPRESS,
     )
 
     # Synteny options
-    synteny = parser.add_argument_group("Synteny options")
-    synteny.add_argument(
-        "-p",
-        dest="patterns_file",
-        type=file_path,
-        default=None,
-        metavar="<filepath>",
-        help="Filepath to patterns file" if show_all else argparse.SUPPRESS,
-    )
-    synteny.add_argument(
-        "-cooccurrence",
-        dest="cooccurrence_file",
-        type=file_path,
-        default=None,
-        metavar="<filepath>",
-        help="Filepath to co-occurrence file" if show_all else argparse.SUPPRESS,
-    )
-    synteny.add_argument(
-        "-exclude_singletons",
-        dest="exclusion_singletons",
-        type=file_path,
-        default=None,
-        metavar="<filepath>",
-        help="Filepath to tab separated file for singletons that are excluded"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    synteny.add_argument(
-        "-mc",
-        dest="min_completeness",
-        type=float,
-        default=0.51,
-        metavar="<float>",
-        help="Minimal fraction of predefined csb to be recognized"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    synteny.add_argument(
-        "-chunks",
-        dest="glob_chunks",
-        type=int,
-        default=5000,
-        metavar="<int>",
-        help="Chunk size for parsing results from glob before entering into database"
-        if show_all
-        else argparse.SUPPRESS,
-    )
+    #synteny = parser.add_argument_group("Synteny options")
+
+
 
     # Information on resources
     information = parser.add_argument_group("Information on resources")
     information.add_argument(
         "-stat_keywords",
         action="store_true",
-        help="Print patterns for keyword naming" if show_all else argparse.SUPPRESS,
+        help="Print patterns for keyword naming" if never_show else argparse.SUPPRESS,
     )
     information.add_argument(
         "-stat_csb",
         action="store_true",
-        help="Print automatically found csbs" if show_all else argparse.SUPPRESS,
+        help="Print automatically found csbs" if never_show else argparse.SUPPRESS,
     )
     information.add_argument(
         "-stat_genomes",
@@ -422,7 +335,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     )
 
     # Collinear syntenic block prediction
-    csb = parser.add_argument_group("Collinear syntenic block prediction")
+    csb = parser.add_argument_group("Collinear syntenic block detection")
     csb.add_argument(
         "-nt",
         dest="nucleotide_range",
@@ -434,21 +347,31 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         else argparse.SUPPRESS,
     )
     csb.add_argument(
+        "-mc",
+        dest="min_completeness",
+        type=float,
+        default=0.51,
+        metavar="<float>",
+        help="Minimal fraction of predefined csb to be recognized"
+        if show_all
+        else argparse.SUPPRESS,
+    )
+    csb.add_argument(
         "-insertions",
         dest="insertions",
         type=int,
         default=1,
         metavar="<int>",
-        help="Max. insertions in a csb" if show_all else argparse.SUPPRESS,
+        help="Max. insertions in a csb" if never_show else argparse.SUPPRESS,
     )
     csb.add_argument(
-        "-occurence",
+        "-occurrence",
         dest="occurence",
         type=int,
         default=1,
         metavar="<int>",
-        help="Min. number occurences to be recognized as csb"
-        if show_all
+        help="Min. number occurrences to be recognized as csb"
+        if never_show
         else argparse.SUPPRESS,
     )
     csb.add_argument(
@@ -458,7 +381,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         default=4,
         metavar="<int>",
         help="Min. number of genes in a csb before recognized"
-        if show_all
+        if never_show
         else argparse.SUPPRESS,
     )
     csb.add_argument(
@@ -468,7 +391,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         default=50,
         metavar="<int>",
         help="Max. number of genes in a csb before recognized"
-        if show_all
+        if never_show
         else argparse.SUPPRESS,
     )
     csb.add_argument(
@@ -478,7 +401,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         default=4,
         metavar="<int>",
         help="Maximum number of repeated genes in a csb."
-        if show_all
+        if never_show
         else argparse.SUPPRESS,
     )
     csb.add_argument(
@@ -488,9 +411,20 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         default=0.0,
         metavar="<float>",
         help="Acceptable dissimilarity in jaccard clustering [0.0-1.0]"
-        if show_all
+        if never_show
         else argparse.SUPPRESS,
     )
+    csb.add_argument(
+        "-chunks",
+        dest="glob_chunks",
+        type=int,
+        default=5000,
+        metavar="<int>",
+        help="Chunk size for parsing results from glob before entering into database"
+        if never_show
+        else argparse.SUPPRESS,
+    )
+
 
     # Read mapping workflow algorithm
     readmap = parser.add_argument_group("Read mapping integration")
@@ -566,12 +500,6 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     # Work step regulation
     flow = parser.add_argument_group("Work step regulation")
     flow.add_argument(
-        "-redo_taxonomy",
-        dest="redo_taxonomy",
-        action="store_true",
-        help="Redo the taxonomy assignment*" if show_all else argparse.SUPPRESS,
-    )
-    flow.add_argument(
         "-no_synteny_completion",
         dest="use_synteny_completion",
         action="store_false",
@@ -588,64 +516,6 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="use_remove_exclusion_singletons",
         action="store_false",
         help="Remove genes that not occur as singletons",
-    )
-
-    # Limiter (dataset conditions)
-    limiter = parser.add_argument_group("Limit output to genomes with conditions *")
-    limiter.add_argument(
-        "-dll",
-        dest="dataset_limit_lineage",
-        type=str,
-        default=None,
-        metavar="<string>",
-        choices=[
-            "Superkingdom",
-            "Phylum",
-            "Class",
-            "Ordnung",
-            "Family",
-            "Genus",
-            "Species",
-        ],
-        help="Taxonomy level [Superkingdom,Phylum,Class,Ordnung,Family,Genus,Species]"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    limiter.add_argument(
-        "-dlt",
-        dest="dataset_limit_taxon",
-        type=str,
-        default=None,
-        metavar="<string>",
-        help="Taxonomic name e.g. Proteobacteria. Requires -dll"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    limiter.add_argument(
-        "-dlp",
-        dest="dataset_limit_proteins",
-        type=str,
-        default="0",
-        metavar="<list>",
-        help="Limit fetch to genomes with <protein>" if show_all else argparse.SUPPRESS,
-    )
-    limiter.add_argument(
-        "-dlk",
-        dest="dataset_limit_keywords",
-        type=str,
-        default="0",
-        metavar="<list>",
-        help="Limit fetch to genomes with <keyword>" if show_all else argparse.SUPPRESS,
-    )
-    limiter.add_argument(
-        "-dtd",
-        dest="dataset_divide_sign",
-        default=".",
-        type=str,
-        metavar="<string>",
-        help='Separator for taxonomy information. The characters ";" ":" and "," cause strange behavior'
-        if show_all
-        else argparse.SUPPRESS,
     )
 
     # Output operators / fetch
@@ -778,80 +648,6 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         ),
     )
 
-    # Alignment and sequence file processing
-    process = parser.add_argument_group("Alignment and sequence file processing")
-    process.add_argument(
-        "-merge_fasta",
-        dest="merge_fasta",
-        type=dir_path,
-        metavar="<directory>",
-        help="Merges two or more sequence files with extension .faa without duplicates"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    process.add_argument(
-        "-filter_fasta",
-        dest="filter_fasta",
-        nargs=3,
-        metavar=("FILE", "MIN", "MAX"),
-        help="Filter FASTA by length MIN..MAX; write to FILE"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    process.add_argument(
-        "-concat_alignment",
-        dest="concat_alignment",
-        type=dir_path,
-        metavar="<directory>",
-        help="Concatenates alignment files with extension .fasta_aln"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    process.add_argument(
-        "-add_taxonomy_to_alignment",
-        dest="add_taxonomy",
-        type=file_path,
-        metavar="<file> or <directory>",
-        help="Adds taxonomy to alignment files in <dir>, requires -db with taxonomy"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    process.add_argument(
-        "-add_genomic_context",
-        dest="add_genomic_context",
-        type=file_path,
-        metavar="<file>",
-        help="Adds genomic context to sequences from fasta file, requires -db with taxonomy"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    process.add_argument(
-        "-create_type_range_dataset",
-        dest="create_type_range_dataset",
-        type=path_str,
-        metavar="<file>",
-        help="Create protein type range dataset from sequences fasta file, requires -db with taxonomy"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    process.add_argument(
-        "-create_gene_cluster_dataset",
-        dest="create_gene_cluster_dataset",
-        type=path_str,
-        metavar="<file>",
-        help="Create gene cluster dataset from sequences fasta file, requires -db with taxonomy"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    process.add_argument(
-        "-aln_gaps",
-        dest="gaps",
-        action="store_true",
-        help="When concatenating alignments add gaps for missing sequences"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-
     return parser
 
 
@@ -937,9 +733,7 @@ def build_config_from_namespace(ns) -> Config:
         or os.path.join(paths_cfg.data, "Thresholds"),
         library=_s(ns, "library") or paths_cfg.hmms,
         result_files_directory=_s(ns, "result_files_directory") or paths_cfg.results,
-        database_directory=_s(ns, "database_directory"),
         cores=int(getattr(ns, "cores", 4)),
-        glob_report=_s(ns, "glob_report"),
         verbose=int(getattr(ns, "verbose", 1)),
     )
 
@@ -955,7 +749,6 @@ def build_config_from_namespace(ns) -> Config:
 
     cli_resources = CliResources(
         HMM_sets=list(getattr(ns, "HMM_sets", [])),
-        clean_reports=bool(getattr(ns, "clean_reports", False)),
         individual_reports=bool(getattr(ns, "individual_reports", True)),
         max_seqs_per_genome=int(getattr(ns, "max_seqs_per_genome", 4)),
         diamond_speed_mode=str(getattr(ns, "diamond_speed_mode", "faster")),
@@ -1015,14 +808,6 @@ def build_config_from_namespace(ns) -> Config:
         ),
     )
 
-    cli_limiter = CliLimiter(
-        dataset_limit_lineage=getattr(ns, "dataset_limit_lineage", None),
-        dataset_limit_taxon=getattr(ns, "dataset_limit_taxon", None),
-        dataset_limit_proteins=getattr(ns, "dataset_limit_proteins", "0"),
-        dataset_limit_keywords=getattr(ns, "dataset_limit_keywords", "0"),
-        dataset_divide_sign=getattr(ns, "dataset_divide_sign", "."),
-    )
-
     cli_ops = CliOperators(
         fetch_genomes=list(getattr(ns, "fetch_genomes", [])),
         fetch_proteins=list(getattr(ns, "fetch_proteins", [])),
@@ -1036,17 +821,6 @@ def build_config_from_namespace(ns) -> Config:
         graph_tax_levels=list(getattr(ns, "graph_tax_levels", ["Phylum"])),
     )
 
-    cli_process = CliProcess(
-        merge_fasta=_s(ns, "merge_fasta"),
-        filter_fasta=getattr(ns, "filter_fasta", None),
-        concat_alignment=_s(ns, "concat_alignment"),
-        add_taxonomy=_s(ns, "add_taxonomy"),
-        add_genomic_context=_s(ns, "add_genomic_context"),
-        create_type_range_dataset=_s(ns, "create_type_range_dataset"),
-        create_gene_cluster_dataset=_s(ns, "create_gene_cluster_dataset"),
-        gaps=bool(getattr(ns, "gaps", False)),
-    )
-
     cfg = Config(
         paths=paths_cfg,
         cli_input=cli_input,
@@ -1057,9 +831,7 @@ def build_config_from_namespace(ns) -> Config:
         cli_csb=cli_csb,
         cli_readmap=cli_readmap,
         cli_flow=cli_flow,
-        cli_limiter=cli_limiter,
         cli_ops=cli_ops,
-        cli_process=cli_process,
     )
     cfg.validate()
     return cfg
@@ -1075,18 +847,18 @@ def _needs_stage_50(ns: argparse.Namespace) -> bool:
 
 
 def _needs_stage_100(ns: argparse.Namespace) -> bool:
-    """Determine whether stage 100 (taxonomy redo) must be forced.
+    """Force stage 100 when user requests taxonomy add/update only.
 
-    Returns:
-        True if any command implies a taxonomy re-computation.
+    Rule:
+      - taxonomy_file is provided AND
+      - result_files_directory is provided AND
+      - fasta_file_directory is NOT provided
     """
-    redo_taxonomy_requested = any(
-        [
-            bool(getattr(ns, "redo_taxonomy", False)),
-        ]
-    )
+    taxonomy_file = getattr(ns, "taxonomy_file", None)
+    results_dir = getattr(ns, "result_files_directory", None)
+    fasta_dir = getattr(ns, "fasta_file_directory", None)
 
-    return redo_taxonomy_requested
+    return bool(taxonomy_file) and bool(results_dir) and not bool(fasta_dir)
 
 
 def _needs_stage_101(ns: argparse.Namespace) -> bool:
@@ -1194,6 +966,7 @@ def parse_to_config(argv: list[str] | None = None) -> Config:
     namespace = parse_cli(argv)
     namespace = _apply_runtime_defaults(namespace)
     config = build_config_from_namespace(namespace)
+
     return config
 
 

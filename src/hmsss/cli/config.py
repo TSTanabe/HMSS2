@@ -237,31 +237,6 @@ class CliOperators:
     use_valid_hits: bool = True
     graph_tax_levels: List[str] = field(default_factory=lambda: ["Phylum"])
 
-@dataclass(slots=True)
-class CliProcess:
-    """FASTA/alignment processing utilities.
-
-    Attributes:
-        merge_fasta: Directory whose `.faa` files will be merged (no duplicates).
-        filter_fasta: Triplet [FILE, MIN, MAX] for length filtering.
-        concat_alignment: Directory with `.fasta_aln` files to concatenate.
-        add_taxonomy: Add taxonomy to alignment(s).
-        add_genomic_context: Add genomic context to sequences.
-        create_type_range_dataset: Build type-range dataset from FASTA.
-        create_gene_cluster_dataset: Build gene-cluster dataset from FASTA.
-        gaps: Add gaps for missing sequences on concatenation.
-    """
-
-    merge_fasta: Optional[str] = None
-    filter_fasta: Optional[List[str]] = None  # ["FILE","MIN","MAX"]
-    concat_alignment: Optional[str] = None
-    add_taxonomy: Optional[str] = None
-    add_genomic_context: Optional[str] = None
-    create_type_range_dataset: Optional[str] = None
-    create_gene_cluster_dataset: Optional[str] = None
-    gaps: bool = False
-
-
 # ==================================================
 # 2) Internal runtime states
 # ==================================================
@@ -376,7 +351,6 @@ class Config:
     cli_flow: CliFlow = field(default_factory=CliFlow)
     cli_limiter: CliLimiter = field(default_factory=CliLimiter)
     cli_ops: CliOperators = field(default_factory=CliOperators)
-    cli_process: CliProcess = field(default_factory=CliProcess)
     cli_readmap: CliReadMapping = field(default_factory=CliReadMapping)
 
     # Laufzeit-State & Projektfelder
