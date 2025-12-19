@@ -1,20 +1,16 @@
 from __future__ import annotations
 import time
-import os
-import sys
 from multiprocessing.queues import SimpleQueue
 
 import pyhmmer
 
-from itertools import repeat
-import multiprocessing
-from multiprocessing import Pool, Process
+from multiprocessing import Pool
 from typing import Dict, List, Union, Optional, Any
 
 from hmsss.cli.config import Config
 from hmsss.cross_check import generate_cross_check_fasta
 
-from hmsss.io.materialize import materialize_pair_gz_next_to_input
+from hmsss.fasta_preparation.materialize import materialize_pair_gz_next_to_input
 
 from hmsss.parse_reports import parse_reports, pattern_completion_synteny, pattern_completion_pathway
 from hmsss.parse_reports import csb_trie_algorithm

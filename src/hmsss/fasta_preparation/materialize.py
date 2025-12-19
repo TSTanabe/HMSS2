@@ -55,3 +55,19 @@ def materialize_pair_gz_next_to_input(path_a: str, path_b: str) -> Iterator[tupl
     """
     with materialize_gz_next_to_input(path_a) as a, materialize_gz_next_to_input(path_b) as b:
         yield a, b
+
+
+@contextmanager
+def materialize_single_next_to_input(path: str) -> Iterator[str]:
+    """
+    Materialize exactly ONE input file.
+
+    - If `path` is not gzipped: yield unchanged path.
+    - If `path` ends with `.gz`: decompress once into temp file next to input,
+      yield temp path, then delete afterwards.
+
+    This avoids using the pair-materializer with (path, path) which would
+    decompress twice.
+    """
+    with materialize_gz_next_to_input(path) as p:
+        yield p
