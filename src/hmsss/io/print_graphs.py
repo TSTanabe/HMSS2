@@ -11,8 +11,6 @@ from hmsss.core.logging import get_logger
 logger = get_logger(__name__)
 
 
-
-
 def print_hit_graphs(
     directory: str,
     protein_dict: Dict[str, Any],
@@ -84,4 +82,4 @@ def print_hit_graphs(
     )
 
     # RAM usage is too high.
-    #graph_gene_cluster.plot_gene_cluster_summary(hit_report, protein_dict, taxon_dict,allowed_types=fetch_proteins,allowed_levels=set(levels))
+    # graph_gene_cluster.plot_gene_cluster_summary(hit_report, protein_dict, taxon_dict,allowed_types=fetch_proteins,allowed_levels=set(levels))

@@ -253,13 +253,7 @@ def _output_taxonomy_summary(
         if dom_string:
             return dom_string
 
-        # 2) erster Name aus get_domains_dict()
-        try:
-            dct = p.get_domains_dict()
-        except Exception:
-            dct = {}
-
-        for dom in dct.values():
+        for dom in p.domains:
             name = getattr(dom, "domain", "") or ""
             name = str(name).strip()
             if name:
@@ -492,7 +486,7 @@ def _output_strain_variability_by_species(
         gid = getattr(prot, "genomeID", None)
         if not gid:
             continue
-        for dom in prot.get_domains_dict().values():
+        for dom in prot.domains:
             name = getattr(dom, "domain", None)
             if name:
                 genome_to_domains[gid].add(name)
@@ -574,7 +568,7 @@ def _output_cluster_overview_by_required(
         if not req:
             return True
         for p in proteins:
-            for dom in p.get_domains_dict().values():
+            for dom in p.domains:
                 if getattr(dom, "domain", None) in req:
                     return True
         return False
@@ -699,11 +693,10 @@ def _output_distinct_fasta_reports(
     # Output: fused domains as separate FASTA
     for protein in fusion_dict.values():
         cluster_id = protein.clusterID
-        domain_dict = protein.get_domains_dict()
         genome_id = protein.genomeID
         proteinlist = protein.get_protein_list()
         sequence = str(protein.protein_sequence).replace("*", "")
-        for domain in domain_dict.values():
+        for domain in protein.domains:
             domain_name = domain.domain
             domain_sequence = sequence[domain.start : domain.end]
             filepath = os.path.join(directory, f"multi_domain_{domain_name}.faa")

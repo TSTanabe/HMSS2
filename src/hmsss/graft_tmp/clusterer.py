@@ -1,8 +1,8 @@
 import os
 
-from hmsss.graft.deduplicator import Deduplicator
-from hmsss.graft.sequence_io import SequenceIO
-from hmsss.graft.orfm import OrfM
+from hmsss.graft_tmp.deduplicator import Deduplicator
+from hmsss.graft_tmp.sequence_io import SequenceIO
+from hmsss.graft_tmp.orfm import OrfM
 from hmsss.core.logging import get_logger
 
 logging = get_logger(__name__)
