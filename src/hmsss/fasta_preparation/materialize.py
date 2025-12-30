@@ -49,11 +49,16 @@ def materialize_gz_next_to_input(path: str) -> Iterator[str]:
 
 
 @contextmanager
-def materialize_pair_gz_next_to_input(path_a: str, path_b: str) -> Iterator[tuple[str, str]]:
+def materialize_pair_gz_next_to_input(
+    path_a: str, path_b: str
+) -> Iterator[tuple[str, str]]:
     """
     Convenience wrapper to materialize two paths in a single 'with' statement.
     """
-    with materialize_gz_next_to_input(path_a) as a, materialize_gz_next_to_input(path_b) as b:
+    with (
+        materialize_gz_next_to_input(path_a) as a,
+        materialize_gz_next_to_input(path_b) as b,
+    ):
         yield a, b
 
 

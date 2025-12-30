@@ -147,6 +147,7 @@ def parallel_transcription(faa_files: dict[str, str], cores: int) -> None:
     logger.info(f"Generated corresponding gff files")
     return
 
+
 def _output_prefix_from_original(fasta_p: Path) -> str:
     """
     genome.faa      -> genome
@@ -156,6 +157,7 @@ def _output_prefix_from_original(fasta_p: Path) -> str:
     if name.endswith(".gz"):
         name = name[:-3]
     return str(fasta_p.with_name(Path(name).stem))
+
 
 def transcripe_fasta(
     args: Tuple[str, int, multiprocessing.Value, multiprocessing.Lock],
@@ -179,7 +181,9 @@ def transcripe_fasta(
 
     try:
         if fasta_p.name.endswith(".gz"):
-            with tempfile.NamedTemporaryFile(mode="wb", suffix=".faa", delete=False) as tmp:
+            with tempfile.NamedTemporaryFile(
+                mode="wb", suffix=".faa", delete=False
+            ) as tmp:
                 tmp_path = tmp.name
                 with gzip.open(str(fasta_p), "rb") as f_in:
                     shutil.copyfileobj(f_in, tmp)
@@ -202,7 +206,6 @@ def transcripe_fasta(
                 os.unlink(tmp_path)
             except Exception:
                 pass
-
 
 
 def check_prodigal_format(gff_file: str) -> int:
