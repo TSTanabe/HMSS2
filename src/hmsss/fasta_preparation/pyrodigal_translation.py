@@ -44,12 +44,15 @@ _G_GENE_FINDER = None
 _G_MIN_TRAIN_BP = 20000
 _G_SKIP_IF_UPTODATE = True
 
+
 def _init_pyrodigal_worker(min_train_bp: int, skip_if_uptodate: bool):
     global _G_GENE_FINDER, _G_MIN_TRAIN_BP, _G_SKIP_IF_UPTODATE
     import pyrodigal
+
     _G_GENE_FINDER = pyrodigal.GeneFinder(meta=False)
     _G_MIN_TRAIN_BP = min_train_bp
     _G_SKIP_IF_UPTODATE = skip_if_uptodate
+
 
 # -------------------------
 # Helpers
@@ -99,7 +102,9 @@ def _is_up_to_date(fna_path: str, faa_gz: Path, gff_gz: Path) -> bool:
         return False
 
 
-def _select_training_seqs(contigs: list[tuple[str, str]], min_train_bp: int) -> list[str]:
+def _select_training_seqs(
+    contigs: list[tuple[str, str]], min_train_bp: int
+) -> list[str]:
     """Pick longest contigs until reaching min_train_bp."""
     contigs_sorted = sorted(contigs, key=lambda x: len(x[1]), reverse=True)
     train: list[str] = []
@@ -129,8 +134,12 @@ def _make_tmp_paths_for(final_faa_gz: Path, final_gff_gz: Path) -> _TmpOutputs:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Unique filenames (mkstemp gives us a real file path; we close the fd and re-open with gzip)
-    faa_fd, faa_tmp = tempfile.mkstemp(prefix=final_faa_gz.name + ".tmp_", dir=str(out_dir))
-    gff_fd, gff_tmp = tempfile.mkstemp(prefix=final_gff_gz.name + ".tmp_", dir=str(out_dir))
+    faa_fd, faa_tmp = tempfile.mkstemp(
+        prefix=final_faa_gz.name + ".tmp_", dir=str(out_dir)
+    )
+    gff_fd, gff_tmp = tempfile.mkstemp(
+        prefix=final_gff_gz.name + ".tmp_", dir=str(out_dir)
+    )
     os.close(faa_fd)
     os.close(gff_fd)
 
@@ -174,7 +183,7 @@ class TranslationStatus:
 
 
 def pyrodigal_translate_and_write_worker(
-    item: tuple[str,str],
+    item: tuple[str, str],
     *,
     min_train_bp: int = 20000,
     translation_table: int = 11,
@@ -195,7 +204,9 @@ def pyrodigal_translate_and_write_worker(
 
     global _G_GENE_FINDER
     if _G_GENE_FINDER is None:
-        raise RuntimeError("Worker not initialized: GeneFinder is None (missing initializer?).")
+        raise RuntimeError(
+            "Worker not initialized: GeneFinder is None (missing initializer?)."
+        )
 
     final_faa_gz, final_gff_gz = _output_paths_next_to_input(fna_path)
 
@@ -245,9 +256,12 @@ def pyrodigal_translate_and_write_worker(
             )
 
             # Stream outputs into temp gzip files (low RAM)
-            with gzip.open(tmp_paths.faa_tmp, "wt") as faa_fh, gzip.open(tmp_paths.gff_tmp, "wt") as gff_fh:
+            with (
+                gzip.open(tmp_paths.faa_tmp, "wt") as faa_fh,
+                gzip.open(tmp_paths.gff_tmp, "wt") as gff_fh,
+            ):
                 gff_fh.write("##gff-version 3\n")
-
+                gene_counter = 1
                 for contig_id, dna in contigs:
                     genes = _G_GENE_FINDER.find_genes(dna)
 
@@ -256,7 +270,8 @@ def pyrodigal_translate_and_write_worker(
                         if not aa:
                             continue
 
-                        prot_id = f"{gid}___{i}"
+                        prot_id = f"{gid}___{gene_counter}"
+                        gene_counter += 1
 
                         # FAA
                         _write_wrapped_fasta_record(faa_fh, prot_id, aa, width=60)
@@ -342,19 +357,32 @@ def parallel_pyrodigal_translation(
     errors = 0
     skipped = 0
 
-    with Pool(processes=worker_processes, initializer=_init_pyrodigal_worker, initargs=(min_train_bp, skip_if_uptodate),) as pool:
-        for status in pool.imap_unordered(pyrodigal_translate_and_write_worker, items, chunksize=chunksize):
+    with Pool(
+        processes=worker_processes,
+        initializer=_init_pyrodigal_worker,
+        initargs=(min_train_bp, skip_if_uptodate),
+    ) as pool:
+        for status in pool.imap_unordered(
+            pyrodigal_translate_and_write_worker, items, chunksize=chunksize
+        ):
             genomes_done += 1
 
             if status.status == "error":
                 errors += 1
-                logger.error("[pyrodigal] %s failed for %s: %s", status.gid, status.fna_path, status.message)
+                logger.error(
+                    "[pyrodigal] %s failed for %s: %s",
+                    status.gid,
+                    status.fna_path,
+                    status.message,
+                )
             elif status.status == "skipped":
                 skipped += 1
 
             if (genomes_done % log_step == 0) or (genomes_done == n_genomes):
                 pct = (genomes_done * 100) // max(1, n_genomes)
-                logger.info(f"[ORF prediction] {genomes_done}/{n_genomes} ({pct}%) genomes processed")
+                logger.info(
+                    f"[ORF prediction] {genomes_done}/{n_genomes} ({pct}%) genomes processed"
+                )
 
     logger.info(
         "Finished pyrodigal translation stage: %d total, %d skipped, %d errors.",
@@ -363,4 +391,6 @@ def parallel_pyrodigal_translation(
         errors,
     )
     if errors:
-        raise RuntimeError(f"pyrodigal translation: {errors} genomes failed (see logs).")
+        raise RuntimeError(
+            f"pyrodigal translation: {errors} genomes failed (see logs)."
+        )
