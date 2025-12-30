@@ -69,6 +69,7 @@ def _load_domain_annotations(tsv_path: str) -> Dict[str, Dict[str, str]]:
             }
     return ann
 
+
 def _make_request_list(fetch_csbs, fetch_proteins):
     """
     Build an ordered list of request tokens from fetch_csbs and fetch_proteins.
@@ -129,12 +130,12 @@ def output_operator(config: Config) -> None:
     # metabolic_dict = _load_domain_annotations(config.metabolic_information)
     metabolic_dict = {}
 
-    cluster_context_dict = db_fetch_context.fetch_cluster_context_for_proteins(
-        database=config.database_directory,
-        base_protein_dict=protein_dict,
-        fetch_from_gene_clusters=bool(config.fetch_csbs),
-    )
-
+    # cluster_context_dict = db_fetch_context.fetch_cluster_context_for_proteins(
+    #    database=config.database_directory,
+    #    base_protein_dict=protein_dict,
+    #    fetch_from_gene_clusters=bool(config.fetch_csbs),
+    # )
+    cluster_context_dict = {}
     # remove the brackets and double points from argument parsing and replicates
     requests = _make_request_list(config.fetch_csbs, config.fetch_proteins)
 

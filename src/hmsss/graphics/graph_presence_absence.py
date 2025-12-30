@@ -69,12 +69,7 @@ def plot_taxonomy_summary_bubbles(
         if dom_string:
             return dom_string
 
-        try:
-            dct = p.get_domains_dict()
-        except Exception:
-            dct = {}
-
-        for dom in dct.values():
+        for dom in p.domains:
             name = getattr(dom, "domain", "") or ""
             name = str(name).strip()
             if name:

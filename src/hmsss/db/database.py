@@ -228,7 +228,7 @@ def insert_database_proteins(database: str, protein_dict: Dict[str, Any]) -> Non
                 protein_records.append(protein_record)
 
                 # Prepare domain records
-                for domain in domains.values():
+                for domain in domains:
                     domain_record = (
                         protein_id,
                         domain.domain,

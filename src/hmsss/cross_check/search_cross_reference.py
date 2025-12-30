@@ -29,11 +29,10 @@ current_counter = None
 counter_lock = None
 
 
-
-
 ##########################################################################################################################################################
 #################### Cross check hits with reference sequences and add the hmmreport lines to the trusted cutoff hmmreport ###############################
 ##########################################################################################################################################################
+
 
 def find_file_by_name_partial(root_dir: str, filename: str) -> list[str]:
     """
@@ -239,16 +238,12 @@ def p_crosscheck_writer(queue: Queue, database_path: str, *, batch_size: int = 5
         total_received += len(item)
 
         if len(buffer) >= batch_size:
-            total_updated += set_valid_hit_true_for_protein_ids(
-                database_path, buffer
-            )
+            total_updated += set_valid_hit_true_for_protein_ids(database_path, buffer)
             buffer.clear()
 
     # final flush
     if buffer:
-        total_updated += set_valid_hit_true_for_protein_ids(
-            database_path, buffer
-        )
+        total_updated += set_valid_hit_true_for_protein_ids(database_path, buffer)
 
     logger.info(
         "Crosscheck writer finished: received=%d ids, updated=%d unique ids",
@@ -284,12 +279,13 @@ def _crosscheck_worker(hmm_id: str, crosscheck_dir: str, queue) -> None:
 
     logger.info("%s: queued %d promoted IDs", hmm_id, len(promoted))
 
+
 def promote_crosschecked_hits_to_db(
-        *,
-        crosscheck_dir: str,
-        database_path: str,
-        processes: int = 4,
-        writer_batch_size: int = 50000,
+    *,
+    crosscheck_dir: str,
+    database_path: str,
+    processes: int = 4,
+    writer_batch_size: int = 50000,
 ):
     """
     Run crosscheck promotion with:

@@ -128,15 +128,15 @@ def _find_possible_transitions(
             Updated transition_dict including any newly identified transitions.
     """
     current_score = 0.0
-    for domain in protein.domains.values():
+    for domain in protein.domains:
         if domain.get_domain() == current_domain:
             current_score = domain.get_score()
 
-    for domain_name, domain_obj in protein.deleted_domains.items():
-        if domain_name in missing_domains:
+    for domain_obj in protein.low_score_domains:
+        if domain_obj.get_domain() in missing_domains:
             score = domain_obj.get_score()
             difference = abs(current_score - score)
-            transition_dict[domain_name].add((protein_id, difference))
+            transition_dict[domain_obj.get_domain()].add((protein_id, difference))
 
     return transition_dict
 
@@ -372,22 +372,18 @@ def execute_pattern_completion(transition_dict, protein_dict):
             if proteinID in protein_dict:
                 protein = protein_dict[proteinID]
 
-                # Save the original hit as comment
-                original_domains = protein.get_domains()
-                protein.add_selection_comment("Syc")
-                protein.valid_hit = True
-                protein.alternative_hit = original_domains
+                for domain in protein.low_score_domains:
+                    if domain.get_domain() == to_domain:
 
-                # Get alternative domain
-                new_domain = protein.deleted_domains[to_domain]
-
-                protein.add_domain(
-                    new_domain.domain,
-                    new_domain.start,
-                    new_domain.end,
-                    new_domain.score,
-                    force=True,
-                )
+                        protein.add_domain(
+                            domain.domain,
+                            domain.start,
+                            domain.end,
+                            domain.score,
+                            force=True,
+                            selection_comment="Syc",
+                        )
+                        protein.valid_hit = True
 
 
 def enhance_syntenic_block_completeness(

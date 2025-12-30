@@ -77,7 +77,7 @@ def enhance_pathway_completeness(
                 # Fallback: pick the best highest-scoring hit to "complete" the pattern
                 best_pid, best_score = max(pairs, key=lambda t: t[1])
                 domain_hits[domain] = {best_pid}
-                #print(f"Fallback: best_pid: {best_pid}, best_score: {best_score}")
+                # print(f"Fallback: best_pid: {best_pid}, best_score: {best_score}")
 
         if not all_domains_present:
             continue
@@ -88,17 +88,12 @@ def enhance_pathway_completeness(
             msg += f"  {d}: {', '.join(sorted(pids))}\n"
         logger.debug(msg.rstrip())
 
-        for hits in domain_hits.values():
-            found_protein_ids.update(hits)
-
-    if mark_valid and found_protein_ids:
-        for pid in found_protein_ids:
-            p = protein_dict.get(pid)
-            if p is None:
-                continue
-
-            if getattr(p, "valid_hit", False) is not True:
-                p.valid_hit = True
-            p.add_selection_comment(selection_comment)
+        for domain_name, hits in domain_hits.items():
+            for hit in hits:
+                protein = protein_dict.get(hit)
+                if protein is None:
+                    continue
+                protein.valid_hit = True
+                protein.add_selection_comment(selection_comment)
 
     return found_protein_ids

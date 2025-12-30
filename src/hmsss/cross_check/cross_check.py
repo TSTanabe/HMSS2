@@ -39,7 +39,9 @@ def reference_sequence_check(config: Config) -> None:
 
     log.info("Promoting cross-checked hits to trusted list")
     search_cross_reference.promote_crosschecked_hits_to_db(
-        crosscheck_dir=config.cross_check_directory, database_path=config.database_directory, processes= config.cores
+        crosscheck_dir=config.cross_check_directory,
+        database_path=config.database_directory,
+        processes=config.cores,
     )
 
     return

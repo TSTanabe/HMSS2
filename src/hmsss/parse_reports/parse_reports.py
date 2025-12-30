@@ -1,12 +1,44 @@
 #!/usr/bin/python
+from __future__ import annotations
 
 import re
 import subprocess
+from bisect import bisect_right
+from dataclasses import dataclass, field, replace
 
-from typing import Dict, Any, Set
+from typing import Dict, Any, Set, List, Tuple, FrozenSet
 
 from hmsss.core.logging import get_logger
+
 logger = get_logger(__name__)
+
+
+@dataclass(frozen=True, slots=True)
+class Domain:
+    domain: str
+    start: int
+    end: int
+    score: float
+    selection_comment: str = ""
+    identity: int = 1
+    bsr: float = 1.0
+
+    # 2.9.22
+    def __hash__(self):
+        return hash((self.domain, self.start, self.end, self.score))
+
+    def get_domain(self):
+        return self.domain
+
+    def get_start(self):
+        return self.start
+
+    def get_end(self):
+        return self.end
+
+    def get_score(self):
+        return self.score
+
 
 class Protein:
     """
@@ -39,15 +71,16 @@ class Protein:
     """
 
     def __init__(
-        self,
-        protein_id: str,
-        hmm: str,
-        start: int = 0,
-        end: int = 0,
-        score: float = 1,
-        genome_id: str = "",
-        ident: int = 25,
-        bsr: float = 1.0,
+            self,
+            protein_id: str,
+            hmm: str,
+            start: int = 0,
+            end: int = 0,
+            score: float = 1,
+            genome_id: str = "",
+            ident: int = 25,
+            bsr: float = 1.0,
+            selection_comment: str = "",
     ):
         self.proteinID: str = protein_id
         self.genomeID: str = genome_id
@@ -59,56 +92,41 @@ class Protein:
         self.gene_locustag: str = ""
         self.clusterID: str = ""
         self.keywords: Dict = {}
-        self.domains: Dict[int, Domain] = {}  # start coordinate → Domain object
-        self.deleted_domains: Dict[
-            str, Domain
-        ] = {}  # Domain objects that have been removed
-        self.add_domain(hmm, start, end, score, ident, bsr)
-        self.selection_comment: Set[str] = set()  # Trusted cutoff Flag or cooccurrence
+        self.domains: Set[Domain] = (
+            set()
+        )  # Domain objects that are included due to high score
+        self.low_score_domains: Set[Domain] = (
+            set()
+        )  # Domain objects that are excluded by score
+        self.add_domain(
+            hmm, start, end, score, ident, bsr, selection_comment=selection_comment
+        )
+        self.selection_comment = ""
         self.alternative_hit: str = ""
         self.valid_hit = False
 
     ##### Getter ####
 
-    def get_domains(self):
-        # return string
-        listing = []
-        for key in sorted(self.domains):
-            listing.append(self.domains[key].get_domain())
+    def get_domains(self) -> str:
+        listing = [dom.domain for dom in sorted(self.domains, key=lambda d: d.start)]
         return "-".join(listing)
-
-    def get_domains_dict(self):
-        # return dict
-        return self.domains
 
     def get_domain_listing(self):
         # return list
-        listing = []
-        for key in sorted(self.domains):
-            listing.append(self.domains[key])
-        return listing
+        return list(self.domains)
 
-    def get_domain_set(self):
-        domains = set()
-        for v in self.domains.values():
-            domains.add(v.get_domain())
-        return domains
+    def get_domain_coordinates(self) -> str:
+        listing = [
+            f"{dom.start}:{dom.end}"
+            for dom in sorted(self.domains, key=lambda d: (d.start, d.end))
+        ]
+        return ";".join(listing)
 
-    def get_domain_coordinates(self):
-        # return string
-        listing = []
-        for key in sorted(self.domains):
-            listing.append(
-                f"{self.domains[key].get_start()}:{self.domains[key].get_end()}"
-            )
-        return "-".join(listing)
-
-    def get_domain_scores(self):
-        # return string
-        listing = []
-        for key in sorted(self.domains):
-            listing.append(f"{self.domains[key].get_score()}")
-        return "-".join(listing)
+    def get_domain_scores(self) -> str:
+        listing = [
+            f"{dom.score}" for dom in sorted(self.domains, key=lambda d: d.start)
+        ]
+        return ";".join(listing)
 
     def get_domain_count(self):
         return len(self.domains)
@@ -149,28 +167,94 @@ class Protein:
     ##### Setter #####
 
     @staticmethod
-    def check_domain_overlap(new_start, new_end, current_start, current_end):
-        # 2.9.22
+    def _check_domain_overlap(a: Domain, b: Domain) -> bool:
+        """
+        Explicit overlap checks for two domains with inclusive coordinates.
+        a = existing/current domain
+        b = new domain
+        """
 
-        if (current_start <= new_start <= current_end) or (
-            current_start <= new_end <= current_end
-        ):
-            # start oder endpunkt innerhalb er grenzen
-            return 1
+        a_start, a_end = a.start, a.end
+        b_start, b_end = b.start, b.end
 
-        elif (new_start <= current_start and current_end <= new_end) or (
-            current_start <= new_start and new_end <= current_end
-        ):
-            # start und end innerhalb der grenzen oder alte domäne innerhalb der neuen
-            return 1
+        # --- Fall 1: Start oder Ende von b liegt innerhalb von a ---
+        if a_start <= b_start <= a_end:
+            return True
+        if a_start <= b_end <= a_end:
+            return True
 
-        elif (new_start <= current_start and new_end <= current_start) or (
-            new_start >= current_end and new_end >= current_end
-        ):
-            # start und end kleiner als self start oder start und end größer als self end dann
-            # domäne außerhalb der alten domäne und adden egal welcher score
-            return 0
-        return None
+        # --- Fall 2: eine Domäne liegt vollständig in der anderen ---
+        if b_start <= a_start and a_end <= b_end:
+            return True
+        if a_start <= b_start and b_end <= a_end:
+            return True
+
+        # --- Fall 3: klar getrennt (b komplett links oder rechts von a) ---
+        if b_end < a_start:
+            return False
+        if b_start > a_end:
+            return False
+
+        # --- Sollte logisch nie erreicht werden ---
+        return False
+
+    @staticmethod
+    def best_nonoverlapping_domain_set(
+            self,
+            domains: Set[Domain],
+            *,
+            inclusive: bool = True,
+    ) -> Set[Domain]:
+
+        # intern als Liste arbeiten
+        doms = sorted(domains, key=lambda d: (d.end, d.start))
+        ends = [d.end for d in doms]
+
+        def compatible_end_value(start: int) -> int:
+            return start - 1 if inclusive else start
+
+        p: List[int] = []
+        for d in doms:
+            j = bisect_right(ends, compatible_end_value(d.start)) - 1
+            p.append(j)
+
+        n = len(doms)
+        dp: List[Tuple[float, int]] = [(0.0, 0)] * n
+        take: List[bool] = [False] * n
+
+        def dom_len(d: Domain) -> int:
+            return (d.end - d.start + 1) if inclusive else (d.end - d.start)
+
+        def better(a: Tuple[float, int], b: Tuple[float, int]) -> bool:
+            if a[0] != b[0]:
+                return a[0] > b[0]
+            return a[1] > b[1]
+
+        for i, d in enumerate(doms):
+            best_skip = dp[i - 1] if i > 0 else (0.0, 0)
+
+            prev = dp[p[i]] if p[i] >= 0 else (0.0, 0)
+            best_take = (prev[0] + float(d.score), prev[1] + dom_len(d))
+
+            if better(best_take, best_skip):
+                dp[i] = best_take
+                take[i] = True
+            else:
+                dp[i] = best_skip
+                take[i] = False
+
+        # Reconstruct
+        chosen: set[Domain] = set()
+
+        i = n - 1
+        while i >= 0:
+            if take[i]:
+                chosen.add(doms[i])
+                i = p[i]
+            else:
+                i -= 1
+
+        return chosen
 
     def add_selection_comment(self, comment: str, sep: str = ",") -> None:
         """
@@ -180,118 +264,82 @@ class Protein:
         if not comment:
             return
         tokens = [t.strip() for t in str(comment).split(sep) if t.strip()]
-        self.selection_comment.update(tokens)
+        self.selection_comment = "-".join(tokens)
 
     def add_domain(
-        self,
-        hmm: str,
-        start: int,
-        end: int,
-        score: float,
-        ident: int = 25,
-        bsr: float = 1.0,
-        *,
-        force: bool = False,
-    ) -> int:
+            self,
+            hmm: str,
+            start: int,
+            end: int,
+            score: float,
+            ident: int = 25,
+            bsr: float = 1.0,
+            *,
+            selection_comment: str = "",
+            force: bool = False,
+    ) -> None:
         """
         Adds a domain to the protein.
 
-        Standardverhalten (force=False):
-          - Wenn Überlappung mit existierender Domäne vorliegt:
-              * Entferne überlappende Domänen mit geringerem Score
-              * Brich ab (return 0), wenn eine überlappende Domäne >= Score hat.
-          - Ansonsten einfügen (return 1).
-
-        Force-Modus (force=True):
-          - Ignoriere die Score-Vergleiche bei Überlappung.
-          - Entferne alle überlappenden Domänen und füge die neue ein (return 1).
-
-        Returns:
-            1 wenn hinzugefügt, 0 wenn nicht hinzugefügt.
         """
-        del_domains = []  # start-Koordinaten der zu entfernenden Domänen
+        # print(
+        #    f"{hmm}\t{start}\t{end}\t{score}\tidentity {ident}\t{bsr}\tselection comment {selection_comment}"
+        # )
+        added_domain = Domain(
+            hmm,
+            start,
+            end,
+            score,
+            selection_comment=selection_comment,
+            identity=ident,
+            bsr=bsr,
+        )
 
-        for domain in self.domains.values():
-            if self.check_domain_overlap(
-                start, end, domain.get_start(), domain.get_end()
-            ):
-                if force:
-                    # im Force-Modus: jede überlappende Domäne räumen
-                    del_domains.append(domain.get_start())
+        if force:
+            to_remove = set()
+            for current_domain in self.domains:
+                if self._check_domain_overlap(added_domain, current_domain):
+                    to_remove.add(current_domain)
+
+            # Namen der entfernten Domains extrahieren
+            removed_names = [dom.domain for dom in to_remove]
+            if removed_names:
+                if self.alternative_hit:
+                    self.alternative_hit += "-" + "-".join(removed_names)
                 else:
-                    # Standard: nur schwächere Domänen räumen, sonst abbrechen
-                    if domain.get_score() < score:
-                        del_domains.append(domain.get_start())
-                    else:
-                        return 0
+                    self.alternative_hit = "-".join(removed_names)
 
-        # überlappende domänen verschieben in deleted_domains
-        for key in del_domains:
-            dom = self.domains.pop(key, None)
-            if dom is not None:
-                key = dom.domain
-                self.deleted_domains[key] = dom
+            # Domains wirklich entfernen
+            self.domains.difference_update(to_remove)
 
-        # neue Domäne eintragen (Schlüssel = start)
-        self.domains[start] = Domain(hmm, start, end, score, ident, bsr)
+            # neue Domäne hinzufügen
+            self.domains.add(added_domain)
+        else:
+            self.low_score_domains.add(added_domain)
 
-        return 1
+    def define_best_scoring_domains(self) -> None:
+        self.domains = self.best_nonoverlapping_domain_set(
+            self, self.low_score_domains, inclusive=False
+        )
 
+    def define_selection_comment(self) -> None:
+        """
+        Collect selection comments from all domains (sorted by start coordinate)
+        and store them as a single string on the Protein.
+        """
+        parts: list[str] = []
 
-class Domain:
-    # 2.9.22
-    """
-    Stores domain information (HMM name, coordinates, score, identity, bsr).
+        for dom in sorted(self.domains, key=lambda d: (d.start, d.end)):
+            # dom.selection_comment is e.g. frozenset[str] (or set[str])
+            if not dom.selection_comment:
+                continue
 
-    Args:
-        domain (str): Domain name.
-        start (int): Start coord.
-        end (int): End coord.
-        score (float): Bitscore.
-        ident (int): Percent identity.
-        bsr (float): Blast score ratio.
-    """
+            # deterministic order within a domain
+            parts.append(dom.selection_comment)
 
-    def __init__(
-        self,
-        domain: str,
-        start: int,
-        end: int,
-        score: float,
-        ident: int = 1,
-        bsr: float = 1.0,
-    ):
-        self.domain: str = domain
-        self.start: int = int(start)
-        self.end: int = int(end)
-        self.score: float = float(score)
-        self.identity: int = int(ident)
-        self.bsr: float = float(bsr)
-
-    def __hash__(self):
-        return hash((self.domain, self.start, self.end, self.score))
-
-    def __eq__(self, other):
-        if isinstance(other, Domain):
-            return (
-                self.domain == other.domain
-                and self.start == other.start
-                and self.end == other.end
-                and self.score == other.score
-            )
-        return False
-
-    def get_domain(self):
-        return self.domain
-
-    def get_start(self):
-        return self.start
-
-    def get_end(self):
-        return self.end
-
-    def get_score(self):
-        return self.score
+        if parts:
+            # join domains in genomic order
+            self.selection_comment = "-".join(parts)
 
 
 #########################################
@@ -300,7 +348,7 @@ class Domain:
 
 
 def parse_gff_file(
-    filepath: str, protein_dict: Dict[str, Protein]
+        filepath: str, protein_dict: Dict[str, Protein]
 ) -> Dict[str, Protein]:
     """
     3.9.22
@@ -432,13 +480,13 @@ def get_locustag(locustag_pattern: re.Pattern, string: str) -> str:
 
 
 def output_genome_report(
-    output_filepath: str,
-    protein_dict: Dict[str, Any],
-    cluster_dict: Dict[str, Any],
-    taxon_dict: Dict[str, str],
-    genomeID: str = "",
-    writemode: str = "w",
-    taxon_divider: str = "\t",
+        output_filepath: str,
+        protein_dict: Dict[str, Any],
+        cluster_dict: Dict[str, Any],
+        taxon_dict: Dict[str, str],
+        genomeID: str = "",
+        writemode: str = "w",
+        taxon_divider: str = "\t",
 ) -> None:
     """
     Writes the main genome hit table (TSV).
@@ -469,7 +517,7 @@ def output_genome_report(
         "gene_end",
         "gene_strand",
         "locustag",
-        #"valid hit",
+        # "valid hit",
         "selection_comment",
         "alternative hit",
         "clusterID",
@@ -495,7 +543,7 @@ def output_genome_report(
             # protein.get_protein_list() erwartete Reihenfolge laut Docstring:
             # [proteinID, get_domains(), get_domain_scores(), get_domain_coordinates(),
             #  gene_contig, gene_start, gene_end, gene_strand, gene_locustag]
-            #if not protein.valid_hit:
+            # if not protein.valid_hit:
             #    continue
 
             pl = protein.get_protein_list()
@@ -537,7 +585,7 @@ def output_genome_report(
                 pl[6],  # gene_end
                 pl[7],  # gene_strand
                 pl[8],  # locustag
-                #protein.valid_hit,
+                # protein.valid_hit,
                 protein.get_selection_comment_csv(),
                 protein.alternative_hit,
                 out_clusterID,
@@ -548,17 +596,15 @@ def output_genome_report(
     return
 
 
-
-
 #########################################################################################
 ################ Processing routines for parsing genome hits ############################
 #########################################################################################
 
 
 def remove_unassigned_intermediate_proteins(
-    combined_protein_dict: Dict[str, Any],
-    trusted_protein_ids: set,
-    cluster_dict: Dict[str, Any],
+        combined_protein_dict: Dict[str, Any],
+        trusted_protein_ids: set,
+        cluster_dict: Dict[str, Any],
 ) -> Dict[str, Any]:
     """
     Remove proteins from combined_protein_dict that are not present in protein_dict
@@ -587,7 +633,7 @@ def remove_unassigned_intermediate_proteins(
     # New 091125 mark up the intermediate hits instead of remove
     for pid, protein in combined_protein_dict.items():
         if protein.valid_hit is True:
-            continue # Skip proteins that are already recognized
+            continue  # Skip proteins that are already recognized
         if pid in trusted_protein_ids:
             protein.valid_hit = True
             protein.add_selection_comment("Sc")
@@ -596,3 +642,17 @@ def remove_unassigned_intermediate_proteins(
             protein.add_selection_comment("Nc")
 
     return combined_protein_dict
+
+
+def define_best_score_hits_for_protein_dict(
+        protein_dict: dict[str, Protein],
+):
+    for protein in protein_dict.values():
+        protein.define_best_scoring_domains()
+
+
+def define_selection_comments_for_protein_dict(
+        protein_dict: dict[str, Protein],
+):
+    for protein in protein_dict.values():
+        protein.define_selection_comment()

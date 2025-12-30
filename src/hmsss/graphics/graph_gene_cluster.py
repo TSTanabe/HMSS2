@@ -10,11 +10,12 @@ from matplotlib.gridspec import GridSpec
 
 # ===================== Datenstrukturen =====================
 
+
 @dataclass
 class Gene:
     start: int
     end: int
-    strand: int = 1          # +1 oder -1
+    strand: int = 1  # +1 oder -1
     color: str = "tab:blue"
     label: str = ""
 
@@ -24,7 +25,7 @@ class ContigSegment:
     name: str
     length: int
     features: List[Gene] = field(default_factory=list)
-    track_start: float = 0.0   # in "bp" (Plotkoordinaten)
+    track_start: float = 0.0  # in "bp" (Plotkoordinaten)
     track_end: float = 0.0
 
     def add_gene(self, gene: Gene):
@@ -45,6 +46,7 @@ class ContigSegment:
 
 
 # ===================== Track =====================
+
 
 class Track:
     def __init__(
@@ -146,12 +148,12 @@ class Track:
         ax = self.ax
 
         # Y-Positionen innerhalb dieses Tracks (0..1)
-        baseline_y = 0.35          # Contig-Linie
-        contig_label_y = 0.05      # Contig-Label
-        gene_y = 0.55              # Gen-Pfeile
-        gene_label_y = 0.70        # Gen-Labels
-        major_tick = 0.06          # Start/Ende
-        minor_tick = 0.03          # 1000-bp
+        baseline_y = 0.35  # Contig-Linie
+        contig_label_y = 0.05  # Contig-Label
+        gene_y = 0.55  # Gen-Pfeile
+        gene_label_y = 0.70  # Gen-Labels
+        major_tick = 0.06  # Start/Ende
+        minor_tick = 0.03  # 1000-bp
         self.baseline_y = baseline_y  # für externe Referenz (falls nötig)
 
         # nur innerhalb dieses Panels
@@ -230,14 +232,13 @@ class Track:
                     (x_head, gene_y),
                     arrowstyle="Simple,head_width=0.8,head_length=0.9,tail_width=0.4",
                     mutation_scale=10,
-                    linewidth=0,          # Körper ist gefüllte Fläche, keine Linien nötig
+                    linewidth=0,  # Körper ist gefüllte Fläche, keine Linien nötig
                     facecolor=g.color,
                     edgecolor="none",
                     transform=trans,
                     clip_on=True,
                 )
                 ax.add_patch(arrow)
-
 
                 ax.add_patch(arrow)
 
@@ -276,6 +277,7 @@ class Track:
 
 
 # ===================== GenomeFigure =====================
+
 
 class GenomeFigure:
     """
@@ -356,7 +358,7 @@ class GenomeFigure:
             figure=fig,
         )
         gs.update(
-            left=0.10,   # etwas mehr Platz links für Track-Label
+            left=0.10,  # etwas mehr Platz links für Track-Label
             right=0.99,
             top=0.98,
             bottom=0.02,
@@ -374,8 +376,11 @@ class GenomeFigure:
 
     def save(self, filename: str, dpi: int = 300, pad_inches: float = 0.1, **kwargs):
         fig, _ = self.plot(dpi=dpi)
-        fig.savefig(filename, dpi=dpi, bbox_inches="tight", pad_inches=pad_inches, **kwargs)
+        fig.savefig(
+            filename, dpi=dpi, bbox_inches="tight", pad_inches=pad_inches, **kwargs
+        )
         plt.close(fig)
+
 
 def plot_gene_cluster_summary(
     output_file: str,
@@ -414,13 +419,7 @@ def plot_gene_cluster_summary(
         if dom_string:
             return dom_string
 
-        # 2) erster Name aus get_domains_dict()
-        try:
-            dct = p.get_domains_dict()
-        except Exception:
-            dct = {}
-
-        for dom in dct.values():
+        for dom in p.domains:
             name = getattr(dom, "domain", "") or ""
             name = str(name).strip()
             if name:
@@ -479,9 +478,7 @@ def plot_gene_cluster_summary(
 
     def genome_sort_key(gid: str):
         rec = taxon_dict.get(gid, {}) or {}
-        tax_key = tuple(
-            (rec.get(lvl) or "").strip().casefold() for lvl in tax_levels
-        )
+        tax_key = tuple((rec.get(lvl) or "").strip().casefold() for lvl in tax_levels)
         return (*tax_key, gid)
 
     genomes_sorted = sorted(genome_to_contigs.keys(), key=genome_sort_key)
@@ -517,7 +514,7 @@ def plot_gene_cluster_summary(
                     continue
                 name = (rec.get(lvl) or "").strip()
                 if name:
-                        label_lines.append(name)
+                    label_lines.append(name)
         species = (rec.get("Species") or "").strip()
         if species:
             label_lines.append(species)

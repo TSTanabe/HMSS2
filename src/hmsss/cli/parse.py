@@ -129,7 +129,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         A fully configured `argparse.ArgumentParser` (no parsing yet).
     """
 
-    never_show = False # Always hide these arguments, because currently unused
+    never_show = False  # Always hide these arguments, because currently unused
 
     # ---- Argument groups ----
     parser = argparse.ArgumentParser(
@@ -310,9 +310,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     )
 
     # Synteny options
-    #synteny = parser.add_argument_group("Synteny options")
-
-
+    # synteny = parser.add_argument_group("Synteny options")
 
     # Information on resources
     information = parser.add_argument_group("Information on resources")
@@ -424,7 +422,6 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         if never_show
         else argparse.SUPPRESS,
     )
-
 
     # Read mapping workflow algorithm
     readmap = parser.add_argument_group("Read mapping integration")

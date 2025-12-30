@@ -22,14 +22,13 @@ according to score thresholds.
 
 def initial_search(config) -> None:
     """Run the initial hmmsearch stage and prepare global reports.
-        If database is present genomeIDs in the database will be ignored.
-        Uses pyhmmer to reduce IO operations and processes everything except the cross-check
-        without writing extra external files
+    If database is present genomeIDs in the database will be ignored.
+    Uses pyhmmer to reduce IO operations and processes everything except the cross-check
+    without writing extra external files
     """
 
     print_header("Initial search (hmmsearch)", logger=logger)
     if os.path.isfile(config.database_directory):
-
         queue.queue_protein_annotation_inputs(config)
         removed = queue.remove_genomes_already_in_db_from_queue(config)
         logger.info(

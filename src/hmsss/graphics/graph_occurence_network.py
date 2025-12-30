@@ -6,6 +6,8 @@ from matplotlib.patches import Wedge
 from typing import Dict, Any, Optional, Set, Tuple, List
 
 import math
+
+
 def plot_taxonomy_cooccurrence_network(
     output_file: str,
     protein_dict: Dict[str, Any],
@@ -66,12 +68,7 @@ def plot_taxonomy_cooccurrence_network(
         if dom_string:
             return dom_string
 
-        try:
-            dct = p.get_domains_dict()
-        except Exception:
-            dct = {}
-
-        for dom in dct.values():
+        for dom in p.domains:
             name = getattr(dom, "domain", "") or ""
             name = str(name).strip()
             if name:
@@ -163,7 +160,13 @@ def plot_taxonomy_cooccurrence_network(
 
     if G.number_of_nodes() == 0:
         fig, ax = plt.subplots(figsize=(4, 2))
-        ax.text(0.5, 0.5, "No nodes after filtering / min_cooccurrence", ha="center", va="center")
+        ax.text(
+            0.5,
+            0.5,
+            "No nodes after filtering / min_cooccurrence",
+            ha="center",
+            va="center",
+        )
         ax.axis("off")
         fig.savefig(output_file, bbox_inches="tight", dpi=300)
         plt.close(fig)
@@ -207,7 +210,9 @@ def plot_taxonomy_cooccurrence_network(
     span = max(span_x, span_y) or 1.0
 
     # Basisradius im Layoutraum: bewusst konservativ
-    base_radius = span * 0.02 / math.sqrt(n_nodes)  # ggf. 0.015 oder 0.01, falls noch zu groß
+    base_radius = (
+        span * 0.02 / math.sqrt(n_nodes)
+    )  # ggf. 0.015 oder 0.01, falls noch zu groß
     r_min = base_radius * 0.6
     r_max = base_radius * 1.4
 
@@ -225,7 +230,9 @@ def plot_taxonomy_cooccurrence_network(
     cmap = plt.get_cmap("tab20c")
     phylum_colors = {p: cmap(i % 20) for i, p in enumerate(all_phyla)}
 
-    def draw_pie_node(ax, center, fractions, colors, radius, edgecolor="black", linewidth=0.5):
+    def draw_pie_node(
+        ax, center, fractions, colors, radius, edgecolor="black", linewidth=0.5
+    ):
         x, y = center
         start_angle = 0.0
         for frac, color in zip(fractions, colors):
@@ -256,7 +263,9 @@ def plot_taxonomy_cooccurrence_network(
         weights = [d.get("weight", 1) for (_, _, d) in edges]
         max_w = max(weights)
         widths = [0.5 + 2.0 * (w / max_w) for w in weights]
-        nx.draw_networkx_edges(G, pos, ax=ax, width=widths, alpha=0.5, edge_color="grey")
+        nx.draw_networkx_edges(
+            G, pos, ax=ax, width=widths, alpha=0.5, edge_color="grey"
+        )
 
     # Knoten als Pies
     for ptype in G.nodes():
@@ -283,7 +292,7 @@ def plot_taxonomy_cooccurrence_network(
             va="center",
             fontsize=6,
             color="black",
-            clip_on=True,   # wichtig: nicht außerhalb der Achsen wachsen lassen
+            clip_on=True,  # wichtig: nicht außerhalb der Achsen wachsen lassen
         )
 
     # Legende für Phyla
@@ -291,7 +300,8 @@ def plot_taxonomy_cooccurrence_network(
     for p in all_phyla:
         handles.append(
             plt.Line2D(
-                [], [],
+                [],
+                [],
                 marker="o",
                 linestyle="",
                 markersize=6,

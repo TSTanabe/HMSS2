@@ -52,13 +52,15 @@ def write_individual_genome_reports(config) -> None:
         # limiter_dict: genau dieses Genom
         limiter_dict = {gid: {}}
         logger.info(f"Printing report for {gid}")
-        protein_dict, cluster_dict, _taxon_dict_unused = db_fetch_protein.fetch_bulk_data(
-            database=config.database_directory,
-            syntenic_domains=None,                 # => "alles" für dieses Genom
-            limiter_dict=limiter_dict,             # => nur dieses Genom
-            fetch_from_gene_clusters=False,
-            excluded_domains=excluded,
-            use_valid_hits=use_valid,
+        protein_dict, cluster_dict, _taxon_dict_unused = (
+            db_fetch_protein.fetch_bulk_data(
+                database=config.database_directory,
+                syntenic_domains=None,  # => "alles" für dieses Genom
+                limiter_dict=limiter_dict,  # => nur dieses Genom
+                fetch_from_gene_clusters=False,
+                excluded_domains=excluded,
+                use_valid_hits=use_valid,
+            )
         )
 
         out_file = out_dir / f"{gid}.tsv"
@@ -73,6 +75,8 @@ def write_individual_genome_reports(config) -> None:
         )
 
         if i % 250 == 0:
-            logger.info("Individual report printing progress: %d / %d", i, len(genome_ids))
+            logger.info(
+                "Individual report printing progress: %d / %d", i, len(genome_ids)
+            )
 
     logger.info("Finished: %d reports", len(genome_ids))

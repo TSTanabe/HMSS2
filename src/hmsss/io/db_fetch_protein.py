@@ -119,6 +119,7 @@ def fetch_bulk_data(
     after = len(taxon_dict)
     logger.info(f"Hits were present in {after} genome lineages of {before}.")
 
+    parse_reports.define_best_score_hits_for_protein_dict(protein_dict)
     return protein_dict, cluster_dict, taxon_dict
 
 
