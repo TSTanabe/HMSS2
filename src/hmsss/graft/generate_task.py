@@ -154,17 +154,17 @@ def build_graft_args(task: GraftMTask) -> SimpleNamespace:
             raise ValueError("Non-interleaved mode: forward muss gesetzt sein.")
         # reverse darf None sein (forward-only)
 
-    gpkg = str(task.gpkg.resolve())
-    outdir = str(task.outdir.resolve())
+    gpkg = str(task.gpkg)
+    outdir = str(task.outdir)
 
     # --- GraftM erwartet forward/reverse oft als LISTEN (oder None) ---
     if task.interleaved is not None:
-        forward = [str(task.interleaved.resolve())]
+        forward = [str(task.interleaved)]
         reverse = None
         interleaved = True
     else:
-        forward = [str(task.forward.resolve())]
-        reverse = [str(task.reverse.resolve())] if task.reverse is not None else None
+        forward = [str(task.forward)]
+        reverse = [str(task.reverse)] if task.reverse is not None else None
         interleaved = False
 
     return SimpleNamespace(
