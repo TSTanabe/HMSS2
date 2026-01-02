@@ -25,61 +25,13 @@ def _check_dependencies():
     )
 
 
-def build_args_for_task(task):
-    """
-    Erzeuge genau die Attribute, die Run.setattributes()/graft() brauchen.
-    Keep it minimal, aber vollständig genug, damit HouseKeeping.parameter_checks läuft.
-    """
-    # IMPORTANT:
-    # - forward sollte LISTE sein (wie argparse bei mehrfachen Inputs)
-    # - reverse entweder None oder LISTE
-    return SimpleNamespace(
-        subparser_name="graft",
-        # Input reads
-        forward=[task.forward],
-        reverse=[task.reverse] if task.reverse else None,
-        interleaved=bool(getattr(task, "interleaved", False)),
-        input_sequence_type=None,  # autodetect
-        # GPKG
-        graftm_package=task.gpkg,
-        # Output / misc
-        output_directory=task.outdir,
-        force=True,
-        verbosity=2,
-        # Threads / thresholds
-        threads=int(task.threads),
-        evalue=str(getattr(task, "evalue", "1e-5")),
-        # Pipeline flags
-        search_only=False,
-        search_and_align_only=False,
-        merge_reads=False,
-        restrict_read_length=None,
-        translation_table=11,
-        min_orf_length=90,
-        euk_check=False,
-        # Search / assignment
-        search_method="hmmsearch+diamond",  # i.d.R. wird das durch gpkg/housekeeping konsistent
-        assignment_method="pplacer",  # oder "diamond"
-        search_diamond_file=getattr(task, "diamond_db", None),
-        diamond_performance_parameters="",
-        # Decoy / expand-search
-        decoy_database=getattr(task, "decoy_db", None),
-        expand_search_contigs=None,
-        maximum_range=None,
-        filter_minimum=None,
-        # Placement options
-        resolve_placements=False,
-        max_samples_for_krona=100,
-    )
-
-
 def _run_graft_task(task):
     """
     Worker: Namespace bauen -> Run(args).main()
     Catch errors without stopping the multiprocessing pool
     """
     try:
-        args = build_args_for_task(task)
+        args = generate_task.build_graft_args(task)
         graft_factory = graft_runner.Run(args)
         # result = (
         #    graft_factory.main()

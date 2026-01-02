@@ -61,7 +61,7 @@ def _ensure_dmnd(
         str(threads),
     ]
     try:
-        subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception as e:
         logger.error(
             f"Initialization of database for gpkg package {name} failed with exception\n{e}"

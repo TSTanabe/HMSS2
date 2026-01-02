@@ -16,6 +16,7 @@ dependencies:
   - scikit-learn=1.8.0
   - pyhmmer=0.11.3
   - pytest=8.4.1
+  - graftm
 
   # --- Bioinformatics tools ---
   - diamond

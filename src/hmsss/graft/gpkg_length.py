@@ -46,10 +46,13 @@ def collect_gpkg_reference_median_lengths(
 
     for gpkg_name, gpkg_dir in gpkg_packages.items():
         faa_path = os.path.join(gpkg_dir, f"{gpkg_name}.faa")
-
+        faa_path2 = os.path.join(gpkg_dir, f"refseq_database.faa")
         try:
             if os.path.isfile(faa_path) and os.path.getsize(faa_path) > 0:
                 lengths = list(_iter_fasta_lengths(faa_path))
+                result[gpkg_name] = _median(lengths)
+            elif os.path.isfile(faa_path2) and os.path.getsize(faa_path2) > 0:
+                lengths = list(_iter_fasta_lengths(faa_path2))
                 result[gpkg_name] = _median(lengths)
             else:
                 logger.warning(f"{gpkg_name}.gpkg Reference FASTA missing {faa_path}")
@@ -57,5 +60,5 @@ def collect_gpkg_reference_median_lengths(
 
         except Exception as e:
             logger.error(f"Median length determination for gpkg packages failed {e}")
-
+    logger.debug(f"Lengths per package {result}")
     return result
