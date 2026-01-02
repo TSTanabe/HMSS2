@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import os
+import sys
 
 from hmsss.db.database import index_database
-from hmsss.graft import adapter_core
+from hmsss.graft import initial_read_mapping
 
 from hmsss.fasta_preparation import fasta_preparation
 from hmsss.search import initial_search
@@ -97,16 +98,16 @@ def run_pipeline(config) -> None:
         print_header("Assigning taxonomy information")
         taxonomy.collect_taxonomy_information(config)
 
-    if config.individual_reports and (config.stage <= 7 <= config.exit) :
+    if config.individual_reports and (config.stage <= 7 <= config.exit):
         print_header("Writing individual hit reports")
         db_fetch_genome_reports.write_individual_genome_reports(config)
 
     if config.stage == 50:
         print_header("Mapping reads to protein and nucleotide fasta files")
-        queue.queue_read_mapping_faa_inputs(config)
-        queue.queue_read_mapping_fna_inputs(config)
-        queue.queue_read_mapping_fastq_inputs(config)
-        adapter_core.read_mapping(config)
+        initial_read_mapping.initial_read_mapping(config)
+        # TODO Ungetestet ist bisher das parsing des outputs. Das muss noch erstellt werden
+        #
+        sys.exit()
 
     if config.stage == 100:
         print_header("Assigning taxonomy information")

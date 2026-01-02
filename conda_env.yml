@@ -1,0 +1,27 @@
+name: hmss3_env
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  # --- Python ---
+  - python=3.10
+
+  # --- Python packages ---
+  - biopython=1.84
+  - numpy=1.24.4
+  - scipy>=1.9,<1.12
+  - networkx=2.8.8
+  - matplotlib=3.10.8
+  - scikit-learn=1.8.0
+  - pyhmmer=0.11.3
+  - pytest=8.4.1
+
+  # --- Bioinformatics tools ---
+  - diamond
+  - prodigal
+  - trimal
+  - orfm
+  - mfqe
+  - pplacer
+  - fasttree

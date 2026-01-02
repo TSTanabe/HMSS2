@@ -237,6 +237,7 @@ class CliOperators:
     use_valid_hits: bool = True
     graph_tax_levels: List[str] = field(default_factory=lambda: ["Phylum"])
 
+
 # ==================================================
 # 2) Internal runtime states
 # ==================================================

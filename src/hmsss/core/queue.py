@@ -9,7 +9,6 @@ import glob
 
 from pathlib import Path
 from typing import List, Set, Dict, Optional
-from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from hmsss.core.logging import get_logger
 from hmsss.db import database
@@ -67,7 +66,6 @@ def queue_fna_inputs(config) -> dict[str, str]:
     return fna_files
 
 
-
 def queue_protein_annotation_inputs(config) -> None:
     """
     Collect FAA/GFF inputs for annotation (gz + plain), WITHOUT decompression.
@@ -86,10 +84,10 @@ def queue_protein_annotation_inputs(config) -> None:
 
     # --- collect files ---
     faa_plain = get_genome_id_files_dict(root, extension=".faa")
-    faa_gz    = get_genome_id_files_dict(root, extension=".faa.gz")
+    faa_gz = get_genome_id_files_dict(root, extension=".faa.gz")
 
     gff_plain = get_genome_id_files_dict(root, extension=".gff")
-    gff_gz    = get_genome_id_files_dict(root, extension=".gff.gz")
+    gff_gz = get_genome_id_files_dict(root, extension=".gff.gz")
 
     # --- merge: gz first, then plain (plain wins) ---
     faa_files = {}
@@ -117,9 +115,7 @@ def queue_protein_annotation_inputs(config) -> None:
     config.gff_files = gff_files
     config.hmmreport_files = hmmreport_files
 
-    log.info(
-        f"Queued {len(common_ids)} genomes with FAA and GFF."
-    )
+    log.info(f"Queued {len(common_ids)} genomes with FAA and GFF.")
 
 
 def queue_faa_without_gff(config) -> dict[str, str]:
@@ -236,6 +232,7 @@ def queue_read_mapping_fna_inputs(config) -> dict[str, str]:
     config.fna_files = merged
     return merged
 
+
 def remove_genomes_already_in_db_from_queue(config) -> int:
     """
     Entfernt Genome aus config.queued_genomes, die bereits in der DB existieren.
@@ -251,7 +248,9 @@ def remove_genomes_already_in_db_from_queue(config) -> int:
     if not os.path.isfile(config.database_directory):
         return 0
 
-    existing: Set[str] = database.fetch_genome_ids(config.database_directory)  # :contentReference[oaicite:3]{index=3}
+    existing: Set[str] = database.fetch_genome_ids(
+        config.database_directory
+    )  # :contentReference[oaicite:3]{index=3}
 
     queued = list(getattr(config, "queued_genomes", []))
     if not queued:
@@ -273,6 +272,7 @@ def remove_genomes_already_in_db_from_queue(config) -> int:
                 d.pop(gid, None)
 
     return len(to_remove)
+
 
 def get_all_files_with_extension(directory: str, extension: str) -> Set[str]:
     """Recursively find all files with a given extension.
@@ -338,42 +338,6 @@ def unpackgz(path: str) -> str:
         with open(file, "wb") as f_out:
             shutil.copyfileobj(f_in, f_out)  # type: ignore[arg-type]
     return file
-
-
-# --- kleine Helper-Routine: entpackt nur .gz, sonst no-op ---
-def _decompress_gz_only(path: str) -> str:
-    """Decompress `.gz` files only (no-op for others).
-
-    Args:
-        path: File path.
-
-    Returns:
-        Path to decompressed file or unchanged path if not `.gz`.
-    """
-    try:
-        return unpackgz(path)
-    except Exception as e:
-        log.error(f"Failed to decompress '{path}': {e}")
-        return path
-
-
-def _parallel_decompress(paths, max_workers: Optional[int] = None) -> None:
-    """Decompress a set of `.gz` files in parallel.
-
-    Args:
-        paths: Iterable of file paths.
-        max_workers: Number of worker processes (default: 4).
-
-    Returns:
-        None. Decompressed files are written in place.
-    """
-    if not paths:
-        return
-    max_workers = max_workers or 4
-    with ProcessPoolExecutor(max_workers=max_workers) as ex:
-        futures = {ex.submit(_decompress_gz_only, p): p for p in paths}
-        for fut in as_completed(futures):
-            _ = fut.result()  # Fehlerlogging passiert in _decompress_gz_only
 
 
 def concatenate_selected_hmms(

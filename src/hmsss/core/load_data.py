@@ -25,8 +25,6 @@ def _project_root_from_this_file(this_file: Path, *, marker_dir: str = "src") ->
     raise DataBootstrapError(f"Could not infer project root from: {this_file}")
 
 
-
-
 def _download_file(
     url: str,
     out_path: Path,
@@ -38,7 +36,6 @@ def _download_file(
 
     req = Request(url, headers={"User-Agent": user_agent})
     with urlopen(req) as r, open(out_path, "wb") as f:
-
         total_size = r.headers.get("Content-Length")
         total_size = int(total_size) if total_size is not None else None
 
@@ -51,13 +48,11 @@ def _download_file(
             if total_size:
                 pct = (downloaded / total_size) * 100
                 sys.stdout.write(
-                    f"\r[Download] {downloaded/1e6:7.1f} / {total_size/1e6:7.1f} MB "
+                    f"\r[Download] {downloaded / 1e6:7.1f} / {total_size / 1e6:7.1f} MB "
                     f"({pct:3.0f}%)"
                 )
             else:
-                sys.stdout.write(
-                    f"\r[Download] {downloaded/1e6:7.1f} MB"
-                )
+                sys.stdout.write(f"\r[Download] {downloaded / 1e6:7.1f} MB")
 
             sys.stdout.flush()
 
