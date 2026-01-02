@@ -28,7 +28,7 @@ class GraftMTask:
 
     forward: str | None = None
     reverse: str | None = None  # nur zusammen mit forward
-    interleaved: str | None = None  # exklusiv (statt forward/reverse)
+    interleaved: bool | None = None  # exklusiv (statt forward/reverse)
 
     def __post_init__(self):
         # For a given gpkg in the task define the paths to diamond and decoy database
@@ -144,7 +144,7 @@ def automatic_forward_reverse_file_detection(
 
 def build_graft_args(task: GraftMTask) -> SimpleNamespace:
     # --- Validierung der Modi ---
-    if task.interleaved is not None:
+    if task.interleaved is True:
         if task.forward is not None or task.reverse is not None:
             raise ValueError(
                 "Interleaved mode: setze nur interleaved, nicht forward/reverse."
