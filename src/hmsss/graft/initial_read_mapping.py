@@ -2,14 +2,16 @@
 import sys
 import os
 import traceback
-from types import SimpleNamespace
 from multiprocessing import get_context
+from graftm.external_program_suite import ExternalProgramSuite
 
 from hmsss.graft import graft_runner, read_counter, gpkg_length, prepare_packages
 from hmsss.core import queue
 from hmsss.graft import generate_task
 
-from graftm.external_program_suite import ExternalProgramSuite
+from hmsss.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def _check_dependencies():
@@ -30,29 +32,32 @@ def _run_graft_task(task):
     Worker: Namespace bauen -> Run(args).main()
     Catch errors without stopping the multiprocessing pool
     """
+    # Execute the graftM read mapping
     try:
         args = generate_task.build_graft_args(task)
-        print(args)
+        logger.debug(args)
         forward_read_number = read_counter.safe_read_count(task.forward)
         reverse_read_number = read_counter.safe_read_count(task.reverse)
         hmm_length = task.length
-        print(hmm_length, forward_read_number, reverse_read_number)
-        graft_factory = graft_runner.Run(args)
-        result = (
-            graft_factory.main()
-        )  # returns a dict with filepaths for read_tax and alignments
-        print(result)
-        # TODO hier noch die Werte berechnen lassen die wir später haben wollen, wie TPM, RPKM, FPKM usw.
-        # Für jedes Taxonomie level einzeln berechnen und die Gesamtheit.
+        logger.debug(hmm_length, forward_read_number, reverse_read_number)
+        graft_runner.Run(args).main()
 
-        return {"ok": True, "task": task, "error": None}
-        # TODO error returns need the same structure as a successful finish
     except SystemExit as e:
         # graftM verwendet exit() an mehreren Stellen
         return {"ok": False, "task": task, "error": f"SystemExit({e.code})"}
 
     except Exception:
         return {"ok": False, "task": task, "error": traceback.format_exc()}
+
+    # parse the graftM read mapping results
+    # TODO hier noch die Werte berechnen lassen die wir später haben wollen, wie TPM, RPKM, FPKM usw.
+    # args.output_directory # Directory with the detected reads
+    # Für jedes Taxonomie level einzeln berechnen und die Gesamtheit.
+    path = os.path.join(args.output_directory, "combined_count_table.txt")
+    if os.path.isfile(path):
+        print("")
+
+    return {"ok": True, "task": task, "error": None}
 
 
 def initial_read_mapping(config):

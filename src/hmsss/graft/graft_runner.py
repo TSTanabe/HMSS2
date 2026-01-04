@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import logging
 import tempfile
 import shutil
 
@@ -13,7 +12,7 @@ from graftm.hmmsearcher import NoInputSequencesException
 from graftm.housekeeping import HouseKeeping
 from graftm.summarise import Stats_And_Summary
 from graftm.pplacer import Pplacer
-from graftm.update import Update
+# from graftm.update import Update
 from graftm.unpack_sequences import UnpackRawReads
 from graftm.graftm_package import GraftMPackage
 from graftm.expand_searcher import ExpandSearcher
@@ -22,11 +21,13 @@ from graftm.getaxnseq import Getaxnseq
 from graftm.sequence_io import SequenceIO
 from graftm.timeit import Timer
 from graftm.clusterer import Clusterer
-from graftm.decorator import Decorator
-from graftm.external_program_suite import ExternalProgramSuite
-from graftm.archive import Archive
+# from graftm.decorator import Decorator
+# from graftm.external_program_suite import ExternalProgramSuite
+# from graftm.archive import Archive
 from graftm.decoy_filter import DecoyFilter
+from hmsss.core.logging import get_logger
 
+logging = get_logger(__name__)
 T = Timer()
 
 
@@ -500,7 +501,7 @@ class Run:
             logging.info("Stopping before taxonomic assignment phase\n")
             exit(0)
         elif not any(base_list):
-            logging.error(
+            logging.info(
                 "No hits in any of the provided files. Cannot continue with no reads to assign taxonomy to.\n"
             )
             exit(0)
@@ -663,351 +664,6 @@ class Run:
 
     def main(self):
         if self.args.subparser_name == "graft":
-            if self.args.verbosity >= self._MIN_VERBOSITY_FOR_ART:
-                print("""
-                                GRAFT
-
-                       Joel Boyd, Ben Woodcroft
-
-                                                         __/__
-                                                  ______|
-          _- - _                         ________|      |_____/
-           - -            -             |        |____/_
-           - _     >>>>  -   >>>>   ____|
-          - _-  -         -             |      ______
-             - _                        |_____|
-           -                                  |______
-            """)
             self.graft()
-
-        elif self.args.subparser_name == "create":
-            if self.args.verbosity >= self._MIN_VERBOSITY_FOR_ART:
-                print("""
-                            CREATE
-
-                   Joel Boyd, Ben Woodcroft
-
-                                                    /
-              >a                                   /
-              -------------                       /
-              >b                        |        |
-              --------          >>>     |  GPKG  |
-              >c                        |________|
-              ----------
-""")
-            if self.args.dereplication_level < 0:
-                logging.error(
-                    "Invalid dereplication level selected! please enter a positive integer"
-                )
-                exit(1)
-
-            else:
-                if not self.args.sequences:
-                    if (
-                            not self.args.alignment
-                            and not self.args.rerooted_annotated_tree
-                            and not self.args.rerooted_tree
-                    ):
-                        logging.error(
-                            "Some sort of sequence data must be provided to run graftM create"
-                        )
-                        exit(1)
-                if self.args.taxonomy:
-                    if self.args.rerooted_annotated_tree:
-                        logging.error(
-                            "--taxonomy is incompatible with --rerooted_annotated_tree"
-                        )
-                        exit(1)
-                    if self.args.taxtastic_taxonomy or self.args.taxtastic_seqinfo:
-                        logging.error(
-                            "--taxtastic_taxonomy and --taxtastic_seqinfo are incompatible with --taxonomy"
-                        )
-                        exit(1)
-                elif self.args.rerooted_annotated_tree:
-                    if self.args.taxtastic_taxonomy or self.args.taxtastic_seqinfo:
-                        logging.error(
-                            "--taxtastic_taxonomy and --taxtastic_seqinfo are incompatible with --rerooted_annotated_tree"
-                        )
-                        exit(1)
-                else:
-                    if (
-                            not self.args.taxtastic_taxonomy
-                            or not self.args.taxtastic_seqinfo
-                    ):
-                        logging.error(
-                            "--taxonomy, --rerooted_annotated_tree or --taxtastic_taxonomy/--taxtastic_seqinfo is required"
-                        )
-                        exit(1)
-                if bool(self.args.taxtastic_taxonomy) ^ bool(
-                        self.args.taxtastic_seqinfo
-                ):
-                    logging.error(
-                        "Both or neither of --taxtastic_taxonomy and --taxtastic_seqinfo must be defined"
-                    )
-                    exit(1)
-                if self.args.alignment and self.args.hmm:
-                    logging.warn(
-                        "Using both --alignment and --hmm is rarely useful, but proceding on the assumption you understand."
-                    )
-                if (
-                        len(
-                            [
-                                _f
-                                for _f in [
-                                self.args.rerooted_tree,
-                                self.args.rerooted_annotated_tree,
-                                self.args.tree,
-                            ]
-                                if _f
-                            ]
-                        )
-                        > 1
-                ):
-                    logging.error("Only 1 input tree can be specified")
-                    exit(1)
-
-                self.create.main(
-                    dereplication_level=self.args.dereplication_level,
-                    sequences=self.args.sequences,
-                    alignment=self.args.alignment,
-                    taxonomy=self.args.taxonomy,
-                    rerooted_tree=self.args.rerooted_tree,
-                    unrooted_tree=self.args.tree,
-                    tree_log=self.args.tree_log,
-                    no_tree=self.args.no_tree,
-                    prefix=self.args.output,
-                    rerooted_annotated_tree=self.args.rerooted_annotated_tree,
-                    min_aligned_percent=float(self.args.min_aligned_percent) / 100,
-                    taxtastic_taxonomy=self.args.taxtastic_taxonomy,
-                    taxtastic_seqinfo=self.args.taxtastic_seqinfo,
-                    hmm=self.args.hmm,
-                    search_hmm_files=self.args.search_hmm_files,
-                    force=self.args.force,
-                    threads=self.args.threads,
-                )
-
-        elif self.args.subparser_name == "update":
-            logging.info(
-                "GraftM package %s specified to update with sequences in %s"
-                % (self.args.graftm_package, self.args.sequences)
-            )
-            if self.args.regenerate_diamond_db:
-                gpkg = GraftMPackage.acquire(self.args.graftm_package)
-                logging.info("Regenerating diamond DB..")
-                gpkg.create_diamond_db()
-                logging.info("Diamond database regenerated.")
-                return
-            elif not self.args.sequences:
-                logging.error(
-                    "--sequences is required unless regenerating the diamond DB"
-                )
-                exit(1)
-
-            if not self.args.output:
-                if self.args.graftm_package.endswith(".gpkg"):
-                    self.args.output = self.args.graftm_package.replace(
-                        ".gpkg", "-updated.gpkg"
-                    )
-                else:
-                    self.args.output = self.args.graftm_package + "-update.gpkg"
-
-            Update(
-                ExternalProgramSuite(["taxit", "FastTreeMP", "hmmalign", "mafft"])
-            ).update(
-                input_sequence_path=self.args.sequences,
-                input_taxonomy_path=self.args.taxonomy,
-                input_graftm_package_path=self.args.graftm_package,
-                output_graftm_package_path=self.args.output,
-            )
-
-        elif self.args.subparser_name == "expand_search":
-            args = self.args
-            if not args.graftm_package and not args.search_hmm_files:
-                logging.error(
-                    "expand_search mode requires either --graftm_package or --search_hmm_files"
-                )
-                exit(1)
-
-            if args.graftm_package:
-                pkg = GraftMPackage.acquire(args.graftm_package)
-            else:
-                pkg = None
-
-            expandsearcher = ExpandSearcher(
-                search_hmm_files=args.search_hmm_files,
-                maximum_range=args.maximum_range,
-                threads=args.threads,
-                evalue=args.evalue,
-                min_orf_length=args.min_orf_length,
-                translation_table=args.translation_table,
-                graftm_package=pkg,
-            )
-            expandsearcher.generate_expand_search_database_from_contigs(
-                args.contigs,
-                args.output_hmm,
-                search_method=ExpandSearcher.HMM_SEARCH_METHOD,
-            )
-
-        elif self.args.subparser_name == "tree":
-            if self.args.graftm_package:
-                # shim in the paths from the graftm package, not overwriting
-                # any of the provided paths.
-                gpkg = GraftMPackage.acquire(self.args.graftm_package)
-                if not self.args.rooted_tree:
-                    self.args.rooted_tree = gpkg.reference_package_tree_path()
-                if not self.args.input_greengenes_taxonomy:
-                    if not self.args.input_taxtastic_seqinfo:
-                        self.args.input_taxtastic_seqinfo = (
-                            gpkg.taxtastic_seqinfo_path()
-                        )
-                    if not self.args.input_taxtastic_taxonomy:
-                        self.args.input_taxtastic_taxonomy = (
-                            gpkg.taxtastic_taxonomy_path()
-                        )
-
-            if self.args.rooted_tree:
-                if self.args.unrooted_tree:
-                    logging.error(
-                        "Both a rooted tree and an un-rooted tree were provided, so it's unclear what you are asking GraftM to do. \
-If you're unsure see graftM tree -h"
-                    )
-                    exit(1)
-                elif self.args.reference_tree:
-                    logging.error(
-                        "Both a rooted tree and reference tree were provided, so it's unclear what you are asking GraftM to do. \
-If you're unsure see graftM tree -h"
-                    )
-                    exit(1)
-
-                if not self.args.decorate:
-                    logging.error(
-                        "It seems a rooted tree has been provided, but --decorate has not been specified so it is unclear what you are asking graftM to do."
-                    )
-                    exit(1)
-
-                dec = Decorator(tree_path=self.args.rooted_tree)
-
-            elif self.args.unrooted_tree and self.args.reference_tree:
-                logging.debug(
-                    "Using provided reference tree %s to reroot %s"
-                    % (self.args.reference_tree, self.args.unrooted_tree)
-                )
-                dec = Decorator(
-                    reference_tree_path=self.args.reference_tree,
-                    tree_path=self.args.unrooted_tree,
-                )
-            else:
-                logging.error(
-                    "Some tree(s) must be provided, either a rooted tree or both an unrooted tree and a reference tree"
-                )
-                exit(1)
-
-            if self.args.output_taxonomy is None and self.args.output_tree is None:
-                logging.error("Either an output tree or taxonomy must be provided")
-                exit(1)
-            if self.args.input_greengenes_taxonomy:
-                if (
-                        self.args.input_taxtastic_seqinfo
-                        or self.args.input_taxtastic_taxonomy
-                ):
-                    logging.error(
-                        "Both taxtastic and greengenes taxonomy were provided, so its unclear what taxonomy you want graftM to decorate with"
-                    )
-                    exit(1)
-                logging.debug("Using input GreenGenes style taxonomy file")
-                dec.main(
-                    self.args.input_greengenes_taxonomy,
-                    self.args.output_tree,
-                    self.args.output_taxonomy,
-                    self.args.no_unique_tax,
-                    self.args.decorate,
-                    None,
-                )
-            elif (
-                    self.args.input_taxtastic_seqinfo and self.args.input_taxtastic_taxonomy
-            ):
-                logging.debug("Using input taxtastic style taxonomy/seqinfo")
-                dec.main(
-                    self.args.input_taxtastic_taxonomy,
-                    self.args.output_tree,
-                    self.args.output_taxonomy,
-                    self.args.no_unique_tax,
-                    self.args.decorate,
-                    self.args.input_taxtastic_seqinfo,
-                )
-            else:
-                logging.error(
-                    "Either a taxtastic taxonomy or seqinfo file was provided. GraftM cannot continue without both."
-                )
-                exit(1)
-
-        elif self.args.subparser_name == "archive":
-            # Back slashes in the ASCII art are escaped.
-            if self.args.verbosity >= self._MIN_VERBOSITY_FOR_ART:
-                print("""
-                               ARCHIVE
-
-                        Joel Boyd, Ben Woodcroft
-
-                  ____.----.
-        ____.----'          \\
-        \\                    \\
-         \\                    \\
-          \\                    \\
-           \\          ____.----'`--.__
-            \\___.----'          |     `--.____
-           /`-._                |       __.-' \\
-          /     `-._            ___.---'       \\
-         /          `-.____.---'                \\           +------+
-        /            / | \\                       \\          |`.    |`.
-       /            /  |  \\                   _.--'  <===>  |  `+--+---+
-       `-.         /   |   \\            __.--'              |   |  |   |
-          `-._    /    |    \\     __.--'     |              |   |  |   |
-            | `-./     |     \\_.-'           |              +---+--+   |
-            |          |                     |               `. |   `. |
-            |          |                     |                 `+------+
-            |          |                     |
-            |          |                     |
-            |          |                     |
-            |          |                     |
-            |          |                     |
-            `-.        |                  _.-'
-               `-.     |           __..--'
-                  `-.  |      __.-'
-                     `-|__.--'
-            """)
-            if self.args.create:
-                if self.args.extract:
-                    logging.error(
-                        "Please specify whether to either create or export a GraftM package"
-                    )
-                    exit(1)
-                if not self.args.graftm_package:
-                    logging.error(
-                        "Creating a GraftM package archive requires an package to be specified"
-                    )
-                    exit(1)
-                if not self.args.archive:
-                    logging.error(
-                        "Creating a GraftM package archive requires an output archive path to be specified"
-                    )
-                    exit(1)
-
-                archive = Archive()
-                archive.create(
-                    self.args.graftm_package, self.args.archive, force=self.args.force
-                )
-
-            elif self.args.extract:
-                archive = Archive()
-                archive.extract(
-                    self.args.archive, self.args.graftm_package, force=self.args.force
-                )
-            else:
-                logging.error(
-                    "Please specify whether to either create or export a GraftM package"
-                )
-                exit(1)
-
         else:
-            raise Exception("Unexpected subparser name %s" % self.args.subparser_name)
+            raise Exception("Unexpected graftM subparser name %s" % self.args.subparser_name)
