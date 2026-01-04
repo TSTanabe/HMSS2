@@ -143,29 +143,26 @@ def automatic_forward_reverse_file_detection(
 
 
 def build_graft_args(task: GraftMTask) -> SimpleNamespace:
-    # --- Validierung der Modi ---
-    if task.interleaved is True:
-        if task.forward is not None or task.reverse is not None:
-            raise ValueError(
-                "Interleaved mode: setze nur interleaved, nicht forward/reverse."
-            )
-    else:
-        if task.forward is None:
-            raise ValueError("Non-interleaved mode: forward muss gesetzt sein.")
-        # reverse darf None sein (forward-only)
-
     gpkg = str(task.gpkg)
     outdir = str(task.outdir)
 
     # --- GraftM erwartet forward/reverse oft als LISTEN (oder None) ---
     if task.interleaved is not None:
-        forward = [str(task.interleaved)]
+        if task.forward is None:
+            raise ValueError("Interleaved mode: forward must be paths to interleaved FASTQ/FASTA files.")
+        if task.reverse is not None:
+            raise ValueError("Interleaved mode: reverse must not be set.")
+        forward = None
         reverse = None
-        interleaved = True
+        interleaved = [str(task.forward)]  # GraftM CLI: --interleaved nargs='+'
+
     else:
+        # Non-interleaved: forward required, reverse optional
+        if task.forward is None:
+            raise ValueError("Non-interleaved mode: forward must be set.")
         forward = [str(task.forward)]
         reverse = [str(task.reverse)] if task.reverse is not None else None
-        interleaved = False
+        interleaved = None
 
     return SimpleNamespace(
         # Dispatch
@@ -175,11 +172,14 @@ def build_graft_args(task: GraftMTask) -> SimpleNamespace:
         forward=forward,
         reverse=reverse,
         interleaved=interleaved,
+
+        # running options
         input_sequence_type=None,
         # Output
         output_directory=outdir,
         force=False,
         verbosity=2,
+        log=False,
         # Pipeline controls
         threads=int(task.threads),
         evalue=str(task.evalue),
@@ -191,6 +191,7 @@ def build_graft_args(task: GraftMTask) -> SimpleNamespace:
         # Search / assignment
         search_method="hmmsearch+diamond",
         assignment_method="pplacer",
+        placements_cutoff=0.75,
         search_diamond_file=task.diamond_db,
         diamond_performance_parameters="",
         decoy_database=task.decoy_db,
@@ -202,8 +203,10 @@ def build_graft_args(task: GraftMTask) -> SimpleNamespace:
         restrict_read_length=None,
         translation_table=11,
         euk_check=False,
+        euk_hmm_file=None,
         # Wird später (durch HouseKeeping) aus dem gpkg gesetzt
         search_hmm_files=[],
+        search_hmm_list_file=None,
         aln_hmm_file=None,
         reference_package=None,
         resolve_placements=False,
