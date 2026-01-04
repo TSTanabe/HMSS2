@@ -28,7 +28,7 @@ class GraftMTask:
 
     forward: str | None = None
     reverse: str | None = None  # nur zusammen mit forward
-    interleaved: bool | None = None  # exklusiv (statt forward/reverse)
+    interleaved: str | None = None  # exklusiv (statt forward/reverse)
 
     def __post_init__(self):
         # For a given gpkg in the task define the paths to diamond and decoy database
@@ -144,7 +144,7 @@ def build_graft_args(task: GraftMTask) -> SimpleNamespace:
     outdir = str(task.outdir)
 
     # --- GraftM erwartet forward/reverse oft als LISTEN (oder None) ---
-    if task.interleaved is not None:
+    if task.interleaved:
         if task.forward is None:
             raise ValueError("Interleaved mode: forward must be paths to interleaved FASTQ/FASTA files.")
         if task.reverse is not None:
@@ -152,6 +152,7 @@ def build_graft_args(task: GraftMTask) -> SimpleNamespace:
         forward = None
         reverse = None
         interleaved = [str(task.forward)]  # GraftM CLI: --interleaved nargs='+'
+        file = interleaved[0]
 
     else:
         # Non-interleaved: forward required, reverse optional
@@ -160,11 +161,12 @@ def build_graft_args(task: GraftMTask) -> SimpleNamespace:
         forward = [str(task.forward)]
         reverse = [str(task.reverse)] if task.reverse is not None else None
         interleaved = None
+        file = forward[0]
 
     # Define output directory. GraftM needs a non-existing one, to not overwrite results
-    gpkg = os.path.basename(gpkg).split('.')[0]
-    file = os.path.basename(forward[0]).split('.')[0]
-    output = os.path.join(outdir, gpkg + "_" + file)
+    file = os.path.basename(file).split('.')[0]
+    output = os.path.join(outdir, task.gpkg_name + "_" + file)
+
     return SimpleNamespace(
         # Dispatch
         subparser_name="graft",
@@ -239,7 +241,7 @@ def create_task_list(
                 genome_id=key,
                 forward=forward_path,
                 reverse=reverse_path,
-                interleaved=False,
+                interleaved=None,
                 outdir=output_directory,
                 threads=threads,
                 evalue=evalue,

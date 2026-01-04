@@ -32,6 +32,7 @@ def _run_graft_task(task):
     """
     try:
         args = generate_task.build_graft_args(task)
+        print(args)
         forward_read_number = read_counter.safe_read_count(task.forward)
         reverse_read_number = read_counter.safe_read_count(task.reverse)
         hmm_length = task.length
