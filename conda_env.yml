@@ -17,6 +17,7 @@ dependencies:
   - pyhmmer=0.11.3
   - pytest=8.4.1
   - graftm
+  - pyrodigal
 
   # --- Bioinformatics tools ---
   - diamond

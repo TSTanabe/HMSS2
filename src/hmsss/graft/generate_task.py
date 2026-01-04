@@ -161,6 +161,10 @@ def build_graft_args(task: GraftMTask) -> SimpleNamespace:
         reverse = [str(task.reverse)] if task.reverse is not None else None
         interleaved = None
 
+    # Define output directory. GraftM needs a non-existing one, to not overwrite results
+    gpkg = os.path.basename(gpkg).split('.')[0]
+    file = os.path.basename(forward[0]).split('.')[0]
+    output = os.path.join(outdir, gpkg + "_" + file)
     return SimpleNamespace(
         # Dispatch
         subparser_name="graft",
@@ -173,7 +177,7 @@ def build_graft_args(task: GraftMTask) -> SimpleNamespace:
         # running options
         input_sequence_type=None,
         # Output
-        output_directory=outdir,
+        output_directory=output,
         force=False,
         verbosity=2,
         log=False,
