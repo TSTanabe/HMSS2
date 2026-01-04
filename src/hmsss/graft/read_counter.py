@@ -1,5 +1,8 @@
 import gzip
 import os
+from hmsss.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def safe_read_count(path: str | None) -> int:
@@ -7,10 +10,13 @@ def safe_read_count(path: str | None) -> int:
     if path is None:
         return 0
     if not isinstance(path, str):
+        logger.error("Read were not counted, missformated path: {path}")
         return 0
     if not os.path.isfile(path):
+        logger.error("Read were not counted, path is not a file: {path}")
         return 0
     if os.path.getsize(path) == 0:
+        logger.error("Read were not counted, file is empty: {path}")
         return 0
     try:
         return count_reads_fasta_or_fastq(path)

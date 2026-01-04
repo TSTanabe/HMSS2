@@ -32,14 +32,15 @@ def _run_graft_task(task):
     """
     try:
         args = generate_task.build_graft_args(task)
-        graft_factory = graft_runner.Run(args)
-        # result = (
-        #    graft_factory.main()
-        # )  # returns a dict with filepaths for read_tax and alignments
         forward_read_number = read_counter.safe_read_count(task.forward)
         reverse_read_number = read_counter.safe_read_count(task.reverse)
         hmm_length = task.length
         print(hmm_length, forward_read_number, reverse_read_number)
+        graft_factory = graft_runner.Run(args)
+        result = (
+            graft_factory.main()
+        )  # returns a dict with filepaths for read_tax and alignments
+        print(result)
         # TODO hier noch die Werte berechnen lassen die wir später haben wollen, wie TPM, RPKM, FPKM usw.
         # Für jedes Taxonomie level einzeln berechnen und die Gesamtheit.
 
@@ -54,7 +55,7 @@ def _run_graft_task(task):
 
 
 def initial_read_mapping(config):
-    _check_dependencies()  # Check if graftM dependencies are present
+    # _check_dependencies()  # Check if graftM dependencies are present
     queue.queue_read_mapping_faa_inputs(config)  # declares config.faa_files
     queue.queue_read_mapping_fna_inputs(config)  # declares config.fna_files
     queue.queue_read_mapping_fastq_inputs(config)  # declares config.fastq_files
