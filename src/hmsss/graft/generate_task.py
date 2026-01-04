@@ -73,12 +73,13 @@ def merge_read_mapping_inputs(
 
 
 def automatic_forward_reverse_file_detection(
-        files: Iterable[str],
+        files: Dict[str, str],
         forward_extension: str | None = None,
         reverse_extension: str | None = None,
 ) -> Tuple[Dict[str, str], Dict[str, str]]:
     # immer absolute Pfade
-    files = [os.path.abspath(f) for f in files]
+
+    files = [os.path.abspath(p) for p in files.values()]
 
     # ------------------------------------------------------------
     # 1) Endungen automatisch bestimmen
@@ -136,10 +137,6 @@ def automatic_forward_reverse_file_detection(
             forward[base] = path
 
     return forward, reverse
-
-
-# These are the namespace and definition of individual tasks
-# TODO wie soll das gestaltet werden damit man es einfach in die multiprocessing tools einfügen kann
 
 
 def build_graft_args(task: GraftMTask) -> SimpleNamespace:
