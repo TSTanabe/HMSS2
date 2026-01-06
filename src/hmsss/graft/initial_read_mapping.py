@@ -136,20 +136,20 @@ def _run_graft_task(task):
         forward_read_number = read_counter.safe_read_count(task.forward)
         reverse_read_number = read_counter.safe_read_count(task.reverse)
         hmm_length = task.length
-        logger.debug(hmm_length, forward_read_number, reverse_read_number)
+        logger.info(hmm_length, forward_read_number, reverse_read_number)
 
         prof_dir = Path(task.outdir) / "profile"
         prof_csv = prof_dir / f"graft_run_pid{os.getpid()}.csv"
-
         t0 = time.perf_counter()
         with ProcSampler(interval_s=0.2, out_csv=str(prof_csv)) as sampler:
             graft_runner.Run(args).main()
         wall = time.perf_counter() - t0
-
-        logger.info(
-            "graftM done | wall=%.2fs | samples=%d | profile=%s",
-            wall, len(sampler.samples), prof_csv
+        print("Profile")
+        print(
+            f"graftM done | wall={wall:.2f}s | samples={len(sampler.samples)} | profile={prof_csv}",
+            flush=True
         )
+
     except SystemExit as e:
         # graftM verwendet exit() an mehreren Stellen
         return {"ok": False, "task": task, "error": f"SystemExit({e.code})"}
