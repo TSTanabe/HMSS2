@@ -28,8 +28,9 @@ def _run_graft_task(task):
         # logger.info(hmm_length, forward_read_number, reverse_read_number)
 
         # Make the graftM read assignment
+        logger.info(f"Starting graft task: {task}")
         filepaths = graft_runner.Run(args).main()
-
+        logger.info(f"Finished graft task: {task}")
         # Parse result files to read dictionary
         files = filepaths[0]
         taxonomy_csv = files.get("taxonomy")
@@ -50,7 +51,7 @@ def _run_graft_task(task):
                 f"sequence={sequence_fasta}, "
                 f"alignment={alignment_fasta}"
             )
-
+        logger.info("Generating read dictionary")
         read_dict = read_models.build_reads_from_outputs(
             gpkg_name=task.gpkg_name,
             taxonomy_csv=taxonomy_csv,
@@ -59,7 +60,7 @@ def _run_graft_task(task):
             hmm_length=hmm_length,
             min_coverage=min_coverage,
         )
-
+        logger.info("Finished generating read dictionary")
         for read in read_dict.values():
             read.metagenomeID = files.get("base")
             read.genomeID = task.genome_id
