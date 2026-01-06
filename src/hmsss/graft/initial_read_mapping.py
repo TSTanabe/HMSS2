@@ -30,6 +30,7 @@ def initial_read_mapping(config):
     task_list = generate_task.initialize_task_list(config)
 
     # TODO Generate the database for the mapped data
+    logger.info("Counting reads for all (meta-)genomes")
     meta_dict, genome_id_set = read_counter.collect_metagenome_counts_parallel(
         task_list, processes=4, chunksize=4
     )
@@ -45,5 +46,6 @@ def initial_read_mapping(config):
         meta_dict,
     )
 
+    logger.info(f"Executing read assignments for {len(task_list)} tasks")
     # Perform the graft for all tasks in the list
     graft_mp.graft_mp(task_list, config.glob_chunks, config)

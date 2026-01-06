@@ -37,12 +37,12 @@ def _run_graft_task(task):
         alignment_fasta = files.get("alignment")
 
         if (
-            not taxonomy_csv
-            or not sequence_fasta
-            or not alignment_fasta
-            or not os.path.isfile(alignment_fasta)
-            or not os.path.isfile(taxonomy_csv)
-            or not os.path.isfile(sequence_fasta)
+                not taxonomy_csv
+                or not sequence_fasta
+                or not alignment_fasta
+                or not os.path.isfile(alignment_fasta)
+                or not os.path.isfile(taxonomy_csv)
+                or not os.path.isfile(sequence_fasta)
         ):
             raise FileNotFoundError(
                 f"Missing or empty input file(s): "
@@ -112,7 +112,7 @@ def graft_mp(task_list: list, batch_size: int, config: Config) -> None:
     # Fortschritt
     read_mappings_done: int = 0
     n_tasks = len(task_list)
-    log_step = max(1, n_tasks // 20)  # ~5% Schritte
+    log_step = max(1, n_tasks // 100)  # ~5% Schritte
     # for each task make a process that generates the argument space for the task and runs the
     ctx = get_context("spawn")
 
