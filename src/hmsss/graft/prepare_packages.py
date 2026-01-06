@@ -31,11 +31,11 @@ def prepare_gpkg_packages(config: Config) -> None | dict[str, str]:
 
 
 def _ensure_dmnd(
-        *,
-        faa_path: str,
-        dmnd_path: str,
-        name: str,
-        threads: int = 4,
+    *,
+    faa_path: str,
+    dmnd_path: str,
+    name: str,
+    threads: int = 4,
 ) -> None:
     """
     Ensure a DIAMOND database exists for the given FASTA.
@@ -61,7 +61,9 @@ def _ensure_dmnd(
         str(threads),
     ]
     try:
-        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(
+            cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
     except Exception as e:
         logger.error(
             f"Initialization of database for gpkg package {name} failed with exception\n{e}"
@@ -69,9 +71,9 @@ def _ensure_dmnd(
 
 
 def initialize_gpkg_packages(
-        package_dict: Dict[str, str],
-        *,
-        threads: int = 4,
+    package_dict: Dict[str, str],
+    *,
+    threads: int = 4,
 ) -> None:
     """
     Ensure that each gpkg contains refseq and decoy DIAMOND databases.
@@ -86,7 +88,6 @@ def initialize_gpkg_packages(
     log.info("Initializing GraftM package DIAMOND databases")
 
     for gpkg_name, gpkg_path in package_dict.items():
-
         logger.info(f"Initializing package: {gpkg_name}")
 
         try:
@@ -97,9 +98,7 @@ def initialize_gpkg_packages(
 
             # --- Refseq DB ---
             if not os.path.isfile(ref_faa):
-                logger.warning(
-                    f"{gpkg_name}.gpkg Missing refseq FASTA {ref_faa}"
-                )
+                logger.warning(f"{gpkg_name}.gpkg Missing refseq FASTA {ref_faa}")
             else:
                 _ensure_dmnd(
                     faa_path=str(ref_faa),
@@ -110,9 +109,7 @@ def initialize_gpkg_packages(
 
             # --- Decoy DB ---
             if not os.path.isfile(decoy_faa):
-                logger.warning(
-                    f"{gpkg_name}.gpkg Missing decoy FASTA {decoy_faa}"
-                )
+                logger.warning(f"{gpkg_name}.gpkg Missing decoy FASTA {decoy_faa}")
             else:
                 _ensure_dmnd(
                     faa_path=str(decoy_faa),

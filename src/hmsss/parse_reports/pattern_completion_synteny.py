@@ -374,7 +374,6 @@ def execute_pattern_completion(transition_dict, protein_dict):
 
                 for domain in protein.low_score_domains:
                     if domain.get_domain() == to_domain:
-
                         protein.add_domain(
                             domain.domain,
                             domain.start,

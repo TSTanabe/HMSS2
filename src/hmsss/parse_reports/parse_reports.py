@@ -71,16 +71,16 @@ class Protein:
     """
 
     def __init__(
-            self,
-            protein_id: str,
-            hmm: str,
-            start: int = 0,
-            end: int = 0,
-            score: float = 1,
-            genome_id: str = "",
-            ident: int = 25,
-            bsr: float = 1.0,
-            selection_comment: str = "",
+        self,
+        protein_id: str,
+        hmm: str,
+        start: int = 0,
+        end: int = 0,
+        score: float = 1,
+        genome_id: str = "",
+        ident: int = 25,
+        bsr: float = 1.0,
+        selection_comment: str = "",
     ):
         self.proteinID: str = protein_id
         self.genomeID: str = genome_id
@@ -200,12 +200,11 @@ class Protein:
 
     @staticmethod
     def best_nonoverlapping_domain_set(
-            self,
-            domains: Set[Domain],
-            *,
-            inclusive: bool = True,
+        self,
+        domains: Set[Domain],
+        *,
+        inclusive: bool = True,
     ) -> Set[Domain]:
-
         # intern als Liste arbeiten
         doms = sorted(domains, key=lambda d: (d.end, d.start))
         ends = [d.end for d in doms]
@@ -267,16 +266,16 @@ class Protein:
         self.selection_comment = "-".join(tokens)
 
     def add_domain(
-            self,
-            hmm: str,
-            start: int,
-            end: int,
-            score: float,
-            ident: int = 25,
-            bsr: float = 1.0,
-            *,
-            selection_comment: str = "",
-            force: bool = False,
+        self,
+        hmm: str,
+        start: int,
+        end: int,
+        score: float,
+        ident: int = 25,
+        bsr: float = 1.0,
+        *,
+        selection_comment: str = "",
+        force: bool = False,
     ) -> None:
         """
         Adds a domain to the protein.
@@ -348,7 +347,7 @@ class Protein:
 
 
 def parse_gff_file(
-        filepath: str, protein_dict: Dict[str, Protein]
+    filepath: str, protein_dict: Dict[str, Protein]
 ) -> Dict[str, Protein]:
     """
     3.9.22
@@ -480,13 +479,13 @@ def get_locustag(locustag_pattern: re.Pattern, string: str) -> str:
 
 
 def output_genome_report(
-        output_filepath: str,
-        protein_dict: Dict[str, Any],
-        cluster_dict: Dict[str, Any],
-        taxon_dict: Dict[str, str],
-        genomeID: str = "",
-        writemode: str = "w",
-        taxon_divider: str = "\t",
+    output_filepath: str,
+    protein_dict: Dict[str, Any],
+    cluster_dict: Dict[str, Any],
+    taxon_dict: Dict[str, str],
+    genomeID: str = "",
+    writemode: str = "w",
+    taxon_divider: str = "\t",
 ) -> None:
     """
     Writes the main genome hit table (TSV).
@@ -602,9 +601,9 @@ def output_genome_report(
 
 
 def remove_unassigned_intermediate_proteins(
-        combined_protein_dict: Dict[str, Any],
-        trusted_protein_ids: set,
-        cluster_dict: Dict[str, Any],
+    combined_protein_dict: Dict[str, Any],
+    trusted_protein_ids: set,
+    cluster_dict: Dict[str, Any],
 ) -> Dict[str, Any]:
     """
     Remove proteins from combined_protein_dict that are not present in protein_dict
@@ -645,14 +644,14 @@ def remove_unassigned_intermediate_proteins(
 
 
 def define_best_score_hits_for_protein_dict(
-        protein_dict: dict[str, Protein],
+    protein_dict: dict[str, Protein],
 ):
     for protein in protein_dict.values():
         protein.define_best_scoring_domains()
 
 
 def define_selection_comments_for_protein_dict(
-        protein_dict: dict[str, Protein],
+    protein_dict: dict[str, Protein],
 ):
     for protein in protein_dict.values():
         protein.define_selection_comment()
