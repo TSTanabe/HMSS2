@@ -46,4 +46,4 @@ def initial_read_mapping(config):
     )
 
     # Perform the graft for all tasks in the list
-    graft_mp.graft_mp(task_list, config.batch_size, config)
+    graft_mp.graft_mp(task_list, config.glob_chunks, config)
