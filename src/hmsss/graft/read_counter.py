@@ -143,10 +143,10 @@ def metagenome_counts_from_task(task) -> dict[str, str | int | Any]:
 
 
 def collect_metagenome_counts_parallel(
-        tasks: list[Any],
-        *,
-        processes: int | None = None,
-        chunksize: int = 1,
+    tasks: list[Any],
+    *,
+    processes: int | None = None,
+    chunksize: int = 1,
 ) -> tuple[dict[str, tuple[str, int, int]], set[str]]:
     """
     Run metagenome_counts_from_task(task) in parallel.
@@ -168,7 +168,7 @@ def collect_metagenome_counts_parallel(
     ctx = mp.get_context("spawn")  # safer on many HPC setups
     with ctx.Pool(processes=processes) as pool:
         for res in pool.imap_unordered(
-                metagenome_counts_from_task, tasks, chunksize=chunksize
+            metagenome_counts_from_task, tasks, chunksize=chunksize
         ):
             metagenomeID = res["metagenomeID"]
             genomeID = res["genomeID"]

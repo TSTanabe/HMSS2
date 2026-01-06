@@ -37,12 +37,12 @@ def _run_graft_task(task):
         alignment_fasta = files.get("alignment")
 
         if (
-                not taxonomy_csv
-                or not sequence_fasta
-                or not alignment_fasta
-                or not os.path.isfile(alignment_fasta)
-                or not os.path.isfile(taxonomy_csv)
-                or not os.path.isfile(sequence_fasta)
+            not taxonomy_csv
+            or not sequence_fasta
+            or not alignment_fasta
+            or not os.path.isfile(alignment_fasta)
+            or not os.path.isfile(taxonomy_csv)
+            or not os.path.isfile(sequence_fasta)
         ):
             raise FileNotFoundError(
                 f"Missing or empty input file(s): "

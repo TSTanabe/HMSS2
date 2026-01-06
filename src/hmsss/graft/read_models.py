@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple, Iterator
+from typing import Dict, Tuple, Iterator
 
 
 @dataclass

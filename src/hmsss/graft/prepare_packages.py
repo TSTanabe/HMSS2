@@ -8,7 +8,6 @@ from typing import Dict
 from hmsss.cli.config import Config
 from hmsss.cli.paths import DATA_DIR
 from hmsss.core import queue as queue
-from hmsss.graft.generate_task import log
 from hmsss.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -31,11 +30,11 @@ def prepare_gpkg_packages(config: Config) -> None | dict[str, str]:
 
 
 def _ensure_dmnd(
-    *,
-    faa_path: str,
-    dmnd_path: str,
-    name: str,
-    threads: int = 4,
+        *,
+        faa_path: str,
+        dmnd_path: str,
+        name: str,
+        threads: int = 4,
 ) -> None:
     """
     Ensure a DIAMOND database exists for the given FASTA.
@@ -71,9 +70,9 @@ def _ensure_dmnd(
 
 
 def initialize_gpkg_packages(
-    package_dict: Dict[str, str],
-    *,
-    threads: int = 4,
+        package_dict: Dict[str, str],
+        *,
+        threads: int = 4,
 ) -> None:
     """
     Ensure that each gpkg contains refseq and decoy DIAMOND databases.
