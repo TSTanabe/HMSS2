@@ -20,7 +20,7 @@ def _run_graft_task(task):
     # Execute the graftM read mapping
     try:
         args = generate_task.build_graft_args(task)
-        logger.debug(args)
+        # logger.debug(args)
         # forward_read_number = read_counter.safe_read_count(task.forward)
         # reverse_read_number = read_counter.safe_read_count(task.reverse)
         hmm_length = task.length
@@ -28,15 +28,14 @@ def _run_graft_task(task):
         # logger.info(hmm_length, forward_read_number, reverse_read_number)
 
         # Make the graftM read assignment
-        print(f"Starting graft task: {task}")
         filepaths = graft_runner.Run(args).main()
-        print(f"Finished graft task: {task}")
+
         # Parse result files to read dictionary
         files = filepaths[0]
         taxonomy_csv = files.get("taxonomy")
         sequence_fasta = files.get("sequences")
         alignment_fasta = files.get("alignment")
-        print(files)
+
         if (
                 not taxonomy_csv
                 or not sequence_fasta
@@ -45,14 +44,13 @@ def _run_graft_task(task):
                 or not os.path.isfile(taxonomy_csv)
                 or not os.path.isfile(sequence_fasta)
         ):
-            print("FILES NOT FOUND")
             raise FileNotFoundError(
                 f"Missing or empty input file(s): "
                 f"taxonomy={taxonomy_csv}, "
                 f"sequence={sequence_fasta}, "
                 f"alignment={alignment_fasta}"
             )
-        print("Generating read dictionary")
+
         read_dict = read_models.build_reads_from_outputs(
             gpkg_name=task.gpkg_name,
             taxonomy_csv=taxonomy_csv,
@@ -61,9 +59,9 @@ def _run_graft_task(task):
             hmm_length=hmm_length,
             min_coverage=min_coverage,
         )
-        print("Finished generating read dictionary")
+
         for read in read_dict.values():
-            read.metagenomeID = files.get("base")
+            read.metagenomeID = task.metagenomeID
             read.genomeID = task.genome_id
 
         return {

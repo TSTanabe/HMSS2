@@ -677,27 +677,36 @@ def insert_database_lineages(database: str, reads: Dict[tuple, "Read"]) -> None:
     return
 
 
-def insert_database_stub_proteins_from_reads(database: str, reads: Dict[tuple, "Read"]) -> None:
+def insert_database_stub_proteins_from_reads(
+        database: str,
+        reads: Dict[tuple, "Read"],
+) -> None:
     """
     Insert stub proteins for reads into Proteins so that Placement.proteinID can reference them.
 
     Strategy:
-    - proteinID := read.readID  (must match what you later write into Placement.proteinID)
+    - proteinID := read.readID
+    - genomeID  := read.genomeID  (REQUIRED, NOT NULL in Proteins)
     - INSERT OR IGNORE to avoid collisions if already present
-
-    Assumes Proteins schema allows inserting only proteinID (other columns nullable or have defaults).
     """
-    protein_id_tuples = []
+    protein_records = []
     seen = set()
 
     for r in reads.values():
         pid = r.readID
-        if not pid or pid in seen:
-            continue
-        seen.add(pid)
-        protein_id_tuples.append((pid,))
+        gid = r.genomeID
 
-    if not protein_id_tuples:
+        if not pid or not gid:
+            continue
+
+        key = (pid, gid)
+        if key in seen:
+            continue
+        seen.add(key)
+
+        protein_records.append((pid, gid))
+
+    if not protein_records:
         return
 
     with sqlite3.connect(database) as con:
@@ -707,8 +716,12 @@ def insert_database_stub_proteins_from_reads(database: str, reads: Dict[tuple, "
         cur.execute("PRAGMA journal_mode = OFF;")
 
         cur.executemany(
-            "INSERT OR IGNORE INTO Proteins (proteinID) VALUES (?)",
-            protein_id_tuples,
+            """
+            INSERT OR IGNORE INTO Proteins
+              (proteinID, genomeID)
+            VALUES (?, ?)
+            """,
+            protein_records,
         )
         con.commit()
     con.close()
