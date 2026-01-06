@@ -87,7 +87,7 @@ def initialize_gpkg_packages(
     logger.debug("Initializing GraftM package DIAMOND databases")
 
     for gpkg_name, gpkg_path in package_dict.items():
-        logger.info(f"Initializing package: {gpkg_name}")
+        logger.debug(f"Initializing package: {gpkg_name}")
 
         try:
             ref_faa = os.path.join(gpkg_path, "refseq_database.faa")

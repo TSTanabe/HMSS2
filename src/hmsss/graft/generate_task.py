@@ -11,7 +11,7 @@ from hmsss.core.logging import get_logger
 from hmsss.graft import prepare_packages, gpkg_length
 from hmsss.utils import myUtil
 
-log = get_logger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -258,6 +258,7 @@ def create_task_list(
 
 def initialize_task_list(config):
     # _check_dependencies()  # Check if graftM dependencies are present
+    logger.info(f"Initializing queue")
     queue.queue_read_mapping_faa_inputs(config)  # declares config.faa_files
     queue.queue_read_mapping_fna_inputs(config)  # declares config.fna_files
     queue.queue_read_mapping_fastq_inputs(config)  # declares config.fastq_files
@@ -269,7 +270,11 @@ def initialize_task_list(config):
     forward_dict, reverse_dict = automatic_forward_reverse_file_detection(
         files=combined_inputs, forward_extension=None, reverse_extension=None
     )
+    logger.info(f"Forward read files: {len(forward_dict)} and reverse read files: {len(reverse_dict)}")
+
     gpkg_packages = prepare_packages.prepare_gpkg_packages(config)
+    logger.info(f"Initialized {len(gpkg_packages)} gpkg packages")
+
     prepare_packages.initialize_gpkg_packages(gpkg_packages, threads=4)
     gpkg_length_dict = gpkg_length.collect_gpkg_reference_median_lengths(gpkg_packages)
     # create task list can also define the cpu threads and the minimal e value
