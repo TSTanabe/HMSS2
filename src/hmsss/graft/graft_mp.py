@@ -36,7 +36,7 @@ def _run_graft_task(task):
         taxonomy_csv = files.get("taxonomy")
         sequence_fasta = files.get("sequences")
         alignment_fasta = files.get("alignment")
-
+        print(files)
         if (
                 not taxonomy_csv
                 or not sequence_fasta
@@ -45,6 +45,7 @@ def _run_graft_task(task):
                 or not os.path.isfile(taxonomy_csv)
                 or not os.path.isfile(sequence_fasta)
         ):
+            print("FILES NOT FOUND")
             raise FileNotFoundError(
                 f"Missing or empty input file(s): "
                 f"taxonomy={taxonomy_csv}, "
