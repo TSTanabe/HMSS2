@@ -5,7 +5,7 @@ from graftm.external_program_suite import ExternalProgramSuite
 from hmsss.db import database
 from hmsss.graft import read_counter, graft_mp
 from hmsss.graft import generate_task
-
+from hmsss.db.database import create_database
 from hmsss.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -26,6 +26,7 @@ def _check_dependencies():
 
 def initial_read_mapping(config):
     # _check_dependencies()  # Check if graftM dependencies are present
+    create_database(config.database_directory)
     task_list = generate_task.initialize_task_list(config)
 
     # TODO Generate the database for the mapped data
