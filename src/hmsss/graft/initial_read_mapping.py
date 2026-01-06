@@ -13,6 +13,103 @@ from hmsss.core.logging import get_logger
 
 logger = get_logger(__name__)
 
+import os
+import time
+import csv
+import threading
+from dataclasses import dataclass, asdict
+from pathlib import Path
+
+import psutil
+
+
+@dataclass
+class Sample:
+    t_s: float
+    cpu_percent: float
+    rss_bytes: int
+    vms_bytes: int
+    read_bytes: int
+    write_bytes: int
+    read_count: int
+    write_count: int
+    num_fds: int | None = None
+
+
+class ProcSampler:
+    """
+    Periodisches Sampling von CPU/RAM/IO des *aktuellen* Prozesses.
+    Schreibt nach Ende optional CSV.
+    """
+
+    def __init__(self, *, interval_s: float = 0.2, out_csv: str | None = None):
+        self.interval_s = float(interval_s)
+        self.out_csv = out_csv
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+        self.samples: list[Sample] = []
+        self._proc = psutil.Process(os.getpid())
+        self._t0 = None
+
+    def __enter__(self):
+        self._t0 = time.perf_counter()
+
+        # cpu_percent braucht eine "Baseline"-Messung
+        self._proc.cpu_percent(interval=None)
+
+        self._thread = threading.Thread(target=self._run, name="proc-sampler", daemon=True)
+        self._thread.start()
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self._stop.set()
+        if self._thread:
+            self._thread.join(timeout=2.0)
+
+        if self.out_csv:
+            self._write_csv(self.out_csv)
+
+        # Exceptions NICHT schlucken – das machst du außen in deinem try/except
+        return False
+
+    def _run(self):
+        while not self._stop.is_set():
+            self._take_sample()
+            time.sleep(self.interval_s)
+
+    def _take_sample(self):
+        t_s = time.perf_counter() - self._t0
+
+        mem = self._proc.memory_info()
+        io = self._proc.io_counters()  # read/write bytes + counts (plattformabhängig zuverlässig unter Linux)
+        try:
+            num_fds = self._proc.num_fds()
+        except Exception:
+            num_fds = None
+
+        s = Sample(
+            t_s=t_s,
+            cpu_percent=self._proc.cpu_percent(interval=None),
+            rss_bytes=mem.rss,
+            vms_bytes=getattr(mem, "vms", 0),
+            read_bytes=getattr(io, "read_bytes", 0),
+            write_bytes=getattr(io, "write_bytes", 0),
+            read_count=getattr(io, "read_count", 0),
+            write_count=getattr(io, "write_count", 0),
+            num_fds=num_fds,
+        )
+        self.samples.append(s)
+
+    def _write_csv(self, out_csv: str):
+        outp = Path(out_csv)
+        outp.parent.mkdir(parents=True, exist_ok=True)
+        with outp.open("w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=list(asdict(self.samples[0]).keys()) if self.samples else [])
+            if self.samples:
+                w.writeheader()
+                for s in self.samples:
+                    w.writerow(asdict(s))
+
 
 def _check_dependencies():
     commands = ExternalProgramSuite(
@@ -40,8 +137,19 @@ def _run_graft_task(task):
         reverse_read_number = read_counter.safe_read_count(task.reverse)
         hmm_length = task.length
         logger.debug(hmm_length, forward_read_number, reverse_read_number)
-        graft_runner.Run(args).main()
 
+        prof_dir = Path(task.outdir) / "profile"
+        prof_csv = prof_dir / f"graft_run_pid{os.getpid()}.csv"
+
+        t0 = time.perf_counter()
+        with ProcSampler(interval_s=0.2, out_csv=str(prof_csv)) as sampler:
+            graft_runner.Run(args).main()
+        wall = time.perf_counter() - t0
+
+        logger.info(
+            "graftM done | wall=%.2fs | samples=%d | profile=%s",
+            wall, len(sampler.samples), prof_csv
+        )
     except SystemExit as e:
         # graftM verwendet exit() an mehreren Stellen
         return {"ok": False, "task": task, "error": f"SystemExit({e.code})"}
@@ -84,6 +192,8 @@ def initial_read_mapping(config):
         output_directory=config.fasta_output_directory,
         length_dict=gpkg_length_dict,
     )
+
+    # TODO Generate the database for the mapped data
 
     # for each task make a process that generates the argument space for the task and runs the
     ctx = get_context("spawn")
