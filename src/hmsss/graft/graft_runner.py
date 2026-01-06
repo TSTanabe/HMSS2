@@ -108,6 +108,17 @@ class Run:
             # First assign the hash that contains all of the trusted placements
             # to a variable to it can be passed to otu_builder, to be written
             # to a file. :)
+            taxonomy_file = GraftMFiles(
+                base, self.args.output_directory, False
+            ).read_tax_output_path(base)
+
+            alignment_file = GraftMFiles(
+                base, self.args.output_directory, False
+            ).aligned_fasta_output_path(base)
+            sequence_file = GraftMFiles(
+                base, self.args.output_directory, False
+            ).fa_output_path(base)
+            print(taxonomy_file, alignment_file, sequence_file)
             placements = trusted_placements[base]
             self.s.readTax(
                 placements,
