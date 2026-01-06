@@ -348,7 +348,7 @@ class Run:
             )
 
             if boots.generate_expand_search_database_from_contigs(
-                self.args.expand_search_contigs, new_database, self.args.search_method
+                    self.args.expand_search_contigs, new_database, self.args.search_method
             ):
                 if self.args.search_method == self.hk.HMMSEARCH_SEARCH_METHOD:
                     self.ss.search_hmm.append(new_database)
@@ -471,7 +471,7 @@ class Run:
                 # Filter out decoys if specified
                 if reads_detected and doing_decoy_search:
                     with tempfile.NamedTemporaryFile(
-                        prefix="graftm_decoy", suffix=".fa"
+                            prefix="graftm_decoy", suffix=".fa"
                     ) as f:
                         tmpname = f.name
                     any_remaining = decoy_filter.filter(result.hit_fasta(), tmpname)
@@ -497,7 +497,7 @@ class Run:
                     else:
                         aln_time = "n/a"
                     if not os.path.exists(
-                        hit_aligned_reads
+                            hit_aligned_reads
                     ):  # If all were filtered out, or there just was none..
                         with open(hit_aligned_reads, "w") as f:
                             pass  # just touch the file, nothing else
@@ -521,7 +521,7 @@ class Run:
             exit(0)
 
         if (
-            self.args.merge_reads
+                self.args.merge_reads
         ):  # not run when diamond is the assignment mode- enforced by argparse grokking
             logging.debug("Running merge reads output")
             if self.args.interleaved:
@@ -620,12 +620,12 @@ class Run:
 
     @T.timeit
     def _assign_taxonomy_with_diamond(
-        self,
-        base_list,
-        db_search_results,
-        graftm_package,
-        graftm_files,
-        diamond_performance_parameters,
+            self,
+            base_list,
+            db_search_results,
+            graftm_package,
+            graftm_files,
+            diamond_performance_parameters,
     ):
         """Run diamond to assign taxonomy
 
@@ -675,10 +675,10 @@ class Run:
                     extra_args=diamond_performance_parameters,
                 )
                 for res in diamond_result.each(
-                    [
-                        SequenceSearchResult.QUERY_ID_FIELD,
-                        SequenceSearchResult.HIT_ID_FIELD,
-                    ]
+                        [
+                            SequenceSearchResult.QUERY_ID_FIELD,
+                            SequenceSearchResult.HIT_ID_FIELD,
+                        ]
                 ):
                     if res[0] in sequence_id_to_hit:
                         # do not accept duplicates
@@ -708,7 +708,7 @@ class Run:
 
     def main(self):
         if self.args.subparser_name == "graft":
-            self.graft()
+            return self.graft()
         else:
             raise Exception(
                 "Unexpected graftM subparser name %s" % self.args.subparser_name
