@@ -26,6 +26,7 @@ class Read:
     lineage : dict
         Parsed lineage mapping (rank -> taxon), if available.
     """
+
     readID: str
     alignment: str
     sequence: str
@@ -125,7 +126,9 @@ def iter_fasta(fasta_path: str) -> Iterator[Tuple[str, str]]:
         yield rid, "".join(chunks)
 
 
-def load_sequences_into_reads(reads: Dict[tuple, "Read"], fasta_path: str, gpkg_name: str) -> None:
+def load_sequences_into_reads(
+        reads: Dict[tuple, "Read"], fasta_path: str, gpkg_name: str
+) -> None:
     """
     Stream a FASTA and write sequences into `reads` (keyed by readID).
 
@@ -137,12 +140,16 @@ def load_sequences_into_reads(reads: Dict[tuple, "Read"], fasta_path: str, gpkg_
         rid_key = (rid, gpkg_name)
         r = reads.get(rid_key)
         if r is None:
-            reads[rid_key] = Read(readID=rid, sequence=seq, alignment="", gpkg_name=gpkg_name)
+            reads[rid_key] = Read(
+                readID=rid, sequence=seq, alignment="", gpkg_name=gpkg_name
+            )
         else:
             r.sequence = seq
 
 
-def load_alignments_into_reads(reads: Dict[tuple, "Read"], alignment_fasta: str, gpkg_name: str) -> None:
+def load_alignments_into_reads(
+        reads: Dict[tuple, "Read"], alignment_fasta: str, gpkg_name: str
+) -> None:
     """
     Stream an alignment FASTA and write alignments into `reads` (keyed by readID).
 
@@ -153,7 +160,9 @@ def load_alignments_into_reads(reads: Dict[tuple, "Read"], alignment_fasta: str,
         rid_key = (rid, gpkg_name)
         r = reads.get(rid_key)
         if r is None:
-            reads[rid_key] = Read(readID=rid, alignment=aln, sequence="", gpkg_name=gpkg_name)
+            reads[rid_key] = Read(
+                readID=rid, alignment=aln, sequence="", gpkg_name=gpkg_name
+            )
         else:
             r.alignment = aln
 
@@ -215,7 +224,9 @@ def _parse_lineage_to_dict(lineage: str) -> Dict[str, str]:
     return out
 
 
-def load_read_taxonomy_into_reads(taxonomy_tsv: str, reads: Dict[tuple, "Read"], gpkg_name: str) -> None:
+def load_read_taxonomy_into_reads(
+        taxonomy_tsv: str, reads: Dict[tuple, "Read"], gpkg_name: str
+) -> None:
     """
     Stream-read taxonomy file and write taxonomy fields directly into existing Read objects.
 
@@ -302,12 +313,18 @@ def build_reads_from_outputs(
     """
     reads: Dict[tuple, Read] = {}
 
-    load_sequences_into_reads(reads=reads, fasta_path=sequence_fasta, gpkg_name=gpkg_name)
-    load_alignments_into_reads(reads=reads, alignment_fasta=alignment_fasta, gpkg_name=gpkg_name)
+    load_sequences_into_reads(
+        reads=reads, fasta_path=sequence_fasta, gpkg_name=gpkg_name
+    )
+    load_alignments_into_reads(
+        reads=reads, alignment_fasta=alignment_fasta, gpkg_name=gpkg_name
+    )
 
     # remove reads below coverage cutoff.
     finalize_reads(reads, min_coverage=min_coverage, hmm_length=hmm_length)
 
-    load_read_taxonomy_into_reads(taxonomy_tsv=taxonomy_csv, reads=reads, gpkg_name=gpkg_name)
+    load_read_taxonomy_into_reads(
+        taxonomy_tsv=taxonomy_csv, reads=reads, gpkg_name=gpkg_name
+    )
 
     return reads

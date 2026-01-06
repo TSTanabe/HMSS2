@@ -29,7 +29,9 @@ def initial_read_mapping(config):
     task_list = generate_task.initialize_task_list(config)
 
     # TODO Generate the database for the mapped data
-    meta_dict, genome_id_set = read_counter.collect_metagenome_counts_parallel(task_list, processes=4, chunksize=4)
+    meta_dict, genome_id_set = read_counter.collect_metagenome_counts_parallel(
+        task_list, processes=4, chunksize=4
+    )
     # 1) GenomeIDs sicherstellen (FK-Voraussetzung)
     database.insert_database_genome_ids(
         config.database_directory,

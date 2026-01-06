@@ -85,8 +85,18 @@ def guess_extension(path: str) -> str:
     """
     # sort longest first so '.fastq.gz' matches before '.gz'
     exts = [
-        ".fastq.gz", ".fq.gz", ".fasta.gz", ".fa.gz", ".fna.gz", ".faa.gz",
-        ".fastq", ".fq", ".fasta", ".fa", ".fna", ".faa",
+        ".fastq.gz",
+        ".fq.gz",
+        ".fasta.gz",
+        ".fa.gz",
+        ".fna.gz",
+        ".faa.gz",
+        ".fastq",
+        ".fq",
+        ".fasta",
+        ".fa",
+        ".fna",
+        ".faa",
         ".gz",
     ]
     for ext in exts:
@@ -102,7 +112,7 @@ def read_basename(read_file: str) -> str:
     """
     base = os.path.basename(read_file)
     ext = guess_extension(read_file)
-    return base[:-len(ext)]
+    return base[: -len(ext)]
 
 
 def metagenome_counts_from_task(task) -> dict[str, str | int | Any]:
@@ -157,7 +167,9 @@ def collect_metagenome_counts_parallel(
 
     ctx = mp.get_context("spawn")  # safer on many HPC setups
     with ctx.Pool(processes=processes) as pool:
-        for res in pool.imap_unordered(metagenome_counts_from_task, tasks, chunksize=chunksize):
+        for res in pool.imap_unordered(
+                metagenome_counts_from_task, tasks, chunksize=chunksize
+        ):
             metagenomeID = res["metagenomeID"]
             genomeID = res["genomeID"]
             fwd = int(res["forward_reads"])
