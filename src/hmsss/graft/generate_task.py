@@ -14,7 +14,7 @@ from hmsss.utils import myUtil
 log = get_logger(__name__)
 
 
-@dataclass(frozen=True)
+@dataclass
 class GraftMTask:
     # takes all variable arguments for the read mapping task
     gpkg: str
@@ -48,10 +48,10 @@ class GraftMTask:
 
 
 def merge_read_mapping_inputs(
-    *,
-    fna_files: Dict[str, str],
-    faa_files: Dict[str, str],
-    fastq_files: Dict[str, str],
+        *,
+        fna_files: Dict[str, str],
+        faa_files: Dict[str, str],
+        fastq_files: Dict[str, str],
 ) -> Dict[str, str]:
     """
     Merge FNA, FAA and FASTQ input dictionaries into a single mapping:
@@ -76,9 +76,9 @@ def merge_read_mapping_inputs(
 
 
 def automatic_forward_reverse_file_detection(
-    files: Dict[str, str],
-    forward_extension: str | None = None,
-    reverse_extension: str | None = None,
+        files: Dict[str, str],
+        forward_extension: str | None = None,
+        reverse_extension: str | None = None,
 ) -> Tuple[Dict[str, str], Dict[str, str]]:
     # immer absolute Pfade
 
@@ -94,7 +94,7 @@ def automatic_forward_reverse_file_detection(
             name = os.path.basename(path)
             for token in ("_R1", "_R2", "_1", "_2"):
                 if token in name:
-                    suffix = name[name.index(token) :]
+                    suffix = name[name.index(token):]
                     suffix_counter[suffix] += 1
 
         if len(suffix_counter) == 0:
@@ -222,14 +222,14 @@ def build_graft_args(task: GraftMTask) -> SimpleNamespace:
 
 
 def create_task_list(
-    gpkg_packages: dict[str, str],
-    forward_dict: dict[str, str],
-    reverse_dict: dict[str, str],
-    output_directory: str,
-    length_dict: dict[str, int],
-    *,
-    threads: int = 1,
-    evalue: str = "1e-5",
+        gpkg_packages: dict[str, str],
+        forward_dict: dict[str, str],
+        reverse_dict: dict[str, str],
+        output_directory: str,
+        length_dict: dict[str, int],
+        *,
+        threads: int = 1,
+        evalue: str = "1e-5",
 ) -> list[GraftMTask]:
     tasks: list[GraftMTask] = []
 
