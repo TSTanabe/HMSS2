@@ -4,11 +4,13 @@ import os
 import sys
 import traceback
 import time
-from typing import List, Dict, Set, Any
+from typing import List, Dict, Set, Any, Tuple
 
 from hmsss.core.logging import get_logger
+from hmsss.graft.read_models import Read
 
 logger = get_logger(__name__)
+
 
 ########## Write output to Database Routines ##########
 
@@ -93,6 +95,73 @@ def create_database(database: str) -> None:
         CONSTRAINT fk_proteinID FOREIGN KEY (proteinID) REFERENCES Proteins(proteinID) ON DELETE CASCADE ON UPDATE CASCADE
         );""")
 
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS Metagenomes (
+            metagenomeID         varchar(128) PRIMARY KEY NOT NULL,
+            genomeID             varchar(32)  NOT NULL,
+            forward_reads        INTEGER      DEFAULT NULL,
+            reverse_reads        INTEGER      DEFAULT NULL,
+            prokaryotic_fraction REAL         DEFAULT NULL,
+
+            FOREIGN KEY (genomeID)
+                REFERENCES Genomes(genomeID)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE
+        );
+        """)
+
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS Lineage (
+            lineageID VARCHAR(64) PRIMARY KEY NOT NULL,
+    
+            root       VARCHAR(64)  DEFAULT NULL,
+            kingdom    VARCHAR(256) DEFAULT NULL,
+            phylum     VARCHAR(256) DEFAULT NULL,
+            class      VARCHAR(256) DEFAULT NULL,
+            "order"    VARCHAR(256) DEFAULT NULL,
+            family     VARCHAR(256) DEFAULT NULL,
+            genus      VARCHAR(256) DEFAULT NULL,
+            species    VARCHAR(256) DEFAULT NULL,
+    
+            raw_lineage TEXT DEFAULT NULL
+        );
+        """)
+
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS Placement (
+            domain_type  VARCHAR(64)  NOT NULL,
+            readID       VARCHAR(256) NOT NULL,
+            metagenomeID VARCHAR(128) NOT NULL,
+    
+            proteinID    VARCHAR(128) DEFAULT NULL,
+            lineageID    VARCHAR(64)  DEFAULT NULL,
+    
+            dom_start      INTEGER      DEFAULT NULL,
+            dom_end        INTEGER      DEFAULT NULL,
+            coverage       REAL         DEFAULT NULL,
+    
+            sequence     TEXT         DEFAULT NULL,
+            alignment    TEXT         DEFAULT NULL,
+    
+            PRIMARY KEY (metagenomeID, domain_type, readID),
+    
+            FOREIGN KEY (proteinID)
+                REFERENCES Proteins(proteinID)
+                ON DELETE SET NULL
+                ON UPDATE CASCADE,
+    
+            FOREIGN KEY (lineageID)
+                REFERENCES Lineage(lineageID)
+                ON DELETE SET NULL
+                ON UPDATE CASCADE,
+    
+            FOREIGN KEY (metagenomeID)
+                REFERENCES Metagenomes(metagenomeID)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE
+        );
+        """)
+
     con.commit()
     con.close()
 
@@ -138,6 +207,38 @@ def index_database(database: str) -> None:
             "CREATE INDEX IF NOT EXISTS tab_key_kid_index ON Keywords(keyword)",
         ),
     ]
+
+    indexes.extend([
+        # --- Metagenomes FKs / joins ---
+        (
+            "tab_meta_gid_index",
+            "CREATE INDEX IF NOT EXISTS tab_meta_gid_index ON Metagenomes(genomeID)",
+        ),
+
+        # --- Placement FKs / joins ---
+        (
+            "tab_place_mid_index",
+            "CREATE INDEX IF NOT EXISTS tab_place_mid_index ON Placement(metagenomeID)",
+        ),
+        (
+            "tab_place_pid_index",
+            "CREATE INDEX IF NOT EXISTS tab_place_pid_index ON Placement(proteinID)",
+        ),
+        (
+            "tab_place_lid_index",
+            "CREATE INDEX IF NOT EXISTS tab_place_lid_index ON Placement(lineageID)",
+        ),
+
+        # useful for filtering/grouping
+        (
+            "tab_place_dtype_index",
+            "CREATE INDEX IF NOT EXISTS tab_place_dtype_index ON Placement(domain_type)",
+        ),
+        (
+            "tab_place_readid_index",
+            "CREATE INDEX IF NOT EXISTS tab_place_readid_index ON Placement(readID)",
+        ),
+    ])
 
     try:
         with sqlite3.connect(database) as con:
@@ -242,9 +343,23 @@ def insert_database_proteins(database: str, protein_dict: Dict[str, Any]) -> Non
 
             # Batch insert for proteins
             cur.executemany(
-                """INSERT OR IGNORE INTO Proteins
-                (proteinID, genomeID, locustag, contig, start, end, strand, comment, alternative_hit, dom_count, valid_hit, sequence)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                """
+                INSERT INTO Proteins
+                  (proteinID, genomeID, locustag, contig, start, end, strand, comment, alternative_hit, dom_count, valid_hit, sequence)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(proteinID) DO UPDATE SET
+                  genomeID         = COALESCE(Proteins.genomeID, excluded.genomeID),
+                  locustag         = COALESCE(Proteins.locustag, excluded.locustag),
+                  contig           = COALESCE(Proteins.contig, excluded.contig),
+                  start            = COALESCE(Proteins.start, excluded.start),
+                  end              = COALESCE(Proteins.end, excluded.end),
+                  strand           = COALESCE(Proteins.strand, excluded.strand),
+                  comment          = COALESCE(Proteins.comment, excluded.comment),
+                  alternative_hit  = COALESCE(Proteins.alternative_hit, excluded.alternative_hit),
+                  dom_count        = COALESCE(Proteins.dom_count, excluded.dom_count),
+                  valid_hit        = COALESCE(Proteins.valid_hit, excluded.valid_hit),
+                  sequence         = COALESCE(Proteins.sequence, excluded.sequence)
+                """,
                 protein_records,
             )
 
@@ -450,7 +565,7 @@ def parse_taxonomy_line(line: str, na: str = "") -> List[str]:
         for pre in prefix_to_rank:
             if token.startswith(pre):
                 rank = prefix_to_rank[pre]
-                value = token[len(pre) :].strip()
+                value = token[len(pre):].strip()
                 # Leerzeichen in Unterstrich nur bei species
                 if rank == "species":
                     value = value.replace(" ", "_")
@@ -461,12 +576,209 @@ def parse_taxonomy_line(line: str, na: str = "") -> List[str]:
 
 
 ##############################################################
+######## Metagenome information to database routines #########
+##############################################################
+
+
+def insert_database_metagenomes(
+        database: str,
+        metagenome_dict: Dict[str, Tuple[str, int | None, int | None]],
+) -> None:
+    """
+    Insert metagenomes into the Metagenomes table.
+
+    Inputs
+    ------
+    database : str
+        Path to sqlite database.
+    metagenome_dict : dict
+        {metagenomeID: (genomeID, forward_reads, reverse_reads)}
+    """
+    with sqlite3.connect(database) as con:
+        cur = con.cursor()
+        cur.execute("""PRAGMA foreign_keys = ON;""")
+        cur.execute("""PRAGMA synchronous = OFF;""")
+        cur.execute("""PRAGMA journal_mode = OFF;""")
+
+        records = [
+            (metagenomeID, genomeID, fwd, rev)
+            for metagenomeID, (genomeID, fwd, rev) in metagenome_dict.items()
+        ]
+
+        cur.executemany(
+            """
+            INSERT OR IGNORE INTO Metagenomes
+              (metagenomeID, genomeID, forward_reads, reverse_reads)
+            VALUES (?, ?, ?, ?)
+            """,
+            records,
+        )
+        con.commit()
+    con.close()
+    return
+
+
+def insert_database_lineages(database: str, reads: Dict[tuple, "Read"]) -> None:
+    """
+    Insert lineage information for all Read objects into the Lineage table.
+
+    - Uses lineageID as PRIMARY KEY
+    - Existing lineageIDs are ignored (INSERT OR IGNORE)
+
+    Parameters
+    ----------
+    database : str
+        Path to sqlite database.
+    reads : dict
+        Dict[(...), Read] or Dict[key, Read]; values must be Read objects
+        with attributes:
+          - lineageID : str
+          - lineage   : dict[str, str]
+    """
+    records = []
+
+    for r in reads.values():
+        if not r.lineageID or not r.lineage:
+            continue
+
+        records.append(
+            (
+                r.lineageID,
+                r.lineage.get("root", "NA"),
+                r.lineage.get("k", "NA"),
+                r.lineage.get("p", "NA"),
+                r.lineage.get("c", "NA"),
+                r.lineage.get("o", "NA"),
+                r.lineage.get("f", "NA"),
+                r.lineage.get("g", "NA"),
+                r.lineage.get("s", "NA"),
+            )
+        )
+
+    if not records:
+        return
+
+    with sqlite3.connect(database) as con:
+        cur = con.cursor()
+        cur.execute("PRAGMA foreign_keys = ON;")
+        cur.execute("PRAGMA synchronous = OFF;")
+        cur.execute("PRAGMA journal_mode = OFF;")
+
+        cur.executemany(
+            """
+            INSERT OR IGNORE INTO Lineage
+              (lineageID, root, kingdom, phylum, class, "order", family, genus, species)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            records,
+        )
+        con.commit()
+    con.close()
+    return
+
+
+def insert_database_stub_proteins_from_reads(database: str, reads: Dict[tuple, "Read"]) -> None:
+    """
+    Insert stub proteins for reads into Proteins so that Placement.proteinID can reference them.
+
+    Strategy:
+    - proteinID := read.readID  (must match what you later write into Placement.proteinID)
+    - INSERT OR IGNORE to avoid collisions if already present
+
+    Assumes Proteins schema allows inserting only proteinID (other columns nullable or have defaults).
+    """
+    protein_id_tuples = []
+    seen = set()
+
+    for r in reads.values():
+        pid = r.readID
+        if not pid or pid in seen:
+            continue
+        seen.add(pid)
+        protein_id_tuples.append((pid,))
+
+    if not protein_id_tuples:
+        return
+
+    with sqlite3.connect(database) as con:
+        cur = con.cursor()
+        cur.execute("PRAGMA foreign_keys = ON;")
+        cur.execute("PRAGMA synchronous = OFF;")
+        cur.execute("PRAGMA journal_mode = OFF;")
+
+        cur.executemany(
+            "INSERT OR IGNORE INTO Proteins (proteinID) VALUES (?)",
+            protein_id_tuples,
+        )
+        con.commit()
+    con.close()
+    return
+
+
+def insert_database_placements(database: str, reads: Dict[tuple, "Read"]) -> None:
+    """
+    Insert Read objects into Placement.
+
+    Expects each Read to have at least:
+      - type (domain_type)
+      - readID
+      - metagenomeID
+      - lineageID (optional)
+      - start, end, coverage (optional but recommended)
+      - sequence, alignment (optional)
+
+    Uses INSERT OR IGNORE to avoid duplicates for PRIMARY KEY (domain_type, readID).
+    """
+    records = []
+
+    for r in reads.values():
+        if not r.gpkg_name or not r.readID or not r.metagenomeID:
+            continue
+
+        records.append(
+            (
+                r.gpkg_name,  # domain_type
+                r.readID,  # readID
+                r.metagenomeID,  # metagenomeID
+                r.readID,  # proteinID (stub mapping: proteinID == readID)
+                r.lineageID or None,
+                r.start if r.start is not None else None,
+                r.end if r.end is not None else None,
+                r.coverage if r.coverage is not None else None,
+                r.sequence or None,
+                r.alignment or None,
+            )
+        )
+
+    if not records:
+        return
+
+    with sqlite3.connect(database) as con:
+        cur = con.cursor()
+        cur.execute("PRAGMA foreign_keys = ON;")
+        cur.execute("PRAGMA synchronous = OFF;")
+        cur.execute("PRAGMA journal_mode = OFF;")
+
+        cur.executemany(
+            """
+            INSERT OR IGNORE INTO Placement
+              (domain_type, readID, metagenomeID, proteinID, lineageID, dom_start, dom_end, coverage, sequence, alignment)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            records,
+        )
+        con.commit()
+    con.close()
+    return
+
+
+##############################################################
 ########## Alter information from database routines ##########
 ##############################################################
 
 
 def update_domain(
-    database: str, protein_diction: Dict[str, Any], old_tag: str, new_tag: str
+        database: str, protein_diction: Dict[str, Any], old_tag: str, new_tag: str
 ) -> None:
     """
     18.11.22
@@ -498,7 +810,7 @@ def update_domain(
 
 
 def update_keywords(
-    database: str, keyword_dict: Dict[str, Set[str]], batch_size: int = 400
+        database: str, keyword_dict: Dict[str, Set[str]], batch_size: int = 400
 ) -> None:
     """
     Update keywords in the database in batches.
@@ -518,7 +830,7 @@ def update_keywords(
                     for clusterID in clusterIDs:
                         inserts.append((clusterID, new_keyword))
                 for i in range(0, len(inserts), batch_size):
-                    batch = inserts[i : i + batch_size]
+                    batch = inserts[i: i + batch_size]
                     cur.executemany(query, batch)
             logger.info(f"Updated keywords with {len(inserts)} entries.")
         except Exception as e:
@@ -527,7 +839,7 @@ def update_keywords(
 
 
 def delete_keywords_from_csb(
-    database: str, prefix: str = "csb-", suffix: str = "_"
+        database: str, prefix: str = "csb-", suffix: str = "_"
 ) -> None:
     """
     Remove keywords from the database that match the pattern options.csb_name_prefix + a number + options.csb_name_suffix.

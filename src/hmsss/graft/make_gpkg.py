@@ -36,6 +36,7 @@ def setup_logger() -> None:
 
 # TESTED on LISC 12.11.2025 for approx. 8000 sequences
 
+
 def run(cmd: str) -> None:
     logger.info("RUN: %s", cmd)
     subprocess.run(cmd, shell=True, check=True)
@@ -50,7 +51,9 @@ def _read_fasta_ids(input_faa: str) -> set[str]:
                 header = line[1:].strip().split()[0]
                 prot_id = header.rsplit("-", 1)[-1]
                 ids.add(prot_id)
-    logger.debug("[DEBUG] Parsed %d exclude IDs (first 10: %s)", len(ids), list(ids)[:10])
+    logger.debug(
+        "[DEBUG] Parsed %d exclude IDs (first 10: %s)", len(ids), list(ids)[:10]
+    )
     return ids
 
 
@@ -63,7 +66,9 @@ def _grep_blast_lines_with_progress(blast_report: str, protein_type: str) -> lis
             if protein_type in line:
                 lines.append(line.rstrip("\n"))
             if total % 100000 == 0:
-                logger.info("  processed: %s | matches: %s", f"{total:,}", f"{len(lines):,}")
+                logger.info(
+                    "  processed: %s | matches: %s", f"{total:,}", f"{len(lines):,}"
+                )
     logger.info("[DONE] Total lines: %s | matches: %s", f"{total:,}", f"{len(lines):,}")
     return lines
 
@@ -93,7 +98,9 @@ def _read_fasta_ids(input_faa: str) -> Set[str]:
                 header = line[1:].strip().split()[0]
                 prot_id = header.rsplit("-", 1)[-1]
                 ids.add(prot_id)
-    logger.debug("[DEBUG] Parsed %d exclude IDs (first 10: %s)", len(ids), list(ids)[:10])
+    logger.debug(
+        "[DEBUG] Parsed %d exclude IDs (first 10: %s)", len(ids), list(ids)[:10]
+    )
     return ids
 
 
@@ -137,7 +144,16 @@ def _ensure_diamond_db(globdb_faa: str, db_dmnd: str, *, threads: int) -> str:
     if os.path.exists(db_dmnd):
         return db_prefix
 
-    cmd = ["diamond", "makedb", "--threads", str(threads), "--in", globdb_faa, "-d", db_prefix]
+    cmd = [
+        "diamond",
+        "makedb",
+        "--threads",
+        str(threads),
+        "--in",
+        globdb_faa,
+        "-d",
+        db_prefix,
+    ]
     logger.info("RUN: %s", " ".join(cmd))
     subprocess.run(cmd, check=True)
     return db_prefix
@@ -160,14 +176,24 @@ def _diamond_collect_subject_ids(
         out_tsv = os.path.join(tmpd, "hits.tsv")
 
         cmd = [
-            "diamond", "blastp",
-            "--threads", str(threads),
-            "--db", db_prefix,
-            "--query", query_faa,
-            "--out", out_tsv,
-            "--outfmt", "6", "qseqid", "sseqid",
-            "--evalue", str(evalue),
-            "--max-target-seqs", str(max_target_seqs),
+            "diamond",
+            "blastp",
+            "--threads",
+            str(threads),
+            "--db",
+            db_prefix,
+            "--query",
+            query_faa,
+            "--out",
+            out_tsv,
+            "--outfmt",
+            "6",
+            "qseqid",
+            "sseqid",
+            "--evalue",
+            str(evalue),
+            "--max-target-seqs",
+            str(max_target_seqs),
         ]
         if min_ident is not None:
             cmd.extend(["--id", str(min_ident)])
@@ -188,7 +214,9 @@ def _diamond_collect_subject_ids(
                 sid = sseqid.rsplit("-", 1)[-1]
                 sids.add(sid)
 
-        logger.debug("[DEBUG] DIAMOND subject IDs: %d (first 10: %s)", len(sids), list(sids)[:10])
+        logger.debug(
+            "[DEBUG] DIAMOND subject IDs: %d (first 10: %s)", len(sids), list(sids)[:10]
+        )
         return sids
 
 
@@ -218,16 +246,28 @@ def _diamond_collect_subject_ids_with_hi_ident_flag(
         out_tsv = os.path.join(tmpd, "hits.tsv")
 
         cmd = [
-            "diamond", "blastp",
+            "diamond",
+            "blastp",
             f"--{sensitivity}",
-            "--threads", str(threads),
-            "--db", db_prefix,
-            "--query", query_faa,
-            "--out", out_tsv,
-            "--outfmt", "6", "qseqid", "sseqid", "pident",
-            "--evalue", str(evalue),
-            "--max-target-seqs", str(max_target_seqs),
-            "--id", str(min_id),
+            "--threads",
+            str(threads),
+            "--db",
+            db_prefix,
+            "--query",
+            query_faa,
+            "--out",
+            out_tsv,
+            "--outfmt",
+            "6",
+            "qseqid",
+            "sseqid",
+            "pident",
+            "--evalue",
+            str(evalue),
+            "--max-target-seqs",
+            str(max_target_seqs),
+            "--id",
+            str(min_id),
         ]
         subprocess.run(cmd, check=True)
 
@@ -294,7 +334,11 @@ def build_query_faa_for_bait(
         raise ValueError(f"No FASTA records found in: {input_faa}")
 
     if total <= max_query:
-        logger.info("[BAIT][query] Using full query FASTA (%s seqs): %s", f"{total:,}", input_faa)
+        logger.info(
+            "[BAIT][query] Using full query FASTA (%s seqs): %s",
+            f"{total:,}",
+            input_faa,
+        )
         return input_faa
 
     # Zufällige Indizes bestimmen
@@ -303,7 +347,9 @@ def build_query_faa_for_bait(
     in_dir = os.path.dirname(os.path.abspath(input_faa))
     base = os.path.basename(input_faa)
     stem, ext = os.path.splitext(base)
-    out_query = os.path.join(in_dir, f"{stem}.query_subsample_{max_query}{ext or '.faa'}")
+    out_query = os.path.join(
+        in_dir, f"{stem}.query_subsample_{max_query}{ext or '.faa'}"
+    )
 
     # Schreiben (2. Pass)
     written = 0
@@ -371,10 +417,19 @@ def _reservoir_sample_fasta_records(
     return reservoir
 
 
-def make_bait_fasta(input_faa: str, globdb_faa: str, output_bait_faa: str, output_dmnd: str, *,
-                    threads: int,
-                    diamond_db_dmnd: Optional[str] = None, evalue: float = 1e-10, max_target_seqs: int = 25000,
-                    hi_ident_threshold: float = 90.0, empty_on_no_bait: bool = False) -> None:
+def make_bait_fasta(
+        input_faa: str,
+        globdb_faa: str,
+        output_bait_faa: str,
+        output_dmnd: str,
+        *,
+        threads: int,
+        diamond_db_dmnd: Optional[str] = None,
+        evalue: float = 1e-10,
+        max_target_seqs: int = 25000,
+        hi_ident_threshold: float = 90.0,
+        empty_on_no_bait: bool = False,
+) -> None:
     assert os.path.isfile(input_faa), f"Missing input_faa: {input_faa}"
     assert os.path.isfile(globdb_faa), f"Missing globdb_faa: {globdb_faa}"
     os.makedirs(os.path.dirname(os.path.abspath(output_bait_faa)) or ".", exist_ok=True)
@@ -411,10 +466,15 @@ def make_bait_fasta(input_faa: str, globdb_faa: str, output_bait_faa: str, outpu
     )
 
     if not bait_ids:
-        logger.warning("[BAIT] No bait_ids after filtering → fallback: random %d sequences from globdb", 1000)
+        logger.warning(
+            "[BAIT] No bait_ids after filtering → fallback: random %d sequences from globdb",
+            1000,
+        )
 
         fallback_k = 1000
-        oversample_k = 5000  # > fallback_k, damit exclude-filter nicht zu viele rauswirft
+        oversample_k = (
+            5000  # > fallback_k, damit exclude-filter nicht zu viele rauswirft
+        )
         seed = None
 
         def _norm_id_from_header(hdr_line: str) -> str:
@@ -423,10 +483,15 @@ def make_bait_fasta(input_faa: str, globdb_faa: str, output_bait_faa: str, outpu
             return token.rsplit("-", 1)[-1]  # exakt wie im globdb-scan
 
         # 1) Ziehe zufällige Records (Reservoir Sampling)
-        sampled_records = _reservoir_sample_fasta_records(globdb_faa, k=oversample_k, seed=seed)
+        sampled_records = _reservoir_sample_fasta_records(
+            globdb_faa, k=oversample_k, seed=seed
+        )
 
         if not sampled_records:
-            logger.warning("[BAIT][fallback-random] Fatal: globdb_faa contains no sequences: %s", globdb_faa)
+            logger.warning(
+                "[BAIT][fallback-random] Fatal: globdb_faa contains no sequences: %s",
+                globdb_faa,
+            )
             open(output_bait_faa, "w").close()
             sys.exit(1)
             return
@@ -471,7 +536,9 @@ def make_bait_fasta(input_faa: str, globdb_faa: str, output_bait_faa: str, outpu
             )
 
         # 3) Schreibe bait FASTA
-        os.makedirs(os.path.dirname(os.path.abspath(output_bait_faa)) or ".", exist_ok=True)
+        os.makedirs(
+            os.path.dirname(os.path.abspath(output_bait_faa)) or ".", exist_ok=True
+        )
         with open(output_bait_faa, "w") as out:
             for hdr, seq in kept_records:
                 out.write(hdr if hdr.endswith("\n") else hdr + "\n")
@@ -493,7 +560,9 @@ def make_bait_fasta(input_faa: str, globdb_faa: str, output_bait_faa: str, outpu
             logger.info("→ Skip DIAMOND DB (bait, exists)")
         else:
             dmnd_prefix = output_dmnd[:-5]  # assumes output_dmnd endswith ".dmnd"
-            run(f"diamond makedb --threads 4 --in '{output_bait_faa}' -d '{dmnd_prefix}'")
+            run(
+                f"diamond makedb --threads 4 --in '{output_bait_faa}' -d '{dmnd_prefix}'"
+            )
 
         return
 
@@ -527,7 +596,11 @@ def make_bait_fasta(input_faa: str, globdb_faa: str, output_bait_faa: str, outpu
                 current_id = token.rsplit("-", 1)[-1]
                 scanned += 1
                 if scanned % 500000 == 0:
-                    logger.info("  processed %s sequences | written %s", f"{scanned:,}", f"{written:,}")
+                    logger.info(
+                        "  processed %s sequences | written %s",
+                        f"{scanned:,}",
+                        f"{written:,}",
+                    )
             else:
                 current_seq.append(line)
         flush()
@@ -538,7 +611,11 @@ def make_bait_fasta(input_faa: str, globdb_faa: str, output_bait_faa: str, outpu
     else:
         dmnd_prefix = output_dmnd[:-5]
         run(f"diamond makedb --threads 4 --in '{output_bait_faa}' -d '{dmnd_prefix}'")
-    logger.info("[DONE] Total scanned: %s | Bait sequences written: %s", f"{scanned:,}", f"{written:,}")
+    logger.info(
+        "[DONE] Total scanned: %s | Bait sequences written: %s",
+        f"{scanned:,}",
+        f"{written:,}",
+    )
 
 
 # ---------- Pipeline-Schritte ----------
@@ -550,7 +627,9 @@ def step4_trimal(input_aln: str, output_trimmed: str) -> None:
     run(f"trimal -in {input_aln} -out {output_trimmed} -gt 0.2")
 
 
-def step5_build_tree(input_alignment: str, output_tree: str, veryfasttree_bin: str) -> None:
+def step5_build_tree(
+        input_alignment: str, output_tree: str, veryfasttree_bin: str
+) -> None:
     cmd = f"{veryfasttree_bin} -out {output_tree} {input_alignment}"
     logger.info("RUN: %s", cmd)
     subprocess.run(cmd, shell=True, check=True)
@@ -564,12 +643,14 @@ def step6_midpoint_root(input_tree: str, output_rooted_tree: str) -> None:
 
 
 # ---------- GraftM-Package bauen ----------
-def step9_create_gpkg(output_gpkg: str,
-                      seqs_faa: str,
-                      trimmed_aln: str,
-                      rooted_tree: str,
-                      taxonomy_tsv: str,
-                      threads: int = 12) -> None:
+def step9_create_gpkg(
+        output_gpkg: str,
+        seqs_faa: str,
+        trimmed_aln: str,
+        rooted_tree: str,
+        taxonomy_tsv: str,
+        threads: int = 12,
+) -> None:
     """
     Erstellt ein GraftM gpkg Paket.
 
@@ -624,7 +705,9 @@ def step10_attach_bait_artifacts(
         oder None, falls keine Datei kopiert wurde.
     """
     if not os.path.isdir(target_dir):
-        logger.info("ℹ gpkg-Verzeichnis noch nicht vorhanden, überspringe Copy: %s", target_dir)
+        logger.info(
+            "ℹ gpkg-Verzeichnis noch nicht vorhanden, überspringe Copy: %s", target_dir
+        )
         return None
 
     # 6_bait.faa kopieren
@@ -681,7 +764,10 @@ def step_make_mock_fragments(
     if os.path.isfile(out_path):
         with open(out_path, "r") as fh:
             existing = sum(1 for line in fh if line.startswith(">"))
-        logger.info("[Mock] Output existiert bereits → überspringe Generierung. Fragmente: %d", existing)
+        logger.info(
+            "[Mock] Output existiert bereits → überspringe Generierung. Fragmente: %d",
+            existing,
+        )
         return existing
 
     # Hilfsfunktionen
@@ -841,14 +927,22 @@ def step11_graft_with_package(
         os.makedirs(result_dir, exist_ok=True)
 
     cmd = [
-        "graftM", "graft",
-        "--graftm_package", gpkg_dir,
-        "--forward", input_faa,
-        "--output_directory", result_dir,
-        "--threads", str(threads),
-        "--decoy_database", bait_dmnd,
-        "--search_diamond_file", "Q",
-        "--search_method", "hmmsearch+diamond",
+        "graftM",
+        "graft",
+        "--graftm_package",
+        gpkg_dir,
+        "--forward",
+        input_faa,
+        "--output_directory",
+        result_dir,
+        "--threads",
+        str(threads),
+        "--decoy_database",
+        bait_dmnd,
+        "--search_diamond_file",
+        "Q",
+        "--search_method",
+        "hmmsearch+diamond",
         "--force",
     ]
 
@@ -894,6 +988,7 @@ def safe_move(src: str, dst: str) -> str:
 
 
 # ---------------------------------------------------------------------
+
 
 def find_read_tax_file(root: str) -> Optional[str]:
     """
@@ -988,11 +1083,19 @@ def parse_graftm_read_tax(path: str) -> Dict[str, Dict[str, Optional[str]]]:
     tax_idx = 1 if len(first_cols) > 1 else None
 
     lower_first = [c.strip().lower() for c in first_cols]
-    if any(x in lower_first for x in ("id", "read", "read_id", "sequence", "seqid", "seq_id")) \
-            or any(x in lower_first for x in ("taxonomy", "classification", "graftm_taxonomy", "taxon")):
+    if any(
+            x in lower_first
+            for x in ("id", "read", "read_id", "sequence", "seqid", "seq_id")
+    ) or any(
+        x in lower_first
+        for x in ("taxonomy", "classification", "graftm_taxonomy", "taxon")
+    ):
         is_header = True
         for i, col in enumerate(lower_first):
-            if any(x in col for x in ("id", "read", "read_id", "sequence", "seqid", "seq_id")):
+            if any(
+                    x in col
+                    for x in ("id", "read", "read_id", "sequence", "seqid", "seq_id")
+            ):
                 id_idx = i
                 break
         tax_idx = None
@@ -1008,8 +1111,7 @@ def parse_graftm_read_tax(path: str) -> Dict[str, Dict[str, Optional[str]]]:
 
     if tax_idx is None:
         raise ValueError(
-            f"Keine Taxonomie-Spalte in {path} erkannt. "
-            f"Erste Zeile: {lines[0]!r}"
+            f"Keine Taxonomie-Spalte in {path} erkannt. Erste Zeile: {lines[0]!r}"
         )
 
     for ln in data_lines:
@@ -1068,18 +1170,10 @@ def evaluate_tax_assignments(
             else:
                 assigned_per_rank[rank] += 1
 
-            if (
-                    test_val is not None
-                    and ref_val is not None
-                    and test_val == ref_val
-            ):
+            if test_val is not None and ref_val is not None and test_val == ref_val:
                 correct_per_rank[rank] += 1
 
-            if (
-                    test_val is not None
-                    and ref_val is not None
-                    and test_val != ref_val
-            ):
+            if test_val is not None and ref_val is not None and test_val != ref_val:
                 wrong_per_rank[rank] += 1
 
     return {
@@ -1093,6 +1187,7 @@ def evaluate_tax_assignments(
 
 
 # ---------------------------------------------------------------------
+
 
 def write_eval_txt(
         gpkg_dir: str,
@@ -1165,7 +1260,6 @@ def write_eval_txt(
 
     out_path = os.path.join(gpkg_dir, "evaluation_stats.txt")
     with open(out_path, "w", encoding="utf-8") as fh:
-
         fh.write(f"protein_type = {protein_type}\n")
         fh.write(f"TP_frags = {TP_frags}\n")
         fh.write(f"TN_frags = {TN_frags}\n\n")
@@ -1267,8 +1361,13 @@ def process_protein_fasta(
     if os.path.exists(out_bait):
         logger.info("→ Skip bait FASTA (exists)")
     else:
-        make_bait_fasta(input_faa=input_faa, globdb_faa=globdb_faa, output_bait_faa=out_bait, output_dmnd=out_dmnd,
-                        threads=4)
+        make_bait_fasta(
+            input_faa=input_faa,
+            globdb_faa=globdb_faa,
+            output_bait_faa=out_bait,
+            output_dmnd=out_dmnd,
+            threads=4,
+        )
 
     # Make the bait dmnd
     if os.path.exists(out_dmnd):
@@ -1297,7 +1396,9 @@ def process_protein_fasta(
 
     # Verschiebe die bait.faa und .dmnd in das gpkg paket
     safe_move(out_bait, os.path.join(out_gpkg, "decoy_database.faa"))
-    safe_move(in_faa, os.path.join(out_gpkg, "refseq_database.faa"))  # moves refseq to gpkg package
+    safe_move(
+        in_faa, os.path.join(out_gpkg, "refseq_database.faa")
+    )  # moves refseq to gpkg package
     # safe_move(out_refdmnd_single_char, out_gpkg)
 
     cwd = os.getcwd()  # Hier wird ins working directory kopiert, sonst scheitert graftM

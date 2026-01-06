@@ -6,7 +6,9 @@ from types import SimpleNamespace
 from collections import defaultdict
 from typing import Iterable, Tuple, Dict
 
+from hmsss.core import queue
 from hmsss.core.logging import get_logger
+from hmsss.graft import prepare_packages, gpkg_length
 from hmsss.utils import myUtil
 
 log = get_logger(__name__)
@@ -21,6 +23,7 @@ class GraftMTask:
     threads: int = 1
     evalue: str = "1e-5"
     length: int = 1
+    min_coverage: float = 0.3
     diamond_db = None
     decoy_db = None
 
@@ -146,7 +149,9 @@ def build_graft_args(task: GraftMTask) -> SimpleNamespace:
     # --- GraftM erwartet forward/reverse oft als LISTEN (oder None) ---
     if task.interleaved:
         if task.forward is None:
-            raise ValueError("Interleaved mode: forward must be paths to interleaved FASTQ/FASTA files.")
+            raise ValueError(
+                "Interleaved mode: forward must be paths to interleaved FASTQ/FASTA files."
+            )
         if task.reverse is not None:
             raise ValueError("Interleaved mode: reverse must not be set.")
         forward = None
@@ -164,7 +169,7 @@ def build_graft_args(task: GraftMTask) -> SimpleNamespace:
         file = forward[0]
 
     # Define output directory. GraftM needs a non-existing one, to not overwrite results
-    file = os.path.basename(file).split('.')[0]
+    file = os.path.basename(file).split(".")[0]
     output = os.path.join(outdir, task.gpkg_name + "_" + file)
 
     return SimpleNamespace(
@@ -175,7 +180,6 @@ def build_graft_args(task: GraftMTask) -> SimpleNamespace:
         forward=forward,
         reverse=reverse,
         interleaved=interleaved,
-
         # running options
         input_sequence_type=None,
         # Output
@@ -250,3 +254,31 @@ def create_task_list(
             tasks.append(task)
 
     return tasks
+
+
+def initialize_task_list(config):
+    # _check_dependencies()  # Check if graftM dependencies are present
+    queue.queue_read_mapping_faa_inputs(config)  # declares config.faa_files
+    queue.queue_read_mapping_fna_inputs(config)  # declares config.fna_files
+    queue.queue_read_mapping_fastq_inputs(config)  # declares config.fastq_files
+    combined_inputs = merge_read_mapping_inputs(
+        fna_files=config.fna_files,
+        faa_files=config.faa_files,
+        fastq_files=config.fastq_files,
+    )
+    forward_dict, reverse_dict = automatic_forward_reverse_file_detection(
+        files=combined_inputs, forward_extension=None, reverse_extension=None
+    )
+    gpkg_packages = prepare_packages.prepare_gpkg_packages(config)
+    prepare_packages.initialize_gpkg_packages(gpkg_packages, threads=4)
+    gpkg_length_dict = gpkg_length.collect_gpkg_reference_median_lengths(gpkg_packages)
+    # create task list can also define the cpu threads and the minimal e value
+    task_list = create_task_list(
+        gpkg_packages=gpkg_packages,
+        forward_dict=forward_dict,
+        reverse_dict=reverse_dict,
+        output_directory=config.fasta_output_directory,
+        length_dict=gpkg_length_dict,
+    )
+
+    return task_list

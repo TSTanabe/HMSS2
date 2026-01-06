@@ -12,6 +12,7 @@ from graftm.hmmsearcher import NoInputSequencesException
 from graftm.housekeeping import HouseKeeping
 from graftm.summarise import Stats_And_Summary
 from graftm.pplacer import Pplacer
+
 # from graftm.update import Update
 from graftm.unpack_sequences import UnpackRawReads
 from graftm.graftm_package import GraftMPackage
@@ -21,6 +22,7 @@ from graftm.getaxnseq import Getaxnseq
 from graftm.sequence_io import SequenceIO
 from graftm.timeit import Timer
 from graftm.clusterer import Clusterer
+
 # from graftm.decorator import Decorator
 # from graftm.external_program_suite import ExternalProgramSuite
 # from graftm.archive import Archive
@@ -72,6 +74,53 @@ class Run:
         if hasattr(args, "reference_package"):
             self.p = Pplacer(self.args.reference_package)
 
+    def output_filepaths(self, base_list):
+        """
+        summarise - write summary information to file, including otu table, biom
+                    file, krona plot, and timing information
+
+        Parameters
+        ----------
+        base_list : array
+            list of each of the files processed by graftm, with the path and
+            and suffixed removed
+        trusted_placements : dict
+            dictionary of placements with entry as the key, a taxonomy string
+            as the value
+        reverse_pipe : bool
+            True = run reverse pipe, False = run normal pipeline
+        """
+
+        # Summary steps.
+        placements_list = []
+        filepaths = []  # filepaths to taxonomy, alignment and sequence files
+        for base in base_list:
+            # First assign the hash that contains all of the trusted placements
+            # to a variable to it can be passed to otu_builder, to be written
+            # to a file. :)
+            taxonomy_file = GraftMFiles(
+                base, self.args.output_directory, False
+            ).read_tax_output_path(base)
+
+            alignment_file = GraftMFiles(
+                base, self.args.output_directory, False
+            ).aligned_fasta_output_path(base)
+
+            sequence_file = GraftMFiles(
+                base, self.args.output_directory, False
+            ).fa_output_path(base)
+
+            filepaths.append(
+                {
+                    "base": base,
+                    "taxonomy": taxonomy_file,
+                    "alignment": alignment_file,
+                    "sequences": sequence_file,
+                }
+            )
+
+        return filepaths
+
     def summarise(self, base_list, trusted_placements, reverse_pipe):
         """
         summarise - write summary information to file, including otu table, biom
@@ -108,17 +157,6 @@ class Run:
             # First assign the hash that contains all of the trusted placements
             # to a variable to it can be passed to otu_builder, to be written
             # to a file. :)
-            taxonomy_file = GraftMFiles(
-                base, self.args.output_directory, False
-            ).read_tax_output_path(base)
-
-            alignment_file = GraftMFiles(
-                base, self.args.output_directory, False
-            ).aligned_fasta_output_path(base)
-            sequence_file = GraftMFiles(
-                base, self.args.output_directory, False
-            ).fa_output_path(base)
-            print(taxonomy_file, alignment_file, sequence_file)
             placements = trusted_placements[base]
             self.s.readTax(
                 placements,
@@ -577,13 +615,8 @@ class Run:
             trusted_placements=assignments,
             reverse_pipe=REVERSE_PIPE,
         )
-
-        return {
-            "output_directory": self.args.output_directory,
-            "combined_summary_table": self.gmf.combined_summary_table_output_path(),
-            "read_tax": read_tax_paths,
-            "alignments": alignment_paths,
-        }
+        filepaths = self.output_filepaths(base_list=base_list)
+        return filepaths  # filepaths to taxonomy, alignment and sequence files. Each field has a dict for the
 
     @T.timeit
     def _assign_taxonomy_with_diamond(
@@ -677,4 +710,6 @@ class Run:
         if self.args.subparser_name == "graft":
             self.graft()
         else:
-            raise Exception("Unexpected graftM subparser name %s" % self.args.subparser_name)
+            raise Exception(
+                "Unexpected graftM subparser name %s" % self.args.subparser_name
+            )

@@ -1,5 +1,8 @@
 import gzip
 import os
+import multiprocessing as mp
+from typing import Any
+
 from hmsss.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -73,3 +76,94 @@ def count_reads_fasta_or_fastq(path: str) -> int:
                 f"Unknown format (neither FASTQ '@' nor FASTA '>'): {path}"
             )
         return n_headers
+
+
+def guess_extension(path: str) -> str:
+    """
+    Return the matched extension (including multi-part like '.fastq.gz').
+    Raises ValueError if unknown.
+    """
+    # sort longest first so '.fastq.gz' matches before '.gz'
+    exts = [
+        ".fastq.gz", ".fq.gz", ".fasta.gz", ".fa.gz", ".fna.gz", ".faa.gz",
+        ".fastq", ".fq", ".fasta", ".fa", ".fna", ".faa",
+        ".gz",
+    ]
+    for ext in exts:
+        if path.endswith(ext):
+            return ext
+    raise ValueError(f"Unable to guess file format of sequence file: {path}")
+
+
+def read_basename(read_file: str) -> str:
+    """
+    Return filename without recognized sequencing extension.
+    Example: '/x/y/sample_1.fq.gz' -> 'sample_1'
+    """
+    base = os.path.basename(read_file)
+    ext = guess_extension(read_file)
+    return base[:-len(ext)]
+
+
+def metagenome_counts_from_task(task) -> dict[str, str | int | Any]:
+    """
+    Compute forward/reverse read counts for a task and build the dict required by
+    insert_database_metagenomes().
+
+    Returns
+    -------
+    (forward_reads, reverse_reads, metagenome_dict)
+
+    metagenome_dict format:
+      {metagenomeID: (genomeID, forward_reads, reverse_reads)}
+    """
+    forward_reads = safe_read_count(task.forward)
+    reverse_reads = safe_read_count(task.reverse)
+
+    task.metagenome_id = read_basename(task.forward)
+    metagenomeID = task.metagenome_id  # set this in task creation, or use files["base"]
+    genomeID = task.genome_id
+
+    return {
+        "metagenomeID": metagenomeID,
+        "genomeID": genomeID,
+        "forward_reads": forward_reads,
+        "reverse_reads": reverse_reads,
+    }
+
+
+def collect_metagenome_counts_parallel(
+        tasks: list[Any],
+        *,
+        processes: int | None = None,
+        chunksize: int = 1,
+) -> tuple[dict[str, tuple[str, int, int]], set[str]]:
+    """
+    Run metagenome_counts_from_task(task) in parallel.
+
+    chunksize defines how many task a single worker gets
+    processes defines how many workers exist
+
+    Returns
+    -------
+    meta_dict : dict
+        {metagenomeID: (genomeID, forward_reads, reverse_reads)}
+    genome_ids : set
+        {genomeID, ...}
+
+    """
+    meta_dict: dict[str, tuple[str, int, int]] = {}
+    genome_ids: set[str] = set()
+
+    ctx = mp.get_context("spawn")  # safer on many HPC setups
+    with ctx.Pool(processes=processes) as pool:
+        for res in pool.imap_unordered(metagenome_counts_from_task, tasks, chunksize=chunksize):
+            metagenomeID = res["metagenomeID"]
+            genomeID = res["genomeID"]
+            fwd = int(res["forward_reads"])
+            rev = int(res["reverse_reads"])
+
+            meta_dict[metagenomeID] = (genomeID, fwd, rev)
+            genome_ids.add(genomeID)
+
+    return meta_dict, genome_ids
