@@ -25,7 +25,7 @@ def prepare_gpkg_packages(config: Config) -> None | dict[str, str]:
             str(DATA_DIR), allowed
         )
     else:
-        log.warning("Define a library set for the read mapping")
+        logger.warning("Define a library set for the read mapping")
         sys.exit()
 
 
@@ -40,7 +40,7 @@ def _ensure_dmnd(
     Ensure a DIAMOND database exists for the given FASTA.
     """
     if os.path.isfile(dmnd_path):
-        log.debug(f"For gpkg {name} database exists exists: {dmnd_path}")
+        logger.debug(f"For gpkg {name} database exists exists: {dmnd_path}")
         return
 
     if not os.path.isfile(faa_path):
@@ -48,7 +48,7 @@ def _ensure_dmnd(
 
     prefix = dmnd_path[:-5] if dmnd_path.endswith(".dmnd") else dmnd_path
 
-    log.info(f"Initilizing {name} package: {dmnd_path}")
+    logger.debug(f"Initilizing {name} package: {dmnd_path}")
     cmd = [
         "diamond",
         "makedb",
@@ -84,7 +84,7 @@ def initialize_gpkg_packages(
     threads
         Threads for diamond makedb
     """
-    log.info("Initializing GraftM package DIAMOND databases")
+    logger.debug("Initializing GraftM package DIAMOND databases")
 
     for gpkg_name, gpkg_path in package_dict.items():
         logger.info(f"Initializing package: {gpkg_name}")
