@@ -70,6 +70,7 @@ class Read:
     def aligned_span_in_sequence(self):
         """
         Locate the ungapped alignment sequence within the original read sequence.
+        Determines only from where to where the alignment goes in the sequence
 
         The alignment is assumed to be against the HMM (not the read), so we:
           1) remove gaps from the alignment
@@ -81,23 +82,23 @@ class Read:
             0-based, end-exclusive coordinates in `self.sequence`,
             or None if not found.
         """
-        if not self.alignment or not self.sequence:
+        aln = getattr(self, "alignment", None)
+        seq = getattr(self, "sequence", None)
+
+        if not aln or not seq:
             self.start = 0
-            self.start = 1
+            self.end = 1
+            return None
 
         # build ungapped query from alignment
         query = "".join(c for c in self.alignment if c not in "-. \n\r\t")
-        if not query:
-            self.start = 0
-            self.start = 1
-
         start = self.sequence.find(query)
         if start == -1:
             self.start = 0
-            self.start = 1
+        else:
+            self.start = start
 
-        self.start = start
-        self.end = start + len(query)
+        self.end = self.start + len(query)
 
 
 # ---------------------------------------------------------------------
