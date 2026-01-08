@@ -59,7 +59,7 @@ def _run_graft_task(task):
             hmm_length=hmm_length,
             min_coverage=min_coverage,
         )
-
+        _dump_read_batch(read_dict)
         for read in read_dict.values():
             read.metagenomeID = task.metagenomeID
             read.genomeID = task.genome_id

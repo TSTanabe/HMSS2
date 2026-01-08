@@ -320,7 +320,7 @@ def build_reads_from_outputs(
     )
 
     # remove reads below coverage cutoff.
-    finalize_reads(reads, min_coverage=min_coverage, hmm_length=hmm_length)
+    # finalize_reads(reads, min_coverage=min_coverage, hmm_length=hmm_length)
 
     load_read_taxonomy_into_reads(
         taxonomy_tsv=taxonomy_csv, reads=reads, gpkg_name=gpkg_name
