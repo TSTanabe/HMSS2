@@ -274,6 +274,7 @@ def create_task_list(
     for key, forward_path in forward_dict.items():
         reverse_path = reverse_dict.get(key)  # None falls nicht vorhanden
         metagenome_id = read_basename(forward_path)
+        genome_id = myUtil.get_genome_id(forward_path)
         for gpkg_name, gpkg in gpkg_packages.items():
             length = length_dict.get(gpkg_name)
             task = GraftMTask(
@@ -281,7 +282,7 @@ def create_task_list(
                 gpkg=gpkg,
                 length=length,
                 metagenome_id=metagenome_id,
-                genome_id=key,
+                genome_id=genome_id,
                 forward=forward_path,
                 reverse=reverse_path,
                 interleaved=None,

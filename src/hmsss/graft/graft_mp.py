@@ -105,6 +105,25 @@ def _flush_read_batch_to_db(database_path: str, read_batch: dict) -> None:
     database.insert_database_placements(database_path, read_batch)
 
 
+def _dump_read_batch(read_batch: dict, *, max_reads: int | None = None) -> None:
+    print(f"[DEBUG] read_batch contains {len(read_batch)} reads")
+
+    for i, (rid, r) in enumerate(read_batch.items(), start=1):
+        print(f"\n--- READ {i} ---")
+        print(f"dict key: {rid}")
+
+        # Alle Attribute des Read-Objekts anzeigen
+        if hasattr(r, "__dict__"):
+            for k, v in r.__dict__.items():
+                print(f"  {k}: {v}")
+        else:
+            print("  [no __dict__] repr:", repr(r))
+
+        if max_reads is not None and i >= max_reads:
+            print(f"\n[DEBUG] stopped after {max_reads} reads")
+            break
+
+
 def graft_mp(task_list: list, batch_size: int, config: Config) -> None:
     read_batch: dict[str, Read] = {}
     batch_counter: int = 0
@@ -133,6 +152,10 @@ def graft_mp(task_list: list, batch_size: int, config: Config) -> None:
             res_dict = res["read_dict"]
             read_batch.update(res_dict)
             batch_counter += 1
+
+            print("Batch batch_counter:", batch_counter)
+            print("Length", len(read_batch))
+            _dump_read_batch(read_batch)
 
             # Insert into database
             if batch_counter >= batch_size:
