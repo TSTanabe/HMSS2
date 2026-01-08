@@ -92,7 +92,7 @@ class Read:
 
         # build ungapped query from alignment
         query = "".join(c for c in self.alignment if c not in "-. \n\r\t")
-        start = self.sequence.find(query)
+        start = self.sequence.find(query[0:6])  # Workaround for less big seqs
         if start == -1:
             self.start = 0
         else:
