@@ -27,7 +27,8 @@ class GraftMTask:
     diamond_db = None
     decoy_db = None
 
-    genome_id: str = None
+    metagenome_id: str = ""
+    genome_id: str = ""
 
     forward: str | None = None
     reverse: str | None = None  # nur zusammen mit forward
@@ -221,6 +222,43 @@ def build_graft_args(task: GraftMTask) -> SimpleNamespace:
     )
 
 
+def guess_extension(path: str) -> str:
+    """
+    Return the matched extension (including multi-part like '.fastq.gz').
+    Raises ValueError if unknown.
+    """
+    # sort longest first so '.fastq.gz' matches before '.gz'
+    exts = [
+        ".fastq.gz",
+        ".fq.gz",
+        ".fasta.gz",
+        ".fa.gz",
+        ".fna.gz",
+        ".faa.gz",
+        ".fastq",
+        ".fq",
+        ".fasta",
+        ".fa",
+        ".fna",
+        ".faa",
+        ".gz",
+    ]
+    for ext in exts:
+        if path.endswith(ext):
+            return ext
+    raise ValueError(f"Unable to guess file format of sequence file: {path}")
+
+
+def read_basename(read_file: str) -> str:
+    """
+    Return filename without recognized sequencing extension.
+    Example: '/x/y/sample_1.fq.gz' -> 'sample_1'
+    """
+    base = os.path.basename(read_file)
+    ext = guess_extension(read_file)
+    return base[: -len(ext)]
+
+
 def create_task_list(
         gpkg_packages: dict[str, str],
         forward_dict: dict[str, str],
@@ -235,13 +273,14 @@ def create_task_list(
 
     for key, forward_path in forward_dict.items():
         reverse_path = reverse_dict.get(key)  # None falls nicht vorhanden
-
+        metagenome_id = read_basename(forward_path)
         for gpkg_name, gpkg in gpkg_packages.items():
             length = length_dict.get(gpkg_name)
             task = GraftMTask(
                 gpkg_name=gpkg_name,
                 gpkg=gpkg,
                 length=length,
+                metagenome_id=metagenome_id,
                 genome_id=key,
                 forward=forward_path,
                 reverse=reverse_path,
@@ -258,10 +297,7 @@ def create_task_list(
 
 def initialize_task_list(config):
     # _check_dependencies()  # Check if graftM dependencies are present
-    logger.info(f"Initializing queue")
-    queue.queue_read_mapping_faa_inputs(config)  # declares config.faa_files
-    queue.queue_read_mapping_fna_inputs(config)  # declares config.fna_files
-    queue.queue_read_mapping_fastq_inputs(config)  # declares config.fastq_files
+
     combined_inputs = merge_read_mapping_inputs(
         fna_files=config.fna_files,
         faa_files=config.faa_files,

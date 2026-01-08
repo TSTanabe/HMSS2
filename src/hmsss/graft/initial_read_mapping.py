@@ -2,6 +2,7 @@
 
 from graftm.external_program_suite import ExternalProgramSuite
 
+from hmsss.core import queue
 from hmsss.db import database
 from hmsss.graft import read_counter, graft_mp
 from hmsss.graft import generate_task
@@ -26,6 +27,11 @@ def _check_dependencies():
 
 def initial_read_mapping(config):
     # _check_dependencies()  # Check if graftM dependencies are present
+    logger.info(f"Initializing queue")
+    queue.queue_read_mapping_faa_inputs(config)  # declares config.faa_files
+    queue.queue_read_mapping_fna_inputs(config)  # declares config.fna_files
+    queue.queue_read_mapping_fastq_inputs(config)  # declares config.fastq_files
+
     create_database(config.database_directory)
     task_list = generate_task.initialize_task_list(config)
 

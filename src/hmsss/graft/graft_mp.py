@@ -140,7 +140,7 @@ def graft_mp(task_list: list, batch_size: int, config: Config) -> None:
                     database_path=config.database_directory, read_batch=read_batch
                 )
                 read_batch.clear()
-            batch_counter = 0
+                batch_counter = 0
 
         # Insert the remaining reads
         if read_batch:
