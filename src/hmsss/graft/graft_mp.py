@@ -59,11 +59,11 @@ def _run_graft_task(task):
             hmm_length=hmm_length,
             min_coverage=min_coverage,
         )
-        _dump_read_batch(read_dict)
+
         for read in read_dict.values():
             read.metagenomeID = task.metagenomeID
             read.genomeID = task.genome_id
-
+        _dump_read_batch(read_dict)
         return {
             "ok": True,
             "task": task,
@@ -74,6 +74,7 @@ def _run_graft_task(task):
 
     except SystemExit as e:
         # graftM verwendet exit() an mehreren Stellen
+        print("SYSTEM EXIT ERROR")
         return {
             "ok": False,
             "task": task,
@@ -83,7 +84,8 @@ def _run_graft_task(task):
             "read_dict": {},
         }
 
-    except Exception:
+    except Exception as e:
+        print("EXCEPION", e)
         return {
             "ok": False,
             "task": task,
