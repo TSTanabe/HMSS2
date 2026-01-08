@@ -156,6 +156,8 @@ def graft_mp(task_list: list, batch_size: int, config: Config) -> None:
             print("Batch batch_counter:", batch_counter)
             print("Length", len(read_batch))
             _dump_read_batch(read_batch)
+            print("----- original res dict -----")
+            _dump_read_batch(res_dict)
 
             # Insert into database
             if batch_counter >= batch_size:
