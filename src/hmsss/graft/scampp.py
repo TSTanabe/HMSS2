@@ -352,6 +352,70 @@ def sanitize_newick_for_pplacer_inplace(path: str | Path) -> None:
     path.write_text(text + "\n")
 
 
+def find_closest(x, visited, y=None):
+    """ Returns leaf label for closest leaf to the node x through path not travelling through visited.
+    If y is populated returns path from x to y not travelling through nodes in visited.
+
+    Parameters
+    ----------
+    x : dendropy node object
+    visited : list containing dendropy node objects
+    y : dendropy node object
+
+    Returns
+    -------
+    If y == None : dendropy node object of closest leaf y to the node x through path not travelling through nodes in visited,
+                   list containing dendropy node objects on path to that leaf y from node x
+    If y != None : dendropy node object y,
+                   list containing dendropy node objects on path from node x to leaf y not travelling through nodes in visited
+
+    """
+    queue = []
+    cnt = 1
+    visited.add(x)
+
+    if x.get_parent() and x.get_parent() not in visited:
+        tmp = []
+        tmp.append(x)
+        heapq.heappush(queue, [x.get_edge_length(), cnt, tmp, x.get_parent()])
+        cnt += 1
+
+    for child in x.child_nodes():
+        if child and child not in visited:
+            tmp = []
+            tmp.append(child)
+            heapq.heappush(queue, [child.get_edge_length(), cnt, tmp, child])
+            cnt += 1
+
+    while len(queue) > 0:
+        try:
+            [length, _, path, node] = heapq.heappop(queue)
+        except IndexError:
+            break
+
+        visited.add(node)
+        if node.is_leaf():
+            if (not y) or node.get_label() == y.get_label():
+                return node, path
+            else:
+                continue
+
+        if node.get_parent() and node.get_parent() not in visited:
+            tmp = path.copy()
+            tmp.append(node)
+            heapq.heappush(queue, [length + node.get_edge_length(), cnt, tmp, node.get_parent()])
+            cnt += 1
+
+        for child in node.child_nodes():
+            if child and child not in visited:
+                tmp = path.copy()
+                tmp.append(child)
+                heapq.heappush(queue, [length + child.get_edge_length(), cnt, tmp, child])
+                cnt += 1
+
+    return x, [x]
+
+
 def run_cmd(cmd: List[str], *, cwd: Optional[str] = None) -> None:
     p = subprocess.run(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if p.returncode != 0:
@@ -566,100 +630,83 @@ def pplacer_tax_scampp_like_graftm(
             ]
             print("5 Running pplacer")
             run_cmd(pplacer_cmd)
+
+            placements = []
+            tmp_output = tmp_jplace
             print("6 load subtree")
             # 6) load subtree placements and remap edge_num onto backbone
-            with open(tmp_jplace, "r", encoding="utf-8") as fh:
-                print("7")
 
-                place_json = json.load(fh)
-                src_fields = place_json.get("fields", [])
-                if not src_fields:
-                    raise RuntimeError("Subtree jplace has no 'fields' key")
+            # load the jplace file and find placements in the original backbone tree
+            place_file = open(tmp_output, 'r')
+            place_json = json.load(place_file)
 
-                # Prüfen, ob alle benötigten Felder existieren
-                missing = [f for f in CANON_FIELDS if f not in src_fields]
-                if missing:
-                    raise RuntimeError(f"Subtree jplace missing fields {missing}; has {src_fields}")
+            if len(place_json["placements"]) > 0:
 
-                # Mapping src_index -> dst_index
-                src_idx = {name: i for i, name in enumerate(src_fields)}
+                added_tree, edge_dict = read_tree_newick_edge_tokens(place_json["tree"])
 
-                def to_canon_p_row(p_row):
-                    # erzeugt eine neue Liste in CANON_FIELDS-Reihenfolge
-                    return [p_row[src_idx[name]] for name in CANON_FIELDS]
+                tmp_place = place_json["placements"][0]
+                for i in range(len(tmp_place["p"])):
+                    edge_num = tmp_place["p"][i][1]  # edge number in subtree
+                    edge_distal = tmp_place["p"][i][0]  # distal length from parent node
 
-                # placements in-place normalisieren, damit Remap-Logik (p[0], p[1]) korrekt ist
-                for pl in place_json.get("placements", []):
-                    if "p" in pl:
-                        pl["p"] = [to_canon_p_row(p_row) for p_row in pl["p"]]
-
-                # wichtig: auch fields im place_json auf kanonisch setzen
-                place_json["fields"] = CANON_FIELDS
-
-            # Parse subtree jplace tree to get edge token -> node mapping
-            _, edge_dict = read_tree_newick_edge_tokens(place_json["tree"])
-            print("8")
-            # Remap: We do a conservative remap of edge_num using a leaf-pair anchor.
-            # This follows the tax-SCAMPP structure: identify a representative edge on backbone.
-            for placement in place_json.get("placements", []):
-                p_list = placement.get("p", [])
-                for p in p_list:
-                    print("10")
-                    distal = float(p[0])
-                    edge_num = str(p[1])
-                    if edge_num not in edge_dict:
-                        continue
-
-                    # Identify two nearby leaves around the chosen subtree edge by going to parent/child labels
-                    right_n = edge_dict[edge_num]
+                    # find placement edge according to edge number
+                    right_n = edge_dict[str(edge_num)]
                     left_n = right_n.get_parent()
-                    if left_n is None:
-                        continue
 
-                    # Find any leaf beneath right_n and left_n (simple DFS)
-                    def any_leaf(start: treeswift.Node) -> Optional[str]:
-                        stack = [start]
-                        while stack:
-                            cur = stack.pop()
-                            if cur.is_leaf():
-                                return cur.get_label()
-                            for ch in cur.child_nodes():
-                                stack.append(ch)
-                        return None
+                    # obtain a path from leaf left to leaf right containing placement edge through the subtree
+                    left, path_l = find_closest(left_n, {left_n, right_n})
+                    right, path_r = find_closest(right_n, {left_n, right_n})
 
-                    print("11")
-                    rlab = any_leaf(right_n)
-                    llab = any_leaf(left_n)
-                    if not rlab or not llab:
-                        continue
+                    # obtain the corresponding path in backbone tree
+                    left = plain_leaf_index[left.get_label()]
+                    right = plain_leaf_index[right.get_label()]
+                    _, path = find_closest(left, {left}, y=right)
 
-                    rlab = rlab.split("%%", 1)[0]
-                    llab = llab.split("%%", 1)[0]
+                    # find the length of placement along the path from leaf left to leaf right in subtree
+                    length = sum([x.get_edge_length() for x in path_l]) + edge_distal
 
-                    br = numbered_leaf_map.get(rlab)
-                    bl = numbered_leaf_map.get(llab)
-                    if br is None or bl is None:
-                        continue
-                    print("12")
-                    # Choose a backbone edge to map to: take the edge token on the path near bl towards root (heuristic).
-                    # For strict equivalence to the original script, you'd port its Dijkstra path remap;
-                    # this minimal version ensures: edge_num becomes a valid backbone edge id.
-                    target = bl
-                    tlabel = target.get_label() or ""
-                    if "%%" not in tlabel:
-                        continue
-                    _, back_edge = tlabel.split("%%", 1)
+                    # find the target placement edge in backbone tree
+                    target_edge = path[-1]
+                    for j in range(len(path)):
+                        length -= path[j].get_edge_length()
+                        if length < 0:
+                            target_edge = path[j]
+                            break
 
-                    p[0] = distal  # keep distal length as-is
-                    p[1] = int(back_edge)  # remapped backbone edge
-                    print("13")
-                jplace["placements"].append(placement)
+                    tmp_place["p"][i][0] = 0
 
-    # Write and return full final jplace
-    print("DUMP JPLACER jason")
-    with open(final_jplace_path, "w", encoding="utf-8") as fh:
-        json.dump(jplace, fh)
-    print("Return jplace")
-    import os
-    os.system(f"cat{final_jplace_path}")
-    return final_jplace_path
+                    label = target_edge.get_label()
+                    [taxon, target_edge_nbr] = label.split('%%', 1)
+                    tmp_place["p"][i][0] = target_edge.get_edge_length() + length
+                    tmp_place["p"][i][1] = int(target_edge_nbr)
+
+                # append the placement to the output jplace
+                placements.append(tmp_place.copy())
+
+            place_file.close()
+
+        # build jplace file
+        jplace["placements"] = placements
+        jplace["metadata"]["invocation"] = {
+            "routine": "pplacer_tax_scampp_like_graftm",
+            "output_file": output_file,
+            "output_path": str(Path(output_path).resolve()),
+            "input_path": str(Path(input_path).resolve()),
+            "threads": int(threads),
+            "refpkg": str(Path(refpkg).resolve()),
+            "model": model,
+            "subtreesize": subtreesize,
+            "subtreetype": subtreetype,
+            "fragmentflag": fragmentflag,
+            "tmpfilenbr": tmpfilenbr,
+        }
+        jplace["version"] = 3
+        jplace["fields"] = ["distal_length", "edge_num", "like_weight_ratio", \
+                            "likelihood", "pendant_length"]
+
+        # output = open('{}/{}.jplace'.format(output, outFile), 'w')
+        final_jplace_path = (Path(output_path) / f"{output_file}.jplace").resolve()
+
+        with open(final_jplace_path, "w", encoding="utf-8") as fh:
+            json.dump(jplace, fh, sort_keys=True, indent=2)
+            fh.write("\n")
