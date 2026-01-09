@@ -549,7 +549,8 @@ def pplacer_tax_scampp_like_graftm(
                 "--tree-stats", ref.tree_stats,
             ]
             run_cmd(taxit_cmd)
-
+            import os
+            os.system(f"head -c 200 {tmp_tree}; echo")
             # 5) pplacer on subtree
             tmp_jplace = tmpd_p / f"place_{qi}.jplace"
             pplacer_cmd = [
