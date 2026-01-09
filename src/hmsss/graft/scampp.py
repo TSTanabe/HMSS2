@@ -443,13 +443,14 @@ def pplacer_tax_scampp_like_graftm(
             # 1) choose subtree leaf labels
             if subtreetype == "h":
                 print("2.h")
+
+                labels = find_closest_hamming(q_seq, ref_dict, subtreesize, fragmentflag)
+            else:
+                print("2.else")
                 print(q_seq)
                 print(ref_dict)
                 print(subtreesize)
                 print(fragmentflag)
-                labels = find_closest_hamming(q_seq, ref_dict, subtreesize, fragmentflag)
-            else:
-                print("2.else")
                 nearest = find_closest_hamming(q_seq, ref_dict, 1, fragmentflag)
                 print("else . 1")
                 print(nearest)
