@@ -432,16 +432,19 @@ def pplacer_tax_scampp_like_graftm(
     print("2 Prepare temporary files")
     with tempfile.TemporaryDirectory(prefix=f"tax_scampp_{tmpfilenbr}_") as tmpd:
         tmpd_p = Path(tmpd)
-
+        print("2.1")
         # Iterate queries: SCAMPP per query
         for qi, (q_name, q_seq) in enumerate(q_dict.items(), start=1):
             # For subtree extraction, use an unmodified copy (no edge-number labels)
             backbone_plain = treeswift.read_tree_newick(ref.tree_file)
             plain_leaf_index = backbone_plain.label_to_node(selection="leaves")
+            print("2.2")
             # 1) choose subtree leaf labels
             if subtreetype == "h":
+                print("2.h")
                 labels = find_closest_hamming(q_seq, ref_dict, subtreesize, fragmentflag)
             else:
+                print("2.else")
                 nearest = find_closest_hamming(q_seq, ref_dict, 1, fragmentflag)
                 if not nearest:
                     continue
@@ -449,16 +452,16 @@ def pplacer_tax_scampp_like_graftm(
                 seed_node = plain_leaf_index.get(seed_label)
                 if seed_node is None:
                     continue
-
+                print("2.3")
                 if subtreetype == "n":
                     labels = subtree_nodes(backbone_plain, seed_node, subtreesize)
                 else:
                     labels = subtree_nodes_with_edge_length(backbone_plain, seed_node, subtreesize)
-
+            print("2.4")
             labels = [lab for lab in labels if lab in ref_dict]
             if not labels:
                 continue
-
+            print("2.5")
             # 2) subtree tree
             subtree = backbone_plain.extract_tree_with(labels)
             subtree.resolve_polytomies()
