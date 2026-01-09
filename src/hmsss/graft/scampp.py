@@ -447,7 +447,9 @@ def pplacer_tax_scampp_like_graftm(
                 print("2.else")
                 nearest = find_closest_hamming(q_seq, ref_dict, 1, fragmentflag)
                 print("else . 1")
+                print(nearest)
                 if not nearest:
+                    print(" NOT NEAREST")
                     continue
                 print("else . 2")
                 seed_label = nearest[0]
