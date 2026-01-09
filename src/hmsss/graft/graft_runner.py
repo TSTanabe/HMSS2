@@ -12,7 +12,7 @@ from graftm.sequence_searcher import SequenceSearcher
 from graftm.hmmsearcher import NoInputSequencesException
 from graftm.housekeeping import HouseKeeping
 from graftm.summarise import Stats_And_Summary
-from graftm.pplacer import Pplacer
+from hmsss.graft.pplacer import Pplacer
 
 # from graftm.update import Update
 from graftm.unpack_sequences import UnpackRawReads
