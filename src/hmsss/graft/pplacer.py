@@ -239,6 +239,7 @@ class Pplacer:
                 files.comb_aln_fa(),
                 args.threads,
             )
+        print(jplace)
         files_to_delete.append(jplace)
         logging.info("Placements finished")
 
