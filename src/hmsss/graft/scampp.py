@@ -120,7 +120,6 @@ def find_closest_hamming(x: str, ref: Dict[str, str], n: int, fragment_flag: boo
     Return n closest ref labels by (fragment-aware) Hamming distance.
     Chunked evaluation to reduce peak compute.
     """
-    print("HAMMING 1")
     if n <= 0 or not ref:
         return []
     si, ei = set_fragment_indices(x) if fragment_flag else (0, len(x))
@@ -128,13 +127,11 @@ def find_closest_hamming(x: str, ref: Dict[str, str], n: int, fragment_flag: boo
 
     heap: List[Tuple[int, int, int, str]] = []
     counter = 0
-    print("HAMMING 2 ")
     for name, seq in ref.items():
         first = hamming(seq[si:si + c], x[si:si + c])
         left = (ei - si) - c
         heapq.heappush(heap, (first, left, counter, name))
         counter += 1
-    print("HAMMING 3")
     out: List[str] = []
     while heap:
         dist, left, _, name = heapq.heappop(heap)
@@ -472,7 +469,6 @@ def pplacer_tax_scampp_like_graftm(
 
     # Read combined alignment and split into ref vs query by tree labels
     # aln_dict = read_fasta_to_dict(input_path)
-    print(input_path)
     # ref_dict, q_dict = read_and_split_fasta(input_path, backbone_leaf_labels)
     q_dict = read_fasta_to_dict(input_path)  # Queries only
     ref_dict = read_fasta_to_dict(ref.ref_alignment)  # e.g. deduplicated_aligned.fasta
@@ -483,7 +479,7 @@ def pplacer_tax_scampp_like_graftm(
     # Prepare numbered backbone tree + jplace scaffold
     add_edge_numbers(backbone_tree)
     jplace = {
-        "tree": newick_with_edge_tokens(backbone_tree),
+        # "tree": newick_with_edge_tokens(backbone_tree),
         "placements": [],
         "metadata": {
             "invocation": "pplacer_tax_scampp_like_graftm",
@@ -559,7 +555,7 @@ def pplacer_tax_scampp_like_graftm(
             run_cmd(taxit_cmd)
 
             import os
-            os.system(f"head -c 200 {tmp_tree}; echo")
+
             # 5) pplacer on subtree
             tmp_jplace = tmpd_p / f"place_{qi}.jplace"
             pplacer_cmd = [
@@ -666,4 +662,5 @@ def pplacer_tax_scampp_like_graftm(
     with open(final_jplace_path, "w", encoding="utf-8") as fh:
         json.dump(jplace, fh)
     print("Return jplace")
+    os.system(f"head -c 200 {final_jplace_path}; echo")
     return final_jplace_path
