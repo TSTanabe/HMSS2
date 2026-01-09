@@ -554,8 +554,6 @@ def pplacer_tax_scampp_like_graftm(
             ]
             run_cmd(taxit_cmd)
 
-            import os
-
             # 5) pplacer on subtree
             tmp_jplace = tmpd_p / f"place_{qi}.jplace"
             pplacer_cmd = [
@@ -662,5 +660,6 @@ def pplacer_tax_scampp_like_graftm(
     with open(final_jplace_path, "w", encoding="utf-8") as fh:
         json.dump(jplace, fh)
     print("Return jplace")
-    os.system(f"head -c 200 {final_jplace_path}; echo")
+    import os
+    os.system(f"cat{final_jplace_path}")
     return final_jplace_path
