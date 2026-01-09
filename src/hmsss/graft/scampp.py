@@ -8,7 +8,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Set
 
 import treeswift
 
@@ -87,6 +87,7 @@ def read_and_split_fasta(
             if not line:
                 continue
             if line.startswith(">"):
+                print(line)
                 flush_record()
                 label = line[1:].strip()
             else:
