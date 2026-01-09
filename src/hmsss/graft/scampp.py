@@ -459,7 +459,7 @@ def pplacer_tax_scampp_like_graftm(
     """
     # ensure_on_path("pplacer")
     # ensure_on_path("taxit")
-
+    CANON_FIELDS = ["distal_length", "edge_num", "like_weight_ratio", "likelihood", "pendant_length"]
     outdir = Path(output_path)
     outdir.mkdir(parents=True, exist_ok=True)
     final_jplace_path = outdir / f"{output_file}.jplace"
@@ -495,8 +495,8 @@ def pplacer_tax_scampp_like_graftm(
             "tmpfilenbr": tmpfilenbr,
         },
         "version": 3,
-        "fields": ["distal_length", "edge_num", "like_weight_ratio", "likelihood", "pendant_length"],
     }
+    jplace["fields"] = CANON_FIELDS
 
     # Map base leaf labels -> numbered backbone leaf nodes (for remap)
     numbered_leaf_map: Dict[str, treeswift.Node] = {}
@@ -576,7 +576,31 @@ def pplacer_tax_scampp_like_graftm(
             # 6) load subtree placements and remap edge_num onto backbone
             with open(tmp_jplace, "r", encoding="utf-8") as fh:
                 print("7")
+
                 place_json = json.load(fh)
+                src_fields = place_json.get("fields", [])
+                if not src_fields:
+                    raise RuntimeError("Subtree jplace has no 'fields' key")
+
+                # Prüfen, ob alle benötigten Felder existieren
+                missing = [f for f in CANON_FIELDS if f not in src_fields]
+                if missing:
+                    raise RuntimeError(f"Subtree jplace missing fields {missing}; has {src_fields}")
+
+                # Mapping src_index -> dst_index
+                src_idx = {name: i for i, name in enumerate(src_fields)}
+
+                def to_canon_p_row(p_row):
+                    # erzeugt eine neue Liste in CANON_FIELDS-Reihenfolge
+                    return [p_row[src_idx[name]] for name in CANON_FIELDS]
+
+                # placements in-place normalisieren, damit Remap-Logik (p[0], p[1]) korrekt ist
+                for pl in place_json.get("placements", []):
+                    if "p" in pl:
+                        pl["p"] = [to_canon_p_row(p_row) for p_row in pl["p"]]
+
+                # wichtig: auch fields im place_json auf kanonisch setzen
+                place_json["fields"] = CANON_FIELDS
 
             # Parse subtree jplace tree to get edge token -> node mapping
             _, edge_dict = read_tree_newick_edge_tokens(place_json["tree"])
