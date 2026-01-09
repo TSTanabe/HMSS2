@@ -386,15 +386,15 @@ def pplacer_tax_scampp_like_graftm(
     Returns:
       - The fully assembled final jplace JSON as a Python dict (also written to disk).
     """
-    ensure_on_path("pplacer")
-    ensure_on_path("taxit")
+    # ensure_on_path("pplacer")
+    # ensure_on_path("taxit")
 
     outdir = Path(output_path)
     outdir.mkdir(parents=True, exist_ok=True)
     final_jplace_path = outdir / f"{output_file}.jplace"
 
     ref = resolve_refpkg_files(refpkg)
-
+    print("1 somethin on the backbone")
     # Load backbone tree
     backbone_tree = treeswift.read_tree_newick(ref.tree_file)
     backbone_leaf_labels = {n.get_label() for n in backbone_tree.traverse_leaves() if n.get_label() is not None}
@@ -433,7 +433,7 @@ def pplacer_tax_scampp_like_graftm(
             continue
         base = lab.split("%%", 1)[0]
         numbered_leaf_map[base] = n
-
+    print("2 Prepare temporary files")
     with tempfile.TemporaryDirectory(prefix=f"tax_scampp_{tmpfilenbr}_") as tmpd:
         tmpd_p = Path(tmpd)
 
@@ -465,14 +465,14 @@ def pplacer_tax_scampp_like_graftm(
             subtree.resolve_polytomies()
             tmp_tree = tmpd_p / f"subtree_{qi}.nwk"
             subtree.write_tree_newick(str(tmp_tree))
-
+            print("3 tmp alignment")
             # 3) tmp alignment: query + subtree refs (already aligned in combined alignment)
             tmp_aln = tmpd_p / f"aln_{qi}.fasta"
             records = {q_name: q_seq}
             for lab in labels:
                 records[lab] = ref_dict[lab]
             write_fasta(str(tmp_aln), records)
-
+            print("4 build subtree")
             # 4) build subtree refpkg with taxit
             tmp_refpkg = tmpd_p / f"refpkg_{qi}"
             tmp_refpkg.mkdir(parents=True, exist_ok=True)
@@ -496,8 +496,9 @@ def pplacer_tax_scampp_like_graftm(
                 "-j", str(max(1, int(threads))),
                 str(tmp_aln),
             ]
+            print("5 Running pplacer")
             run_cmd(pplacer_cmd)
-
+            print("6 load subtree")
             # 6) load subtree placements and remap edge_num onto backbone
             with open(tmp_jplace, "r", encoding="utf-8") as fh:
                 place_json = json.load(fh)
