@@ -634,11 +634,12 @@ def pplacer_tax_scampp_like_graftm(
 
                     p[0] = distal  # keep distal length as-is
                     p[1] = int(back_edge)  # remapped backbone edge
-
+                    print("13")
                 jplace["placements"].append(placement)
 
     # Write and return full final jplace
+    print("DUMP JPLACER jason")
     with open(final_jplace_path, "w", encoding="utf-8") as fh:
         json.dump(jplace, fh)
-
+    print("Return jplace")
     return jplace
