@@ -10,7 +10,9 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Set
+import warnings
 
+warnings.filterwarnings("ignore")
 import treeswift
 
 
@@ -573,16 +575,18 @@ def pplacer_tax_scampp_like_graftm(
             print("6 load subtree")
             # 6) load subtree placements and remap edge_num onto backbone
             with open(tmp_jplace, "r", encoding="utf-8") as fh:
+                print("7")
                 place_json = json.load(fh)
 
             # Parse subtree jplace tree to get edge token -> node mapping
             _, edge_dict = read_tree_newick_edge_tokens(place_json["tree"])
-
+            print("8")
             # Remap: We do a conservative remap of edge_num using a leaf-pair anchor.
             # This follows the tax-SCAMPP structure: identify a representative edge on backbone.
             for placement in place_json.get("placements", []):
                 p_list = placement.get("p", [])
                 for p in p_list:
+                    print("10")
                     distal = float(p[0])
                     edge_num = str(p[1])
                     if edge_num not in edge_dict:
@@ -605,6 +609,7 @@ def pplacer_tax_scampp_like_graftm(
                                 stack.append(ch)
                         return None
 
+                    print("11")
                     rlab = any_leaf(right_n)
                     llab = any_leaf(left_n)
                     if not rlab or not llab:
@@ -617,7 +622,7 @@ def pplacer_tax_scampp_like_graftm(
                     bl = numbered_leaf_map.get(llab)
                     if br is None or bl is None:
                         continue
-
+                    print("12")
                     # Choose a backbone edge to map to: take the edge token on the path near bl towards root (heuristic).
                     # For strict equivalence to the original script, you'd port its Dijkstra path remap;
                     # this minimal version ensures: edge_num becomes a valid backbone edge id.
