@@ -72,6 +72,7 @@ def find_closest_hamming(x: str, ref: Dict[str, str], n: int, fragment_flag: boo
     Return n closest ref labels by (fragment-aware) Hamming distance.
     Chunked evaluation to reduce peak compute.
     """
+    print("HAMMING 1")
     if n <= 0 or not ref:
         return []
     si, ei = set_fragment_indices(x) if fragment_flag else (0, len(x))
@@ -79,13 +80,13 @@ def find_closest_hamming(x: str, ref: Dict[str, str], n: int, fragment_flag: boo
 
     heap: List[Tuple[int, int, int, str]] = []
     counter = 0
-
+    print("HAMMING 2 ")
     for name, seq in ref.items():
         first = hamming(seq[si:si + c], x[si:si + c])
         left = (ei - si) - c
         heapq.heappush(heap, (first, left, counter, name))
         counter += 1
-
+    print("HAMMING 3")
     out: List[str] = []
     while heap:
         dist, left, _, name = heapq.heappop(heap)
