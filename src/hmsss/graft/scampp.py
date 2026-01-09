@@ -545,6 +545,7 @@ def pplacer_tax_scampp_like_graftm(
             # 4) build subtree refpkg with taxit
             tmp_refpkg = tmpd_p / f"refpkg_{qi}"
             # tmp_refpkg.mkdir(parents=True, exist_ok=True)
+            sanitize_newick_for_pplacer_inplace(tmp_tree)
             taxit_cmd = [
                 "taxit", "create",
                 "-P", str(tmp_refpkg),
@@ -554,7 +555,7 @@ def pplacer_tax_scampp_like_graftm(
                 "--tree-stats", ref.tree_stats,
             ]
             run_cmd(taxit_cmd)
-            sanitize_newick_for_pplacer_inplace(tmp_tree)
+
             import os
             os.system(f"head -c 200 {tmp_tree}; echo")
             # 5) pplacer on subtree
