@@ -446,10 +446,13 @@ def pplacer_tax_scampp_like_graftm(
             else:
                 print("2.else")
                 nearest = find_closest_hamming(q_seq, ref_dict, 1, fragmentflag)
+                print("else . 1")
                 if not nearest:
                     continue
+                print("else . 2")
                 seed_label = nearest[0]
                 seed_node = plain_leaf_index.get(seed_label)
+                print(" else .3")
                 if seed_node is None:
                     continue
                 print("2.3")
