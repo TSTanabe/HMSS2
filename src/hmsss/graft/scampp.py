@@ -394,7 +394,7 @@ def pplacer_tax_scampp_like_graftm(
     final_jplace_path = outdir / f"{output_file}.jplace"
 
     ref = resolve_refpkg_files(refpkg)
-    print("1 somethin on the backbone")
+
     # Load backbone tree
     backbone_tree = treeswift.read_tree_newick(ref.tree_file)
     backbone_leaf_labels = {n.get_label() for n in backbone_tree.traverse_leaves() if n.get_label() is not None}
@@ -421,10 +421,6 @@ def pplacer_tax_scampp_like_graftm(
         "fields": ["distal_length", "edge_num", "like_weight_ratio", "likelihood", "pendant_length"],
     }
 
-    # For subtree extraction, use an unmodified copy (no edge-number labels)
-    backbone_plain = treeswift.read_tree_newick(ref.tree_file)
-    plain_leaf_index = backbone_plain.label_to_node(selection="leaves")
-
     # Map base leaf labels -> numbered backbone leaf nodes (for remap)
     numbered_leaf_map: Dict[str, treeswift.Node] = {}
     for n in backbone_tree.traverse_leaves():
@@ -439,6 +435,9 @@ def pplacer_tax_scampp_like_graftm(
 
         # Iterate queries: SCAMPP per query
         for qi, (q_name, q_seq) in enumerate(q_dict.items(), start=1):
+            # For subtree extraction, use an unmodified copy (no edge-number labels)
+            backbone_plain = treeswift.read_tree_newick(ref.tree_file)
+            plain_leaf_index = backbone_plain.label_to_node(selection="leaves")
             # 1) choose subtree leaf labels
             if subtreetype == "h":
                 labels = find_closest_hamming(q_seq, ref_dict, subtreesize, fragmentflag)
