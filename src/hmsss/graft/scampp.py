@@ -403,6 +403,10 @@ def pplacer_tax_scampp_like_graftm(
     # Read combined alignment and split into ref vs query by tree labels
     aln_dict = read_fasta_to_dict(input_path)
     ref_dict, q_dict = separate_ref_and_query(aln_dict, backbone_leaf_labels)
+    print("tree leaves (sample):", list(sorted(backbone_leaf_labels))[:5])
+    print("aln headers (sample):", list(aln_dict.keys())[:5])
+    print("ref_dict size:", len(ref_dict), "q_dict size:", len(q_dict))
+    print("intersection size:", len(set(aln_dict.keys()) & backbone_leaf_labels))
 
     # Prepare numbered backbone tree + jplace scaffold
     add_edge_numbers(backbone_tree)
