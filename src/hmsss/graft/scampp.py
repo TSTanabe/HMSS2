@@ -52,6 +52,50 @@ def separate_ref_and_query(aln_dict: Dict[str, str], backbone_leaf_labels: set[s
     return ref, query
 
 
+def read_and_split_fasta(
+        fasta_path: str,
+        backbone_leaf_labels: Set[str],
+) -> Tuple[Dict[str, str], Dict[str, str]]:
+    """
+    Stream FASTA and split records into:
+      - ref_dict: headers that exist in backbone_leaf_labels
+      - q_dict  : all others
+
+    This avoids materializing a full aln_dict in memory.
+    """
+    ref_dict: Dict[str, str] = {}
+    q_dict: Dict[str, str] = {}
+
+    label: Optional[str] = None
+    seq_chunks: List[str] = []
+
+    def flush_record():
+        nonlocal label, seq_chunks
+        if label is None:
+            return
+        seq = "".join(seq_chunks)
+        if label in backbone_leaf_labels:
+            ref_dict[label] = seq
+        else:
+            q_dict[label] = seq
+        label = None
+        seq_chunks = []
+
+    with open(fasta_path, "r", encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith(">"):
+                flush_record()
+                label = line[1:].strip()
+            else:
+                seq_chunks.append(line)
+
+    flush_record()
+    return ref_dict, q_dict
+
+
 def set_fragment_indices(x: str) -> Tuple[int, int]:
     """Trim leading/trailing '-' for fragment-aware distance."""
     si = 0
@@ -401,13 +445,16 @@ def pplacer_tax_scampp_like_graftm(
     backbone_leaf_labels = {n.get_label() for n in backbone_tree.traverse_leaves() if n.get_label() is not None}
 
     # Read combined alignment and split into ref vs query by tree labels
-    aln_dict = read_fasta_to_dict(input_path)
-    ref_dict, q_dict = separate_ref_and_query(aln_dict, backbone_leaf_labels)
-    print("tree leaves (sample):", list(sorted(backbone_leaf_labels))[:5])
-    print("aln headers (sample):", list(aln_dict.keys())[:5])
-    print("ref_dict size:", len(ref_dict), "q_dict size:", len(q_dict))
-    print("intersection size:", len(set(aln_dict.keys()) & backbone_leaf_labels))
+    # aln_dict = read_fasta_to_dict(input_path)
+    ref_dict, q_dict = read_and_split_fasta(input_path, backbone_leaf_labels)
 
+    print("tree leaves (sample):", list(sorted(backbone_leaf_labels))[:5])
+    # print("aln headers (sample):", list(sorted(aln_dict.keys()))[:5])
+    print("ref_dict size:", len(ref_dict), "q_dict size:", len(q_dict))
+    # print("intersection size:", len(set(aln_dict.keys()) & backbone_leaf_labels))
+    print(ref_dict)
+    print("-------------")
+    print(q_dict)
     # Prepare numbered backbone tree + jplace scaffold
     add_edge_numbers(backbone_tree)
     jplace = {
