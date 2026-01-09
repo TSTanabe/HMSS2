@@ -63,7 +63,7 @@ def _run_graft_task(task):
         for read in read_dict.values():
             read.metagenomeID = task.metagenome_id
             read.genomeID = task.genome_id
-        _dump_read_batch(read_dict)
+        # _dump_read_batch(read_dict)
         return {
             "ok": True,
             "task": task,
@@ -155,11 +155,11 @@ def graft_mp(task_list: list, batch_size: int, config: Config) -> None:
             read_batch.update(res_dict)
             batch_counter += 1
 
-            print("Batch batch_counter:", batch_counter)
-            print("Length", len(read_batch))
-            _dump_read_batch(read_batch)
-            print("----- original res dict -----")
-            _dump_read_batch(res_dict)
+            # print("Batch batch_counter:", batch_counter)
+            # print("Length", len(read_batch))
+            # _dump_read_batch(read_batch)
+            # print("----- original res dict -----")
+            # _dump_read_batch(res_dict)
 
             # Insert into database
             if batch_counter >= batch_size:

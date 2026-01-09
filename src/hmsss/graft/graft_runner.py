@@ -3,6 +3,7 @@
 import os
 import tempfile
 import shutil
+import time
 
 from graftm.sequence_search_results import SequenceSearchResult
 from graftm.graftm_output_paths import GraftMFiles
@@ -413,6 +414,7 @@ class Run:
                     direction = False
                     self.gmf = GraftMFiles(base, self.args.output_directory, direction)
 
+                t0 = time.perf_counter()
                 if self.args.type == self.PIPELINE_AA:
                     logging.debug("Running protein pipeline")
                     try:
@@ -441,6 +443,8 @@ class Run:
                             " command that failed was: %s" % e.command
                         )
                         exit(Run.NO_ORFS_EXITSTATUS)
+                    dt = time.perf_counter() - t0
+                    print(f"[TIME] aa_db_search took {dt:.3f} seconds")
 
                 # Or the DNA pipeline
                 elif self.args.type == self.PIPELINE_NT:
@@ -468,6 +472,7 @@ class Run:
                     base_list.append(base)
                     continue
 
+                t0 = time.perf_counter()
                 # Filter out decoys if specified
                 if reads_detected and doing_decoy_search:
                     with tempfile.NamedTemporaryFile(
@@ -481,7 +486,10 @@ class Run:
                         # No hits remain after decoy filtering.
                         os.remove(result.hit_fasta())
                         continue
+                dt = time.perf_counter() - t0
+                print(f"[TIME] decoy filtering took {dt:.3f} seconds")
 
+                t0 = time.perf_counter()
                 if self.args.assignment_method == Run.PPLACER_TAXONOMIC_ASSIGNMENT:
                     logging.info("aligning reads to reference package database")
                     hit_aligned_reads = self.gmf.aligned_fasta_output_path(base)
@@ -502,7 +510,8 @@ class Run:
                         with open(hit_aligned_reads, "w") as f:
                             pass  # just touch the file, nothing else
                     seqs_list.append(hit_aligned_reads)
-
+                dt = time.perf_counter() - t0
+                print(f"[TIME] pplacer preparation took {dt:.3f} seconds")
                 db_search_results.append(result)
                 base_list.append(base)
                 search_results.append(result.search_result)
@@ -545,6 +554,7 @@ class Run:
         elif REVERSE_PIPE:
             base_list = base_list[0::2]
 
+        t0 = time.perf_counter()
         # Leave the pipeline if search only was specified
         if self.args.search_and_align_only:
             logging.info("Stopping before taxonomic assignment phase\n")
@@ -589,6 +599,8 @@ class Run:
                 % self.args.placement_method
             )
 
+        dt = time.perf_counter() - t0
+        print(f"[TIME] pplacer assignment phase took {dt:.3f} seconds")
         # Prepare read mapping und alignments for return
         read_tax_paths = {}
         alignment_paths = {}
