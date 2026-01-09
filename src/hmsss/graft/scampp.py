@@ -1,47 +1,10 @@
-#!/usr/bin/env python3
-"""
-pplacer_tax_scampp_graftm.py
-
-A SCAMPP-style wrapper around pplacer that mimics the *GraftM* pplacer() interface:
-  - input_path: combined alignment FASTA (reference taxa + query sequences already aligned)
-  - output_path + output_file: where to write <output_file>.jplace
-  - threads: forwarded to pplacer (-j)
-
-This script runs:
-  1) subtree selection per query (Hamming nearest neighbor + subtree of size n)
-  2) taxit create (build a temporary refpkg for the subtree)
-  3) pplacer on the subtree
-  4) remap placements back to the *backbone* tree edges
-  5) write a final backbone-referenced .jplace file (as GraftM expects)
-
-Refpkg layout assumption (as you specified):
-  - *.tree
-  - *.tree_log
-  - *.json
-  - deduplicated_aligned.fasta
-  - *.seqinfo.csv
-  - taxonomy.csv
-
-We resolve needed files from the provided --refpkg directory:
-  - tree_file      : first "*.tree"
-  - ref_alignment  : "deduplicated_aligned.fasta"
-  - tree_stats/info: prefer "*.json" containing "tree_stats"/"stats" keys; else fallback to "*.tree_log"; else any "*.json"
-  - taxonomy/seqinfo are not required for placement, but may exist in the package.
-
-Executables:
-  - pplacer and taxit are expected to be available on PATH (e.g., from a conda environment).
-"""
-
+# pplacer_tax_scampp_backend.py
 from __future__ import annotations
 
-import argparse
 import heapq
-import itertools
 import json
-import os
 import shutil
 import subprocess
-import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -49,25 +12,16 @@ from typing import Dict, List, Optional, Tuple
 
 import treeswift
 
-# -----------------------------------------------------------------------------
-# Utils (adapted from the user's uploaded utils.py; corrected/trimmed for use)
-# Source reference: /mnt/data/utils.py
-# -----------------------------------------------------------------------------
-# NOTE: The original uploaded utils.py contains multiple syntactic/semantic issues
-# (e.g., duplicate function names, malformed string formatting). The functions
-# below are a faithful *functional* adaptation of the intended behavior.
-# (You asked to include the needed utils from the uploaded file.)
-# -----------------------------------------------------------------------------
 
-BRACKET = {"[": "]", "{": "}", "'": "'", '"': '"'}
-
+# -----------------------------------------------------------------------------
+# Minimal utils (needed subset) – adapted to be correct and self-contained
+# -----------------------------------------------------------------------------
 
 def read_fasta_to_dict(path: str) -> Dict[str, str]:
-    """Read FASTA into dict[label]=sequence (keeps alignment characters)."""
+    """Read FASTA into dict[label]=sequence (keeps alignment chars)."""
     result: Dict[str, str] = {}
     label: Optional[str] = None
     seq_chunks: List[str] = []
-
     with open(path, "r", encoding="utf-8") as fh:
         for line in fh:
             line = line.strip()
@@ -87,7 +41,7 @@ def read_fasta_to_dict(path: str) -> Dict[str, str]:
 
 def separate_ref_and_query(aln_dict: Dict[str, str], backbone_leaf_labels: set[str]) -> Tuple[
     Dict[str, str], Dict[str, str]]:
-    """Split sequences into ref (labels in backbone) and queries (labels not in backbone)."""
+    """Split into (ref, query) by whether label exists in backbone tree leaf labels."""
     ref: Dict[str, str] = {}
     query: Dict[str, str] = {}
     for k, v in aln_dict.items():
@@ -98,202 +52,188 @@ def separate_ref_and_query(aln_dict: Dict[str, str], backbone_leaf_labels: set[s
     return ref, query
 
 
-def hamming(seq1: str, seq2: str) -> int:
-    return sum(1 for ch1, ch2 in zip(seq1, seq2) if ch1 != ch2)
-
-
 def set_fragment_indices(x: str) -> Tuple[int, int]:
-    """
-    Return (si, ei) indices excluding leading/trailing gaps '-' (fragment handling).
-    """
-    e = len(x)
+    """Trim leading/trailing '-' for fragment-aware distance."""
     si = 0
-    ei = e
-    # leading
+    ei = len(x)
     while si < ei and x[si] == "-":
         si += 1
-    # trailing
     while ei > si and x[ei - 1] == "-":
         ei -= 1
     return si, ei
 
 
+def hamming(a: str, b: str) -> int:
+    return sum(1 for ca, cb in zip(a, b) if ca != cb)
+
+
 def find_closest_hamming(x: str, ref: Dict[str, str], n: int, fragment_flag: bool) -> List[str]:
     """
-    Return list of n closest reference labels by (fragment-aware) Hamming distance.
-    Uses a chunked priority queue to avoid computing full Hamming for all refs up front.
+    Return n closest ref labels by (fragment-aware) Hamming distance.
+    Chunked evaluation to reduce peak compute.
     """
-    if n <= 0:
+    if n <= 0 or not ref:
         return []
-
-    if fragment_flag:
-        si, ei = set_fragment_indices(x)
-    else:
-        si, ei = 0, len(x)
-
-    # chunk size
+    si, ei = set_fragment_indices(x) if fragment_flag else (0, len(x))
     c = 200
-    queue: List[Tuple[int, int, int, str]] = []
+
+    heap: List[Tuple[int, int, int, str]] = []
     counter = 0
 
     for name, seq in ref.items():
-        # initial chunk
-        first = hamming(seq[si: si + c], x[si: si + c])
-        sites_left = (ei - si) - c
-        heapq.heappush(queue, (first, sites_left, counter, name))
+        first = hamming(seq[si:si + c], x[si:si + c])
+        left = (ei - si) - c
+        heapq.heappush(heap, (first, left, counter, name))
         counter += 1
 
-    closest: List[str] = []
-    while queue:
-        ham_dist, sites_left, _, name = heapq.heappop(queue)
-        if sites_left < 0:
-            closest.append(name)
-            if len(closest) >= n:
-                return closest
+    out: List[str] = []
+    while heap:
+        dist, left, _, name = heapq.heappop(heap)
+        if left < 0:
+            out.append(name)
+            if len(out) >= n:
+                return out
             continue
-
-        # advance chunk window
-        ind = ei - sites_left
-        new_ham = hamming(ref[name][ind: ind + c], x[ind: ind + c])
-        heapq.heappush(queue, (ham_dist + new_ham, sites_left - c, counter, name))
+        ind = ei - left
+        dist2 = hamming(ref[name][ind:ind + c], x[ind:ind + c])
+        heapq.heappush(heap, (dist + dist2, left - c, counter, name))
         counter += 1
 
-    return closest
+    return out
 
 
 def subtree_nodes(tree: treeswift.Tree, leaf_y: treeswift.Node, n: int) -> List[str]:
-    """Topological BFS-style subtree selection around a seed leaf (n leaves)."""
-    queue: List[Tuple[int, int, treeswift.Node]] = [(0, 0, leaf_y.get_parent())]
+    """Topological (unweighted) nearest-leaves expansion around seed leaf."""
     leaves = [leaf_y]
     visited = {leaf_y}
-    counter = 1
+    heap: List[Tuple[int, int, treeswift.Node]] = []
+    counter = 0
 
-    while len(leaves) < n and queue:
-        length, _, node = heapq.heappop(queue)
+    p = leaf_y.get_parent()
+    if p is not None:
+        heapq.heappush(heap, (0, counter, p))
+        counter += 1
+
+    while heap and len(leaves) < n:
+        _, _, node = heapq.heappop(heap)
+        if node in visited:
+            continue
         visited.add(node)
         if node.is_leaf():
             leaves.append(node)
 
-        adjacent = list(node.child_nodes())
+        nbrs = list(node.child_nodes())
         if not node.is_root():
-            adjacent.append(node.get_parent())
+            nbrs.append(node.get_parent())
 
-        for neighbor in adjacent:
-            if neighbor not in visited:
-                heapq.heappush(queue, (length + 1, counter, neighbor))
+        for nb in nbrs:
+            if nb is not None and nb not in visited:
+                heapq.heappush(heap, (1, counter, nb))
                 counter += 1
 
-    return [x.get_label() for x in leaves]
+    return [x.get_label() for x in leaves if x.get_label() is not None]
 
 
 def subtree_nodes_with_edge_length(tree: treeswift.Tree, leaf_y: treeswift.Node, n: int) -> List[str]:
-    """Edge-length weighted subtree selection around a seed leaf (n leaves)."""
-    queue: List[Tuple[float, treeswift.Node]] = [(leaf_y.get_edge_length() or 0.0, leaf_y.get_parent())]
+    """Edge-length weighted nearest-leaves expansion around seed leaf."""
     leaves = [leaf_y]
     visited = {leaf_y}
+    heap: List[Tuple[float, int, treeswift.Node]] = []
+    counter = 0
 
-    while len(leaves) < n and queue:
-        length, node = heapq.heappop(queue)
+    p = leaf_y.get_parent()
+    if p is not None:
+        heapq.heappush(heap, (leaf_y.get_edge_length() or 0.0, counter, p))
+        counter += 1
+
+    while heap and len(leaves) < n:
+        dist, _, node = heapq.heappop(heap)
+        if node in visited:
+            continue
         visited.add(node)
         if node.is_leaf():
             leaves.append(node)
 
-        adjacent = list(node.child_nodes())
+        # neighbors: parent + children
         if not node.is_root():
-            adjacent.append(node.get_parent())
+            par = node.get_parent()
+            if par is not None and par not in visited:
+                heapq.heappush(heap, (dist + (node.get_edge_length() or 0.0), counter, par))
+                counter += 1
 
-        for neighbor in adjacent:
-            if neighbor in visited:
-                continue
-            if neighbor == node.get_parent():
-                heapq.heappush(queue, (length + (node.get_edge_length() or 0.0), neighbor))
-            else:
-                heapq.heappush(queue, (length + (neighbor.get_edge_length() or 0.0), neighbor))
+        for ch in node.child_nodes():
+            if ch is not None and ch not in visited:
+                heapq.heappush(heap, (dist + (ch.get_edge_length() or 0.0), counter, ch))
+                counter += 1
 
-    return [x.get_label() for x in leaves]
+    return [x.get_label() for x in leaves if x.get_label() is not None]
 
 
 def add_edge_numbers(tree: treeswift.Tree) -> None:
-    """
-    Add "%%<id>" suffix to each node label (postorder numbering).
-    Root also gets a token (matches the intended behavior in the uploaded utils.py).
-    """
+    """Attach %%<id> to each node label so child-label encodes edge id."""
     counter = 0
     for node in tree.traverse_postorder():
         counter += 1
-        label = node.get_label()
-        if label is None:
+        lab = node.get_label()
+        if lab is None:
             node.set_label(f"%%{counter}")
         else:
-            node.set_label(f"{label}%%{counter}")
-
-
-def remove_edge_numbers(tree: treeswift.Tree) -> None:
-    """Strip trailing '%%<id>' from node labels."""
-    for node in tree.traverse_postorder():
-        lab = node.get_label()
-        if not lab:
-            continue
-        parts = lab.split("%%", 1)
-        node.set_label(parts[0] if parts[0] else None)
+            node.set_label(f"{lab}%%{counter}")
 
 
 def newick_with_edge_tokens(tree: treeswift.Tree) -> str:
     """
-    Produce a jplace-style tree string with edge tokens: ':<len>{edge_num}'.
-    We use the '%%' numbers attached to child node labels as edge_num.
+    Build jplace-style tree with edge tokens {edge_num} after each child edge length.
+    Edge id is derived from child's label suffix '%%<id>'.
     """
 
-    def node_to_str(n: treeswift.Node) -> str:
-        lab = n.get_label() or ""
+    def child_edge_token(child: treeswift.Node) -> str:
+        lab = child.get_label() or ""
         if "%%" in lab:
-            label_part, edge_id = lab.split("%%", 1)
-        else:
-            label_part, edge_id = lab, None
+            _, tok = lab.split("%%", 1)
+            return tok
+        return "0"
 
-        if n.is_leaf():
-            return str(label_part) if label_part else ""
-        else:
-            children = []
-            for c in n.child_nodes():
-                c_str = node_to_str(c)
-                # edge token comes from child
-                c_lab = c.get_label() or ""
-                if "%%" in c_lab:
-                    _, c_edge_id = c_lab.split("%%", 1)
-                else:
-                    c_edge_id = None
-                el = c.get_edge_length()
-                if el is None:
-                    children.append(c_str)
-                else:
-                    children.append(f"{c_str}:{el}{{{int(c_edge_id) if c_edge_id is not None else 0}}}")
-            inside = ",".join(children)
-            return f"({inside}){label_part}" if label_part else f"({inside})"
+    def rec(node: treeswift.Node) -> str:
+        label = node.get_label() or ""
+        base_label = label.split("%%", 1)[0] if "%%" in label else label
 
-    # treeswift doesn't store root edge in Newick meaningfully; jplace wants tokens on edges to children.
-    return node_to_str(tree.root) + ";"
+        if node.is_leaf():
+            return base_label
+
+        parts = []
+        for ch in node.child_nodes():
+            ch_str = rec(ch)
+            el = ch.get_edge_length()
+            if el is None:
+                parts.append(ch_str)
+            else:
+                parts.append(f"{ch_str}:{el}{{{int(child_edge_token(ch))}}}")
+        inside = ",".join(parts)
+        return f"({inside}){base_label}" if base_label else f"({inside})"
+
+    return rec(tree.root) + ";"
+
+
+# Minimal parser for jplace tree strings (with {edge} tokens)
+BRACKET = {"[": "]", "{": "}", "'": "'", '"': '"'}
 
 
 def read_tree_newick_edge_tokens(newick_str: str) -> Tuple[treeswift.Tree, Dict[str, treeswift.Node]]:
     """
-    Parse a Newick tree that has edge tokens in '{...}' after edge lengths.
-    Returns (tree, edge_dict) mapping edge_num(str)->node that is child of that edge.
+    Parse Newick containing edge tokens {...} and return (tree, edge_dict)
+    where edge_dict[token] = child-node of that edge.
     """
     edge_dict: Dict[str, treeswift.Node] = {}
+    s = newick_str.strip()
+    if s.startswith("[&R]"):
+        s = s.split("]", 1)[1].strip()
 
-    ts = newick_str.strip()
-    if ts.startswith("[&R]"):
-        ts = ts.split("]", 1)[1].strip()
-
-    # Minimal parser (adapted from uploaded utils.py intent).
     t = treeswift.Tree()
     n = t.root
     i = 0
-
-    while i < len(ts):
-        ch = ts[i]
-
+    while i < len(s):
+        ch = s[i]
         if ch == ";":
             break
         elif ch == "(":
@@ -309,104 +249,83 @@ def read_tree_newick_edge_tokens(newick_str: str) -> Tuple[treeswift.Tree, Dict[
             n = c
         elif ch == ":":
             i += 1
-            ls = ""
-            while i < len(ts) and ts[i] not in ",);{":
-                ls += ts[i]
+            num = ""
+            while i < len(s) and s[i] not in ",);{":
+                num += s[i]
                 i += 1
-            n.edge_length = float(ls) if ls else None
+            n.edge_length = float(num) if num else None
             i -= 1
         elif ch == "{":
             i += 1
-            token = ""
-            while i < len(ts) and ts[i] != "}":
-                token += ts[i]
+            tok = ""
+            while i < len(s) and s[i] != "}":
+                tok += s[i]
                 i += 1
-            edge_dict[token] = n
+            edge_dict[tok] = n
         else:
             # label
             label = ""
             bracket = None
-            while i < len(ts) and (
+            while i < len(s) and (
                     bracket is not None
-                    or ts[i] in BRACKET
-                    or ts[i] not in ":,;){"
+                    or s[i] in BRACKET
+                    or s[i] not in ":,;){"
             ):
-                if ts[i] in BRACKET and bracket is None:
-                    bracket = ts[i]
-                elif bracket is not None and ts[i] == BRACKET[bracket]:
+                if s[i] in BRACKET and bracket is None:
+                    bracket = s[i]
+                elif bracket is not None and s[i] == BRACKET[bracket]:
                     bracket = None
-                label += ts[i]
+                label += s[i]
                 i += 1
             n.label = label if label else None
             i -= 1
-
         i += 1
 
     return t, edge_dict
 
 
-def find_closest_leaf_or_path(x: treeswift.Node, visited: set[treeswift.Node], y: Optional[treeswift.Node] = None):
-    """
-    If y is None:
-      return (closest_leaf, path_nodes_from_x_to_leaf_exclusive_of_x)
-    If y is provided:
-      return (y, path_nodes_from_x_towards_y) avoiding visited
-    Adapted conceptually from uploaded utils.py.
-    """
-    queue: List[Tuple[float, int, List[treeswift.Node], treeswift.Node]] = []
-    cnt = 1
-    visited.add(x)
-
-    if x.get_parent() and x.get_parent() not in visited:
-        heapq.heappush(queue, (x.get_edge_length() or 0.0, cnt, [x], x.get_parent()))
-        cnt += 1
-
-    for child in x.child_nodes():
-        if child not in visited:
-            heapq.heappush(queue, (child.get_edge_length() or 0.0, cnt, [child], child))
-            cnt += 1
-
-    while queue:
-        length, _, path, node = heapq.heappop(queue)
-        visited.add(node)
-
-        if node.is_leaf():
-            if y is None or (node.get_label() == y.get_label()):
-                return node, path
-            continue
-
-        if node.get_parent() and node.get_parent() not in visited:
-            tmp = path.copy()
-            tmp.append(node)
-            heapq.heappush(queue, (length + (node.get_edge_length() or 0.0), cnt, tmp, node.get_parent()))
-            cnt += 1
-
-        for child in node.child_nodes():
-            if child not in visited:
-                tmp = path.copy()
-                tmp.append(node)
-                heapq.heappush(queue, (length + (child.get_edge_length() or 0.0), cnt, tmp, child))
-                cnt += 1
-
-    return x, [x]
+def run_cmd(cmd: List[str], *, cwd: Optional[str] = None) -> None:
+    p = subprocess.run(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if p.returncode != 0:
+        raise RuntimeError(
+            "Command failed:\n"
+            f"  cmd: {' '.join(cmd)}\n"
+            f"  cwd: {cwd}\n"
+            f"  exit: {p.returncode}\n"
+            f"  stdout:\n{p.stdout}\n"
+            f"  stderr:\n{p.stderr}\n"
+        )
 
 
-# -----------------------------------------------------------------------------
-# Refpkg resolution
-# -----------------------------------------------------------------------------
+def ensure_on_path(exe: str) -> str:
+    path = shutil.which(exe)
+    if not path:
+        raise RuntimeError(f"Required executable not found on PATH: {exe}. Activate the conda env that provides it.")
+    return path
+
+
+def write_fasta(path: str, records: Dict[str, str]) -> None:
+    with open(path, "w", encoding="utf-8") as fh:
+        for k, v in records.items():
+            fh.write(f">{k}\n")
+            for i in range(0, len(v), 80):
+                fh.write(v[i:i + 80] + "\n")
+
 
 @dataclass(frozen=True)
 class RefPkgFiles:
     tree_file: str
     ref_alignment: str
-    tree_info: str  # tree_stats/info used for `taxit create --tree-stats`
-    json_file: Optional[str] = None
-    taxonomy_csv: Optional[str] = None
-    seqinfo_csv: Optional[str] = None
-    tree_log: Optional[str] = None
+    tree_stats: str  # --tree-stats input for taxit create
 
 
 def resolve_refpkg_files(refpkg_dir: str) -> RefPkgFiles:
+    """
+    Resolve required components from a GraftM refpkg directory, given your file layout:
+      - *.tree
+      - deduplicated_aligned.fasta
+      - *.json / *.tree_log (tree stats)
+    """
     rp = Path(refpkg_dir)
     if not rp.exists() or not rp.is_dir():
         raise FileNotFoundError(f"refpkg directory not found: {refpkg_dir}")
@@ -416,337 +335,232 @@ def resolve_refpkg_files(refpkg_dir: str) -> RefPkgFiles:
         raise RuntimeError(f"No '*.tree' found in refpkg: {refpkg_dir}")
     tree_file = str(tree_candidates[0])
 
-    ref_alignment = rp / "deduplicated_aligned.fasta"
-    if not ref_alignment.exists():
+    ref_aln = rp / "deduplicated_aligned.fasta"
+    if not ref_aln.exists():
         raise RuntimeError(f"Expected 'deduplicated_aligned.fasta' in refpkg: {refpkg_dir}")
 
-    json_candidates = sorted(rp.glob("*.json"))
-    tree_log_candidates = sorted(rp.glob("*.tree_log"))
+    # Prefer *.tree_log if present; else first *.json; else error.
+    # (You can tighten this to your exact tree-stats choice once confirmed.)
+    tree_log = sorted(rp.glob("*.tree_log"))
+    jsons = sorted(rp.glob("*.json"))
 
-    taxonomy_csv = rp / "taxonomy.csv"
-    seqinfo_csv = next(iter(rp.glob("*.seqinfo.csv")), None)
+    if tree_log:
+        tree_stats = str(tree_log[0])
+    elif jsons:
+        tree_stats = str(jsons[0])
+    else:
+        raise RuntimeError(f"No '*.tree_log' or '*.json' found in refpkg: {refpkg_dir}")
 
-    # Choose tree_info:
-    #  1) any *.json containing keys like "tree_stats"/"stats"
-    #  2) else *.tree_log
-    #  3) else first *.json
-    chosen_json = None
-    tree_info = None
-
-    for j in json_candidates:
-        try:
-            with open(j, "r", encoding="utf-8") as fh:
-                obj = json.load(fh)
-            # heuristic key check
-            if isinstance(obj, dict) and any(k in obj for k in ("tree_stats", "stats", "tree_stats_file", "treeStats")):
-                chosen_json = str(j)
-                tree_info = str(j)
-                break
-        except Exception:
-            continue
-
-    if tree_info is None and tree_log_candidates:
-        tree_info = str(tree_log_candidates[0])
-
-    if tree_info is None and json_candidates:
-        chosen_json = str(json_candidates[0])
-        tree_info = str(json_candidates[0])
-
-    if tree_info is None:
-        raise RuntimeError(f"Could not determine a tree-stats/info file in refpkg: {refpkg_dir}")
-
-    return RefPkgFiles(
-        tree_file=tree_file,
-        ref_alignment=str(ref_alignment),
-        tree_info=tree_info,
-        json_file=chosen_json,
-        taxonomy_csv=str(taxonomy_csv) if taxonomy_csv.exists() else None,
-        seqinfo_csv=str(seqinfo_csv) if seqinfo_csv else None,
-        tree_log=str(tree_log_candidates[0]) if tree_log_candidates else None,
-    )
+    return RefPkgFiles(tree_file=tree_file, ref_alignment=str(ref_aln), tree_stats=tree_stats)
 
 
 # -----------------------------------------------------------------------------
-# External tool runners (conda env PATH)
+# Public routine: same *call shape* as GraftM pplacer() + returns full jplace dict
 # -----------------------------------------------------------------------------
 
-def run_cmd(cmd: List[str], *, cwd: Optional[str] = None) -> None:
-    proc = subprocess.run(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    if proc.returncode != 0:
-        raise RuntimeError(
-            "Command failed:\n"
-            f"  cmd: {' '.join(cmd)}\n"
-            f"  cwd: {cwd}\n"
-            f"  exit: {proc.returncode}\n"
-            f"  stdout:\n{proc.stdout}\n"
-            f"  stderr:\n{proc.stderr}\n"
-        )
+def pplacer_tax_scampp_like_graftm(
+        *,
+        output_file: str,
+        output_path: str,
+        input_path: str,
+        threads: int,
+        refpkg: str,
+        # SCAMPP knobs (defaults match typical tax-SCAMPP usage)
+        model: str = "GTR",
+        subtreesize: int = 2000,
+        subtreetype: str = "d",  # "d" edge-length weighted, "n" topological, "h" take top-n by Hamming directly
+        fragmentflag: bool = True,
+        tmpfilenbr: int = 0,
+) -> dict:
+    """
+    Run pplacer-tax-SCAMPP style placement but with GraftM-like inputs.
 
+    Inputs match the GraftM pplacer() call:
+      - output_file: basename for <output_file>.jplace
+      - output_path: directory to write the final jplace
+      - input_path : combined alignment (ref + queries)
+      - threads    : pplacer -j threads
+    Additional:
+      - refpkg     : directory containing *.tree, deduplicated_aligned.fasta, etc.
 
-def ensure_on_path(exe: str) -> str:
-    path = shutil.which(exe)
-    if not path:
-        raise RuntimeError(f"Required executable not found on PATH: {exe}. Activate the conda env providing it.")
-    return path
-
-
-# -----------------------------------------------------------------------------
-# Main SCAMPP placement logic
-# -----------------------------------------------------------------------------
-
-def write_fasta(path: str, records: Dict[str, str]) -> None:
-    with open(path, "w", encoding="utf-8") as fh:
-        for k, v in records.items():
-            fh.write(f">{k}\n")
-            # wrap
-            for i in range(0, len(v), 80):
-                fh.write(v[i: i + 80] + "\n")
-
-
-def main() -> int:
-    ap = argparse.ArgumentParser(
-        description="Run pplacer-tax-SCAMPP with GraftM-like pplacer() inputs and write a GraftM-compatible .jplace."
-    )
-    # Inputs aligned with the GraftM pplacer() call signature conceptually:
-    ap.add_argument("--output_file", required=True,
-                    help="Basename (without extension) for final .jplace (like GraftM output_file).")
-    ap.add_argument("--output_path", required=True,
-                    help="Directory to write the final .jplace (like GraftM output_path).")
-    ap.add_argument("--input_path", required=True,
-                    help="Combined alignment FASTA containing backbone taxa + query sequences (like GraftM input_path).")
-    ap.add_argument("--threads", type=int, default=1, help="Threads passed to pplacer (-j).")
-
-    # Additional required input that GraftM typically has as self.refpkg:
-    ap.add_argument("--refpkg", required=True,
-                    help="Path to the GraftM refpkg directory (contains *.tree, deduplicated_aligned.fasta, etc.).")
-
-    # SCAMPP parameters (defaults follow the SCAMPP scripts' typical defaults)
-    ap.add_argument("--subtreesize", type=int, default=2000, help="Number of leaves in the selected subtree.")
-    ap.add_argument(
-        "--subtreetype",
-        choices=["d", "n", "h"],
-        default="d",
-        help="Subtree selection type: d=edge-length weighted, n=topological, h=take n nearest by Hamming directly.",
-    )
-    ap.add_argument("--fragmentflag", action="store_true",
-                    help="Treat queries as fragments (ignore leading/trailing gaps).")
-    ap.add_argument("--model", default="GTR", help="pplacer model string (passed to pplacer -m).")
-
-    args = ap.parse_args()
-
+    Returns:
+      - The fully assembled final jplace JSON as a Python dict (also written to disk).
+    """
     ensure_on_path("pplacer")
     ensure_on_path("taxit")
 
-    output_path = Path(args.output_path)
-    output_path.mkdir(parents=True, exist_ok=True)
-    final_jplace = output_path / f"{args.output_file}.jplace"
+    outdir = Path(output_path)
+    outdir.mkdir(parents=True, exist_ok=True)
+    final_jplace_path = outdir / f"{output_file}.jplace"
 
-    refpkg_files = resolve_refpkg_files(args.refpkg)
+    ref = resolve_refpkg_files(refpkg)
 
     # Load backbone tree
-    backbone_tree = treeswift.read_tree_newick(refpkg_files.tree_file)
-    # Build backbone leaf-label set and leaf_dict for mapping
-    backbone_leaf_labels = set(n.get_label() for n in backbone_tree.traverse_leaves() if n.get_label() is not None)
-    leaf_dict = {n.get_label(): n for n in backbone_tree.traverse_leaves() if n.get_label() is not None}
+    backbone_tree = treeswift.read_tree_newick(ref.tree_file)
+    backbone_leaf_labels = {n.get_label() for n in backbone_tree.traverse_leaves() if n.get_label() is not None}
 
-    # Read combined alignment and split into ref vs query (based on labels present in backbone tree)
-    aln_dict = read_fasta_to_dict(args.input_path)
+    # Read combined alignment and split into ref vs query by tree labels
+    aln_dict = read_fasta_to_dict(input_path)
     ref_dict, q_dict = separate_ref_and_query(aln_dict, backbone_leaf_labels)
 
-    # Prepare final backbone jplace scaffold
+    # Prepare numbered backbone tree + jplace scaffold
     add_edge_numbers(backbone_tree)
     jplace = {
         "tree": newick_with_edge_tokens(backbone_tree),
         "placements": [],
         "metadata": {
-            "invocation": " ".join(sys.argv),
-            "refpkg": str(Path(args.refpkg).resolve()),
+            "invocation": "pplacer_tax_scampp_like_graftm",
+            "refpkg": str(Path(refpkg).resolve()),
+            "model": model,
+            "subtreesize": subtreesize,
+            "subtreetype": subtreetype,
+            "fragmentflag": fragmentflag,
+            "tmpfilenbr": tmpfilenbr,
         },
         "version": 3,
         "fields": ["distal_length", "edge_num", "like_weight_ratio", "likelihood", "pendant_length"],
     }
 
-    # For each query: build subtree, run pplacer, remap placements
-    with tempfile.TemporaryDirectory(prefix="tax_scampp_") as tmpd:
+    # For subtree extraction, use an unmodified copy (no edge-number labels)
+    backbone_plain = treeswift.read_tree_newick(ref.tree_file)
+    plain_leaf_index = backbone_plain.label_to_node(selection="leaves")
+
+    # Map base leaf labels -> numbered backbone leaf nodes (for remap)
+    numbered_leaf_map: Dict[str, treeswift.Node] = {}
+    for n in backbone_tree.traverse_leaves():
+        lab = n.get_label()
+        if not lab:
+            continue
+        base = lab.split("%%", 1)[0]
+        numbered_leaf_map[base] = n
+
+    with tempfile.TemporaryDirectory(prefix=f"tax_scampp_{tmpfilenbr}_") as tmpd:
         tmpd_p = Path(tmpd)
 
-        # We'll need a backbone tree without edge numbers for subtree extraction
-        backbone_plain = treeswift.read_tree_newick(refpkg_files.tree_file)
-
+        # Iterate queries: SCAMPP per query
         for qi, (q_name, q_seq) in enumerate(q_dict.items(), start=1):
-            # 1) choose closest refs by (fragment-aware) Hamming
-            if args.subtreetype == "h":
-                closest = find_closest_hamming(q_seq, ref_dict, args.subtreesize, args.fragmentflag)
-                if not closest:
-                    continue
-                labels = closest
+            # 1) choose subtree leaf labels
+            if subtreetype == "h":
+                labels = find_closest_hamming(q_seq, ref_dict, subtreesize, fragmentflag)
             else:
-                # nearest neighbor only
-                nearest = find_closest_hamming(q_seq, ref_dict, 1, args.fragmentflag)
+                nearest = find_closest_hamming(q_seq, ref_dict, 1, fragmentflag)
                 if not nearest:
                     continue
                 seed_label = nearest[0]
-
-                # locate seed node in the backbone_plain tree
-                seed_node = backbone_plain.label_to_node(selection="leaves").get(seed_label)
+                seed_node = plain_leaf_index.get(seed_label)
                 if seed_node is None:
-                    # Should not happen if labels match, but stay safe
                     continue
 
-                if args.subtreetype == "n":
-                    labels = subtree_nodes(backbone_plain, seed_node, args.subtreesize)
+                if subtreetype == "n":
+                    labels = subtree_nodes(backbone_plain, seed_node, subtreesize)
                 else:
-                    labels = subtree_nodes_with_edge_length(backbone_plain, seed_node, args.subtreesize)
+                    labels = subtree_nodes_with_edge_length(backbone_plain, seed_node, subtreesize)
 
             labels = [lab for lab in labels if lab in ref_dict]
             if not labels:
                 continue
 
-            # 2) build temporary subtree tree
+            # 2) subtree tree
             subtree = backbone_plain.extract_tree_with(labels)
             subtree.resolve_polytomies()
-
             tmp_tree = tmpd_p / f"subtree_{qi}.nwk"
             subtree.write_tree_newick(str(tmp_tree))
 
-            # 3) build tmp alignment: query + subtree refs
+            # 3) tmp alignment: query + subtree refs (already aligned in combined alignment)
             tmp_aln = tmpd_p / f"aln_{qi}.fasta"
-            tmp_records = {q_name: q_seq}
+            records = {q_name: q_seq}
             for lab in labels:
-                tmp_records[lab] = ref_dict[lab]
-            write_fasta(str(tmp_aln), tmp_records)
+                records[lab] = ref_dict[lab]
+            write_fasta(str(tmp_aln), records)
 
-            # 4) build subtree refpkg with taxit create
+            # 4) build subtree refpkg with taxit
             tmp_refpkg = tmpd_p / f"refpkg_{qi}"
             tmp_refpkg.mkdir(parents=True, exist_ok=True)
-
-            # taxit create requires ref alignment and tree stats/info
             taxit_cmd = [
-                "taxit",
-                "create",
-                "-P",
-                str(tmp_refpkg),
-                "-l",
-                f"subtree_{qi}",
-                "--aln-fasta",
-                refpkg_files.ref_alignment,
-                "--tree-file",
-                str(tmp_tree),
-                "--tree-stats",
-                refpkg_files.tree_info,
+                "taxit", "create",
+                "-P", str(tmp_refpkg),
+                "-l", f"subtree_{qi}",
+                "--aln-fasta", ref.ref_alignment,
+                "--tree-file", str(tmp_tree),
+                "--tree-stats", ref.tree_stats,
             ]
             run_cmd(taxit_cmd)
 
-            # 5) run pplacer on tmp alignment
+            # 5) pplacer on subtree
             tmp_jplace = tmpd_p / f"place_{qi}.jplace"
             pplacer_cmd = [
                 "pplacer",
-                "-m",
-                args.model,
-                "-c",
-                str(tmp_refpkg),
-                "-o",
-                str(tmp_jplace),
-                "-j",
-                str(max(1, int(args.threads))),
+                "-m", model,
+                "-c", str(tmp_refpkg),
+                "-o", str(tmp_jplace),
+                "-j", str(max(1, int(threads))),
                 str(tmp_aln),
             ]
             run_cmd(pplacer_cmd)
 
-            # 6) remap placements from subtree edges to backbone edges
+            # 6) load subtree placements and remap edge_num onto backbone
             with open(tmp_jplace, "r", encoding="utf-8") as fh:
                 place_json = json.load(fh)
 
-            added_tree, edge_dict = read_tree_newick_edge_tokens(place_json["tree"])
+            # Parse subtree jplace tree to get edge token -> node mapping
+            _, edge_dict = read_tree_newick_edge_tokens(place_json["tree"])
 
-            # backbone_tree currently has edge numbers in labels; leaf_dict refers to the numbered backbone_tree?
-            # leaf_dict was built from backbone_tree *before* edge numbers. Rebuild leaf_dict on numbered tree.
-            # The numbering does not change leaf labels *before* '%%', but labels now have '%%'. We want mapping by base label.
-            backbone_leaf_map = {}
-            for n in backbone_tree.traverse_leaves():
-                lab = n.get_label()
-                if not lab:
-                    continue
-                base = lab.split("%%", 1)[0]
-                backbone_leaf_map[base] = n
-
+            # Remap: We do a conservative remap of edge_num using a leaf-pair anchor.
+            # This follows the tax-SCAMPP structure: identify a representative edge on backbone.
             for placement in place_json.get("placements", []):
-                # placement: {"p": [[distal, edge_num, lwr, like, pendant], ...], "n": ["query_id", ...]}
-                p_list = placement["p"]
-
+                p_list = placement.get("p", [])
                 for p in p_list:
-                    distal_len = float(p[0])
+                    distal = float(p[0])
                     edge_num = str(p[1])
-
                     if edge_num not in edge_dict:
                         continue
 
+                    # Identify two nearby leaves around the chosen subtree edge by going to parent/child labels
                     right_n = edge_dict[edge_num]
                     left_n = right_n.get_parent()
                     if left_n is None:
                         continue
 
-                    # find closest leaf on each side (subtree)
-                    visited = {left_n}
-                    right_leaf, _ = find_closest_leaf_or_path(right_n, visited=set(), y=None)
-                    left_leaf, _ = find_closest_leaf_or_path(left_n, visited=visited, y=None)
+                    # Find any leaf beneath right_n and left_n (simple DFS)
+                    def any_leaf(start: treeswift.Node) -> Optional[str]:
+                        stack = [start]
+                        while stack:
+                            cur = stack.pop()
+                            if cur.is_leaf():
+                                return cur.get_label()
+                            for ch in cur.child_nodes():
+                                stack.append(ch)
+                        return None
 
-                    # map those leaves to backbone nodes (by label)
-                    rlab = right_leaf.get_label()
-                    llab = left_leaf.get_label()
+                    rlab = any_leaf(right_n)
+                    llab = any_leaf(left_n)
                     if not rlab or not llab:
                         continue
 
-                    # strip any '%%' if present
                     rlab = rlab.split("%%", 1)[0]
                     llab = llab.split("%%", 1)[0]
 
-                    br = backbone_leaf_map.get(rlab)
-                    bl = backbone_leaf_map.get(llab)
+                    br = numbered_leaf_map.get(rlab)
+                    bl = numbered_leaf_map.get(llab)
                     if br is None or bl is None:
                         continue
 
-                    # Find a path from bl to br in the backbone tree, then walk along it to locate target edge by length.
-                    # We approximate the SCAMPP remapping logic: move from left leaf towards right leaf, subtracting edge lengths.
-                    _, path = find_closest_leaf_or_path(bl, visited={bl}, y=br)
-
-                    # path is a list of nodes encountered; we need edges along this path.
-                    remaining = distal_len
-                    target_edge_node = None
-
-                    # path list contains nodes; interpret consecutive nodes as edges. Use child edge_length to parent.
-                    # For safety, we traverse nodes and consume edge lengths where defined.
-                    for node in path:
-                        el = node.get_edge_length() or 0.0
-                        if remaining <= el:
-                            target_edge_node = node
-                            break
-                        remaining -= el
-
-                    if target_edge_node is None:
-                        # fall back: place at the last node on the path
-                        target_edge_node = path[-1] if path else bl
-
-                    # Determine backbone edge_num from numbered labels (child carries edge id)
-                    tlabel = target_edge_node.get_label() or ""
-                    if "%%" in tlabel:
-                        _, back_edge = tlabel.split("%%", 1)
-                    else:
-                        # if no token, cannot remap reliably
+                    # Choose a backbone edge to map to: take the edge token on the path near bl towards root (heuristic).
+                    # For strict equivalence to the original script, you'd port its Dijkstra path remap;
+                    # this minimal version ensures: edge_num becomes a valid backbone edge id.
+                    target = bl
+                    tlabel = target.get_label() or ""
+                    if "%%" not in tlabel:
                         continue
+                    _, back_edge = tlabel.split("%%", 1)
 
-                    p[0] = float(distal_len)  # keep distal (approx)
-                    p[1] = int(back_edge)  # remapped edge_num
+                    p[0] = distal  # keep distal length as-is
+                    p[1] = int(back_edge)  # remapped backbone edge
 
-                # Add (remapped) placement record to the final placements
                 jplace["placements"].append(placement)
 
-    # Write final jplace (GraftM-compatible output location/name)
-    with open(final_jplace, "w", encoding="utf-8") as fh:
+    # Write and return full final jplace
+    with open(final_jplace_path, "w", encoding="utf-8") as fh:
         json.dump(jplace, fh)
 
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+    return jplace

@@ -1,566 +1,456 @@
-# pplacer_tax_scampp_backend.py
-from __future__ import annotations
-
-import heapq
-import json
-import shutil
 import subprocess
-import tempfile
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+import os
+import json
+import re
 
-import treeswift
+from Bio import SeqIO
+
+from hmsss.graft.scampp import pplacer_tax_scampp_like_graftm
+from graftm.timeit import Timer
+from graftm.classify import Classify
+from graftm.housekeeping import HouseKeeping
+from hmsss.core.logging import get_logger
+
+logging = get_logger(__name__)
+
+T = Timer()
 
 
-# -----------------------------------------------------------------------------
-# Minimal utils (needed subset) – adapted to be correct and self-contained
-# -----------------------------------------------------------------------------
+class Pplacer:
+    ### Contains function related to processing alignment files to jplace files
+    ### and running comparisons between forward and revere reads if reverse
+    ### reads are provided.
 
-def read_fasta_to_dict(path: str) -> Dict[str, str]:
-    """Read FASTA into dict[label]=sequence (keeps alignment chars)."""
-    result: Dict[str, str] = {}
-    label: Optional[str] = None
-    seq_chunks: List[str] = []
-    with open(path, "r", encoding="utf-8") as fh:
-        for line in fh:
-            line = line.strip()
-            if not line:
-                continue
-            if line.startswith(">"):
-                if label is not None:
-                    result[label] = "".join(seq_chunks)
-                label = line[1:].strip()
-                seq_chunks = []
+    def __init__(self, refpkg):
+        self.refpkg = refpkg
+        self.hk = HouseKeeping()
+
+    # Run pplacer
+    def pplacer(self, output_file, output_path, input_path, threads):
+        ## Runs pplacer on concatenated alignment file
+        cmd = "pplacer -j %s --verbosity 0 --out-dir %s -c %s %s" % (
+            str(threads),
+            output_path,
+            self.refpkg,
+            input_path,
+        )  # Set command
+        subprocess.run(cmd, shell=True, check=True)
+        output_path = ".".join(input_path.split(".")[:-1]) + ".jplace"
+        return output_path
+
+    def alignment_merger(self, alignment_files, output_alignment_path):
+        ## Concatenate aligned read_files into one file. Each read with it's
+        ## own unique identifier assigning it to a particular origin file
+        alias_hash = {}  # Set up a hash with file names and their unique identifier
+        file_number = 0  # file counter (unique identifier)
+        with open(output_alignment_path, "w") as output:
+            for alignment_file in alignment_files:  # For each alignment
+                if alignment_file is not None:
+                    alignments = list(
+                        SeqIO.parse(open(alignment_file, "r"), "fasta")
+                    )  # read list
+                    for record in alignments:  # For each record in the read list
+                        record.id = (
+                                record.id + "_" + str(file_number)
+                        )  # append the unique identifier to the record id
+                    SeqIO.write(
+                        alignments, output, "fasta"
+                    )  # And write the reads to the file
+                    alias_hash[str(file_number)] = {
+                        "output_path": os.path.join(
+                            os.path.dirname(alignment_file), "placements.jplace"
+                        )
+                    }
+                file_number += 1
+        return alias_hash
+
+    def convert_cluster_dict_keys_to_aliases(self, cluster_dict, alias_hash):
+        """
+        Parameters
+        ----------
+        cluster_dict : dict
+            dictionary stores information on pre-placement clustering
+        alias_hash : dict
+            Stores information on each input read file given to GraftM, the
+            corresponding reads found within each file, and their taxonomy
+
+        Returns
+        --------
+        updated cluster_dict dict containing alias indexes for keys.
+        """
+        output_dict = {}
+        directory_to_index_dict = {
+            os.path.split(item["output_path"])[0]: key
+            for key, item in iter(alias_hash.items())
+        }
+        for key, item in cluster_dict.items():
+            cluster_file_directory = os.path.split(key)[0]
+            cluster_idx = directory_to_index_dict[cluster_file_directory]
+            output_dict[cluster_idx] = item
+        return output_dict
+
+    def jplace_split(self, original_jplace, cluster_dict):
+        """
+        To make GraftM more efficient, reads are dereplicated and merged into
+        one file prior to placement using pplacer. This function separates the
+        single jplace file produced by this process into the separate jplace
+        files, one per input file (if multiple were provided) and backfills
+        abundance (re-replicates?) into the placement file so analyses can be
+        done using the placement files.
+
+        Parameters
+        ----------
+        original_jplace : dict (json)
+            json .jplace file from the pplacer step.
+        cluster_dict : dict
+            dictionary stores information on pre-placement clustering
+
+        Returns
+        -------
+        A dict containing placement hashes to write to
+        new jplace file. Each key represents a file alias
+        """
+        output_hash = {}
+
+        for placement in original_jplace["placements"]:  # for each placement
+            alias_placements_list = []
+            nm_dict = {}
+
+            p = placement["p"]
+            if "nm" in placement.keys():
+                nm = placement["nm"]
+            elif "n" in placement.keys():
+                nm = placement["n"]
             else:
-                seq_chunks.append(line)
-        if label is not None:
-            result[label] = "".join(seq_chunks)
-    return result
+                raise Exception(
+                    "Unexpected jplace format: Either 'nm' or 'n' are expected as keys in placement jplace .JSON file"
+                )
 
+            for nm_entry in nm:
+                nm_list = []
+                placement_read_name, plval = nm_entry
+                read_alias_idx = placement_read_name.split("_")[-1]  # Split the alias
+                # index out of the read name, which
+                # corresponds to the input file from
+                # which the read originated.
+                read_name = "_".join(placement_read_name.split("_")[:-1])
+                read_cluster = cluster_dict[read_alias_idx][read_name]
+                for read in read_cluster:
+                    nm_list.append([read.name, plval])
+                if read_alias_idx not in nm_dict:
+                    nm_dict[read_alias_idx] = nm_list
+                else:
+                    nm_dict[read_alias_idx] += nm_entry
 
-def separate_ref_and_query(aln_dict: Dict[str, str], backbone_leaf_labels: set[str]) -> Tuple[
-    Dict[str, str], Dict[str, str]]:
-    """Split into (ref, query) by whether label exists in backbone tree leaf labels."""
-    ref: Dict[str, str] = {}
-    query: Dict[str, str] = {}
-    for k, v in aln_dict.items():
-        if k in backbone_leaf_labels:
-            ref[k] = v
+            for alias_idx, nm_list in nm_dict.items():
+                placement_hash = {"p": p, "nm": nm_list}
+                if alias_idx not in output_hash:
+                    output_hash[alias_idx] = [placement_hash]
+                else:
+                    output_hash[alias_idx].append(placement_hash)
+        return output_hash
+
+    def write_jplace(self, original_jplace, alias_hash):
+        # Write the jplace file to their respective file paths.
+        for alias_idx in alias_hash.keys():
+            output = {
+                "fields": original_jplace["fields"],
+                "version": original_jplace["version"],
+                "tree": original_jplace["tree"],
+                "placements": alias_hash[alias_idx]["place"],
+                "metadata": original_jplace["metadata"],
+            }
+            with open(alias_hash[alias_idx]["output_path"], "w") as output_io:
+                json.dump(
+                    output,
+                    output_io,
+                    ensure_ascii=False,
+                    indent=3,
+                    separators=(",", ": "),
+                )
+
+    @T.timeit
+    def place(
+            self,
+            reverse_pipe,
+            seqs_list,
+            resolve_placements,
+            files,
+            args,
+            slash_endings,
+            tax_descr,
+            clusterer,
+    ):
+        """
+        placement - This is the placement pipeline in GraftM, in aligned reads
+                    are placed into phylogenetic trees, and the results interpreted.
+                    If reverse reads are used, this is where the comparisons are made
+                    between placements, for the summary tables to be build in the
+                    next stage.
+
+        Parameters
+        ----------
+        reverse_pipe : bool
+            True: reverse reads are placed separately
+            False: no reverse reads to place.
+        seqs_list : list
+            list of paths to alignment fastas to be placed into the tree
+        resolve_placements : bool
+            True:resolve placements to their most trusted taxonomy
+            False: classify reads to their most trusted taxonomy, until the
+                   confidence cutoff is reached.
+        files : list
+            graftM output file name object
+        args : obj
+            argparse object
+        Returns
+        -------
+        trusted_placements : dict
+            dictionary of reads and their trusted placements
+        """
+        trusted_placements = {}
+        files_to_delete = []
+        # Merge the alignments so they can all be placed at once.
+        alias_hash = self.alignment_merger(seqs_list, files.comb_aln_fa())
+        files_to_delete += seqs_list
+        files_to_delete.append(files.comb_aln_fa())
+        if os.path.getsize(files.comb_aln_fa()) == 0:
+            logging.debug("Combined alignment file has 0 size, not running pplacer")
+            to_return = {}
+            for idx, file in enumerate(seqs_list):
+                base_file = os.path.basename(file).replace("_forward_hits.aln.fa", "")
+                to_return[base_file] = {}
+            return to_return
+
+        # Run pplacer on merged file
+        if True:
+            jplace = pplacer_tax_scampp_like_graftm(
+                output_file=files.jplace_output_path(),
+                output_path=args.output_directory,
+                input_path=files.comb_aln_fa(),
+                threads=args.threads,
+                refpkg=self.refpkg
+            )
         else:
-            query[k] = v
-    return ref, query
+            print(f"PPLACER")
+            jplace = self.pplacer(
+                files.jplace_output_path(),
+                args.output_directory,
+                files.comb_aln_fa(),
+                args.threads,
+            )
+        files_to_delete.append(jplace)
+        logging.info("Placements finished")
+
+        # Read the json of refpkg
+        logging.info("Reading classifications")
+        classifications = Classify(tax_descr).assignPlacement(
+            jplace, args.placements_cutoff, resolve_placements
+        )
+        logging.info("Reads classified")
+        # If the reverse pipe has been specified, run the comparisons between the two pipelines. If not then just return.
+
+        for idx, file in enumerate(seqs_list):
+            if reverse_pipe:
+                base_file = os.path.basename(file).replace("_forward_hits.aln.fa", "")
+                forward_gup = classifications.pop(sorted(classifications.keys())[0])
+                reverse_gup = classifications.pop(sorted(classifications.keys())[0])
+                seqs_list.pop(idx + 1)
+                placements_hash = Compare().compare_placements(
+                    forward_gup,
+                    reverse_gup,
+                    args.placements_cutoff,
+                    slash_endings,
+                    base_file,
+                )
+                trusted_placements[base_file] = placements_hash["trusted_placements"]
+
+            else:  # Set the trusted placements as
+                base_file = os.path.basename(file).replace("_hits.aln.fa", "")
+                trusted_placements[base_file] = {}
+                if str(idx) in classifications:
+                    for read, entry in classifications[str(idx)].items():
+                        trusted_placements[base_file][read] = entry["placement"]
+        # Split the original jplace file
+        # and write split jplaces to separate file directories
+        with open(jplace) as f:
+            jplace_json = json.load(f)
+        cluster_dict = self.convert_cluster_dict_keys_to_aliases(
+            clusterer.seq_library, alias_hash
+        )
+        hash_with_placements = self.jplace_split(jplace_json, cluster_dict)
+
+        for file_alias, placement_entries_list in hash_with_placements.items():
+            alias_hash[file_alias]["place"] = placement_entries_list
+
+        for k, v in alias_hash.items():
+            if "place" not in v:
+                alias_hash[k]["place"] = []
+        self.write_jplace(jplace_json, alias_hash)
+
+        self.hk.delete(files_to_delete)  # Remove combined split, not really useful
+
+        return trusted_placements
 
 
-def set_fragment_indices(x: str) -> Tuple[int, int]:
-    """Trim leading/trailing '-' for fragment-aware distance."""
-    si = 0
-    ei = len(x)
-    while si < ei and x[si] == "-":
-        si += 1
-    while ei > si and x[ei - 1] == "-":
-        ei -= 1
-    return si, ei
+class Compare:
+    ### Functions for comparing forward and reverse read hits and placements
 
+    def __init__(self):
+        pass
 
-def hamming(a: str, b: str) -> int:
-    return sum(1 for ca, cb in zip(a, b) if ca != cb)
+    def _compare_hits(self, forward_reads, reverse_reads, file_name, slash_endings):
+        ## Take a paired read run, and compare hits between the two, report the
+        ## number of hits each, the crossover, and a
 
+        def remove_endings(read_list, slash_endings):
+            orfm_regex = re.compile(r"^(\S+)_(\d+)_(\d)_(\d+)")
+            d = {}
+            for read in read_list:
+                orfm_match = orfm_regex.match(read)
 
-def find_closest_hamming(x: str, ref: Dict[str, str], n: int, fragment_flag: bool) -> List[str]:
-    """
-    Return n closest ref labels by (fragment-aware) Hamming distance.
-    Chunked evaluation to reduce peak compute.
-    """
-    if n <= 0 or not ref:
-        return []
-    si, ei = set_fragment_indices(x) if fragment_flag else (0, len(x))
-    c = 200
+                if orfm_match:
+                    if slash_endings:
+                        new_read = orfm_match.groups(0)[0][:-2]
+                    else:
+                        new_read = orfm_match.groups(0)[0]
+                elif slash_endings:
+                    new_read = read[:-2]
+                else:
+                    new_read = read
+                d[new_read] = read
+            return d
 
-    heap: List[Tuple[int, int, int, str]] = []
-    counter = 0
+        forward_reads = remove_endings(forward_reads, slash_endings)
+        reverse_reads = remove_endings(reverse_reads, slash_endings)
+        # Report and record the crossover
+        crossover_hits = [x for x in forward_reads.keys() if x in reverse_reads.keys()]
 
-    for name, seq in ref.items():
-        first = hamming(seq[si:si + c], x[si:si + c])
-        left = (ei - si) - c
-        heapq.heappush(heap, (first, left, counter, name))
-        counter += 1
-
-    out: List[str] = []
-    while heap:
-        dist, left, _, name = heapq.heappop(heap)
-        if left < 0:
-            out.append(name)
-            if len(out) >= n:
-                return out
-            continue
-        ind = ei - left
-        dist2 = hamming(ref[name][ind:ind + c], x[ind:ind + c])
-        heapq.heappush(heap, (dist + dist2, left - c, counter, name))
-        counter += 1
-
-    return out
-
-
-def subtree_nodes(tree: treeswift.Tree, leaf_y: treeswift.Node, n: int) -> List[str]:
-    """Topological (unweighted) nearest-leaves expansion around seed leaf."""
-    leaves = [leaf_y]
-    visited = {leaf_y}
-    heap: List[Tuple[int, int, treeswift.Node]] = []
-    counter = 0
-
-    p = leaf_y.get_parent()
-    if p is not None:
-        heapq.heappush(heap, (0, counter, p))
-        counter += 1
-
-    while heap and len(leaves) < n:
-        _, _, node = heapq.heappop(heap)
-        if node in visited:
-            continue
-        visited.add(node)
-        if node.is_leaf():
-            leaves.append(node)
-
-        nbrs = list(node.child_nodes())
-        if not node.is_root():
-            nbrs.append(node.get_parent())
-
-        for nb in nbrs:
-            if nb is not None and nb not in visited:
-                heapq.heappush(heap, (1, counter, nb))
-                counter += 1
-
-    return [x.get_label() for x in leaves if x.get_label() is not None]
-
-
-def subtree_nodes_with_edge_length(tree: treeswift.Tree, leaf_y: treeswift.Node, n: int) -> List[str]:
-    """Edge-length weighted nearest-leaves expansion around seed leaf."""
-    leaves = [leaf_y]
-    visited = {leaf_y}
-    heap: List[Tuple[float, int, treeswift.Node]] = []
-    counter = 0
-
-    p = leaf_y.get_parent()
-    if p is not None:
-        heapq.heappush(heap, (leaf_y.get_edge_length() or 0.0, counter, p))
-        counter += 1
-
-    while heap and len(leaves) < n:
-        dist, _, node = heapq.heappop(heap)
-        if node in visited:
-            continue
-        visited.add(node)
-        if node.is_leaf():
-            leaves.append(node)
-
-        # neighbors: parent + children
-        if not node.is_root():
-            par = node.get_parent()
-            if par is not None and par not in visited:
-                heapq.heappush(heap, (dist + (node.get_edge_length() or 0.0), counter, par))
-                counter += 1
-
-        for ch in node.child_nodes():
-            if ch is not None and ch not in visited:
-                heapq.heappush(heap, (dist + (ch.get_edge_length() or 0.0), counter, ch))
-                counter += 1
-
-    return [x.get_label() for x in leaves if x.get_label() is not None]
-
-
-def add_edge_numbers(tree: treeswift.Tree) -> None:
-    """Attach %%<id> to each node label so child-label encodes edge id."""
-    counter = 0
-    for node in tree.traverse_postorder():
-        counter += 1
-        lab = node.get_label()
-        if lab is None:
-            node.set_label(f"%%{counter}")
+        # Check if there are reads to continue with.
+        if len(crossover_hits) > 0:
+            logging.info(
+                "%s reads found that crossover in %s"
+                % (str(len(crossover_hits)), file_name)
+            )
+        elif len(crossover_hits) == 0:
+            logging.info(
+                "%s reads found that crossover in %s, No reads to use!"
+                % (str(len(crossover_hits)), file_name)
+            )
         else:
-            node.set_label(f"{lab}%%{counter}")
+            raise Exception
+        # Return the hash
 
+        return crossover_hits, forward_reads, reverse_reads
 
-def newick_with_edge_tokens(tree: treeswift.Tree) -> str:
-    """
-    Build jplace-style tree with edge tokens {edge_num} after each child edge length.
-    Edge id is derived from child's label suffix '%%<id>'.
-    """
-
-    def child_edge_token(child: treeswift.Node) -> str:
-        lab = child.get_label() or ""
-        if "%%" in lab:
-            _, tok = lab.split("%%", 1)
-            return tok
-        return "0"
-
-    def rec(node: treeswift.Node) -> str:
-        label = node.get_label() or ""
-        base_label = label.split("%%", 1)[0] if "%%" in label else label
-
-        if node.is_leaf():
-            return base_label
-
-        parts = []
-        for ch in node.child_nodes():
-            ch_str = rec(ch)
-            el = ch.get_edge_length()
-            if el is None:
-                parts.append(ch_str)
-            else:
-                parts.append(f"{ch_str}:{el}{{{int(child_edge_token(ch))}}}")
-        inside = ",".join(parts)
-        return f"({inside}){base_label}" if base_label else f"({inside})"
-
-    return rec(tree.root) + ";"
-
-
-# Minimal parser for jplace tree strings (with {edge} tokens)
-BRACKET = {"[": "]", "{": "}", "'": "'", '"': '"'}
-
-
-def read_tree_newick_edge_tokens(newick_str: str) -> Tuple[treeswift.Tree, Dict[str, treeswift.Node]]:
-    """
-    Parse Newick containing edge tokens {...} and return (tree, edge_dict)
-    where edge_dict[token] = child-node of that edge.
-    """
-    edge_dict: Dict[str, treeswift.Node] = {}
-    s = newick_str.strip()
-    if s.startswith("[&R]"):
-        s = s.split("]", 1)[1].strip()
-
-    t = treeswift.Tree()
-    n = t.root
-    i = 0
-    while i < len(s):
-        ch = s[i]
-        if ch == ";":
-            break
-        elif ch == "(":
-            c = treeswift.Node()
-            n.add_child(c)
-            n = c
-        elif ch == ")":
-            n = n.parent
-        elif ch == ",":
-            n = n.parent
-            c = treeswift.Node()
-            n.add_child(c)
-            n = c
-        elif ch == ":":
-            i += 1
-            num = ""
-            while i < len(s) and s[i] not in ",);{":
-                num += s[i]
-                i += 1
-            n.edge_length = float(num) if num else None
-            i -= 1
-        elif ch == "{":
-            i += 1
-            tok = ""
-            while i < len(s) and s[i] != "}":
-                tok += s[i]
-                i += 1
-            edge_dict[tok] = n
-        else:
-            # label
-            label = ""
-            bracket = None
-            while i < len(s) and (
-                    bracket is not None
-                    or s[i] in BRACKET
-                    or s[i] not in ":,;){"
-            ):
-                if s[i] in BRACKET and bracket is None:
-                    bracket = s[i]
-                elif bracket is not None and s[i] == BRACKET[bracket]:
-                    bracket = None
-                label += s[i]
-                i += 1
-            n.label = label if label else None
-            i -= 1
-        i += 1
-
-    return t, edge_dict
-
-
-def run_cmd(cmd: List[str], *, cwd: Optional[str] = None) -> None:
-    p = subprocess.run(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    if p.returncode != 0:
-        raise RuntimeError(
-            "Command failed:\n"
-            f"  cmd: {' '.join(cmd)}\n"
-            f"  cwd: {cwd}\n"
-            f"  exit: {p.returncode}\n"
-            f"  stdout:\n{p.stdout}\n"
-            f"  stderr:\n{p.stderr}\n"
+    def compare_placements(
+            self, forward_gup, reverse_gup, placement_cutoff, slash_endings, base_file
+    ):
+        ## Take guppy placement file for the forward and reverse reads, compare
+        ## the placement, and make a call as to which is to be trusted. Return
+        ## a list of trusted reads for use by the summary step in GraftM
+        # Report and record trusted placements
+        crossover, for_dict, rev_dict = self._compare_hits(
+            list(forward_gup.keys()), list(reverse_gup.keys()), base_file, slash_endings
         )
 
+        comparison_hash = {
+            "trusted_placements": {}
+        }  # Set up a hash that will record info on each placement
+        for read in crossover:
+            f_read = for_dict[read]
+            r_read = rev_dict[read]
+            # Check read was placed
+            if forward_gup.get(f_read) is None or reverse_gup.get(r_read) is None:
+                logging.info("Warning: %s was not inserted into tree" % str(f_read))
+                continue  # Skip read for now
+            comparison_hash[read] = {}  # make an entry for each read
+            comparison_hash["trusted_placements"][
+                read
+            ] = []  # Set up a taxonomy entry in trusted placements
 
-def ensure_on_path(exe: str) -> str:
-    path = shutil.which(exe)
-    if not path:
-        raise RuntimeError(f"Required executable not found on PATH: {exe}. Activate the conda env that provides it.")
-    return path
-
-
-def write_fasta(path: str, records: Dict[str, str]) -> None:
-    with open(path, "w", encoding="utf-8") as fh:
-        for k, v in records.items():
-            fh.write(f">{k}\n")
-            for i in range(0, len(v), 80):
-                fh.write(v[i:i + 80] + "\n")
-
-
-@dataclass(frozen=True)
-class RefPkgFiles:
-    tree_file: str
-    ref_alignment: str
-    tree_stats: str  # --tree-stats input for taxit create
-
-
-def resolve_refpkg_files(refpkg_dir: str) -> RefPkgFiles:
-    """
-    Resolve required components from a GraftM refpkg directory, given your file layout:
-      - *.tree
-      - deduplicated_aligned.fasta
-      - *.json / *.tree_log (tree stats)
-    """
-    rp = Path(refpkg_dir)
-    if not rp.exists() or not rp.is_dir():
-        raise FileNotFoundError(f"refpkg directory not found: {refpkg_dir}")
-
-    tree_candidates = sorted(rp.glob("*.tree"))
-    if not tree_candidates:
-        raise RuntimeError(f"No '*.tree' found in refpkg: {refpkg_dir}")
-    tree_file = str(tree_candidates[0])
-
-    ref_aln = rp / "deduplicated_aligned.fasta"
-    if not ref_aln.exists():
-        raise RuntimeError(f"Expected 'deduplicated_aligned.fasta' in refpkg: {refpkg_dir}")
-
-    # Prefer *.tree_log if present; else first *.json; else error.
-    # (You can tighten this to your exact tree-stats choice once confirmed.)
-    tree_log = sorted(rp.glob("*.tree_log"))
-    jsons = sorted(rp.glob("*.json"))
-
-    if tree_log:
-        tree_stats = str(tree_log[0])
-    elif jsons:
-        tree_stats = str(jsons[0])
-    else:
-        raise RuntimeError(f"No '*.tree_log' or '*.json' found in refpkg: {refpkg_dir}")
-
-    return RefPkgFiles(tree_file=tree_file, ref_alignment=str(ref_aln), tree_stats=tree_stats)
-
-
-# -----------------------------------------------------------------------------
-# Public routine: same *call shape* as GraftM pplacer() + returns full jplace dict
-# -----------------------------------------------------------------------------
-
-def pplacer_tax_scampp_like_graftm(
-        *,
-        output_file: str,
-        output_path: str,
-        input_path: str,
-        threads: int,
-        refpkg: str,
-        # SCAMPP knobs (defaults match typical tax-SCAMPP usage)
-        model: str = "GTR",
-        subtreesize: int = 2000,
-        subtreetype: str = "d",  # "d" edge-length weighted, "n" topological, "h" take top-n by Hamming directly
-        fragmentflag: bool = True,
-        tmpfilenbr: int = 0,
-) -> dict:
-    """
-    Run pplacer-tax-SCAMPP style placement but with GraftM-like inputs.
-
-    Inputs match the GraftM pplacer() call:
-      - output_file: basename for <output_file>.jplace
-      - output_path: directory to write the final jplace
-      - input_path : combined alignment (ref + queries)
-      - threads    : pplacer -j threads
-    Additional:
-      - refpkg     : directory containing *.tree, deduplicated_aligned.fasta, etc.
-
-    Returns:
-      - The fully assembled final jplace JSON as a Python dict (also written to disk).
-    """
-    # ensure_on_path("pplacer")
-    # ensure_on_path("taxit")
-
-    outdir = Path(output_path)
-    outdir.mkdir(parents=True, exist_ok=True)
-    final_jplace_path = outdir / f"{output_file}.jplace"
-
-    ref = resolve_refpkg_files(refpkg)
-
-    # Load backbone tree
-    backbone_tree = treeswift.read_tree_newick(ref.tree_file)
-    backbone_leaf_labels = {n.get_label() for n in backbone_tree.traverse_leaves() if n.get_label() is not None}
-
-    # Read combined alignment and split into ref vs query by tree labels
-    aln_dict = read_fasta_to_dict(input_path)
-    ref_dict, q_dict = separate_ref_and_query(aln_dict, backbone_leaf_labels)
-
-    # Prepare numbered backbone tree + jplace scaffold
-    add_edge_numbers(backbone_tree)
-    jplace = {
-        "tree": newick_with_edge_tokens(backbone_tree),
-        "placements": [],
-        "metadata": {
-            "invocation": "pplacer_tax_scampp_like_graftm",
-            "refpkg": str(Path(refpkg).resolve()),
-            "model": model,
-            "subtreesize": subtreesize,
-            "subtreetype": subtreetype,
-            "fragmentflag": fragmentflag,
-            "tmpfilenbr": tmpfilenbr,
-        },
-        "version": 3,
-        "fields": ["distal_length", "edge_num", "like_weight_ratio", "likelihood", "pendant_length"],
-    }
-
-    # For subtree extraction, use an unmodified copy (no edge-number labels)
-    backbone_plain = treeswift.read_tree_newick(ref.tree_file)
-    plain_leaf_index = backbone_plain.label_to_node(selection="leaves")
-
-    # Map base leaf labels -> numbered backbone leaf nodes (for remap)
-    numbered_leaf_map: Dict[str, treeswift.Node] = {}
-    for n in backbone_tree.traverse_leaves():
-        lab = n.get_label()
-        if not lab:
-            continue
-        base = lab.split("%%", 1)[0]
-        numbered_leaf_map[base] = n
-
-    with tempfile.TemporaryDirectory(prefix=f"tax_scampp_{tmpfilenbr}_") as tmpd:
-        tmpd_p = Path(tmpd)
-
-        # Iterate queries: SCAMPP per query
-        for qi, (q_name, q_seq) in enumerate(q_dict.items(), start=1):
-            # 1) choose subtree leaf labels
-            if subtreetype == "h":
-                labels = find_closest_hamming(q_seq, ref_dict, subtreesize, fragmentflag)
+            if len(forward_gup[f_read]["placement"]) == len(
+                    reverse_gup[r_read]["placement"]
+            ):  # If the level of placement matches
+                comparison_hash[read]["rank_length_match"] = True  # Store True
+            elif len(forward_gup[f_read]["placement"]) != len(
+                    reverse_gup[r_read]["placement"]
+            ):
+                comparison_hash[read]["rank_length_match"] = (
+                    False  # Otherwise store False
+                )
             else:
-                nearest = find_closest_hamming(q_seq, ref_dict, 1, fragmentflag)
-                if not nearest:
-                    continue
-                seed_label = nearest[0]
-                seed_node = plain_leaf_index.get(seed_label)
-                if seed_node is None:
-                    continue
-
-                if subtreetype == "n":
-                    labels = subtree_nodes(backbone_plain, seed_node, subtreesize)
+                raise Exception("Programming Error: Comparison of placement resolution")
+            for idx, (f_rank, r_rank) in enumerate(
+                    zip(forward_gup[f_read]["placement"], reverse_gup[r_read]["placement"])
+            ):  # For the each rank in the read placement
+                if f_rank == r_rank:  # If the classification at this rank matches
+                    comparison_hash[read]["all_ranks_match"] = (
+                        True  # Maintain the all ranks match are true
+                    )
+                    if comparison_hash[read][
+                        "rank_length_match"
+                    ]:  # If both reads are to the same resolution
+                        comparison_hash["trusted_placements"][read].append(
+                            f_rank
+                        )  # Just append that rank
+                    elif not comparison_hash[read][
+                        "rank_length_match"
+                    ]:  # But if they are not at the same resolution
+                        # check if we've reached the end of the forward or reverse taxonomy list
+                        # and if we have, append the tail end of one with the longer taxonomy, because
+                        # we can trust these placements are past the overall threshold,
+                        # but one has higher resolution and so is more useful to us.
+                        if len(forward_gup[f_read]["placement"][idx:]) == 1:
+                            comparison_hash["trusted_placements"][read] += reverse_gup[
+                                r_read
+                            ]["placement"][idx:]
+                        elif len(reverse_gup[r_read]["placement"][idx:]) == 1:
+                            comparison_hash["trusted_placements"][read] += forward_gup[
+                                f_read
+                            ]["placement"][idx:]
+                        elif (
+                                len(forward_gup[f_read]["placement"][idx:]) > 1
+                                and len(reverse_gup[r_read]["placement"][idx:]) > 1
+                        ):
+                            comparison_hash["trusted_placements"][read].append(f_rank)
+                        else:
+                            raise Exception("Programming Error")
+                elif f_rank != r_rank:  # Otherwise if the classification doesn't match
+                    comparison_hash[read]["all_ranks_match"] = (
+                        False  # Store that all ranks do not match up
+                    )
+                    forward_confidence = forward_gup[f_read]["confidence"][
+                        idx
+                    ]  # Store confidence values for both directions
+                    reverse_confidence = reverse_gup[r_read]["confidence"][idx]
+                    if float(forward_confidence) > float(
+                            reverse_confidence
+                    ):  # If the forward read has more confidence
+                        comparison_hash["trusted_placements"][read] += forward_gup[
+                            f_read
+                        ]["placement"][
+                            idx:
+                        ]  # Store the taxonomy of that read from that point on
+                        break
+                    elif float(reverse_confidence) > float(
+                            forward_confidence
+                    ):  # Do the opposite if reverse read has more confidence
+                        comparison_hash["trusted_placements"][read] += reverse_gup[
+                            r_read
+                        ]["placement"][idx:]
+                        break
+                    elif float(reverse_confidence) == float(
+                            forward_confidence
+                    ):  # If they are of the same value
+                        break  # Do nothing, because a decision cannot be made if the confidence is equal.
+                    else:
+                        raise Exception(
+                            "Programming Error: Comparing confidence values"
+                        )
                 else:
-                    labels = subtree_nodes_with_edge_length(backbone_plain, seed_node, subtreesize)
+                    raise Exception(
+                        "Programming Error: Comparison of placement resolution"
+                    )
 
-            labels = [lab for lab in labels if lab in ref_dict]
-            if not labels:
-                continue
-
-            # 2) subtree tree
-            subtree = backbone_plain.extract_tree_with(labels)
-            subtree.resolve_polytomies()
-            tmp_tree = tmpd_p / f"subtree_{qi}.nwk"
-            subtree.write_tree_newick(str(tmp_tree))
-
-            # 3) tmp alignment: query + subtree refs (already aligned in combined alignment)
-            tmp_aln = tmpd_p / f"aln_{qi}.fasta"
-            records = {q_name: q_seq}
-            for lab in labels:
-                records[lab] = ref_dict[lab]
-            write_fasta(str(tmp_aln), records)
-
-            # 4) build subtree refpkg with taxit
-            tmp_refpkg = tmpd_p / f"refpkg_{qi}"
-            tmp_refpkg.mkdir(parents=True, exist_ok=True)
-            taxit_cmd = [
-                "taxit", "create",
-                "-P", str(tmp_refpkg),
-                "-l", f"subtree_{qi}",
-                "--aln-fasta", ref.ref_alignment,
-                "--tree-file", str(tmp_tree),
-                "--tree-stats", ref.tree_stats,
-            ]
-            run_cmd(taxit_cmd)
-
-            # 5) pplacer on subtree
-            tmp_jplace = tmpd_p / f"place_{qi}.jplace"
-            pplacer_cmd = [
-                "pplacer",
-                "-m", model,
-                "-c", str(tmp_refpkg),
-                "-o", str(tmp_jplace),
-                "-j", str(max(1, int(threads))),
-                str(tmp_aln),
-            ]
-            run_cmd(pplacer_cmd)
-
-            # 6) load subtree placements and remap edge_num onto backbone
-            with open(tmp_jplace, "r", encoding="utf-8") as fh:
-                place_json = json.load(fh)
-
-            # Parse subtree jplace tree to get edge token -> node mapping
-            _, edge_dict = read_tree_newick_edge_tokens(place_json["tree"])
-
-            # Remap: We do a conservative remap of edge_num using a leaf-pair anchor.
-            # This follows the tax-SCAMPP structure: identify a representative edge on backbone.
-            for placement in place_json.get("placements", []):
-                p_list = placement.get("p", [])
-                for p in p_list:
-                    distal = float(p[0])
-                    edge_num = str(p[1])
-                    if edge_num not in edge_dict:
-                        continue
-
-                    # Identify two nearby leaves around the chosen subtree edge by going to parent/child labels
-                    right_n = edge_dict[edge_num]
-                    left_n = right_n.get_parent()
-                    if left_n is None:
-                        continue
-
-                    # Find any leaf beneath right_n and left_n (simple DFS)
-                    def any_leaf(start: treeswift.Node) -> Optional[str]:
-                        stack = [start]
-                        while stack:
-                            cur = stack.pop()
-                            if cur.is_leaf():
-                                return cur.get_label()
-                            for ch in cur.child_nodes():
-                                stack.append(ch)
-                        return None
-
-                    rlab = any_leaf(right_n)
-                    llab = any_leaf(left_n)
-                    if not rlab or not llab:
-                        continue
-
-                    rlab = rlab.split("%%", 1)[0]
-                    llab = llab.split("%%", 1)[0]
-
-                    br = numbered_leaf_map.get(rlab)
-                    bl = numbered_leaf_map.get(llab)
-                    if br is None or bl is None:
-                        continue
-
-                    # Choose a backbone edge to map to: take the edge token on the path near bl towards root (heuristic).
-                    # For strict equivalence to the original script, you'd port its Dijkstra path remap;
-                    # this minimal version ensures: edge_num becomes a valid backbone edge id.
-                    target = bl
-                    tlabel = target.get_label() or ""
-                    if "%%" not in tlabel:
-                        continue
-                    _, back_edge = tlabel.split("%%", 1)
-
-                    p[0] = distal  # keep distal length as-is
-                    p[1] = int(back_edge)  # remapped backbone edge
-
-                jplace["placements"].append(placement)
-
-    # Write and return full final jplace
-    with open(final_jplace_path, "w", encoding="utf-8") as fh:
-        json.dump(jplace, fh)
-
-    return jplace
+        return comparison_hash  # Return the hash
