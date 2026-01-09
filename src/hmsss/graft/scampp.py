@@ -449,7 +449,9 @@ def pplacer_tax_scampp_like_graftm(
     # Read combined alignment and split into ref vs query by tree labels
     # aln_dict = read_fasta_to_dict(input_path)
     print(input_path)
-    ref_dict, q_dict = read_and_split_fasta(input_path, backbone_leaf_labels)
+    # ref_dict, q_dict = read_and_split_fasta(input_path, backbone_leaf_labels)
+    q_dict = read_fasta_to_dict(input_path)  # Queries only
+    ref_dict = read_fasta_to_dict(ref.ref_alignment)  # e.g. deduplicated_aligned.fasta
 
     print("tree leaves (sample):", list(sorted(backbone_leaf_labels))[:5])
     # print("aln headers (sample):", list(sorted(aln_dict.keys()))[:5])
