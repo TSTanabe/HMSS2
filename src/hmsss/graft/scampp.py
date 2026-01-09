@@ -335,7 +335,7 @@ def resolve_refpkg_files(refpkg_dir: str) -> RefPkgFiles:
         raise RuntimeError(f"No '*.tree' found in refpkg: {refpkg_dir}")
     tree_file = str(tree_candidates[0])
 
-    ref_aln = rp / "deduplicated_aligned.fasta"
+    ref_aln = sorted(rp.glob("*_aligned.fasta"))[0]
     if not ref_aln.exists():
         raise RuntimeError(f"Expected 'deduplicated_aligned.fasta' in refpkg: {refpkg_dir}")
 
