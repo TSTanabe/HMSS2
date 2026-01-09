@@ -684,7 +684,7 @@ def pplacer_tax_scampp_like_graftm(
                 placements.append(tmp_place.copy())
 
             place_file.close()
-
+        print("14")
         # build jplace file
         jplace["placements"] = placements
         jplace["metadata"]["invocation"] = {
@@ -706,7 +706,8 @@ def pplacer_tax_scampp_like_graftm(
 
         # output = open('{}/{}.jplace'.format(output, outFile), 'w')
         final_jplace_path = (Path(output_path) / f"{output_file}.jplace").resolve()
-
+        print("15")
         with open(final_jplace_path, "w", encoding="utf-8") as fh:
             json.dump(jplace, fh, sort_keys=True, indent=2)
             fh.write("\n")
+        return final_jplace_path
