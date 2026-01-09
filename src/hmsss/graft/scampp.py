@@ -442,7 +442,7 @@ def pplacer_tax_scampp_like_graftm(
         subtreetype: str = "d",  # "d" edge-length weighted, "n" topological, "h" take top-n by Hamming directly
         fragmentflag: bool = True,
         tmpfilenbr: int = 0,
-) -> dict:
+) -> Path:
     """
     Run pplacer-tax-SCAMPP style placement but with GraftM-like inputs.
 
@@ -642,4 +642,4 @@ def pplacer_tax_scampp_like_graftm(
     with open(final_jplace_path, "w", encoding="utf-8") as fh:
         json.dump(jplace, fh)
     print("Return jplace")
-    return jplace
+    return final_jplace_path
