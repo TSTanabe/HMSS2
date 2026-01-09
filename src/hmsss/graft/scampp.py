@@ -1,6 +1,7 @@
 # pplacer_tax_scampp_backend.py
 from __future__ import annotations
 
+import re
 import heapq
 import json
 import shutil
@@ -330,6 +331,28 @@ def read_tree_newick_edge_tokens(newick_str: str) -> Tuple[treeswift.Tree, Dict[
     return t, edge_dict
 
 
+def sanitize_newick_for_pplacer_inplace(path: str | Path) -> None:
+    """
+    In-place removal of Newick/NEXUS comment blocks (e.g. '[&R]')
+    to make trees pplacer-compatible.
+    """
+    path = Path(path)
+
+    text = path.read_text().strip()
+
+    # Remove all [ ... ] comment blocks (non-greedy)
+    text = re.sub(r"\[.*?\]", "", text)
+
+    # Clean whitespace
+    text = text.strip()
+
+    # Ensure Newick terminator
+    if not text.endswith(";"):
+        text += ";"
+
+    path.write_text(text + "\n")
+
+
 def run_cmd(cmd: List[str], *, cwd: Optional[str] = None) -> None:
     p = subprocess.run(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if p.returncode != 0:
@@ -481,62 +504,44 @@ def pplacer_tax_scampp_like_graftm(
             continue
         base = lab.split("%%", 1)[0]
         numbered_leaf_map[base] = n
-    print("2 Prepare temporary files")
     with tempfile.TemporaryDirectory(prefix=f"tax_scampp_{tmpfilenbr}_") as tmpd:
         tmpd_p = Path(tmpd)
-        print("2.1")
+
         # Iterate queries: SCAMPP per query
         for qi, (q_name, q_seq) in enumerate(q_dict.items(), start=1):
             # For subtree extraction, use an unmodified copy (no edge-number labels)
             backbone_plain = treeswift.read_tree_newick(ref.tree_file)
             plain_leaf_index = backbone_plain.label_to_node(selection="leaves")
-            print("2.2")
+
             # 1) choose subtree leaf labels
             if subtreetype == "h":
-                print("2.h")
-
                 labels = find_closest_hamming(q_seq, ref_dict, subtreesize, fragmentflag)
             else:
-                print("2.else")
-                print(q_seq)
-                print(ref_dict)
-                print(subtreesize)
-                print(fragmentflag)
                 nearest = find_closest_hamming(q_seq, ref_dict, 1, fragmentflag)
-                print("else . 1")
-                print(nearest)
                 if not nearest:
-                    print(" NOT NEAREST")
                     continue
-                print("else . 2")
                 seed_label = nearest[0]
                 seed_node = plain_leaf_index.get(seed_label)
-                print(" else .3")
                 if seed_node is None:
                     continue
-                print("2.3")
                 if subtreetype == "n":
                     labels = subtree_nodes(backbone_plain, seed_node, subtreesize)
                 else:
                     labels = subtree_nodes_with_edge_length(backbone_plain, seed_node, subtreesize)
-            print("2.4")
             labels = [lab for lab in labels if lab in ref_dict]
             if not labels:
                 continue
-            print("2.5")
             # 2) subtree tree
             subtree = backbone_plain.extract_tree_with(labels)
             subtree.resolve_polytomies()
             tmp_tree = tmpd_p / f"subtree_{qi}.nwk"
             subtree.write_tree_newick(str(tmp_tree))
-            print("3 tmp alignment")
             # 3) tmp alignment: query + subtree refs (already aligned in combined alignment)
             tmp_aln = tmpd_p / f"aln_{qi}.fasta"
             records = {q_name: q_seq}
             for lab in labels:
                 records[lab] = ref_dict[lab]
             write_fasta(str(tmp_aln), records)
-            print("4 build subtree")
             # 4) build subtree refpkg with taxit
             tmp_refpkg = tmpd_p / f"refpkg_{qi}"
             # tmp_refpkg.mkdir(parents=True, exist_ok=True)
@@ -549,6 +554,7 @@ def pplacer_tax_scampp_like_graftm(
                 "--tree-stats", ref.tree_stats,
             ]
             run_cmd(taxit_cmd)
+            sanitize_newick_for_pplacer_inplace(tmp_tree)
             import os
             os.system(f"head -c 200 {tmp_tree}; echo")
             # 5) pplacer on subtree
