@@ -83,7 +83,6 @@ def read_and_split_fasta(
 
     with open(fasta_path, "r", encoding="utf-8") as fh:
         for line in fh:
-            print(line)
             line = line.strip()
             if not line:
                 continue
@@ -454,12 +453,8 @@ def pplacer_tax_scampp_like_graftm(
     ref_dict = read_fasta_to_dict(ref.ref_alignment)  # e.g. deduplicated_aligned.fasta
 
     print("tree leaves (sample):", list(sorted(backbone_leaf_labels))[:5])
-    # print("aln headers (sample):", list(sorted(aln_dict.keys()))[:5])
     print("ref_dict size:", len(ref_dict), "q_dict size:", len(q_dict))
-    # print("intersection size:", len(set(aln_dict.keys()) & backbone_leaf_labels))
-    print(ref_dict)
-    print("-------------")
-    print(q_dict)
+    print("intersection size:", len(set(ref_dict.keys()) & backbone_leaf_labels))
     # Prepare numbered backbone tree + jplace scaffold
     add_edge_numbers(backbone_tree)
     jplace = {
@@ -544,7 +539,7 @@ def pplacer_tax_scampp_like_graftm(
             print("4 build subtree")
             # 4) build subtree refpkg with taxit
             tmp_refpkg = tmpd_p / f"refpkg_{qi}"
-            tmp_refpkg.mkdir(parents=True, exist_ok=True)
+            # tmp_refpkg.mkdir(parents=True, exist_ok=True)
             taxit_cmd = [
                 "taxit", "create",
                 "-P", str(tmp_refpkg),
