@@ -297,7 +297,7 @@ def integrate_edge_tokens_to_newick(tree):
         # Preserve original behavior: use string formatting for non-integer floats/other types
         suffix = f"{name}:{edge_len}{{{int(token)}}};"
 
-    return f"{tree.root.newick_edge_tokens()}{suffix}"
+    return f"{newick_edge_tokens(tree.root)}{suffix}"
 
 
 # Minimal parser for jplace tree strings (with {edge} tokens)
