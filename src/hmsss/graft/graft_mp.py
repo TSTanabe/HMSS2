@@ -85,7 +85,8 @@ def _run_graft_task(task):
         }
 
     except Exception as e:
-        print("EXCEPION", e)
+        print("EXCEPtION", e)
+        print(traceback.format_exc())
         return {
             "ok": False,
             "task": task,

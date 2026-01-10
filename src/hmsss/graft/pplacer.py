@@ -232,7 +232,6 @@ class Pplacer:
             refpkg=self.refpkg
         )
         print("--- SCAMPP")
-        import os
         os.system("cat your_file.jplace")
 
         jplace = self.pplacer(
@@ -242,7 +241,6 @@ class Pplacer:
             args.threads,
         )
         print("--- PPLACER")
-        import os
         os.system("cat your_file.jplace")
         files_to_delete.append(jplace)
 
