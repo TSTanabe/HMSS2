@@ -238,7 +238,7 @@ class Pplacer:
         t1 = time.perf_counter()
 
         print(f"--- SCAMPP ({t1 - t0:.2f} s)")
-        os.system(f"cat {jplace}")
+        # os.system(f"cat {jplace}")
 
         # --- PPLACER ---
         t2 = time.perf_counter()
@@ -251,7 +251,7 @@ class Pplacer:
         t3 = time.perf_counter()
 
         print(f"--- PPLACER ({t3 - t2:.2f} s)")
-        os.system(f"cat {jplace}")
+        # os.system(f"cat {jplace}")
 
         files_to_delete.append(jplace)
 
