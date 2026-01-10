@@ -227,38 +227,36 @@ def add_edge_numbers(tree: treeswift.Tree) -> None:
             node.set_label(f"{lab}%%{counter}")
 
 
-def newick_with_edge_tokens(tree: treeswift.Tree) -> str:
+def integrate_edge_tokens_to_newick(tree):
     """
-    Build jplace-style tree with edge tokens {edge_num} after each child edge length.
-    Edge id is derived from child's label suffix '%%<id>'.
+    Modified from treeswift tree.newick().
+
+    Output this ``Tree`` as a Newick string with labels (including edge tokens).
+
+    Returns
+    -------
+    str
+        Newick string of this ``Tree``.
     """
+    # Root label is expected to contain "name%%token"
+    root_label = tree.root.get_label()
+    name, token = root_label.split("%%", 1)
 
-    def child_edge_token(child: treeswift.Node) -> str:
-        lab = child.get_label() or ""
-        if "%%" in lab:
-            _, tok = lab.split("%%", 1)
-            return tok
-        return "0"
+    edge_len = tree.root.edge_length
 
-    def rec(node: treeswift.Node) -> str:
-        label = node.get_label() or ""
-        base_label = label.split("%%", 1)[0] if "%%" in label else label
+    # Build the root "suffix" (label + edge length + token + terminator)
+    if edge_len is None:
+        suffix = ";"
+    elif isinstance(edge_len, int):
+        suffix = f"{name}:{edge_len}{{{int(token)}}};"
+    elif isinstance(edge_len, float) and edge_len.is_integer():
+        # Preserve original behavior: print as integer if the float is an integer value
+        suffix = f"{name}:{int(edge_len)}{{{int(token)}}};"
+    else:
+        # Preserve original behavior: use string formatting for non-integer floats/other types
+        suffix = f"{name}:{edge_len}{{{int(token)}}};"
 
-        if node.is_leaf():
-            return base_label
-
-        parts = []
-        for ch in node.child_nodes():
-            ch_str = rec(ch)
-            el = ch.get_edge_length()
-            if el is None:
-                parts.append(ch_str)
-            else:
-                parts.append(f"{ch_str}:{el}{{{int(child_edge_token(ch))}}}")
-        inside = ",".join(parts)
-        return f"({inside}){base_label}" if base_label else f"({inside})"
-
-    return rec(tree.root) + ";"
+    return f"{tree.root.newick_edge_tokens()}{suffix}"
 
 
 # Minimal parser for jplace tree strings (with {edge} tokens)
@@ -444,6 +442,17 @@ def write_fasta(path: str, records: Dict[str, str]) -> None:
                 fh.write(v[i:i + 80] + "\n")
 
 
+def remove_edge_numbers(tree):
+    for node in tree.traverse_postorder():
+        # if not node.is_root():
+        label_list = node.get_label().split('%%', 1)
+        if label_list[0] == '':
+            node.set_label(None)
+        else:
+            node.set_label(label_list[0])
+
+
+# Paths for files in the refpkg from pplacer
 @dataclass(frozen=True)
 class RefPkgFiles:
     tree_file: str
@@ -518,33 +527,37 @@ def pplacer_tax_scampp_like_graftm(
     Returns:
       - The fully assembled final jplace JSON as a Python dict (also written to disk).
     """
-    # ensure_on_path("pplacer")
-    # ensure_on_path("taxit")
+
     CANON_FIELDS = ["distal_length", "edge_num", "like_weight_ratio", "likelihood", "pendant_length"]
     outdir = Path(output_path)
     outdir.mkdir(parents=True, exist_ok=True)
-    final_jplace_path = outdir / f"{output_file}.jplace"
+    final_jplace_file_path = outdir / f"{output_file}.jplace"
 
     ref = resolve_refpkg_files(refpkg)
 
     # Load backbone tree
     backbone_tree = treeswift.read_tree_newick(ref.tree_file)
-    backbone_leaf_labels = {n.get_label() for n in backbone_tree.traverse_leaves() if n.get_label() is not None}
+    backbone_leaf_labels = backbone_tree.label_to_node(
+        selection=set([n.label for n in backbone_tree.traverse_leaves()]))
 
-    # Read combined alignment and split into ref vs query by tree labels
-    # aln_dict = read_fasta_to_dict(input_path)
-    # ref_dict, q_dict = read_and_split_fasta(input_path, backbone_leaf_labels)
+    # graftM combined input contains only the query paths
     q_dict = read_fasta_to_dict(input_path)  # Queries only
-    ref_dict = read_fasta_to_dict(ref.ref_alignment)  # e.g. deduplicated_aligned.fasta
+    ref_dict = read_fasta_to_dict(ref.ref_alignment)  # tree alignment deduplicated_aligned.fasta
 
-    print("tree leaves (sample):", list(sorted(backbone_leaf_labels))[:5])
-    print("ref_dict size:", len(ref_dict), "q_dict size:", len(q_dict))
-    print("intersection size:", len(set(ref_dict.keys()) & backbone_leaf_labels))
     # Prepare numbered backbone tree + jplace scaffold
     add_edge_numbers(backbone_tree)
+
+    placements = []
     jplace = {
-        # "tree": newick_with_edge_tokens(backbone_tree),
+        "tree": integrate_edge_tokens_to_newick(backbone_tree),
         "placements": [],
+        "fields": [
+            "distal_length",
+            "edge_num",
+            "like_weight_ratio",
+            "likelihood",
+            "pendant_length",
+        ],
         "metadata": {
             "invocation": "pplacer_tax_scampp_like_graftm",
             "refpkg": str(Path(refpkg).resolve()),
@@ -556,70 +569,78 @@ def pplacer_tax_scampp_like_graftm(
         },
         "version": 3,
     }
-    jplace["fields"] = CANON_FIELDS
 
-    # Map base leaf labels -> numbered backbone leaf nodes (for remap)
-    numbered_leaf_map: Dict[str, treeswift.Node] = {}
-    for n in backbone_tree.traverse_leaves():
-        lab = n.get_label()
-        if not lab:
-            continue
-        base = lab.split("%%", 1)[0]
-        numbered_leaf_map[base] = n
     with tempfile.TemporaryDirectory(prefix=f"tax_scampp_{tmpfilenbr}_") as tmpd:
         tmpd_p = Path(tmpd)
 
-        # Iterate queries: SCAMPP per query
+        # ------------------------------------------------------------
+        # Place each query sequence (Original-Logik)
+        # ------------------------------------------------------------
         for qi, (q_name, q_seq) in enumerate(q_dict.items(), start=1):
-            # For subtree extraction, use an unmodified copy (no edge-number labels)
-            backbone_plain = treeswift.read_tree_newick(ref.tree_file)
-            plain_leaf_index = backbone_plain.label_to_node(selection="leaves")
+            tmp_tree = tmpd_p / f"tree_{qi}_{q_name}.nwk"
+            tmp_aln = tmpd_p / f"aln_{qi}_{q_name}.fa"
+            tmp_jplace = tmpd_p / f"place_{qi}_{q_name}.jplace"
+            tmp_refpkg = tmpd_p / f"refpkg_{qi}_{q_name}"
 
             # 1) choose subtree leaf labels
             if subtreetype == "h":
-                labels = find_closest_hamming(q_seq, ref_dict, subtreesize, fragmentflag)
+                nearest = find_closest_hamming(q_seq, ref_dict, subtreesize, fragmentflag)
+                if not nearest:
+                    continue
+                # Original: labels werden aus backbone_leaf_labels (Backbone Nodes) geholt
+                labels = [backbone_leaf_labels[taxon].get_label() for taxon in nearest if taxon in backbone_leaf_labels]
             else:
                 nearest = find_closest_hamming(q_seq, ref_dict, 1, fragmentflag)
                 if not nearest:
                     continue
-                seed_label = nearest[0]
-                seed_node = plain_leaf_index.get(seed_label)
-                if seed_node is None:
+
+                seed_taxon = nearest[0]
+                if seed_taxon not in backbone_leaf_labels:
                     continue
+                seed_node = backbone_leaf_labels[seed_taxon]
+
                 if subtreetype == "n":
-                    labels = subtree_nodes(backbone_plain, seed_node, subtreesize)
+                    labels = subtree_nodes(backbone_tree, seed_node, subtreesize)
                 else:
-                    labels = subtree_nodes_with_edge_length(backbone_plain, seed_node, subtreesize)
-            labels = [lab for lab in labels if lab in ref_dict]
+                    labels = subtree_nodes_with_edge_length(backbone_tree, seed_node, subtreesize)
+
             if not labels:
                 continue
-            # 2) subtree tree
-            subtree = backbone_plain.extract_tree_with(labels)
-            subtree.resolve_polytomies()
-            tmp_tree = tmpd_p / f"subtree_{qi}.nwk"
-            subtree.write_tree_newick(str(tmp_tree))
-            # 3) tmp alignment: query + subtree refs (already aligned in combined alignment)
-            tmp_aln = tmpd_p / f"aln_{qi}.fasta"
+
+            # 2) write tmp alignment: query + subtree refs
+            #    Original: subtree labels tragen %%edge_id -> fürs FASTA wieder strippen
             records = {q_name: q_seq}
             for lab in labels:
-                records[lab] = ref_dict[lab]
+                base = lab.split("%%", 1)[0]
+                if base in ref_dict:
+                    records[base] = ref_dict[base]
             write_fasta(str(tmp_aln), records)
-            # 4) build subtree refpkg with taxit
-            tmp_refpkg = tmpd_p / f"refpkg_{qi}"
-            # tmp_refpkg.mkdir(parents=True, exist_ok=True)
+
+            # 3) subtree tree
+            subtree = backbone_tree.extract_tree_with(labels)
+
+            # Original: falls subtree root 2 Kinder -> deroot
+            if subtree.root.num_children() == 2:
+                subtree.deroot()
+
+            # Original: Edge-Nummern im Subtree entfernen, bevor pplacer läuft
+            remove_edge_numbers(subtree)
+
+            subtree.write_tree_newick(str(tmp_tree), hide_rooted_prefix=True)
+
+            # 4) build subtree refpkg with taxit (Original nutzt ref alignment + tree stats)
             sanitize_newick_for_pplacer_inplace(tmp_tree)
             taxit_cmd = [
                 "taxit", "create",
                 "-P", str(tmp_refpkg),
                 "-l", f"subtree_{qi}",
-                "--aln-fasta", ref.ref_alignment,
+                "--aln-fasta", ref.ref_alignment,  # wie Original: ref alignment (nicht tmp_aln)
                 "--tree-file", str(tmp_tree),
                 "--tree-stats", ref.tree_stats,
             ]
             run_cmd(taxit_cmd)
 
             # 5) pplacer on subtree
-            tmp_jplace = tmpd_p / f"place_{qi}.jplace"
             pplacer_cmd = [
                 "pplacer",
                 "-m", model,
@@ -628,86 +649,63 @@ def pplacer_tax_scampp_like_graftm(
                 "-j", str(max(1, int(threads))),
                 str(tmp_aln),
             ]
-            print("5 Running pplacer")
             run_cmd(pplacer_cmd)
 
-            placements = []
-            tmp_output = tmp_jplace
-            print("6 load subtree")
-            # 6) load subtree placements and remap edge_num onto backbone
+            # 6) load subtree placements and remap edge_num onto backbone (Original-Remap)
+            with open(tmp_jplace, "r", encoding="utf-8") as place_file:
+                place_json = json.load(place_file)
 
-            # load the jplace file and find placements in the original backbone tree
-            place_file = open(tmp_output, 'r')
-            place_json = json.load(place_file)
+            if not place_json.get("placements"):
+                continue
 
-            if len(place_json["placements"]) > 0:
+            added_tree, edge_dict = read_tree_newick_edge_tokens(place_json["tree"])
 
-                added_tree, edge_dict = read_tree_newick_edge_tokens(place_json["tree"])
+            tmp_place = place_json["placements"][0]
+            for i in range(len(tmp_place["p"])):
+                edge_num = tmp_place["p"][i][1]  # edge number in subtree
+                edge_distal = tmp_place["p"][i][0]  # distal length from parent node
 
-                tmp_place = place_json["placements"][0]
-                for i in range(len(tmp_place["p"])):
-                    edge_num = tmp_place["p"][i][1]  # edge number in subtree
-                    edge_distal = tmp_place["p"][i][0]  # distal length from parent node
+                # find placement edge according to edge number
+                right_n = edge_dict[str(edge_num)]
+                left_n = right_n.get_parent()
 
-                    # find placement edge according to edge number
-                    right_n = edge_dict[str(edge_num)]
-                    left_n = right_n.get_parent()
+                # obtain a path from leaf left to leaf right containing placement edge through the subtree
+                left, path_l = find_closest(left_n, {left_n, right_n})
+                right, path_r = find_closest(right_n, {left_n, right_n})
 
-                    # obtain a path from leaf left to leaf right containing placement edge through the subtree
-                    left, path_l = find_closest(left_n, {left_n, right_n})
-                    right, path_r = find_closest(right_n, {left_n, right_n})
+                # obtain the corresponding path in backbone tree (Original: leaf_dict)
+                left = backbone_leaf_labels[left.get_label()]
+                right = backbone_leaf_labels[right.get_label()]
+                _, path = find_closest(left, {left}, y=right)
 
-                    # obtain the corresponding path in backbone tree
-                    left = plain_leaf_index[left.get_label()]
-                    right = plain_leaf_index[right.get_label()]
-                    _, path = find_closest(left, {left}, y=right)
+                # find the length of placement along the path from leaf left to leaf right in subtree
+                length = sum(x.get_edge_length() for x in path_l) + edge_distal
 
-                    # find the length of placement along the path from leaf left to leaf right in subtree
-                    length = sum([x.get_edge_length() for x in path_l]) + edge_distal
+                # find the target placement edge in backbone tree
+                target_edge = path[-1]
+                for j in range(len(path)):
+                    length -= path[j].get_edge_length()
+                    if length < 0:
+                        target_edge = path[j]
+                        break
 
-                    # find the target placement edge in backbone tree
-                    target_edge = path[-1]
-                    for j in range(len(path)):
-                        length -= path[j].get_edge_length()
-                        if length < 0:
-                            target_edge = path[j]
-                            break
+                # rewrite placement: map to backbone edge number and update distal length
+                label = target_edge.get_label()
+                taxon, target_edge_nbr = label.split("%%", 1)
 
-                    tmp_place["p"][i][0] = 0
+                tmp_place["p"][i][0] = target_edge.get_edge_length() + length
+                tmp_place["p"][i][1] = int(target_edge_nbr)
 
-                    label = target_edge.get_label()
-                    [taxon, target_edge_nbr] = label.split('%%', 1)
-                    tmp_place["p"][i][0] = target_edge.get_edge_length() + length
-                    tmp_place["p"][i][1] = int(target_edge_nbr)
+            placements.append(tmp_place.copy())
 
-                # append the placement to the output jplace
-                placements.append(tmp_place.copy())
-
-            place_file.close()
-        print("14")
-        # build jplace file
+        # ------------------------------------------------------------
+        # finalize jplace + write
+        # ------------------------------------------------------------
         jplace["placements"] = placements
-        jplace["metadata"]["invocation"] = {
-            "routine": "pplacer_tax_scampp_like_graftm",
-            "output_file": output_file,
-            "output_path": str(Path(output_path).resolve()),
-            "input_path": str(Path(input_path).resolve()),
-            "threads": int(threads),
-            "refpkg": str(Path(refpkg).resolve()),
-            "model": model,
-            "subtreesize": subtreesize,
-            "subtreetype": subtreetype,
-            "fragmentflag": fragmentflag,
-            "tmpfilenbr": tmpfilenbr,
-        }
-        jplace["version"] = 3
-        jplace["fields"] = ["distal_length", "edge_num", "like_weight_ratio", \
-                            "likelihood", "pendant_length"]
 
-        # output = open('{}/{}.jplace'.format(output, outFile), 'w')
         final_jplace_path = (Path(output_path) / f"{output_file}.jplace").resolve()
-        print("15")
         with open(final_jplace_path, "w", encoding="utf-8") as fh:
             json.dump(jplace, fh, sort_keys=True, indent=2)
             fh.write("\n")
+        print(f"Return final jplace {final_jplace_file_path}")
         return final_jplace_path

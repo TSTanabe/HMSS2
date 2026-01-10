@@ -223,24 +223,29 @@ class Pplacer:
             return to_return
 
         # Run pplacer on merged file
-        if True:
-            jplace = pplacer_tax_scampp_like_graftm(
-                output_file=files.jplace_output_path(),
-                output_path=args.output_directory,
-                input_path=files.comb_aln_fa(),
-                threads=args.threads,
-                refpkg=self.refpkg
-            )
-        else:
-            print(f"PPLACER")
-            jplace = self.pplacer(
-                files.jplace_output_path(),
-                args.output_directory,
-                files.comb_aln_fa(),
-                args.threads,
-            )
-        print(jplace)
+
+        jplace = pplacer_tax_scampp_like_graftm(
+            output_file=files.jplace_output_path(),
+            output_path=args.output_directory,
+            input_path=files.comb_aln_fa(),
+            threads=args.threads,
+            refpkg=self.refpkg
+        )
+        print("--- SCAMPP")
+        import os
+        os.system("cat your_file.jplace")
+
+        jplace = self.pplacer(
+            files.jplace_output_path(),
+            args.output_directory,
+            files.comb_aln_fa(),
+            args.threads,
+        )
+        print("--- PPLACER")
+        import os
+        os.system("cat your_file.jplace")
         files_to_delete.append(jplace)
+
         logging.info("Placements finished")
 
         # Read the json of refpkg
