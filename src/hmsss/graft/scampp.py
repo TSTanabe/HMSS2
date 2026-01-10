@@ -660,10 +660,6 @@ def pplacer_tax_scampp_like_graftm(
             # 3) subtree tree
             subtree = backbone_tree.extract_tree_with(labels)
 
-            # Original: falls subtree root 2 Kinder -> deroot
-            if subtree.root.num_children() == 2:
-                subtree.deroot()
-
             # Original: Edge-Nummern im Subtree entfernen, bevor pplacer läuft
             remove_edge_numbers(subtree)
 
