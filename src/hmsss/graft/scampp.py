@@ -227,6 +227,47 @@ def add_edge_numbers(tree: treeswift.Tree) -> None:
             node.set_label(f"{lab}%%{counter}")
 
 
+def newick_edge_tokens(node):
+    '''
+    Modified from treeswift node.newick()
+    Newick string conversion starting at this ``Node`` object
+    Returns:
+        ``str``: Newick string conversion starting at this ``Node`` object
+    '''
+    node_to_str = dict()
+    for node in node.traverse_postorder():
+        node_label = node.get_label()
+        [label, edge_nbr] = node_label.split('%%', 1)
+        # node.set_label(label_list[0])
+        if node.is_leaf():
+            if label is None:
+                node_to_str[node] = ''
+            else:
+                node_to_str[node] = str(label)
+        else:
+            out = ['(']
+            for c in node.children:
+                c_label = c.get_label()
+                [label_c, edge_nbr_c] = c_label.split('%%', 1)
+                out.append(node_to_str[c])
+                if c.edge_length is not None:
+                    if isinstance(c.edge_length, int):
+                        l_str = str(c.edge_length)
+                    elif isinstance(c.edge_length, float) and c.edge_length.is_integer():
+                        l_str = str(int(c.edge_length))
+                    else:
+                        l_str = str(c.edge_length)
+                    out.append(':%s{%d}' % (l_str, int(edge_nbr_c)))
+                out.append(',')
+                del node_to_str[c]
+            out.pop()  # trailing comma
+            out.append(')')
+            if label is not None:
+                out.append(str(label))
+            node_to_str[node] = ''.join(out)
+    return node_to_str[node]
+
+
 def integrate_edge_tokens_to_newick(tree):
     """
     Modified from treeswift tree.newick().
