@@ -224,6 +224,10 @@ class Pplacer:
 
         # Run pplacer on merged file
 
+        import time
+
+        # --- SCAMPP ---
+        t0 = time.perf_counter()
         jplace = pplacer_tax_scampp_like_graftm(
             output_file=files.jplace_output_path(),
             output_path=args.output_directory,
@@ -231,17 +235,24 @@ class Pplacer:
             threads=args.threads,
             refpkg=self.refpkg
         )
-        print("--- SCAMPP")
-        os.system("cat your_file.jplace")
+        t1 = time.perf_counter()
 
+        print(f"--- SCAMPP ({t1 - t0:.2f} s)")
+        os.system(f"cat {jplace}")
+
+        # --- PPLACER ---
+        t2 = time.perf_counter()
         jplace = self.pplacer(
             files.jplace_output_path(),
             args.output_directory,
             files.comb_aln_fa(),
             args.threads,
         )
-        print("--- PPLACER")
-        os.system("cat your_file.jplace")
+        t3 = time.perf_counter()
+
+        print(f"--- PPLACER ({t3 - t2:.2f} s)")
+        os.system(f"cat {jplace}")
+
         files_to_delete.append(jplace)
 
         logging.info("Placements finished")
