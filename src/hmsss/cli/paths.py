@@ -16,11 +16,11 @@ The constants are initialized on import; `refresh_paths()` can be used to
 recompute them for a different base (e.g., temporary test roots).
 """
 
-
 __all__ = [
     "ROOT_DIR",
     "BIN_DIR",
     "DATA_DIR",
+    "GPKG_DIR",
     "HMMS_DIR",
     "REFSEQ_DIR",
     "RESULTS_DIR",
@@ -31,6 +31,7 @@ __all__ = [
     "SRC_FILE_PATTERNS",
     "SRC_FILE_EXCLUSION_SINGLETONS",
     "SRC_FILE_METABOLISM_INFORMATION",
+    "SRC_FILE_GPKG_RAM_INFORMATION",
     "refresh_paths",
     "as_dict",
 ]
@@ -84,10 +85,12 @@ def _make_paths(root: Path) -> Dict[str, Path]:
         HMMS_DIR, REFSEQ_DIR, RESULTS_DIR, PACKAGE_DIR, and source resource files.
     """
     data = root / "data"
+    gpkg = root / "gpkg"
     return {
         "ROOT_DIR": root,
         "BIN_DIR": root / "bin",
         "DATA_DIR": data,
+        "GPKG_DIR": gpkg,
         # Consistent with parse.py-Defaults: HMMlib
         "HMMS_DIR": data / "HMMs",
         "REFSEQ_DIR": data / "RefSeqs",
@@ -100,6 +103,8 @@ def _make_paths(root: Path) -> Dict[str, Path]:
         "SRC_FILE_PATTERNS": data / "Patterns",
         "SRC_FILE_EXCLUSION_SINGLETONS": data / "Exclusion_singletons",
         "SRC_FILE_METABOLISM_INFORMATION": data / "Metabolism_information",
+        # gpkg resources
+        "SRC_FILE_GPKG_RAM_INFORMATION": gpkg / "RAM_profile"
     }
 
 
@@ -110,6 +115,7 @@ _paths = _make_paths(_detect_root())
 ROOT_DIR: Path = _paths["ROOT_DIR"]
 BIN_DIR: Path = _paths["BIN_DIR"]
 DATA_DIR: Path = _paths["DATA_DIR"]
+GPKG_DIR: Path = _paths["GPKG_DIR"]
 HMMS_DIR: Path = _paths["HMMS_DIR"]
 REFSEQ_DIR: Path = _paths["REFSEQ_DIR"]
 RESULTS_DIR: Path = _paths["RESULTS_DIR"]
@@ -121,6 +127,7 @@ SRC_FILE_THRESHOLDS: Path = _paths["SRC_FILE_THRESHOLDS"]
 SRC_FILE_PATTERNS: Path = _paths["SRC_FILE_PATTERNS"]
 SRC_FILE_EXCLUSION_SINGLETONS: Path = _paths["SRC_FILE_EXCLUSION_SINGLETONS"]
 SRC_FILE_METABOLISM_INFORMATION: Path = _paths["SRC_FILE_METABOLISM_INFORMATION"]
+SRC_FILE_GPKG_RAM_INFORMATION: Path = _paths["SRC_FILE_GPKG_RAM_INFORMATION"]
 
 
 def refresh_paths(base: str | Path | None = None) -> None:
@@ -137,6 +144,7 @@ def refresh_paths(base: str | Path | None = None) -> None:
         ROOT_DIR, \
         BIN_DIR, \
         DATA_DIR, \
+        GPKG_DIR, \
         HMMS_DIR, \
         REFSEQ_DIR, \
         RESULTS_DIR, \
@@ -146,6 +154,7 @@ def refresh_paths(base: str | Path | None = None) -> None:
         SRC_FILE_THRESHOLDS, \
         SRC_FILE_PATTERNS, \
         SRC_FILE_EXCLUSION_SINGLETONS, \
+        SRC_FILE_GPKG_RAM_INFORMATION, \
         _paths
 
     root = Path(base).resolve() if base else _detect_root()
@@ -166,9 +175,11 @@ def refresh_paths(base: str | Path | None = None) -> None:
     SRC_FILE_EXCLUSION_SINGLETONS = _paths["SRC_FILE_EXCLUSION_SINGLETONS"]
     SRC_FILE_METABOLISM_INFORMATION = _paths["SRC_FILE_METABOLISM_INFORMATION"]
 
+    SRC_FILE_GPKG_RAM_INFORMATION = _paths["SRC_FILE_GPKG_RAM_INFORMATION"]
+
 
 def as_dict(
-    str_paths: bool = True, include_sources: bool = False
+        str_paths: bool = True, include_sources: bool = False
 ) -> Dict[str, str | Path]:
     """Return all core paths as a dictionary (for logs/debugging).
 
@@ -183,6 +194,7 @@ def as_dict(
         "ROOT_DIR": ROOT_DIR,
         "BIN_DIR": BIN_DIR,
         "DATA_DIR": DATA_DIR,
+        "GPKG_DIR": GPKG_DIR,
         "HMMS_DIR": HMMS_DIR,
         "REFSEQ_DIR": REFSEQ_DIR,
         "RESULTS_DIR": RESULTS_DIR,

@@ -53,4 +53,8 @@ def initial_read_mapping(config):
 
     logger.info(f"Executing read assignments for {len(task_list)} tasks")
     # Perform the graft for all tasks in the list
-    graft_mp.graft_mp(task_list, config.glob_chunks, config)
+
+    if config.ram_limit:
+        graft_mp.graft_mp_tokenized_executor(task_list, config.glob_chunks, config)
+    else:
+        graft_mp.graft_mp(task_list, config.glob_chunks, config)

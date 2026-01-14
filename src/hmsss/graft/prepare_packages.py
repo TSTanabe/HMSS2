@@ -6,7 +6,7 @@ import subprocess
 from typing import Dict
 
 from hmsss.cli.config import Config
-from hmsss.cli.paths import DATA_DIR
+from hmsss.cli.paths import GPKG_DIR
 from hmsss.core import queue as queue
 from hmsss.core.logging import get_logger
 
@@ -22,7 +22,7 @@ def prepare_gpkg_packages(config: Config) -> None | dict[str, str]:
             else config.hmm_sets.split()
         )
         return queue.collect_gpkg_from_selected_metabolism_packages(
-            str(DATA_DIR), allowed
+            str(GPKG_DIR), allowed
         )
     else:
         logger.warning("Define a library set for the read mapping")

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import math
 from dataclasses import dataclass
 from types import SimpleNamespace
 from collections import defaultdict
@@ -8,7 +9,7 @@ from typing import Iterable, Tuple, Dict
 
 from hmsss.core import queue
 from hmsss.core.logging import get_logger
-from hmsss.graft import prepare_packages, gpkg_length
+from hmsss.graft import prepare_packages, gpkg_length, gpkg_ram
 from hmsss.utils import myUtil
 
 logger = get_logger(__name__)
@@ -26,6 +27,10 @@ class GraftMTask:
     min_coverage: float = 0.3
     diamond_db = None
     decoy_db = None
+
+    # Memory limits für das mapping
+    mem_est_gb: float | None = None  # for scheduling / tokens
+    mem_cap_gb: float | None = None  # hard per-process limit
 
     metagenome_id: str = ""
     genome_id: str = ""
@@ -46,6 +51,39 @@ class GraftMTask:
 
         object.__setattr__(self, "diamond_db", diamond_db)
         object.__setattr__(self, "decoy_db", decoy_db)
+
+    def apply_ram_profile(
+            self,
+            peak_gb: float | None,
+            *,
+            est_factor: float = 1.10,
+            cap_factor: float = 1.25,
+            fallback_est_gb: float = 16.0,
+            fallback_cap_gb: float = 24.0,
+            rounding: str = "ceil",
+    ) -> None:
+        """
+        Set mem_est_gb and mem_cap_gb based on a measured peak RAM (GB).
+        If peak_gb is None, use conservative fallback values.
+        """
+        if peak_gb is None:
+            self.mem_est_gb = float(fallback_est_gb)
+            self.mem_cap_gb = float(fallback_cap_gb)
+            return
+
+        est = float(peak_gb) * float(est_factor)
+        cap = float(peak_gb) * float(cap_factor)
+
+        if rounding == "ceil":
+            self.mem_est_gb = float(math.ceil(est))
+            self.mem_cap_gb = float(math.ceil(cap))
+        elif rounding == "round":
+            self.mem_est_gb = float(round(est))
+            self.mem_cap_gb = float(round(cap))
+        else:
+            # no rounding
+            self.mem_est_gb = est
+            self.mem_cap_gb = cap
 
 
 def merge_read_mapping_inputs(
@@ -265,6 +303,7 @@ def create_task_list(
         reverse_dict: dict[str, str],
         output_directory: str,
         length_dict: dict[str, int],
+        gpkg_ram_profile: dict[str, float],
         *,
         threads: int = 1,
         evalue: str = "1e-5",
@@ -277,6 +316,7 @@ def create_task_list(
         genome_id = myUtil.get_genome_id(forward_path)
         for gpkg_name, gpkg in gpkg_packages.items():
             length = length_dict.get(gpkg_name)
+            peak = gpkg_ram_profile.get(gpkg_name, 4.0)  # default 4 GB RAM
             task = GraftMTask(
                 gpkg_name=gpkg_name,
                 gpkg=gpkg,
@@ -290,6 +330,7 @@ def create_task_list(
                 threads=threads,
                 evalue=evalue,
             )
+            task.apply_ram_profile(peak)
 
             tasks.append(task)
 
@@ -314,6 +355,7 @@ def initialize_task_list(config):
 
     prepare_packages.initialize_gpkg_packages(gpkg_packages, threads=4)
     gpkg_length_dict = gpkg_length.collect_gpkg_reference_median_lengths(gpkg_packages)
+    gpkg_ram_dict = gpkg_ram.collect_gpkg_ram(gpkg_packages)
     # create task list can also define the cpu threads and the minimal e value
     task_list = create_task_list(
         gpkg_packages=gpkg_packages,
@@ -321,6 +363,7 @@ def initialize_task_list(config):
         reverse_dict=reverse_dict,
         output_directory=config.fasta_output_directory,
         length_dict=gpkg_length_dict,
+        gpkg_ram_profile=gpkg_ram_dict,
     )
 
     return task_list

@@ -160,13 +160,13 @@ def _ensure_diamond_db(globdb_faa: str, db_dmnd: str, *, threads: int) -> str:
 
 
 def _diamond_collect_subject_ids(
-    *,
-    db_prefix: str,
-    query_faa: str,
-    threads: int,
-    evalue: float,
-    max_target_seqs: int,
-    min_ident: Optional[float],
+        *,
+        db_prefix: str,
+        query_faa: str,
+        threads: int,
+        evalue: float,
+        max_target_seqs: int,
+        min_ident: Optional[float],
 ) -> Set[str]:
     """
     DIAMOND blastp → sammelt nur sseqid (als Suffix nach letztem '-').
@@ -221,15 +221,15 @@ def _diamond_collect_subject_ids(
 
 
 def _diamond_collect_subject_ids_with_hi_ident_flag(
-    *,
-    db_prefix: str,
-    query_faa: str,
-    threads: int,
-    evalue: float,
-    max_target_seqs: int,
-    hi_ident_threshold: float,
-    sensitivity: str = "very-sensitive",
-    min_id: float = 25.0,
+        *,
+        db_prefix: str,
+        query_faa: str,
+        threads: int,
+        evalue: float,
+        max_target_seqs: int,
+        hi_ident_threshold: float,
+        sensitivity: str = "very-sensitive",
+        min_id: float = 25.0,
 ):
     """
     Single DIAMOND run.
@@ -311,10 +311,10 @@ def _count_fasta_records(fp: str) -> int:
 
 
 def build_query_faa_for_bait(
-    input_faa: str,
-    *,
-    max_query: int,
-    rng: Optional[random.Random] = None,
+        input_faa: str,
+        *,
+        max_query: int,
+        rng: Optional[random.Random] = None,
 ) -> str:
     """
     Erzeugt eine Query-FASTA für DIAMOND:
@@ -376,10 +376,10 @@ def build_query_faa_for_bait(
 
 
 def _reservoir_sample_fasta_records(
-    fasta_path: str,
-    *,
-    k: int,
-    seed: int | None = None,
+        fasta_path: str,
+        *,
+        k: int,
+        seed: int | None = None,
 ) -> list[tuple[str, str]]:
     """
     Reservoir sampling über FASTA-Records.
@@ -418,17 +418,17 @@ def _reservoir_sample_fasta_records(
 
 
 def make_bait_fasta(
-    input_faa: str,
-    globdb_faa: str,
-    output_bait_faa: str,
-    output_dmnd: str,
-    *,
-    threads: int,
-    diamond_db_dmnd: Optional[str] = None,
-    evalue: float = 1e-10,
-    max_target_seqs: int = 25000,
-    hi_ident_threshold: float = 90.0,
-    empty_on_no_bait: bool = False,
+        input_faa: str,
+        globdb_faa: str,
+        output_bait_faa: str,
+        output_dmnd: str,
+        *,
+        threads: int,
+        diamond_db_dmnd: Optional[str] = None,
+        evalue: float = 1e-10,
+        max_target_seqs: int = 25000,
+        hi_ident_threshold: float = 90.0,
+        empty_on_no_bait: bool = False,
 ) -> None:
     assert os.path.isfile(input_faa), f"Missing input_faa: {input_faa}"
     assert os.path.isfile(globdb_faa), f"Missing globdb_faa: {globdb_faa}"
@@ -628,7 +628,7 @@ def step4_trimal(input_aln: str, output_trimmed: str) -> None:
 
 
 def step5_build_tree(
-    input_alignment: str, output_tree: str, veryfasttree_bin: str
+        input_alignment: str, output_tree: str, veryfasttree_bin: str
 ) -> None:
     cmd = f"{veryfasttree_bin} -out {output_tree} {input_alignment}"
     logger.info("RUN: %s", cmd)
@@ -644,12 +644,12 @@ def step6_midpoint_root(input_tree: str, output_rooted_tree: str) -> None:
 
 # ---------- GraftM-Package bauen ----------
 def step9_create_gpkg(
-    output_gpkg: str,
-    seqs_faa: str,
-    trimmed_aln: str,
-    rooted_tree: str,
-    taxonomy_tsv: str,
-    threads: int = 12,
+        output_gpkg: str,
+        seqs_faa: str,
+        trimmed_aln: str,
+        rooted_tree: str,
+        taxonomy_tsv: str,
+        threads: int = 12,
 ) -> None:
     """
     Erstellt ein GraftM gpkg Paket.
@@ -684,11 +684,11 @@ def step9_create_gpkg(
 
 # ---------- Step 10 – Bait-Artefakte ins gpkg kopieren ----------
 def step10_attach_bait_artifacts(
-    out_dir: str,
-    protein_type: str,
-    bait_faa: str,
-    bait_dmnd: str,
-    target_dir: str,
+        out_dir: str,
+        protein_type: str,
+        bait_faa: str,
+        bait_dmnd: str,
+        target_dir: str,
 ) -> Optional[str]:
     """
     Kopiert (falls vorhanden) 6_bait.faa und 7_bait_db.dmnd in den Ordner
@@ -729,15 +729,16 @@ def step10_attach_bait_artifacts(
 
 
 def step_make_mock_fragments(
-    input_faa: str,
-    out_dir: str,
-    output_name: str,
-    *,
-    min_len: int = 40,
-    max_len: int = 60,
-    min_step: int = 15,
-    max_step: int = 45,
-    max_sequences: int = 100000,
+        input_faa: str,
+        out_dir: str,
+        output_name: str,
+        *,
+        min_len: int = 40,
+        max_len: int = 60,
+        min_step: int = 15,
+        max_step: int = 45,
+        max_sequences: int = 100000,
+        max_fragments: int = 100000,
 ) -> int:
     """
     Erzeugt Mock-Fragmente aus Protein-FASTA.
@@ -756,6 +757,10 @@ def step_make_mock_fragments(
         nur die Fragmente gezählt (Anzahl '>'-Header) und diese Zahl zurückgegeben.
       • Verarbeite höchstens `max_sequences` zufällig ausgewählte Eingabesequenzen.
     """
+
+    def reached_fragment_cap() -> bool:
+        return max_fragments is not None and total_frags >= max_fragments
+
     assert os.path.isfile(input_faa), f"FASTA not found: {input_faa}"
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, output_name)
@@ -810,6 +815,9 @@ def step_make_mock_fragments(
         last_pct_printed = -10  # VOR der for-Schleife initialisieren
 
         for base_name, aa in _iter_fasta(input_faa):
+
+            if total_frags >= max_fragments:
+                break
             processed += 1
 
             if selected_indices is not None and (processed - 1) not in selected_indices:
@@ -853,7 +861,7 @@ def step_make_mock_fragments(
                 for clen in (c_len1, c_len2):
                     frag_idx += 1
                     total_frags += 1
-                    out_fh.write(f">{base_name}_{frag_idx}\n{aa[L - clen :]}\n")
+                    out_fh.write(f">{base_name}_{frag_idx}\n{aa[L - clen:]}\n")
 
             else:
                 # Sliding-Fenster mit jitter
@@ -906,12 +914,12 @@ def step_make_mock_fragments(
 
 
 def step11_graft_with_package(
-    gpkg_dir: str,
-    input_faa: str,
-    search_dmnd: str,
-    bait_dmnd: str,
-    threads: int = 4,
-    result_dir: str = "graft_results",
+        gpkg_dir: str,
+        input_faa: str,
+        search_dmnd: str,
+        bait_dmnd: str,
+        threads: int = 4,
+        result_dir: str = "graft_results",
 ) -> Optional[str]:
     """
     Führt 'graftM graft' mit dem erzeugten gpkg gegen eine Protein-FASTA aus.
@@ -1084,8 +1092,8 @@ def parse_graftm_read_tax(path: str) -> Dict[str, Dict[str, Optional[str]]]:
 
     lower_first = [c.strip().lower() for c in first_cols]
     if any(
-        x in lower_first
-        for x in ("id", "read", "read_id", "sequence", "seqid", "seq_id")
+            x in lower_first
+            for x in ("id", "read", "read_id", "sequence", "seqid", "seq_id")
     ) or any(
         x in lower_first
         for x in ("taxonomy", "classification", "graftm_taxonomy", "taxon")
@@ -1093,8 +1101,8 @@ def parse_graftm_read_tax(path: str) -> Dict[str, Dict[str, Optional[str]]]:
         is_header = True
         for i, col in enumerate(lower_first):
             if any(
-                x in col
-                for x in ("id", "read", "read_id", "sequence", "seqid", "seq_id")
+                    x in col
+                    for x in ("id", "read", "read_id", "sequence", "seqid", "seq_id")
             ):
                 id_idx = i
                 break
@@ -1129,8 +1137,8 @@ RANK_ORDER = ["kingdom", "phylum", "class", "order", "family", "genus", "species
 
 
 def evaluate_tax_assignments(
-    reference: Dict[str, Dict[str, Any]],
-    test: Dict[str, Dict[str, Any]],
+        reference: Dict[str, Dict[str, Any]],
+        test: Dict[str, Dict[str, Any]],
 ) -> Dict[str, Any]:
     n_test_keys = len(test)
     n_correct_lowest_rank = 0
@@ -1190,12 +1198,12 @@ def evaluate_tax_assignments(
 
 
 def write_eval_txt(
-    gpkg_dir: str,
-    protein_type: str,
-    TP_frags: int,
-    TN_frags: int,
-    eval_stats: Dict[str, Any],
-    fp_test_keys: int,
+        gpkg_dir: str,
+        protein_type: str,
+        TP_frags: int,
+        TN_frags: int,
+        eval_stats: Dict[str, Any],
+        fp_test_keys: int,
 ) -> str:
     """
     Schreibt alle Evaluationswerte in ein einfaches maschinenlesbares Textfile.
@@ -1311,12 +1319,12 @@ def write_eval_txt(
 
 # ---------- Verarbeitung einer einzelnen FASTA-Datei ----------
 def process_protein_fasta(
-    input_faa: str,
-    out_dir: str,
-    threads: int,
-    veryfasttree_bin: str,
-    globdb_faa: str,
-    taxonomy_tsv: str,
+        input_faa: str,
+        out_dir: str,
+        threads: int,
+        veryfasttree_bin: str,
+        globdb_faa: str,
+        taxonomy_tsv: str,
 ) -> None:
     protein_type = os.path.splitext(os.path.basename(input_faa))[0]
     os.makedirs(out_dir, exist_ok=True)
@@ -1385,6 +1393,7 @@ def process_protein_fasta(
         os.rename(out_refdmnd, out_refdmnd_single_char)  # das sollte nun Q heißen
 
     # GPKG Paket bauen
+    logger.info(f"Create Package")
     step9_create_gpkg(
         output_gpkg=out_gpkg,
         seqs_faa=input_faa,
@@ -1408,6 +1417,7 @@ def process_protein_fasta(
     gpkg_refdmnd = os.path.join(cwd, "Q")
 
     # GPKG Paket testen: Baue TP und TN Sets
+    logger.info(f"Create mock TP reads")
     TP_name = "8_TP_reads.faa"
     TP_frags = step_make_mock_fragments(
         input_faa=input_faa,
@@ -1415,6 +1425,7 @@ def process_protein_fasta(
         output_name=TP_name,
         max_sequences=50000,
     )
+    logger.info(f"Create mock TN reads")
     TN_name = "9_TN_reads.faa"
     TN_frags = step_make_mock_fragments(
         input_faa=out_bait,

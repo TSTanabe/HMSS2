@@ -26,11 +26,11 @@ def _project_root_from_this_file(this_file: Path, *, marker_dir: str = "src") ->
 
 
 def _download_file(
-    url: str,
-    out_path: Path,
-    *,
-    user_agent: str = "HMSS2/1.0",
-    chunk_size: int = 1024 * 1024,  # 1 MB
+        url: str,
+        out_path: Path,
+        *,
+        user_agent: str = "HMSS2/1.0",
+        chunk_size: int = 1024 * 1024,  # 1 MB
 ) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -67,71 +67,72 @@ def _sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def ensure_data_dir_with_marker(
-    *,
-    data_zip_url: str,
-    expected_sha256: str | None = None,
-    project_root: Path | None = None,
-    marker_name: str = ".data_ok",
+def ensure_dir_with_marker_from_zip(
+        *,
+        zip_url: str,
+        expected_sha256: str | None = None,
+        project_root: Path | None = None,
+        target_dirname: str,
+        marker_name: str = ".ok",
+        user_agent: str = "HMSS2/1.0",
 ) -> Path:
     """
-    Stellt sicher, dass <project_root>/data vollständig initialisiert ist.
-    "Vollständig" = data/ existiert UND Marker-Datei existiert.
+    Stellt sicher, dass <project_root>/<target_dirname> vollständig initialisiert ist.
+
+    "Vollständig" = target_dir existiert UND Marker-Datei existiert.
 
     ZIP-Layouts unterstützt:
-      A) ZIP enthält top-level 'data/...'
-      B) ZIP enthält direkt den Inhalt von 'data/' (z.B. 'HMMs/...', 'RefSeqs/...')
+      A) ZIP enthält top-level '<target_dirname>/...'
+      B) ZIP enthält direkt den Inhalt von '<target_dirname>/' (z.B. 'HMMs/...')
 
-    Verhalten wenn data/ existiert, aber Marker fehlt:
-      - data/ wird als unvollständig betrachtet
-      - data/ wird nach data.__backup__<timestamp> verschoben
-      - neues data/ wird aus dem ZIP erstellt
+    Verhalten wenn target_dir existiert, aber Marker fehlt:
+      - target_dir wird als unvollständig betrachtet
+      - target_dir wird nach <target_dirname>.__backup__<timestamp> verschoben
+      - neues target_dir wird aus dem ZIP erstellt
       - Marker wird am Ende angelegt
-      - Backup bleibt erhalten (damit nichts verloren geht)
     """
     if project_root is None:
         project_root = _project_root_from_this_file(Path(__file__))
 
-    data_dir = project_root / "data"
-    marker = data_dir / marker_name
+    target_dir = project_root / target_dirname
+    marker = target_dir / marker_name
 
-    # Nur dann skippen, wenn Marker existiert
-    if data_dir.is_dir() and marker.is_file():
-        return data_dir
+    # Skip nur wenn Marker existiert
+    if target_dir.is_dir() and marker.is_file():
+        return target_dir
 
-    if not data_dir.exists():
+    if not target_dir.exists():
         sys.stdout.write(
-            f"[SETUP] Data archive is not initialized: {data_dir} "
-            f"[SETUP] Downloading data from archive.\n"
+            f"[SETUP] Archive is not initialized: {target_dir}\n"
+            f"[SETUP] Downloading from: {zip_url}\n"
         )
     else:
         sys.stdout.write(
-            f"[SETUP] Data archive is incomplete: {data_dir} "
-            f"[SETUP] Downloading data from archive.\n"
+            f"[SETUP] Archive is incomplete: {target_dir}\n"
+            f"[SETUP] Downloading from: {zip_url}\n"
         )
 
     project_root.mkdir(parents=True, exist_ok=True)
 
-    # Falls data/ existiert aber unvollständig: sichern (nicht löschen)
+    # Backup, falls unvollständig vorhanden
     backup_dir: Path | None = None
-    if data_dir.exists():
+    if target_dir.exists():
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_dir = project_root / f"data.__backup__{ts}"
-        # Wenn es irgendwie schon existiert (sehr selten): suffix
+        backup_dir = project_root / f"{target_dirname}.__backup__{ts}"
         i = 1
         while backup_dir.exists():
-            backup_dir = project_root / f"data.__backup__{ts}_{i}"
+            backup_dir = project_root / f"{target_dirname}.__backup__{ts}_{i}"
             i += 1
-        data_dir.replace(backup_dir)
+        target_dir.replace(backup_dir)
 
-    tmp_root = Path(tempfile.mkdtemp(prefix="hmss2_data_bootstrap_"))
+    tmp_root = Path(tempfile.mkdtemp(prefix=f"hmss2_{target_dirname}_bootstrap_"))
     try:
-        zip_path = tmp_root / "data.zip"
+        zip_path = tmp_root / f"{target_dirname}.zip"
         extract_dir = tmp_root / "extract"
         extract_dir.mkdir(parents=True, exist_ok=True)
 
         # Download
-        _download_file(data_zip_url, zip_path)
+        _download_file(zip_url, zip_path, user_agent=user_agent)
 
         # Optional integrity check
         if expected_sha256 is not None:
@@ -145,40 +146,68 @@ def ensure_data_dir_with_marker(
         with zipfile.ZipFile(zip_path, "r") as zf:
             zf.extractall(extract_dir)
 
-        # Quelle bestimmen
-        candidate_a = extract_dir / "data"
-        if candidate_a.is_dir():
-            source_data = candidate_a
-        else:
-            source_data = extract_dir
+        # Quelle bestimmen (Layout A oder B)
+        candidate_a = extract_dir / target_dirname
+        source_dir = candidate_a if candidate_a.is_dir() else extract_dir
 
-        # In staging kopieren (damit replace sauber/atomar bleibt)
-        staging = project_root / ".data_staging_tmp"
+        # Staging copy -> atomarer replace
+        staging = project_root / f".{target_dirname}_staging_tmp"
         if staging.exists():
             shutil.rmtree(staging)
-        shutil.copytree(source_data, staging)
+        shutil.copytree(source_dir, staging)
 
-        # Jetzt staging -> data (data existiert hier nicht mehr, weil ggf. vorher gebackupt)
-        staging.replace(data_dir)
+        staging.replace(target_dir)
 
-        # Minimal sanity check
-        if not data_dir.is_dir():
-            raise DataBootstrapError("Data directory was not created after extraction.")
+        if not target_dir.is_dir():
+            raise DataBootstrapError(
+                f"Target directory was not created after extraction: {target_dir}"
+            )
 
-        # ✅ Marker am Ende schreiben: nur wenn alles erfolgreich war
+        # Marker am Ende
         marker.touch()
-
-        return data_dir
+        return target_dir
 
     except zipfile.BadZipFile as e:
         raise DataBootstrapError(f"Downloaded file is not a valid zip: {e}") from e
     except Exception as e:
-        # Wenn etwas schiefgeht: versuche Backup zurückzuholen
-        if (not data_dir.exists()) and (backup_dir is not None) and backup_dir.exists():
+        # Backup zurückholen, falls möglich
+        if (not target_dir.exists()) and (backup_dir is not None) and backup_dir.exists():
             try:
-                backup_dir.replace(data_dir)
+                backup_dir.replace(target_dir)
             except Exception:
                 pass
-        raise DataBootstrapError(f"Failed to bootstrap data directory: {e}") from e
+        raise DataBootstrapError(f"Failed to bootstrap {target_dirname}: {e}") from e
     finally:
         shutil.rmtree(tmp_root, ignore_errors=True)
+
+
+def ensure_data_dir_with_marker(
+        *,
+        data_zip_url: str,
+        expected_sha256: str | None = None,
+        project_root: Path | None = None,
+        marker_name: str = ".data_ok",
+) -> Path:
+    return ensure_dir_with_marker_from_zip(
+        zip_url=data_zip_url,
+        expected_sha256=expected_sha256,
+        project_root=project_root,
+        target_dirname="data",
+        marker_name=marker_name,
+    )
+
+
+def ensure_gpkg_dir_with_marker(
+        *,
+        gpkg_zip_url: str,
+        expected_sha256: str | None = None,
+        project_root: Path | None = None,
+        marker_name: str = ".gpkg_ok",
+) -> Path:
+    return ensure_dir_with_marker_from_zip(
+        zip_url=gpkg_zip_url,
+        expected_sha256=expected_sha256,
+        project_root=project_root,
+        target_dirname="gpkg",
+        marker_name=marker_name,
+    )
