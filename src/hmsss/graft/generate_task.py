@@ -56,8 +56,8 @@ class GraftMTask:
             self,
             peak_gb: float | None,
             *,
-            est_factor: float = 1.10,
-            cap_factor: float = 1.25,
+            est_factor: float = 1.02,
+            cap_factor: float = 1.1,
             fallback_est_gb: float = 16.0,
             fallback_cap_gb: float = 24.0,
             rounding: str = "ceil",
@@ -337,6 +337,39 @@ def create_task_list(
     return tasks
 
 
+def filter_gpkg_by_ram(
+        *,
+        gpkg_packages: dict[str, str],
+        gpkg_ram_profile: dict[str, float],
+        ram_limit_gb: float,
+        cap_factor: float = 1.1,
+        fallback_cap_gb: float = 64.0,
+) -> dict[str, str]:
+    """
+    Remove GPKGs that would exceed the RAM limit even in isolation.
+    """
+    kept: dict[str, str] = {}
+
+    for gpkg_name, gpkg_path in gpkg_packages.items():
+        peak = gpkg_ram_profile.get(gpkg_name)
+
+        if peak is None:
+            cap = fallback_cap_gb
+        else:
+            cap = math.ceil(float(peak) * cap_factor)
+
+        if cap > ram_limit_gb:
+            logger.warning(
+                f"[GPKG filter] Removing gpkg '{gpkg_name}': "
+                f"Estimated needed RAM={cap} GB > RAM LIMIT={ram_limit_gb} GB"
+            )
+            continue
+
+        kept[gpkg_name] = gpkg_path
+
+    return kept
+
+
 def initialize_task_list(config):
     # _check_dependencies()  # Check if graftM dependencies are present
 
@@ -356,6 +389,14 @@ def initialize_task_list(config):
     prepare_packages.initialize_gpkg_packages(gpkg_packages, threads=4)
     gpkg_length_dict = gpkg_length.collect_gpkg_reference_median_lengths(gpkg_packages)
     gpkg_ram_dict = gpkg_ram.collect_gpkg_ram(gpkg_packages)
+
+    gpkg_packages = filter_gpkg_by_ram(
+        gpkg_packages=gpkg_packages,
+        gpkg_ram_profile=gpkg_ram_dict,
+        ram_limit_gb=float(config.ram_limit),
+        # Ein min limit wäre auch sinnvoll wenn man gewisse gpkgs eineln laufen lassen will
+    )
+
     # create task list can also define the cpu threads and the minimal e value
     task_list = create_task_list(
         gpkg_packages=gpkg_packages,

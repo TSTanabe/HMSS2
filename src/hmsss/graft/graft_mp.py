@@ -228,6 +228,80 @@ from multiprocessing import get_context
 
 from concurrent.futures import wait, FIRST_COMPLETED
 
+from __future__ import annotations
+from typing import Callable, Any
+
+
+def _start_bestfit_tasks(
+        *,
+        ex: object,
+        pending: list,
+        future_to_tokens: dict,
+        available_tokens_gb: float,
+        total_tokens_gb: float,
+        max_workers: int,
+        k_scan: int = 100,
+        handle_result_fn: Callable[[dict], None],
+) -> tuple[float, bool]:
+    """
+    Start tasks using Best-Fit from Top-K pending tasks.
+
+    Returns:
+      (updated_available_tokens_gb, did_progress)
+
+    did_progress is True if we either:
+      - started at least one task, or
+      - skipped (discarded) at least one oversize task.
+    """
+    did_progress = False
+
+    while pending and (len(future_to_tokens) < max_workers):
+        best_i = None
+        best_need = 0.0
+
+        scan_n = min(k_scan, len(pending))
+
+        # Scan Top-K for best-fit
+        for i in range(scan_n):
+            task = pending[i]
+            need = _task_mem_est_gb(task)
+
+            # Policy: oversize -> discard with warning
+            if need > total_tokens_gb:
+                logger.warning(
+                    f"[RAM tokens] Skipping task {getattr(task, 'gpkg_name', '?')} "
+                    f"(mem_est_gb={need:.1f} > ram_budget_gb={total_tokens_gb:.1f})"
+                )
+                pending.pop(i)
+                handle_result_fn({"ok": False})  # counts as processed consistently
+                did_progress = True
+                best_i = None
+                best_need = 0.0
+                break  # restart scanning (indices shifted)
+
+            # Best fit: largest that still fits
+            if need <= available_tokens_gb and need > best_need:
+                best_need = need
+                best_i = i
+
+        # If we removed an oversize task, restart the outer while and try again
+        if best_i is None and best_need == 0.0 and did_progress:
+            continue
+
+        # No task fits into remaining tokens right now -> stop starting
+        if best_i is None:
+            break
+
+        # Start the selected task
+        task = pending.pop(best_i)
+        available_tokens_gb -= best_need
+
+        fut = ex.submit(_run_graft_task, task)
+        future_to_tokens[fut] = best_need
+        did_progress = True
+
+    return available_tokens_gb, did_progress
+
 
 def _collect_done_futures(
         *,
@@ -273,52 +347,36 @@ def _collect_done_futures(
     return available_tokens_gb
 
 
-def graft_mp_tokenized_executor(task_list: list, batch_size: int, config: Config) -> None:
-    """
-    Token-aware multiprocessing using ProcessPoolExecutor + wait(FIRST_COMPLETED).
-
-    Properties:
-      - Skip tasks whose mem_est_gb > ram_budget_gb (warn)
-      - Start tasks only when enough RAM tokens are available
-      - Free tokens as soon as ANY task finishes (FIRST_COMPLETED)
-      - Same DB flush logic as graft_mp / graft_mp_tokenized
-    """
-    read_batch: dict[str, Read] = {}
+def graft_mp_tokenized_executor(task_list: list, batch_size: int, config: "Config") -> None:
+    read_batch: dict[str, "Read"] = {}
     batch_counter: int = 0
 
-    read_mappings_done: int = 0
+    processed: int = 0
     n_tasks = len(task_list)
     log_step = max(1, n_tasks // 100)
 
-    # ---- RAM token budget (GB) ----
-    total_tokens_gb = float(getattr(config, "ram_budget_gb", 8.0))
+    total_tokens_gb = float(getattr(config, "ram_budget_gb", 128.0))
     available_tokens_gb = total_tokens_gb
 
-    # Optional: largest-first gegen Fragmentierung
-    task_list = sorted(task_list, key=lambda t: _task_mem_est_gb(t), reverse=True)
+    pending = sorted(task_list, key=lambda t: _task_mem_est_gb(t), reverse=True)
 
-    # spawn context
     ctx = get_context("spawn")
     max_workers = max(1, int(config.cores) - 1)
 
-    # in-flight: future -> reserved_tokens_gb
     future_to_tokens: dict = {}
 
     def _handle_result(res: dict) -> None:
-        nonlocal read_mappings_done, batch_counter, read_batch
+        nonlocal processed, batch_counter, read_batch
 
-        read_mappings_done += 1
-
-        # Progress logger
-        if (read_mappings_done % log_step == 0) or (read_mappings_done == n_tasks):
-            pct = (read_mappings_done * 100) // max(1, n_tasks)
-            logger.info(f"[Read-mapping progress] {read_mappings_done}/{n_tasks} ({pct}%) tasks processed")
+        processed += 1
+        if (processed % log_step == 0) or (processed == n_tasks):
+            pct = (processed * 100) // max(1, n_tasks)
+            logger.info(f"[Read-mapping progress] {processed}/{n_tasks} ({pct}%) tasks processed")
 
         if not res.get("ok"):
             return
 
-        res_dict = res["read_dict"]
-        read_batch.update(res_dict)
+        read_batch.update(res["read_dict"])
         batch_counter += 1
 
         if batch_counter >= batch_size:
@@ -327,64 +385,36 @@ def graft_mp_tokenized_executor(task_list: list, batch_size: int, config: Config
             batch_counter = 0
 
     with ProcessPoolExecutor(max_workers=max_workers, mp_context=ctx) as ex:
-        idx = 0
-
-        while idx < len(task_list) or future_to_tokens:
-            # 1) So viele Tasks starten wie möglich (Tokens & worker budget)
-            started_any = False
-            while idx < len(task_list):
-                task = task_list[idx]
-                need = _task_mem_est_gb(task)
-
-                # Policy: zu groß für den Node => verwerfen
-                if need > total_tokens_gb:
-                    logger.warning(
-                        f"[RAM tokens] Skipping task {getattr(task, 'gpkg_name', '?')} "
-                        f"(mem_est_gb={need:.1f} > ram_budget_gb={total_tokens_gb:.1f})"
-                    )
-                    idx += 1
-                    # zählt als "processed", damit Progress/Ende konsistent bleibt
-                    read_mappings_done += 1
-                    continue
-
-                # nicht genug Tokens frei => jetzt nicht starten
-                if need > available_tokens_gb:
-                    break
-
-                # Workerzahl nicht überschreiten: executor blockiert nicht,
-                # aber wir begrenzen in-flight, um Token-Accounting stabil zu halten
-                if len(future_to_tokens) >= max_workers:
-                    break
-
-                available_tokens_gb -= need
-                fut = ex.submit(_run_graft_task, task)
-                future_to_tokens[fut] = need
-                idx += 1
-                started_any = True
-
-            # 2) Wenn nichts startbar ist: auf mindestens EIN fertiges Future warten
-            if future_to_tokens and (not started_any):
-                available_tokens_gb = _collect_done_futures(
-                    future_to_tokens=future_to_tokens,
-                    timeout=None,  # <- blockierend bis FIRST_COMPLETED
-                    available_tokens_gb=available_tokens_gb,
-                    handle_result_fn=_handle_result,
-                )
-                continue
-
-            # 3) Wenn wir gestartet haben, können wir ebenfalls fertige Futures einsammeln (ohne zu blockieren)
-            available_tokens_gb = _collect_done_futures(
+        while pending or future_to_tokens:
+            # 1) Refill: start as many as possible
+            available_tokens_gb, _ = _start_bestfit_tasks(
+                ex=ex,
+                pending=pending,
                 future_to_tokens=future_to_tokens,
-                timeout=0.0,  # <- non-blocking poll
                 available_tokens_gb=available_tokens_gb,
+                total_tokens_gb=total_tokens_gb,
+                max_workers=max_workers,
+                k_scan=100,
                 handle_result_fn=_handle_result,
             )
 
-            # kleine Pause gegen Busy-wait
-            if future_to_tokens:
-                time.sleep(0.02)
+            # 2) If nothing is running, we're done (or only oversize were skipped)
+            if not future_to_tokens:
+                break
 
-    # remaining reads flush
+            # 3) Always block until at least one finishes
+            done, _ = wait(future_to_tokens.keys(), return_when=FIRST_COMPLETED)
+
+            for fut in done:
+                reserved = future_to_tokens.pop(fut)
+                available_tokens_gb += reserved
+                try:
+                    res = fut.result()
+                except Exception as e:
+                    print(e)
+                    res = {"ok": False}
+                _handle_result(res)
+
     if read_batch:
         _flush_read_batch_to_db(database_path=config.database_directory, read_batch=read_batch)
         read_batch.clear()
