@@ -308,7 +308,7 @@ def graft_mp_tokenized_executor(task_list: list, batch_size: int, config: "Confi
     n_tasks = len(task_list)
     log_step = max(1, n_tasks // 100)
 
-    total_tokens_gb = float(getattr(config, "ram_limit_max", 16.0))
+    total_tokens_gb = float(getattr(config, "rm_ram_limit_max", 16.0))
     available_tokens_gb = total_tokens_gb
 
     pending = sorted(task_list, key=lambda t: _task_mem_est_gb(t), reverse=True)
