@@ -287,7 +287,8 @@ def _start_bestfit_tasks(
         task = pending.pop(best_i)
         available_tokens_gb -= best_need
 
-        logger.info(f"Starting task {task.gpkg_name}")
+        logger.info(
+            f"Starting task {task.gpkg_name} Need: {need:.1f} GB; Available: {available_tokens_gb:.1f} GB; Total tokens: {total_tokens_gb:.1f} GB")
         fut = ex.submit(_run_graft_task, task)
         future_to_tokens[fut] = best_need
         did_progress = True
