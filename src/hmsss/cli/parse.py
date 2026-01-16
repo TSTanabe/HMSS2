@@ -809,7 +809,7 @@ def build_config_from_namespace(ns) -> Config:
 
     cli_resources = CliResources(
         HMM_sets=list(getattr(ns, "HMM_sets", [])),
-        individual_reports=bool(getattr(ns, "individual_reports", True)),
+        disable_individual_reports=bool(getattr(ns, "disable_individual_reports", False)),
         max_seqs_per_genome=int(getattr(ns, "max_seqs_per_genome", 4)),
         diamond_speed_mode=str(getattr(ns, "diamond_speed_mode", "faster")),
         bool_cross_check=bool(getattr(ns, "bool_cross_check", True)),
