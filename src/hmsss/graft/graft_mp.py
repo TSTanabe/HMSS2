@@ -291,7 +291,6 @@ def _start_bestfit_tasks(
         available_tokens_gb -= best_need
 
         fut = ex.submit(_run_graft_task, task)
-        fut._hmss_task_id = task.task_id
         fut._hmss_gpkg = getattr(task, "gpkg_name", "?")
         fut._hmss_mem_gb = best_need
 
@@ -412,8 +411,12 @@ def graft_mp_tokenized_executor(task_list: list, batch_size: int, config: "Confi
 
             for fut in done:
                 reserved = future_to_tokens.pop(fut)
-                logger.info(f"Reserved tokens returned: {reserved} GB")
                 available_tokens_gb += reserved
+                logger.info(
+                    "Reserved tokens returned: %.1f GB | gpkg=%s",
+                    reserved,
+                    getattr(fut, "_hmss_gpkg", "?"),
+                )
                 try:
                     res = fut.result()
                 except Exception as e:
