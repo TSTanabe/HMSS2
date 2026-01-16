@@ -36,10 +36,10 @@ def _run_graft_task(task):
     """
     # Execute the graftM read mapping
     try:
-        # Set RAM limit in GB
-        mem_cap_gb = getattr(task, "mem_cap_gb", None)
-        if mem_cap_gb is not None:
-            _set_worker_mem_limit_gb(float(mem_cap_gb))
+        # Set RAM limit in GB, RSS limiter thorughs exceptions when additional libraries are loaded
+        # mem_cap_gb = getattr(task, "mem_cap_gb", None)
+        # if mem_cap_gb is not None:
+        #    _set_worker_mem_limit_gb(float(mem_cap_gb))
 
         args = generate_task.build_graft_args(task)
         # logger.debug(args)
