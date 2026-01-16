@@ -28,13 +28,13 @@ def _get_cluster_info(clusterID, cluster_dict):
 
 
 def _output_genome_report(
-    output_filepath: str,
-    protein_dict: Dict[str, Any],
-    cluster_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Any],
-    genomeID: str = "",
-    writemode: str = "w",
-    taxon_divider: str = ".",
+        output_filepath: str,
+        protein_dict: Dict[str, Any],
+        cluster_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Any],
+        genomeID: str = "",
+        writemode: str = "w",
+        taxon_divider: str = ".",
 ) -> None:
     """
     Writes the main genome hit table (TSV).
@@ -90,6 +90,11 @@ def _output_genome_report(
             # protein.get_protein_list() erwartete Reihenfolge laut Docstring:
             # [proteinID, get_domains(), get_domain_scores(), get_domain_coordinates(),
             #  gene_contig, gene_start, gene_end, gene_strand, gene_locustag]
+
+            # Skip proteins that are from other genomes
+            if genomeID and protein.genomeID != genomeID:
+                continue
+
             pl = protein.get_protein_list()
 
             # clusterID + csb (ohne keyword/completeness), needed for parse report routine
@@ -132,10 +137,10 @@ def _output_genome_report(
 
 
 def _output_protein_taxonomy(
-    output_filepath: str,
-    protein_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
-    writemode: str = "w",
+        output_filepath: str,
+        protein_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
+        writemode: str = "w",
 ) -> None:
     """
     Writes a 2-column TSV file:
@@ -192,11 +197,11 @@ def _output_protein_taxonomy(
 
 
 def _output_taxonomy_summary(
-    output_file: str,
-    protein_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
-    allowed_types: Optional[List[str]] = None,
-    preferred_order: Optional[List[str]] = None,
+        output_file: str,
+        protein_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
+        allowed_types: Optional[List[str]] = None,
+        preferred_order: Optional[List[str]] = None,
 ) -> None:
     """
     Summarise protein-type presence per taxonomic level and taxon.
@@ -384,9 +389,9 @@ def _output_taxonomy_summary(
 
 
 def _output_unique_taxonomy_table(
-    output_file: str,
-    protein_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
+        output_file: str,
+        protein_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
 ) -> str:
     """
     Write a non-redundant taxonomy table from a structured taxonomy dict.
@@ -450,12 +455,12 @@ def _output_unique_taxonomy_table(
 
 
 def _output_strain_variability_by_species(
-    directory: str,
-    protein_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
-    required_domains: Set[str],
-    *,
-    unknown_label: str = "Unknown",
+        directory: str,
+        protein_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
+        required_domains: Set[str],
+        *,
+        unknown_label: str = "Unknown",
 ) -> str:
     import os
     from collections import defaultdict
@@ -535,11 +540,11 @@ def _output_strain_variability_by_species(
 
 
 def _output_cluster_overview_by_required(
-    output_filepath: str,
-    protein_dict: Dict[str, Any],
-    required_domains: Set[str],
-    *,
-    writemode: str = "w",
+        output_filepath: str,
+        protein_dict: Dict[str, Any],
+        required_domains: Set[str],
+        *,
+        writemode: str = "w",
 ) -> None:
     """
     Eine Zeile pro Gencluster, der mindestens eines der `required_domains` enthält.
@@ -628,10 +633,10 @@ def _output_cluster_overview_by_required(
 
 
 def _output_distinct_fasta_reports(
-    directory: str,
-    protein_dict: Dict[str, Any],
-    cluster_dict: Dict[str, Any],
-    writemode: str = "w",
+        directory: str,
+        protein_dict: Dict[str, Any],
+        cluster_dict: Dict[str, Any],
+        writemode: str = "w",
 ) -> Set[str]:
     """Writes all protein sequences into distinct FASTA files by domain class and for fusion domains.
 
@@ -698,7 +703,7 @@ def _output_distinct_fasta_reports(
         sequence = str(protein.protein_sequence).replace("*", "")
         for domain in protein.domains:
             domain_name = domain.domain
-            domain_sequence = sequence[domain.start : domain.end]
+            domain_sequence = sequence[domain.start: domain.end]
             filepath = os.path.join(directory, f"multi_domain_{domain_name}.faa")
             files.add(filepath)
             with open(filepath, "a") as writer:
@@ -781,9 +786,9 @@ def _singletons(directory, filepaths):
 
 
 def _output_cluster_context_report(
-    output_filepath: str,
-    context_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
+        output_filepath: str,
+        context_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
 ) -> None:
     """
     Write an extended cluster context table.
@@ -874,11 +879,11 @@ def _clean_empty_files(directory: str) -> None:
 
 
 def _output_domain_function_report(
-    output_filepath: str,
-    protein_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
-    domain_annotations: Dict[str, Dict[str, str]],
-    writemode: str = "w",
+        output_filepath: str,
+        protein_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
+        domain_annotations: Dict[str, Dict[str, str]],
+        writemode: str = "w",
 ) -> None:
     """
     Schreibt pro Protein/Domain Funktionszeilen:
@@ -1007,13 +1012,13 @@ def _output_domain_function_report(
 
 
 def print_hit_reports(
-    directory: str,
-    protein_dict: Dict[str, Any],
-    cluster_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
-    metabolic_dict: Dict[str, Any],
-    context_dict: Dict[str, Any] | None,
-    fetch_proteins: List[str],
+        directory: str,
+        protein_dict: Dict[str, Any],
+        cluster_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
+        metabolic_dict: Dict[str, Any],
+        context_dict: Dict[str, Any] | None,
+        fetch_proteins: List[str],
 ) -> None:
     """
     Main output routine: creates hit tables, taxonomy summaries, and protein FASTA files.
