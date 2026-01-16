@@ -285,7 +285,7 @@ def _start_bestfit_tasks(
 
         # Start the selected task
         task = pending.pop(best_i)
-        logger.info(
+        logger.debug(
             f"Starting task {task.gpkg_name} Need: {need:.1f} GB; Available: {available_tokens_gb:.1f} GB; Total tokens: {total_tokens_gb:.1f} GB")
 
         available_tokens_gb -= best_need
@@ -298,57 +298,6 @@ def _start_bestfit_tasks(
         did_progress = True
 
     return available_tokens_gb, did_progress
-
-
-def _collect_done_futures(
-        *,
-        future_to_tokens: dict,
-        # future_to_task: dict,
-        timeout: float | None,
-        available_tokens_gb: float,
-        handle_result_fn,
-) -> float:
-    """
-    Collect finished futures, free reserved tokens, and process results.
-
-    Args:
-        timeout:
-            - None  => block until at least one future finishes (if any exist)
-            - 0.0   => non-blocking poll
-            - >0.0  => wait up to that many seconds
-    Returns:
-        Updated available_tokens_gb
-    """
-    if not future_to_tokens:
-        return available_tokens_gb
-
-    done, _ = wait(
-        future_to_tokens.keys(),
-        timeout=timeout,
-        return_when=FIRST_COMPLETED,
-    )
-
-    for fut in done:
-        reserved = future_to_tokens.pop(fut)
-        # future_to_task.pop(fut, None)
-        available_tokens_gb += reserved
-
-        logger.info(
-            "Reserved tokens returned: %.1f GB | task_id=%s | gpkg=%s",
-            reserved,
-            getattr(fut, "_hmss_task_id", "?"),
-            getattr(fut, "_hmss_gpkg", "?"),
-        )
-
-        try:
-            res = fut.result()
-        except Exception as e:
-            print(e)
-            res = {"ok": False}
-
-        handle_result_fn(res)
-
-    return available_tokens_gb
 
 
 def graft_mp_tokenized_executor(task_list: list, batch_size: int, config: "Config") -> None:
@@ -412,7 +361,7 @@ def graft_mp_tokenized_executor(task_list: list, batch_size: int, config: "Confi
             for fut in done:
                 reserved = future_to_tokens.pop(fut)
                 available_tokens_gb += reserved
-                logger.info(
+                logger.debug(
                     "Reserved tokens returned: %.1f GB | gpkg=%s",
                     reserved,
                     getattr(fut, "_hmss_gpkg", "?"),

@@ -444,7 +444,7 @@ class Run:
                         )
                         exit(Run.NO_ORFS_EXITSTATUS)
                     dt = time.perf_counter() - t0
-                    print(f"[TIME] aa_db_search took {dt:.3f} seconds")
+                    logging.debug(f"[TIME] aa_db_search took {dt:.3f} seconds")
 
                 # Or the DNA pipeline
                 elif self.args.type == self.PIPELINE_NT:
@@ -487,7 +487,7 @@ class Run:
                         os.remove(result.hit_fasta())
                         continue
                 dt = time.perf_counter() - t0
-                print(f"[TIME] decoy filtering took {dt:.3f} seconds")
+                logging.debug(f"[TIME] decoy filtering took {dt:.3f} seconds")
 
                 t0 = time.perf_counter()
                 if self.args.assignment_method == Run.PPLACER_TAXONOMIC_ASSIGNMENT:
@@ -511,7 +511,7 @@ class Run:
                             pass  # just touch the file, nothing else
                     seqs_list.append(hit_aligned_reads)
                 dt = time.perf_counter() - t0
-                print(f"[TIME] pplacer preparation took {dt:.3f} seconds")
+                logging.debug(f"[TIME] pplacer preparation took {dt:.3f} seconds")
                 db_search_results.append(result)
                 base_list.append(base)
                 search_results.append(result.search_result)
@@ -600,7 +600,7 @@ class Run:
             )
 
         dt = time.perf_counter() - t0
-        print(f"[TIME] pplacer assignment phase took {dt:.3f} seconds")
+        logging.debug(f"[TIME] pplacer assignment phase took {dt:.3f} seconds")
         # Prepare read mapping und alignments for return
         read_tax_paths = {}
         alignment_paths = {}
