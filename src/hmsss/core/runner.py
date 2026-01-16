@@ -98,7 +98,7 @@ def run_pipeline(config) -> None:
         print_header("Assigning taxonomy information")
         taxonomy.collect_taxonomy_information(config)
 
-    if config.individual_reports and (config.stage <= 7 <= config.exit):
+    if not config.disable_individual_reports and (config.stage <= 7 <= config.exit):
         print_header("Writing individual hit reports")
         db_fetch_genome_reports.write_individual_genome_reports(config)
 

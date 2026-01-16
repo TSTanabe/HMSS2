@@ -46,7 +46,7 @@ def write_individual_genome_reports(config) -> None:
     all_taxon: Dict[str, str] = db_fetch_taxonomy.fetch_taxonomy_dict(db_path=db_uri)
 
     excluded = getattr(config, "fetch_not_csb_with_these_domains", None)
-    use_valid = getattr(config, "use_valid_hits", True)
+    use_non_valid = getattr(config, "use_non_valid_hits", False)
 
     def iter_chunks(items: List[str], chunk_size: int) -> Iterable[List[str]]:
         if chunk_size <= 0:
@@ -76,7 +76,7 @@ def write_individual_genome_reports(config) -> None:
             limiter_dict=limiter_dict,  # => nur diese Genome
             fetch_from_gene_clusters=False,
             excluded_domains=excluded,
-            use_valid_hits=use_valid,
+            use_non_valid_hits=use_non_valid,
         )
 
         # Ausgabe pro Genom (unverändert)

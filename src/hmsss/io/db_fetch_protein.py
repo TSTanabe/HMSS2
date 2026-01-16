@@ -12,12 +12,12 @@ logger = get_logger(__name__)
 
 
 def fetch_bulk_data(
-    database: str,
-    syntenic_domains: Optional[List[str]],
-    limiter_dict: Optional[Dict[str, str]] = None,
-    fetch_from_gene_clusters: bool = False,
-    excluded_domains: Optional[List[str]] = None,
-    use_valid_hits: bool = True,
+        database: str,
+        syntenic_domains: Optional[List[str]],
+        limiter_dict: Optional[Dict[str, str]] = None,
+        fetch_from_gene_clusters: bool = False,
+        excluded_domains: Optional[List[str]] = None,
+        use_non_valid_hits: bool = False,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, dict[str, str]]]:
     """
     Fetch bulk data from the database based on specified conditions, using batching
@@ -74,7 +74,7 @@ def fetch_bulk_data(
                 set(syntenic_domains),
                 use_limiter=(n > 0),
                 use_exclusions=True,
-                use_valid_hits=use_valid_hits,  # Default True
+                use_non_valid_hits=use_non_valid_hits,  # Default True
                 valid_hit_column_available=valid_hit_column_available,
             )  # Fetches all domains that are in a syntenic gene cluster, but not csb including the exclusion
         else:
@@ -84,8 +84,9 @@ def fetch_bulk_data(
                 use_exclusions=True,
                 require_all_domains_in_same_genome=bool(
                     syntenic_domains
-                ),  # nur fordern, wenn explizite Domains übergeben wurden. Kann leer sein, wenn komplettes genom gefordert
-                use_valid_hits=use_valid_hits,  # Default True
+                ),
+                # nur fordern, wenn explizite Domains übergeben wurden. Kann leer sein, wenn komplettes genom gefordert
+                use_non_valid_hits=use_non_valid_hits,  # Default True
                 valid_hit_column_available=valid_hit_column_available,
             )
 
@@ -129,7 +130,7 @@ def fetch_bulk_data(
 
 
 def _prepare_required_domains_temp(
-    cur: sqlite3.Cursor, required_domains: "Iterable[str]"
+        cur: sqlite3.Cursor, required_domains: "Iterable[str]"
 ) -> int:
     """
     Legt die TEMP-Tabelle tmp_req_domains(domain TEXT PRIMARY KEY) an und befüllt sie.
@@ -165,7 +166,7 @@ def _prepare_required_domains_temp(
 
 
 def _prepare_excluded_domains_temp(
-    cur: sqlite3.Cursor, excluded_domains: "Iterable[str] | None"
+        cur: sqlite3.Cursor, excluded_domains: "Iterable[str] | None"
 ) -> int:
     doms = {d for d in (excluded_domains or []) if d}
     cur.execute(
@@ -182,7 +183,7 @@ def _prepare_excluded_domains_temp(
 
 
 def _prepare_limiter_genomes_temp(
-    cur: sqlite3.Cursor, taxon_dict: Optional[Dict[str, Any]]
+        cur: sqlite3.Cursor, taxon_dict: Optional[Dict[str, Any]]
 ) -> int:
     """
     Erstellt TEMP-Tabelle tmp_req_genomes(genomeID TEXT PRIMARY KEY)
@@ -226,11 +227,11 @@ def has_column(cur: sqlite3.Cursor, table_name: str, column_name: str) -> bool:
 
 
 def generate_fetch_query_covering_domains(
-    required_domains: Iterable[str],
-    use_limiter: bool = True,
-    use_exclusions: bool = True,
-    use_valid_hits: bool = True,
-    valid_hit_column_available: bool = False,
+        required_domains: Iterable[str],
+        use_limiter: bool = True,
+        use_exclusions: bool = True,
+        use_non_valid_hits: bool = True,
+        valid_hit_column_available: bool = False,
 ) -> Tuple[str, List[Any]]:
     """
     Liefert ein SELECT, das ALLE Proteine (mit Domains) aus genau den Clustern zurückgibt,
@@ -316,7 +317,7 @@ def generate_fetch_query_covering_domains(
     where_parts = []
     if use_exclusions:
         where_parts.append("x.clusterID IS NULL")
-    if use_valid_hits and valid_hit_column_available:
+    if not use_non_valid_hits and valid_hit_column_available:
         where_parts.append("p.valid_hit = 1")
     where_clause = f"WHERE {' AND '.join(where_parts)}" if where_parts else ""
 
@@ -331,8 +332,8 @@ def generate_fetch_query_covering_domains(
 
 
 def generate_fetch_query_domains_anywhere(
-    required_domains: Iterable[str],
-    use_limiter: bool = True,
+        required_domains: Iterable[str],
+        use_limiter: bool = True,
 ) -> Tuple[str, List[Any]]:
     """
     Baut ein SELECT, das *alle* Domain-Hits (egal wo lokalisiert, unabhängig von Clustern)
@@ -398,11 +399,11 @@ def generate_fetch_query_domains_anywhere(
 
 # Testing routine
 def generate_fetch_query_domains_anywhere_excluding_clusters(
-    use_limiter: bool = False,
-    use_exclusions: bool = True,
-    require_all_domains_in_same_genome: bool = True,
-    use_valid_hits: bool = True,
-    valid_hit_column_available: bool = False,
+        use_limiter: bool = False,
+        use_exclusions: bool = True,
+        require_all_domains_in_same_genome: bool = True,
+        use_non_valid_hits: bool = True,
+        valid_hit_column_available: bool = False,
 ) -> tuple[str, list]:
     """
     Selektiert alle Domain-Hits aus tmp_req_domains, schließt aber Proteine aus
@@ -509,7 +510,7 @@ def generate_fetch_query_domains_anywhere_excluding_clusters(
     where_parts = []
     if use_exclusions:
         where_parts.append("x.clusterID IS NULL")
-    if use_valid_hits and valid_hit_column_available:
+    if not use_non_valid_hits and valid_hit_column_available:
         where_parts.append("p.valid_hit = 1")
     where_clause = f"WHERE {' AND '.join(where_parts)}" if where_parts else ""
 
@@ -526,12 +527,12 @@ def generate_fetch_query_domains_anywhere_excluding_clusters(
 
 
 def build_proteins_from_query(
-    cur: sqlite3.Cursor,
-    sql: str,
-    args: tuple | list | None,
-    protein_dict: Dict[str, parse_reports.Protein],
-    genome_id_set: Set[str],
-    fusion_prot_ids: Set[str] | None = None,
+        cur: sqlite3.Cursor,
+        sql: str,
+        args: tuple | list | None,
+        protein_dict: Dict[str, parse_reports.Protein],
+        genome_id_set: Set[str],
+        fusion_prot_ids: Set[str] | None = None,
 ) -> None:
     """
     Execute SQL and build Protein objects directly from the cursor iterator.
@@ -577,9 +578,9 @@ def build_proteins_from_query(
 
 
 def hydrate_fused_protein_domains(
-    db_path: str,
-    fusion_prot_ids: "set[str] | list[str]",
-    protein_dict: dict,
+        db_path: str,
+        fusion_prot_ids: "set[str] | list[str]",
+        protein_dict: dict,
 ) -> int:
     """
     Fügt für alle Proteine in `fusion_prot_ids` sämtliche Domains hinzu – effizient und 999-sicher.
@@ -642,10 +643,10 @@ def hydrate_fused_protein_domains(
 
 
 def fetch_taxonomy_dict(
-    db_path: str,
-    genome_ids: Iterable[str],
-    trennzeichen: str,
-    existing: Optional[Dict[str, str]] = None,
+        db_path: str,
+        genome_ids: Iterable[str],
+        trennzeichen: str,
+        existing: Optional[Dict[str, str]] = None,
 ) -> Dict[str, str]:
     """
     Holt Taxonomie-Infos für die gegebenen genomeIDs in EINEM Query, 999-sicher.

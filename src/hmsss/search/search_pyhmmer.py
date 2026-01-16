@@ -166,7 +166,7 @@ def _init_worker(
         gff_files: Dict[str, str],
         nucleotide_range: int,
         min_completeness: float,
-        use_synteny_completion: bool,
+        disable_synteny_completion: bool,
 ):
     """
     Lädt schwere/konstante Daten einmal pro Worker.
@@ -197,7 +197,7 @@ def _init_worker(
 
     _G_NUCLEOTIDE_RANGE = nucleotide_range
     _G_MIN_COMPLETENESS = min_completeness
-    _G_USE_SYNTENY_COMPLETION = use_synteny_completion
+    _G_USE_SYNTENY_COMPLETION = disable_synteny_completion
 
     # 1) HMMlib laden (einmal pro Worker)
     with pyhmmer.plan7.HMMFile(hmm_path) as hf:
@@ -453,7 +453,7 @@ def _process_genome1(
             )
 
             # --- 6) Co-occurrence patterns added to valid hits
-            if _G_USE_SYNTENY_COMPLETION:
+            if not _G_USE_SYNTENY_COMPLETION:
                 pattern_completion_pathway.enhance_pathway_completeness(
                     protein_dict, _G_COOCCURRENCE, _G_OPT_THRESH
                 )
@@ -693,7 +693,7 @@ def consecutive_hmm_search(config: Config, processes: int = 4) -> None:
                     config.gff_files,
                     config.nucleotide_range,
                     config.min_completeness,
-                    config.use_synteny_completion,
+                    config.disable_synteny_completion,
             ),  # arguments for the init worker
     ) as pool:
         for protein_dict, cluster_dict in pool.imap_unordered(

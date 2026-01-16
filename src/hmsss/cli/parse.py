@@ -170,7 +170,6 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-v",
-        "--verbose",
         type=int,
         default=1,
         choices=[0, 1, 2],
@@ -185,7 +184,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     # Search parameters
     parameters = parser.add_argument_group("Search parameters")
     parameters.add_argument(
-        "-cut_type",
+        "--cut-type",
         dest="threshold_type",
         type=int,
         default=1,
@@ -196,7 +195,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         else argparse.SUPPRESS,
     )
     parameters.add_argument(
-        "-cut_score",
+        "--cut-score",
         dest="thrs_score",
         type=int,
         default=50,
@@ -204,20 +203,20 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help="Global minimal score cutoff" if show_all else argparse.SUPPRESS,
     )
     parameters.add_argument(
-        "-taxonomy",
+        "--taxonomy",
         dest="taxonomy_file",
         type=file_path,
         default=None,
         metavar="<filepath>",
-        help="Filepath to tab separated taxonomy file",
+        help="Add taxonomy from this tab separated taxonomy file",
     )
     parameters.add_argument(
-        "-refseq_ident",
+        "--refseq-ident",
         dest="refseq_identity",
         type=int,
         default=90,
         metavar="<int>",
-        help="Minimal percent identity to reference sequence set"
+        help="Minimal percent identity to reference sequence set cross check"
         if show_all
         else argparse.SUPPRESS,
     )
@@ -249,35 +248,35 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     # Search library resources
     resources = parser.add_argument_group("Search library resources")
     resources.add_argument(
-        "-hmms",
+        "--hmms",
         nargs="+",
         dest="HMM_sets",
         type=str,
         default=["DHPS", "DMS", "Dsr", "SQ", "Sulfonates"],
-        metavar="<list>",
-        help="Limit to HMM sets (whitespace or CSV separated)"
+        metavar="",
+        help="Limit to HMM/GPKG sets (whitespace separated)"
         if show_all
         else argparse.SUPPRESS,
     )
     resources.add_argument(
-        "-no_reports",
-        dest="individual_reports",
-        action="store_false",
-        help="Do not write individual files per genome"
+        "--disable-reports",
+        dest="disable_individual_reports",
+        action="store_true",
+        help="Disable individual reports, only bulk database"
         if show_all
         else argparse.SUPPRESS,
     )
     resources.add_argument(
-        "-max_seq_per_genome",
+        "--max-seq-per-genome",
         dest="max_seqs_per_genome",
         type=int,
         default=4,
-        help="Max. number of initial hits per protein per genome forwarded to cross check via Diamond"
+        help="Max. number of paralogs per genome forwarded to cross check via Diamond"
         if show_all
         else argparse.SUPPRESS,
     )
     resources.add_argument(
-        "-diamond_speed",
+        "--diamond-speed",
         dest="diamond_speed_mode",
         type=str,
         choices=[
@@ -292,18 +291,18 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help="DIAMOND blastp speed mode" if show_all else argparse.SUPPRESS,
     )
     resources.add_argument(
-        "-no_cross_check",
+        "--blast-cross-check",
         dest="bool_cross_check",
         action="store_false",
-        help="No cross check with reference sequences via Diamond"
+        help="Use Diamond blastp cross check for hit selection"
         if show_all
         else argparse.SUPPRESS,
     )
     resources.add_argument(
-        "-optimized_cutoff_cross_check",
+        "--optimized-cutoff-cross-check",
         dest="optimized_cutoff_cross_check",
         action="store_true",
-        help="Use optimized cutoff instead of cross check with Diamond"
+        help="Use optimized cutoff for hit selection"
         if never_show
         else argparse.SUPPRESS,
     )
@@ -314,17 +313,17 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     # Information on resources
     information = parser.add_argument_group("Information on resources")
     information.add_argument(
-        "-stat_keywords",
+        "--stat-keywords",
         action="store_true",
         help="Print patterns for keyword naming" if never_show else argparse.SUPPRESS,
     )
     information.add_argument(
-        "-stat_csb",
+        "--stat-csb",
         action="store_true",
         help="Print automatically found csbs" if never_show else argparse.SUPPRESS,
     )
     information.add_argument(
-        "-stat_genomes",
+        "--stat-genomes",
         action="store_true",
         help="Print taxonomy information from database"
         if show_all
@@ -339,7 +338,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=int,
         default=3500,
         metavar="<int>",
-        help="Max. nucleotide distance to be considered synthenic genes"
+        help="Max. nucleotide distance to be considered syntenic genes"
         if show_all
         else argparse.SUPPRESS,
     )
@@ -429,7 +428,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         "--read-mapping",
         dest="use_read_mapping",
         action="store_true",
-        help="Enable read-mapping analysis for FASTQ files located in the -f directory.",
+        help="Enable read-mapping analysis for files located in the -f directory",
     )
 
     readmap.add_argument(
@@ -438,7 +437,9 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=int,
         default=14,
         metavar="<int>",
-        help="Number of threads to use (default: 14).",
+        help="Number of threads to use for read mapping"
+        if never_show
+        else argparse.SUPPRESS,
     )
 
     readmap.add_argument(
@@ -447,7 +448,9 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=float,
         default=1e-5,
         metavar="<float>",
-        help="E-value threshold for homology search (default: 1e-5).",
+        help="E-value threshold for homology search"
+        if show_all
+        else argparse.SUPPRESS,
     )
 
     readmap.add_argument(
@@ -456,14 +459,18 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=float,
         default=0.75,
         metavar="<float>",
-        help="Placement cutoff for phylogenetic placement (default: 0.75).",
+        help="Placement cutoff for phylogenetic placement."
+        if show_all
+        else argparse.SUPPRESS,
     )
 
     readmap.add_argument(
         "--rm-resolve-placements",
         dest="rm_resolve_placements",
         action="store_true",
-        help="Resolve ambiguous phylogenetic placements (default: False).",
+        help="Resolve ambiguous phylogenetic placements"
+        if show_all
+        else argparse.SUPPRESS,
     )
 
     readmap.add_argument(
@@ -472,7 +479,9 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=int,
         default=96,
         metavar="<int>",
-        help="Minimum ORF length (default: 96).",
+        help="Minimum ORF length"
+        if show_all
+        else argparse.SUPPRESS,
     )
 
     readmap.add_argument(
@@ -481,7 +490,9 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=int,
         default=None,
         metavar="<int>",
-        help="Maximum read length (default: None).",
+        help="Maximum read length"
+        if show_all
+        else argparse.SUPPRESS,
     )
 
     readmap.add_argument(
@@ -490,7 +501,9 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=int,
         default=11,
         metavar="<int>",
-        help="NCBI translation table to use (default: 11).",
+        help="NCBI translation table to use"
+        if show_all
+        else argparse.SUPPRESS,
     )
     readmap.add_argument(
         "--ram-limit-min",
@@ -499,9 +512,10 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         default=0.0,
         metavar="<float>",
         help=(
-            "Minimum RAM limit in GB for read-mapping tasks. "
-            "Used to filter or schedule GPKGs (float, e.g. 8.0)."
-        ),
+            "Use gpkg with at least minimum estimated RAM"
+        )
+        if show_all
+        else argparse.SUPPRESS,
     )
 
     readmap.add_argument(
@@ -511,9 +525,10 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         default=16.0,
         metavar="<float>",
         help=(
-            "Maximum RAM limit in GB for read-mapping tasks. "
-            "Used as upper bound for per-task or global RAM usage (float, e.g. 128.0)."
-        ),
+            "Use gpkg with at less than estimated RAM"
+        )
+        if show_all
+        else argparse.SUPPRESS,
     )
 
     # --- Interleaved FASTQ ---
@@ -524,28 +539,37 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help=(
             "Treat input FASTQ files as interleaved reads "
             "(mutually exclusive with reverse pairs)."
-        ),
+
+        )
+        if show_all
+        else argparse.SUPPRESS,
     )
 
     # Work step regulation
     flow = parser.add_argument_group("Work step regulation")
     flow.add_argument(
-        "-no_synteny_completion",
-        dest="use_synteny_completion",
-        action="store_false",
-        help="Use syntenic block completeness enhancement",
+        "--disable-synteny-completion",
+        dest="disable_synteny_completion",
+        action="store_true",
+        help="Disable syntenic block completeness enhancement"
+        if show_all
+        else argparse.SUPPRESS,
     )
     flow.add_argument(
         "-no_remove_intermediate",
         dest="use_remove_unassigned_intermediates",
         action="store_false",
-        help="Remove intermediate hits without genetic context",
+        help="Remove intermediate hits without genetic context"
+        if never_show
+        else argparse.SUPPRESS,
     )
     flow.add_argument(
         "-no_remove_exclusion_singletons",
         dest="use_remove_exclusion_singletons",
         action="store_false",
-        help="Remove genes that not occur as singletons",
+        help="Remove genes that not occur as singletons"
+        if never_show
+        else argparse.SUPPRESS,
     )
 
     # Output operators / fetch
@@ -564,7 +588,9 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
             "Genus",
             "Species",
         ],
-        help="Taxonomy level [Superkingdom,Phylum,Class,Ordnung,Family,Genus,Species]",
+        help="Taxonomy level [Superkingdom,Phylum,Class,Ordnung,Family,Genus,Species]"
+        if show_all
+        else argparse.SUPPRESS,
     )
     operators.add_argument(
         "-ft",
@@ -581,7 +607,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="fetch_genomes",
         type=str,
         default=[],
-        metavar="<list>",
+        metavar="",
         help="Select only genomes with these identifiers (whitespace separated)"
         if show_all
         else argparse.SUPPRESS,
@@ -592,7 +618,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="fetch_proteins",
         type=str,
         default=[],
-        metavar="<list>",
+        metavar="",
         help="Select only proteins with these domains (whitespace separated)",
     )
     operators.add_argument(
@@ -601,8 +627,8 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="fetch_csbs",
         type=str,
         default=[],
-        metavar="<list>",
-        help="Select only csb encoding the given proteins (whitespace separated). The ':' without whitespace will be interpreted as logical OR",
+        metavar="",
+        help="Select gene clusters encoding the given proteins (whitespace separated). The ':' without whitespace will be interpreted as logical OR",
     )
     operators.add_argument(
         "-fnd",
@@ -610,7 +636,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="exclude_domains",
         type=str,
         default=[],
-        metavar="<list>",
+        metavar="",
         help="Select gene cluster without these proteins (whitespace separated). The ':' without whitespace will be interpreted as logical OR"
         if show_all
         else argparse.SUPPRESS,
@@ -623,7 +649,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         default=[],
         metavar="<list>",
         help="Select only proteins in gene cluster with this keyword (whitespace separated)"
-        if show_all
+        if never_show
         else argparse.SUPPRESS,
     )
     operators.add_argument(
@@ -633,17 +659,17 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         default="OR",
         choices=["AND", "OR"],
         help="Select cluster with keywords connected by AND or OR"
-        if show_all
+        if never_show
         else argparse.SUPPRESS,
     )
     operators.add_argument(
-        "-include_noise_cut_hits",
-        dest="use_valid_hits",
-        action="store_false",
-        help="Include distant homologs that are considered as noise",
+        "--disable-filters",
+        dest="use_non_valid_hits",
+        action="store_true",
+        help="Fetch without noise hit filters",
     )
     operators.add_argument(
-        "-fasta",
+        "--fasta",
         dest="print_fasta",
         action="store_true",
         help="Print protein sequence fasta files for retrieved hits"
@@ -654,7 +680,9 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         "--print-graphs",
         dest="print_graphs",
         action="store_true",
-        help="Print graphs for the selected output",
+        help="Print graphs for the selected output"
+        if show_all
+        else argparse.SUPPRESS,
     )
     operators.add_argument(
         "--graph-tax-levels",
@@ -675,7 +703,9 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help=(
             "Taxonomic levels to summarize in graphs. Multiple selection is possible. "
             "[Superkingdom, Phylum, Class, Order, Family, Genus, Species]"
-        ),
+        )
+        if show_all
+        else argparse.SUPPRESS,
     )
 
     return parser
@@ -832,7 +862,7 @@ def build_config_from_namespace(ns) -> Config:
 
     cli_flow = CliFlow(
         redo_taxonomy=bool(getattr(ns, "redo_taxonomy", False)),
-        use_synteny_completion=bool(getattr(ns, "use_synteny_completion", True)),
+        disable_synteny_completion=bool(getattr(ns, "use_synteny_completion", True)),
         use_remove_unassigned_intermediates=bool(
             getattr(ns, "use_remove_unassigned_intermediates", True)
         ),

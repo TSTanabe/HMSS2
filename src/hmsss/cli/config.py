@@ -102,7 +102,7 @@ class CliResources:
     Attributes:
         HMM_sets: Optional subset of HMM sets to include.
         clean_reports: Overwrite existing hmmsearch reports.
-        individual_reports: Write per-genome reports if True.
+        disable_individual_reports: Write per-genome reports if True.
         max_seqs_per_genome: Cap sequences per protein per genome (Diamond check).
         bool_cross_check: Enable reference cross-check via Diamond.
         optimized_cutoff_cross_check: Use optimized cutoff instead of Diamond.
@@ -110,7 +110,7 @@ class CliResources:
 
     HMM_sets: List[str] = field(default_factory=list)
     clean_reports: bool = False
-    individual_reports: bool = True
+    disable_individual_reports: bool = True
     max_seqs_per_genome: int = 4
     diamond_speed_mode: str = "fast"
     bool_cross_check: bool = True
@@ -195,7 +195,7 @@ class CliFlow:
     """Global flow modifiers (e.g., recompute taxonomy)."""
 
     redo_taxonomy: bool = False
-    use_synteny_completion: bool = True
+    disable_synteny_completion: bool = True
     use_remove_unassigned_intermediates: bool = True
     use_remove_exclusion_singletons: bool = True
 
@@ -239,7 +239,7 @@ class CliOperators:
     keywords_connector: str = "OR"
     print_fasta: bool = False
     print_graphs: bool = False
-    use_valid_hits: bool = True
+    use_non_valid_hits: bool = True
     graph_tax_levels: List[str] = field(default_factory=lambda: ["Phylum"])
 
 
@@ -397,7 +397,7 @@ class Config:
     hmm_sets = prop("cli_resources.HMM_sets")  # :contentReference[oaicite:14]{index=14}
     clean_reports = prop("cli_resources.clean_reports")
     bool_cross_check = prop("cli_resources.bool_cross_check")
-    individual_reports = prop("cli_resources.individual_reports")
+    disable_individual_reports = prop("cli_resources.disable_individual_reports")
     max_seqs_per_genome = prop("cli_resources.max_seqs_per_genome")
     diamond_speed_mode = prop("cli_resources.diamond_speed_mode")
     optimized_cutoff_cross_check = prop("cli_resources.optimized_cutoff_cross_check")
@@ -419,7 +419,7 @@ class Config:
     fetch_not_csb_with_these_domains = prop("cli_ops.fetch_not_csb_with_these_domains")
     print_fasta = prop("cli_ops.print_fasta")
     print_graphs = prop("cli_ops.print_graphs")
-    use_valid_hits = prop("cli_ops.use_valid_hits")
+    use_non_valid_hits = prop("cli_ops.use_non_valid_hits")
     graph_tax_levels = prop("cli_ops.graph_tax_levels")
 
     dataset_limit_lineage = prop(
@@ -549,7 +549,7 @@ class Config:
 
     # Flow control for parsing and redo taxonomy
     redo_taxonomy = prop("cli_flow.redo_taxonomy")
-    use_synteny_completion = prop("cli_flow.use_synteny_completion")
+    disable_synteny_completion = prop("cli_flow.disable_synteny_completion")
     use_remove_unassigned_intermediates = prop(
         "cli_flow.use_remove_unassigned_intermediates"
     )
