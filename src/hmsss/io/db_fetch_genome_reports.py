@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 import sqlite3
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Iterable
 
 from hmsss.core.logging import get_logger
 from hmsss.io import db_fetch_protein, db_fetch_taxonomy
@@ -48,35 +48,54 @@ def write_individual_genome_reports(config) -> None:
     excluded = getattr(config, "fetch_not_csb_with_these_domains", None)
     use_valid = getattr(config, "use_valid_hits", True)
 
-    for i, gid in enumerate(genome_ids, start=1):
-        # limiter_dict: genau dieses Genom
-        limiter_dict = {gid: {}}
-        logger.info(f"Printing report for {gid}")
-        protein_dict, cluster_dict, _taxon_dict_unused = (
-            db_fetch_protein.fetch_bulk_data(
-                database=config.database_directory,
-                syntenic_domains=None,  # => "alles" für dieses Genom
-                limiter_dict=limiter_dict,  # => nur dieses Genom
-                fetch_from_gene_clusters=False,
-                excluded_domains=excluded,
-                use_valid_hits=use_valid,
-            )
+    def iter_chunks(items: List[str], chunk_size: int) -> Iterable[List[str]]:
+        if chunk_size <= 0:
+            raise ValueError(f"chunk_size must be > 0, got {chunk_size}")
+        for i in range(0, len(items), chunk_size):
+            yield items[i: i + chunk_size]
+
+    chunk_size = getattr(config, "genome_report_chunk_size", 500)  # oder fix: 500/1000
+    total = len(genome_ids)
+
+    printed = 0
+    for chunk_idx, gids in enumerate(iter_chunks(genome_ids, chunk_size), start=1):
+        # limiter_dict: mehrere Genome gleichzeitig
+        limiter_dict = {gid: {} for gid in gids}
+
+        logger.info(
+            "Printing report chunk %d: %d genomes (progress %d/%d)",
+            chunk_idx,
+            len(gids),
+            printed,
+            total,
         )
 
-        out_file = out_dir / f"{gid}.tsv"
-        parse_reports.output_genome_report(
-            output_filepath=str(out_file),
-            protein_dict=protein_dict,
-            cluster_dict=cluster_dict,
-            taxon_dict={gid: all_taxon.get(gid, "")},
-            genomeID=gid,
-            writemode="w",
-            taxon_divider="\t",
+        protein_dict, cluster_dict, _taxon_dict_unused = db_fetch_protein.fetch_bulk_data(
+            database=config.database_directory,
+            syntenic_domains=None,  # => "alles" für diese Genome
+            limiter_dict=limiter_dict,  # => nur diese Genome
+            fetch_from_gene_clusters=False,
+            excluded_domains=excluded,
+            use_valid_hits=use_valid,
         )
 
-        if i % 250 == 0:
-            logger.info(
-                "Individual report printing progress: %d / %d", i, len(genome_ids)
+        # Ausgabe pro Genom (unverändert)
+        for gid in gids:
+            logger.debug("Printing report for %s", gid)
+
+            out_file = out_dir / f"{gid}.tsv"
+            parse_reports.output_genome_report(
+                output_filepath=str(out_file),
+                protein_dict=protein_dict,
+                cluster_dict=cluster_dict,
+                taxon_dict={gid: all_taxon.get(gid, "")},
+                genomeID=gid,
+                writemode="w",
+                taxon_divider="\t",
             )
+
+            printed += 1
+            if printed % 250 == 0 or printed == total:
+                logger.info("Individual report printing progress: %d / %d", printed, total)
 
     logger.info("Finished: %d reports", len(genome_ids))
