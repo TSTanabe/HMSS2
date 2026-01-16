@@ -402,6 +402,7 @@ def graft_mp_tokenized_executor(task_list: list, batch_size: int, config: "Confi
 
             for fut in done:
                 reserved = future_to_tokens.pop(fut)
+                logger.info(f"Reserved tokens returned: {reserved} GB")
                 available_tokens_gb += reserved
                 try:
                     res = fut.result()
