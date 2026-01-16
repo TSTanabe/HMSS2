@@ -359,7 +359,7 @@ def filter_gpkg_by_ram(
         else:
             cap = math.ceil(float(peak) * cap_factor)
 
-        if cap > ram_limit_gb:
+        if 0 < ram_limit_gb < cap:  # limit 0 means no limit
             logger.warning(
                 f"[GPKG filter] Removing gpkg '{gpkg_name}': "
                 f"Estimated needed RAM={cap} GB > RAM limit={ram_limit_gb} GB"
