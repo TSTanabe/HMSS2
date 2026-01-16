@@ -328,6 +328,7 @@ def _collect_done_futures(
     for fut in done:
         reserved = future_to_tokens.pop(fut)
         # future_to_task.pop(fut, None)
+        logger.info(f"Reserved tokens returned: {reserved} GB")
         available_tokens_gb += reserved
 
         try:
