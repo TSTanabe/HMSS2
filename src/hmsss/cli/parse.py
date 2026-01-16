@@ -465,13 +465,14 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     # Search library resources
     resources = parser.add_argument_group("Search library resources")
     resources.add_argument(
-        "--hmms",
+        "--hmm-sets",
         nargs="+",
         dest="HMM_sets",
         type=str,
-        default=["DHPS", "DMS", "Dsr", "SQ", "Sulfonates"],
+        default=sorted(["DHPS", "DMS", "Dsr", "SQ", "Aryl"]),
+        choices=sorted(["DHPS", "DMS", "Dsr", "SQ", "Aryl"]),
         metavar="",
-        help="Limit to HMM/GPKG sets (whitespace separated)"
+        help="Limit to HMM sets (whitespace separated)"
         if show_all
         else argparse.SUPPRESS,
     )
@@ -648,6 +649,45 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help="Enable read-mapping analysis for files located in the -f directory",
     )
 
+    resources.add_argument(
+        "--gpkgs",
+        nargs="+",
+        dest="gpkg_sets",
+        type=str,
+        choices=sorted(
+            [
+                "Apr",
+                "Qmo",
+                "Asr",
+                "Mcc",
+                "Phs",
+                "Ttr",
+                "CS",
+                "Aryl",
+                "DHPS",
+                "Taurine",
+                "Isethionat",
+                "DMS",
+                "sHdr",
+                "Dsr",
+                "Sox",
+                "Shy",
+                "Sud",
+                "Sor",
+                "Soe",
+                "SQ",
+                "SQDG",
+                "SQR",
+            ]
+        ),
+        default=sorted(["SQ", "Dsr", "sHdr", "Sox"]),
+        metavar="GPKG",
+        help=(
+            "Limit to GPKG packages (whitespace separated). Some tokens refer to the same set."
+            if show_all
+            else argparse.SUPPRESS
+        ),
+    )
     readmap.add_argument(
         "--rm-threads",
         dest="rm_threads",
@@ -665,9 +705,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=float,
         default=1e-5,
         metavar="<float>",
-        help="E-value threshold for homology search"
-        if show_all
-        else argparse.SUPPRESS,
+        help="E-value threshold for homology search" if show_all else argparse.SUPPRESS,
     )
 
     readmap.add_argument(
@@ -696,9 +734,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=int,
         default=96,
         metavar="<int>",
-        help="Minimum ORF length"
-        if show_all
-        else argparse.SUPPRESS,
+        help="Minimum ORF length" if show_all else argparse.SUPPRESS,
     )
 
     readmap.add_argument(
@@ -707,9 +743,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=int,
         default=None,
         metavar="<int>",
-        help="Maximum read length"
-        if show_all
-        else argparse.SUPPRESS,
+        help="Maximum read length" if show_all else argparse.SUPPRESS,
     )
 
     readmap.add_argument(
@@ -718,9 +752,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=int,
         default=11,
         metavar="<int>",
-        help="NCBI translation table to use"
-        if show_all
-        else argparse.SUPPRESS,
+        help="NCBI translation table to use" if show_all else argparse.SUPPRESS,
     )
     readmap.add_argument(
         "--ram-limit-min",
@@ -728,9 +760,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=float,
         default=0.0,
         metavar="<float>",
-        help=(
-            "Use gpkg with at least minimum estimated RAM"
-        )
+        help=("Use gpkg with at least minimum estimated RAM")
         if show_all
         else argparse.SUPPRESS,
     )
@@ -741,9 +771,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=float,
         default=16.0,
         metavar="<float>",
-        help=(
-            "Use gpkg with at less than estimated RAM"
-        )
+        help=("Use gpkg with at less than estimated RAM. 0 means unlimited")
         if show_all
         else argparse.SUPPRESS,
     )
@@ -756,7 +784,6 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help=(
             "Treat input FASTQ files as interleaved reads "
             "(mutually exclusive with reverse pairs)."
-
         )
         if show_all
         else argparse.SUPPRESS,
@@ -909,9 +936,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         "--print-graphs",
         dest="print_graphs",
         action="store_true",
-        help="Print graphs for the selected output"
-        if show_all
-        else argparse.SUPPRESS,
+        help="Print graphs for the selected output" if show_all else argparse.SUPPRESS,
     )
     operators.add_argument(
         "--graph-tax-levels",
@@ -992,6 +1017,7 @@ def _paths_cfg_from_paths_module() -> PathsCfg:
         refseq=d["REFSEQ_DIR"],
         results=d["RESULTS_DIR"],
         package=d["PACKAGE_DIR"],
+        gpkg=d["GPKG_DIR"],
     )
 
 
@@ -1019,7 +1045,7 @@ def build_config_from_namespace(ns) -> Config:
     cli_input = CliInput(
         fasta_file_directory=_s(ns, "fasta_file_directory"),
         score_threshold_file=_s(ns, "score_threshold_file")
-                             or os.path.join(paths_cfg.data, "Thresholds"),
+        or os.path.join(paths_cfg.data, "Thresholds"),
         library=_s(ns, "library") or paths_cfg.hmms,
         result_files_directory=_s(ns, "result_files_directory") or paths_cfg.results,
         cores=int(getattr(ns, "cores", 4)),
@@ -1038,7 +1064,9 @@ def build_config_from_namespace(ns) -> Config:
 
     cli_resources = CliResources(
         HMM_sets=list(getattr(ns, "HMM_sets", [])),
-        disable_individual_reports=bool(getattr(ns, "disable_individual_reports", False)),
+        disable_individual_reports=bool(
+            getattr(ns, "disable_individual_reports", False)
+        ),
         max_seqs_per_genome=int(getattr(ns, "max_seqs_per_genome", 4)),
         diamond_speed_mode=str(getattr(ns, "diamond_speed_mode", "faster")),
         bool_cross_check=bool(getattr(ns, "bool_cross_check", True)),
@@ -1049,11 +1077,11 @@ def build_config_from_namespace(ns) -> Config:
 
     cli_synteny = CliSynteny(
         patterns_file=_s(ns, "patterns_file")
-                      or os.path.join(paths_cfg.data, "Patterns"),
+        or os.path.join(paths_cfg.data, "Patterns"),
         cooccurrence_file=_s(ns, "cooccurrence_file")
-                          or os.path.join(paths_cfg.data, "Cooccurrence"),
+        or os.path.join(paths_cfg.data, "Cooccurrence"),
         exclusion_singletons=_s(ns, "exclusion_singletons")
-                             or os.path.join(paths_cfg.data, "Exclusion_singletons"),
+        or os.path.join(paths_cfg.data, "Exclusion_singletons"),
         min_completeness=float(getattr(ns, "min_completeness", 0.5)),
         glob_chunks=int(getattr(ns, "glob_chunks", 5000)),
     )
@@ -1077,6 +1105,7 @@ def build_config_from_namespace(ns) -> Config:
 
     cli_readmap = CliReadMapping(
         use_read_mapping=bool(getattr(ns, "use_read_mapping", False)),
+        gpkg_sets=list(getattr(ns, "gpkg_sets", [])),
         threads=ns.rm_threads,
         evalue=ns.rm_evalue,
         placements_cutoff=ns.rm_placements_cutoff,
@@ -1087,6 +1116,7 @@ def build_config_from_namespace(ns) -> Config:
         ram_limit_max=ns.rm_ram_limit_max,
         ram_limit_min=ns.rm_ram_limit_min,
         interleaved=bool(getattr(ns, "interleaved", False)),
+        ram_profile_file=ns.ram_profile_file or paths_cfg.gpkg,
     )
 
     cli_flow = CliFlow(
@@ -1218,6 +1248,7 @@ def _apply_runtime_defaults(ns: argparse.Namespace) -> argparse.Namespace:
     _set_default("exclusion_singletons", str(paths.SRC_FILE_EXCLUSION_SINGLETONS))
     _set_default("metabolism_information", str(paths.SRC_FILE_METABOLISM_INFORMATION))
     _set_default("result_files_directory", str(paths.RESULTS_DIR))
+    _set_default("ram_profile_file", str(paths.SRC_FILE_GPKG_RAM_INFORMATION))
 
     # Stage normalization
     raw_stage = getattr(ns, "stage", None)

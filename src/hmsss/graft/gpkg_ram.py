@@ -58,7 +58,7 @@ def parse_ram_profiles_file(path: Path) -> Dict[str, float]:
 
 
 def collect_gpkg_ram(
-        gpkg_packages: Dict[str, str],
+    gpkg_packages: Dict[str, str],
 ) -> Dict[str, float]:
     """
     Collect peak RAM usage per GPKG.

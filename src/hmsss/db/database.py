@@ -208,37 +208,37 @@ def index_database(database: str) -> None:
         ),
     ]
 
-    indexes.extend([
-        # --- Metagenomes FKs / joins ---
-        (
-            "tab_meta_gid_index",
-            "CREATE INDEX IF NOT EXISTS tab_meta_gid_index ON Metagenomes(genomeID)",
-        ),
-
-        # --- Placement FKs / joins ---
-        (
-            "tab_place_mid_index",
-            "CREATE INDEX IF NOT EXISTS tab_place_mid_index ON Placement(metagenomeID)",
-        ),
-        (
-            "tab_place_pid_index",
-            "CREATE INDEX IF NOT EXISTS tab_place_pid_index ON Placement(proteinID)",
-        ),
-        (
-            "tab_place_lid_index",
-            "CREATE INDEX IF NOT EXISTS tab_place_lid_index ON Placement(lineageID)",
-        ),
-
-        # useful for filtering/grouping
-        (
-            "tab_place_dtype_index",
-            "CREATE INDEX IF NOT EXISTS tab_place_dtype_index ON Placement(domain_type)",
-        ),
-        (
-            "tab_place_readid_index",
-            "CREATE INDEX IF NOT EXISTS tab_place_readid_index ON Placement(readID)",
-        ),
-    ])
+    indexes.extend(
+        [
+            # --- Metagenomes FKs / joins ---
+            (
+                "tab_meta_gid_index",
+                "CREATE INDEX IF NOT EXISTS tab_meta_gid_index ON Metagenomes(genomeID)",
+            ),
+            # --- Placement FKs / joins ---
+            (
+                "tab_place_mid_index",
+                "CREATE INDEX IF NOT EXISTS tab_place_mid_index ON Placement(metagenomeID)",
+            ),
+            (
+                "tab_place_pid_index",
+                "CREATE INDEX IF NOT EXISTS tab_place_pid_index ON Placement(proteinID)",
+            ),
+            (
+                "tab_place_lid_index",
+                "CREATE INDEX IF NOT EXISTS tab_place_lid_index ON Placement(lineageID)",
+            ),
+            # useful for filtering/grouping
+            (
+                "tab_place_dtype_index",
+                "CREATE INDEX IF NOT EXISTS tab_place_dtype_index ON Placement(domain_type)",
+            ),
+            (
+                "tab_place_readid_index",
+                "CREATE INDEX IF NOT EXISTS tab_place_readid_index ON Placement(readID)",
+            ),
+        ]
+    )
 
     try:
         with sqlite3.connect(database) as con:
@@ -565,7 +565,7 @@ def parse_taxonomy_line(line: str, na: str = "") -> List[str]:
         for pre in prefix_to_rank:
             if token.startswith(pre):
                 rank = prefix_to_rank[pre]
-                value = token[len(pre):].strip()
+                value = token[len(pre) :].strip()
                 # Leerzeichen in Unterstrich nur bei species
                 if rank == "species":
                     value = value.replace(" ", "_")
@@ -581,8 +581,8 @@ def parse_taxonomy_line(line: str, na: str = "") -> List[str]:
 
 
 def insert_database_metagenomes(
-        database: str,
-        metagenome_dict: Dict[str, Tuple[str, int | None, int | None]],
+    database: str,
+    metagenome_dict: Dict[str, Tuple[str, int | None, int | None]],
 ) -> None:
     """
     Insert metagenomes into the Metagenomes table.
@@ -678,8 +678,8 @@ def insert_database_lineages(database: str, reads: Dict[tuple, "Read"]) -> None:
 
 
 def insert_database_stub_proteins_from_reads(
-        database: str,
-        reads: Dict[tuple, "Read"],
+    database: str,
+    reads: Dict[tuple, "Read"],
 ) -> None:
     """
     Insert stub proteins for reads into Proteins so that Placement.proteinID can reference them.
@@ -791,7 +791,7 @@ def insert_database_placements(database: str, reads: Dict[tuple, "Read"]) -> Non
 
 
 def update_domain(
-        database: str, protein_diction: Dict[str, Any], old_tag: str, new_tag: str
+    database: str, protein_diction: Dict[str, Any], old_tag: str, new_tag: str
 ) -> None:
     """
     18.11.22
@@ -823,7 +823,7 @@ def update_domain(
 
 
 def update_keywords(
-        database: str, keyword_dict: Dict[str, Set[str]], batch_size: int = 400
+    database: str, keyword_dict: Dict[str, Set[str]], batch_size: int = 400
 ) -> None:
     """
     Update keywords in the database in batches.
@@ -843,7 +843,7 @@ def update_keywords(
                     for clusterID in clusterIDs:
                         inserts.append((clusterID, new_keyword))
                 for i in range(0, len(inserts), batch_size):
-                    batch = inserts[i: i + batch_size]
+                    batch = inserts[i : i + batch_size]
                     cur.executemany(query, batch)
             logger.info(f"Updated keywords with {len(inserts)} entries.")
         except Exception as e:
@@ -852,7 +852,7 @@ def update_keywords(
 
 
 def delete_keywords_from_csb(
-        database: str, prefix: str = "csb-", suffix: str = "_"
+    database: str, prefix: str = "csb-", suffix: str = "_"
 ) -> None:
     """
     Remove keywords from the database that match the pattern options.csb_name_prefix + a number + options.csb_name_suffix.

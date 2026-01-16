@@ -23,7 +23,7 @@ def _set_worker_mem_limit_gb(limit_gb: float) -> None:
     if limit_gb <= 0:
         return
 
-    bytes_limit = int(limit_gb * 1024 ** 3)
+    bytes_limit = int(limit_gb * 1024**3)
 
     # Hard+soft limit
     resource.setrlimit(resource.RLIMIT_AS, (bytes_limit, bytes_limit))
@@ -60,12 +60,12 @@ def _run_graft_task(task):
         alignment_fasta = files.get("alignment")
 
         if (
-                not taxonomy_csv
-                or not sequence_fasta
-                or not alignment_fasta
-                or not os.path.isfile(alignment_fasta)
-                or not os.path.isfile(taxonomy_csv)
-                or not os.path.isfile(sequence_fasta)
+            not taxonomy_csv
+            or not sequence_fasta
+            or not alignment_fasta
+            or not os.path.isfile(alignment_fasta)
+            or not os.path.isfile(taxonomy_csv)
+            or not os.path.isfile(sequence_fasta)
         ):
             raise FileNotFoundError(
                 f"Missing or empty input file(s): "
@@ -224,15 +224,15 @@ def _task_mem_est_gb(task, default_gb: float = 4.0) -> float:
 
 
 def _start_bestfit_tasks(
-        *,
-        ex: object,
-        pending: list,
-        future_to_tokens: dict,
-        available_tokens_gb: float,
-        total_tokens_gb: float,
-        max_workers: int,
-        k_scan: int = 100,
-        handle_result_fn: Callable[[dict], None],
+    *,
+    ex: object,
+    pending: list,
+    future_to_tokens: dict,
+    available_tokens_gb: float,
+    total_tokens_gb: float,
+    max_workers: int,
+    k_scan: int = 100,
+    handle_result_fn: Callable[[dict], None],
 ) -> tuple[float, bool]:
     """
     Start tasks using Best-Fit from Top-K pending tasks.
@@ -286,7 +286,8 @@ def _start_bestfit_tasks(
         # Start the selected task
         task = pending.pop(best_i)
         logger.info(
-            f"Starting task {task.gpkg_name} Need: {need:.1f} GB; Available: {available_tokens_gb:.1f} GB; Total tokens: {total_tokens_gb:.1f} GB")
+            f"Starting task {task.gpkg_name} Need: {need:.1f} GB; Available: {available_tokens_gb:.1f} GB; Total tokens: {total_tokens_gb:.1f} GB"
+        )
 
         available_tokens_gb -= best_need
 
@@ -305,17 +306,17 @@ from typing import Callable
 
 
 def _start_bestfit_tasks_debug(
-        *,
-        ex: object,
-        pending: list,
-        future_to_tokens: dict,
-        available_tokens_gb: float,
-        total_tokens_gb: float,
-        max_workers: int,
-        k_scan: int = 100,
-        handle_result_fn: Callable[[dict], None],
-        debug_scan: int = 12,  # how many candidates to print per tick
-        debug_level: str = "INFO",  # "INFO" or "DEBUG"
+    *,
+    ex: object,
+    pending: list,
+    future_to_tokens: dict,
+    available_tokens_gb: float,
+    total_tokens_gb: float,
+    max_workers: int,
+    k_scan: int = 100,
+    handle_result_fn: Callable[[dict], None],
+    debug_scan: int = 12,  # how many candidates to print per tick
+    debug_level: str = "INFO",  # "INFO" or "DEBUG"
 ) -> tuple[float, bool]:
     """
     Debug-instrumented variant of _start_bestfit_tasks().
@@ -331,14 +332,21 @@ def _start_bestfit_tasks_debug(
     # Print entry status once per call
     _log(
         "[SCHED] enter: pending=%d running=%d max_workers=%d avail=%.1f total=%.1f k_scan=%d",
-        len(pending), len(future_to_tokens), max_workers, available_tokens_gb, total_tokens_gb, k_scan
+        len(pending),
+        len(future_to_tokens),
+        max_workers,
+        available_tokens_gb,
+        total_tokens_gb,
+        k_scan,
     )
 
     # If no worker slots, we can immediately explain why nothing starts
     if len(future_to_tokens) >= max_workers:
         _log(
             "[SCHED] no worker slot: running=%d >= max_workers=%d (tokens avail=%.1f)",
-            len(future_to_tokens), max_workers, available_tokens_gb
+            len(future_to_tokens),
+            max_workers,
+            available_tokens_gb,
         )
         return available_tokens_gb, False
 
@@ -359,8 +367,10 @@ def _start_bestfit_tasks_debug(
             peek.append((getattr(tj, "gpkg_name", "?"), nj))
         _log(
             "[SCHED] scan peek top-%d/%d (avail=%.1f): %s",
-            peek_n, scan_n, available_tokens_gb,
-            ", ".join([f"{n}:{gb:.1f}" for n, gb in peek]) if peek else "(none)"
+            peek_n,
+            scan_n,
+            available_tokens_gb,
+            ", ".join([f"{n}:{gb:.1f}" for n, gb in peek]) if peek else "(none)",
         )
 
         removed_oversize = False
@@ -375,7 +385,10 @@ def _start_bestfit_tasks_debug(
             if need_i > total_tokens_gb:
                 _log(
                     "[SCHED] OVERSIZE -> drop %s (need=%.1f > total=%.1f). pending before=%d",
-                    name, need_i, total_tokens_gb, len(pending)
+                    name,
+                    need_i,
+                    total_tokens_gb,
+                    len(pending),
                 )
                 pending.pop(i)
                 handle_result_fn({"ok": False})
@@ -390,7 +403,10 @@ def _start_bestfit_tasks_debug(
 
         # If we removed an oversize task, restart the loop
         if removed_oversize:
-            _log("[SCHED] restart scan after oversize removal (pending now=%d)", len(pending))
+            _log(
+                "[SCHED] restart scan after oversize removal (pending now=%d)",
+                len(pending),
+            )
             continue
 
         # No task fits into remaining tokens right now -> stop starting
@@ -418,7 +434,13 @@ def _start_bestfit_tasks_debug(
 
         _log(
             "[SCHED] START %s need=%.1f avail_before=%.1f total=%.1f running=%d/%d pending_left=%d",
-            name, best_need, available_tokens_gb, total_tokens_gb, len(future_to_tokens), max_workers, len(pending)
+            name,
+            best_need,
+            available_tokens_gb,
+            total_tokens_gb,
+            len(future_to_tokens),
+            max_workers,
+            len(pending),
         )
 
         available_tokens_gb -= best_need
@@ -432,17 +454,26 @@ def _start_bestfit_tasks_debug(
 
         _log(
             "[SCHED] submitted %s; avail_after=%.1f running_now=%d/%d (tick=%.3fs)",
-            name, available_tokens_gb, len(future_to_tokens), max_workers, time.time() - t0
+            name,
+            available_tokens_gb,
+            len(future_to_tokens),
+            max_workers,
+            time.time() - t0,
         )
 
     _log(
         "[SCHED] exit: did_progress=%s pending=%d running=%d avail=%.1f",
-        did_progress, len(pending), len(future_to_tokens), available_tokens_gb
+        did_progress,
+        len(pending),
+        len(future_to_tokens),
+        available_tokens_gb,
     )
     return available_tokens_gb, did_progress
 
 
-def graft_mp_tokenized_executor(task_list: list, batch_size: int, config: "Config") -> None:
+def graft_mp_tokenized_executor(
+    task_list: list, batch_size: int, config: "Config"
+) -> None:
     read_batch: dict[str, "Read"] = {}
     batch_counter: int = 0
 
@@ -466,7 +497,9 @@ def graft_mp_tokenized_executor(task_list: list, batch_size: int, config: "Confi
         processed += 1
         if (processed % log_step == 0) or (processed == n_tasks):
             pct = (processed * 100) // max(1, n_tasks)
-            logger.info(f"[Read-mapping progress] {processed}/{n_tasks} ({pct}%) tasks processed")
+            logger.info(
+                f"[Read-mapping progress] {processed}/{n_tasks} ({pct}%) tasks processed"
+            )
 
         if not res.get("ok"):
             return
@@ -475,7 +508,9 @@ def graft_mp_tokenized_executor(task_list: list, batch_size: int, config: "Confi
         batch_counter += 1
 
         if batch_counter >= batch_size:
-            _flush_read_batch_to_db(database_path=config.database_directory, read_batch=read_batch)
+            _flush_read_batch_to_db(
+                database_path=config.database_directory, read_batch=read_batch
+            )
             read_batch.clear()
             batch_counter = 0
 
@@ -516,5 +551,7 @@ def graft_mp_tokenized_executor(task_list: list, batch_size: int, config: "Confi
                 _handle_result(res)
 
     if read_batch:
-        _flush_read_batch_to_db(database_path=config.database_directory, read_batch=read_batch)
+        _flush_read_batch_to_db(
+            database_path=config.database_directory, read_batch=read_batch
+        )
         read_batch.clear()

@@ -104,7 +104,7 @@ def _make_paths(root: Path) -> Dict[str, Path]:
         "SRC_FILE_EXCLUSION_SINGLETONS": data / "Exclusion_singletons",
         "SRC_FILE_METABOLISM_INFORMATION": data / "Metabolism_information",
         # gpkg resources
-        "SRC_FILE_GPKG_RAM_INFORMATION": gpkg / "RAM_profile"
+        "SRC_FILE_GPKG_RAM_INFORMATION": gpkg / "RAM_profile",
     }
 
 
@@ -179,7 +179,7 @@ def refresh_paths(base: str | Path | None = None) -> None:
 
 
 def as_dict(
-        str_paths: bool = True, include_sources: bool = False
+    str_paths: bool = True, include_sources: bool = False
 ) -> Dict[str, str | Path]:
     """Return all core paths as a dictionary (for logs/debugging).
 

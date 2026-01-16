@@ -52,7 +52,7 @@ def write_individual_genome_reports(config) -> None:
         if chunk_size <= 0:
             raise ValueError(f"chunk_size must be > 0, got {chunk_size}")
         for i in range(0, len(items), chunk_size):
-            yield items[i: i + chunk_size]
+            yield items[i : i + chunk_size]
 
     chunk_size = getattr(config, "genome_report_chunk_size", 500)  # oder fix: 500/1000
     total = len(genome_ids)
@@ -70,13 +70,15 @@ def write_individual_genome_reports(config) -> None:
             total,
         )
 
-        protein_dict, cluster_dict, _taxon_dict_unused = db_fetch_protein.fetch_bulk_data(
-            database=config.database_directory,
-            syntenic_domains=None,  # => "alles" für diese Genome
-            limiter_dict=limiter_dict,  # => nur diese Genome
-            fetch_from_gene_clusters=False,
-            excluded_domains=excluded,
-            use_non_valid_hits=use_non_valid,
+        protein_dict, cluster_dict, _taxon_dict_unused = (
+            db_fetch_protein.fetch_bulk_data(
+                database=config.database_directory,
+                syntenic_domains=None,  # => "alles" für diese Genome
+                limiter_dict=limiter_dict,  # => nur diese Genome
+                fetch_from_gene_clusters=False,
+                excluded_domains=excluded,
+                use_non_valid_hits=use_non_valid,
+            )
         )
 
         # Ausgabe pro Genom (unverändert)
@@ -96,6 +98,8 @@ def write_individual_genome_reports(config) -> None:
 
             printed += 1
             if printed % 250 == 0 or printed == total:
-                logger.info("Individual report printing progress: %d / %d", printed, total)
+                logger.info(
+                    "Individual report printing progress: %d / %d", printed, total
+                )
 
     logger.info("Finished: %d reports", len(genome_ids))

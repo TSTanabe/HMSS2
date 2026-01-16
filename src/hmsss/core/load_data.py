@@ -26,11 +26,11 @@ def _project_root_from_this_file(this_file: Path, *, marker_dir: str = "src") ->
 
 
 def _download_file(
-        url: str,
-        out_path: Path,
-        *,
-        user_agent: str = "HMSS2/1.0",
-        chunk_size: int = 1024 * 1024,  # 1 MB
+    url: str,
+    out_path: Path,
+    *,
+    user_agent: str = "HMSS2/1.0",
+    chunk_size: int = 1024 * 1024,  # 1 MB
 ) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -68,13 +68,13 @@ def _sha256(path: Path) -> str:
 
 
 def ensure_dir_with_marker_from_zip(
-        *,
-        zip_url: str,
-        expected_sha256: str | None = None,
-        project_root: Path | None = None,
-        target_dirname: str,
-        marker_name: str = ".ok",
-        user_agent: str = "HMSS2/1.0",
+    *,
+    zip_url: str,
+    expected_sha256: str | None = None,
+    project_root: Path | None = None,
+    target_dirname: str,
+    marker_name: str = ".ok",
+    user_agent: str = "HMSS2/1.0",
 ) -> Path:
     """
     Stellt sicher, dass <project_root>/<target_dirname> vollständig initialisiert ist.
@@ -171,7 +171,11 @@ def ensure_dir_with_marker_from_zip(
         raise DataBootstrapError(f"Downloaded file is not a valid zip: {e}") from e
     except Exception as e:
         # Backup zurückholen, falls möglich
-        if (not target_dir.exists()) and (backup_dir is not None) and backup_dir.exists():
+        if (
+            (not target_dir.exists())
+            and (backup_dir is not None)
+            and backup_dir.exists()
+        ):
             try:
                 backup_dir.replace(target_dir)
             except Exception:
@@ -182,11 +186,11 @@ def ensure_dir_with_marker_from_zip(
 
 
 def ensure_data_dir_with_marker(
-        *,
-        data_zip_url: str,
-        expected_sha256: str | None = None,
-        project_root: Path | None = None,
-        marker_name: str = ".data_ok",
+    *,
+    data_zip_url: str,
+    expected_sha256: str | None = None,
+    project_root: Path | None = None,
+    marker_name: str = ".data_ok",
 ) -> Path:
     return ensure_dir_with_marker_from_zip(
         zip_url=data_zip_url,
@@ -198,11 +202,11 @@ def ensure_data_dir_with_marker(
 
 
 def ensure_gpkg_dir_with_marker(
-        *,
-        gpkg_zip_url: str,
-        expected_sha256: str | None = None,
-        project_root: Path | None = None,
-        marker_name: str = ".gpkg_ok",
+    *,
+    gpkg_zip_url: str,
+    expected_sha256: str | None = None,
+    project_root: Path | None = None,
+    marker_name: str = ".gpkg_ok",
 ) -> Path:
     return ensure_dir_with_marker_from_zip(
         zip_url=gpkg_zip_url,

@@ -126,7 +126,7 @@ def iter_fasta(fasta_path: str) -> Iterator[Tuple[str, str]]:
 
 
 def load_sequences_into_reads(
-        reads: Dict[tuple, "Read"], fasta_path: str, gpkg_name: str
+    reads: Dict[tuple, "Read"], fasta_path: str, gpkg_name: str
 ) -> None:
     """
     Stream a FASTA and write sequences into `reads` (keyed by readID).
@@ -147,7 +147,7 @@ def load_sequences_into_reads(
 
 
 def load_alignments_into_reads(
-        reads: Dict[tuple, "Read"], alignment_fasta: str, gpkg_name: str
+    reads: Dict[tuple, "Read"], alignment_fasta: str, gpkg_name: str
 ) -> None:
     """
     Stream an alignment FASTA and write alignments into `reads` (keyed by readID).
@@ -224,7 +224,7 @@ def _parse_lineage_to_dict(lineage: str) -> Dict[str, str]:
 
 
 def load_read_taxonomy_into_reads(
-        taxonomy_tsv: str, reads: Dict[tuple, "Read"], gpkg_name: str
+    taxonomy_tsv: str, reads: Dict[tuple, "Read"], gpkg_name: str
 ) -> None:
     """
     Stream-read taxonomy file and write taxonomy fields directly into existing Read objects.
@@ -255,10 +255,10 @@ def load_read_taxonomy_into_reads(
 
 
 def finalize_reads(
-        reads: Dict[tuple, Read],
-        *,
-        min_coverage: float,
-        hmm_length: int,
+    reads: Dict[tuple, Read],
+    *,
+    min_coverage: float,
+    hmm_length: int,
 ) -> None:
     """
     Compute coverage for all reads and delete reads with coverage < min_coverage.
@@ -289,13 +289,13 @@ def finalize_reads(
 
 
 def build_reads_from_outputs(
-        *,
-        gpkg_name: str,
-        taxonomy_csv: str,
-        alignment_fasta: str,
-        sequence_fasta: str,
-        hmm_length: int,
-        min_coverage: float,
+    *,
+    gpkg_name: str,
+    taxonomy_csv: str,
+    alignment_fasta: str,
+    sequence_fasta: str,
+    hmm_length: int,
+    min_coverage: float,
 ) -> Dict[tuple, Read]:
     """
     Build Read objects keyed by readID by streaming the three output files.

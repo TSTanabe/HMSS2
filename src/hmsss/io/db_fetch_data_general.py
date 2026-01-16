@@ -133,7 +133,7 @@ def _build_limiter_dict(config: Config) -> Dict[str, Any]:
 
 
 def fetch_fasta_and_hit_data(
-        config: Config,
+    config: Config,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
     """
     Zentrale Fetch-Routine für Output-Operatoren.

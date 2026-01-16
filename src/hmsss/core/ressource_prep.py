@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 from hmsss.core.logging import get_logger, print_header
-from hmsss.cli.paths import DATA_DIR
+from hmsss.cli.paths import DATA_DIR, GPKG_DIR
 from hmsss.core import queue as queue
 
 log = get_logger(__name__)
@@ -124,7 +124,10 @@ def ressource_preparation(config) -> None:
         queue.concatenate_files_shell(
             str(DATA_DIR), "metabolic_information", ".txt", config.metabolic_information
         )
-
+    if not os.path.isfile(config.rm_ram_profile):
+        queue.concatenate_files_shell(
+            str(GPKG_DIR), "ram_profile", ".txt", config.rm_ram_profile
+        )
     # ---- Existenz der Ressourcen sicherstellen ----
     _require_path_exists(config.library, "HMM library")
     _require_path_exists(config.score_threshold_file, "Score thresholds")

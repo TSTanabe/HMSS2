@@ -14,27 +14,27 @@ logger = get_logger(__name__)
 
 
 def prepare_gpkg_packages(config: Config) -> None | dict[str, str]:
-    if config.hmm_sets:
-        logger.info(f"Collecting graftM packages for {config.hmm_sets}")
+    if config.gpkg_sets:
+        logger.info(f"Collecting graftM packages for {config.gpkg_sets}")
         allowed = (
-            config.hmm_sets
-            if isinstance(config.hmm_sets, list)
-            else config.hmm_sets.split()
+            config.gpkg_sets
+            if isinstance(config.gpkg_sets, list)
+            else config.gpkg_sets.split()
         )
         return queue.collect_gpkg_from_selected_metabolism_packages(
             str(GPKG_DIR), allowed
         )
     else:
-        logger.warning("Define a library set for the read mapping")
+        logger.warning("Define a gpkg set for the read mapping")
         sys.exit()
 
 
 def _ensure_dmnd(
-        *,
-        faa_path: str,
-        dmnd_path: str,
-        name: str,
-        threads: int = 4,
+    *,
+    faa_path: str,
+    dmnd_path: str,
+    name: str,
+    threads: int = 4,
 ) -> None:
     """
     Ensure a DIAMOND database exists for the given FASTA.
@@ -70,9 +70,9 @@ def _ensure_dmnd(
 
 
 def initialize_gpkg_packages(
-        package_dict: Dict[str, str],
-        *,
-        threads: int = 4,
+    package_dict: Dict[str, str],
+    *,
+    threads: int = 4,
 ) -> None:
     """
     Ensure that each gpkg contains refseq and decoy DIAMOND databases.

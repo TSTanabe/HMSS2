@@ -31,9 +31,9 @@ logger = get_logger(__name__)
 
 
 def make_threshold_dict(
-        file_path: str,
-        threshold_type: int = 1,
-        default_score: float = 50.0,
+    file_path: str,
+    threshold_type: int = 1,
+    default_score: float = 50.0,
 ) -> Dict[str, Union[float, Dict[str, float]]]:
     """
     Parse a tab-separated cutoff table.
@@ -135,7 +135,7 @@ _G_USE_SYNTENY_COMPLETION: Optional[bool] = None
 
 
 def _build_optimized_suffix_thresholds(
-        threshold_dict: dict,
+    threshold_dict: dict,
 ) -> dict[str, float]:
     """
     Build optimized-cutoff dict keyed by suffix (after first '_').
@@ -159,14 +159,14 @@ def _build_optimized_suffix_thresholds(
 
 
 def _init_worker(
-        hmm_path: str,
-        threshold_dict: Dict[str, float],
-        config_light: dict,
-        faa_files: Dict[str, str],
-        gff_files: Dict[str, str],
-        nucleotide_range: int,
-        min_completeness: float,
-        disable_synteny_completion: bool,
+    hmm_path: str,
+    threshold_dict: Dict[str, float],
+    config_light: dict,
+    faa_files: Dict[str, str],
+    gff_files: Dict[str, str],
+    nucleotide_range: int,
+    min_completeness: float,
+    disable_synteny_completion: bool,
 ):
     """
     Lädt schwere/konstante Daten einmal pro Worker.
@@ -248,6 +248,7 @@ def _init_worker(
 # parse pyhmmer hits to protein dict
 #
 
+
 def hmm_identity(aln, min_identity: float | None = 0.25) -> int:
     ident = 0
     aligned = 0
@@ -295,8 +296,12 @@ def debug_pyhmmer_domain(dom) -> None:
     aln = dom.alignment
 
     print("=== pyhmmer domain debug ===")
-    print(f"HMM name        : {aln.hmm_name.decode() if isinstance(aln.hmm_name, bytes) else aln.hmm_name}")
-    print(f"Target name     : {aln.target_name.decode() if isinstance(aln.target_name, bytes) else aln.target_name}")
+    print(
+        f"HMM name        : {aln.hmm_name.decode() if isinstance(aln.hmm_name, bytes) else aln.hmm_name}"
+    )
+    print(
+        f"Target name     : {aln.target_name.decode() if isinstance(aln.target_name, bytes) else aln.target_name}"
+    )
 
     print("\n-- HMM (profile) --")
     print(f"hmm_from / hmm_to      : {aln.hmm_from} .. {aln.hmm_to}")
@@ -314,8 +319,9 @@ def debug_pyhmmer_domain(dom) -> None:
 
     print("\n-- Derived metrics --")
     hmm_cov = (aln.hmm_to - aln.hmm_from + 1) / aln.hmm_length
-    insert_frac = ((dom.env_to - dom.env_from + 1) - (aln.hmm_to - aln.hmm_from + 1)) / max(1, (
-            aln.hmm_to - aln.hmm_from + 1))
+    insert_frac = (
+        (dom.env_to - dom.env_from + 1) - (aln.hmm_to - aln.hmm_from + 1)
+    ) / max(1, (aln.hmm_to - aln.hmm_from + 1))
 
     print(f"hmm_coverage            : {hmm_cov:.3f}")
     print(f"insertion_fraction      : {insert_frac:.3f}")
@@ -324,9 +330,9 @@ def debug_pyhmmer_domain(dom) -> None:
 
 
 def add_pyhmmer_hits_to_protein_dict(
-        *,
-        genome_id: str,
-        tophits_iter,
+    *,
+    genome_id: str,
+    tophits_iter,
 ) -> dict[str, Protein]:
     """
     Füllt protein_dict mit Domains aus pyhmmer hmmsearch.
@@ -379,9 +385,17 @@ def add_pyhmmer_hits_to_protein_dict(
                         selection_comment = "Nc"
 
                     if protein is None:
-                        protein = Protein(protein_id=prot_id, hmm=hmm_name, start=start, end=end, score=int(score),
-                                          selection_comment=selection_comment, ident=hmm_ident, genome_id=genome_id,
-                                          bsr=hmm_cov)
+                        protein = Protein(
+                            protein_id=prot_id,
+                            hmm=hmm_name,
+                            start=start,
+                            end=end,
+                            score=int(score),
+                            selection_comment=selection_comment,
+                            ident=hmm_ident,
+                            genome_id=genome_id,
+                            bsr=hmm_cov,
+                        )
                         if valid_hit:
                             protein.valid_hit = True
                         protein_dict[prot_id] = protein
@@ -403,7 +417,7 @@ def add_pyhmmer_hits_to_protein_dict(
 # Worker: verarbeitet ein Batch
 # -----------------------------
 def _process_genome1(
-        genome_id: str,
+    genome_id: str,
 ) -> tuple[dict[str, Protein], dict[str, Any]] | None:
     """
     Pro Batch: pro Genom
@@ -421,7 +435,7 @@ def _process_genome1(
             # load genome with all sequences into RAM
             abc = pyhmmer.easel.Alphabet.amino()
             with pyhmmer.easel.SequenceFile(
-                    faa_file, "fasta", digital=True, alphabet=abc
+                faa_file, "fasta", digital=True, alphabet=abc
             ) as sf:
                 seqs = sf.read_block()
 
@@ -484,7 +498,7 @@ def _process_genome1(
 
 
 def _process_genome_timed(
-        genome_id: str,
+    genome_id: str,
 ) -> tuple[dict[str, Protein], dict[str, Any]] | None:
     """
     Pro Batch: pro Genom
@@ -524,7 +538,7 @@ def _process_genome_timed(
             t0 = time.perf_counter()
             abc = pyhmmer.easel.Alphabet.amino()
             with pyhmmer.easel.SequenceFile(
-                    faa_file, "fasta", digital=True, alphabet=abc
+                faa_file, "fasta", digital=True, alphabet=abc
             ) as sf:
                 seqs = sf.read_block()
             t_load = time.perf_counter() - t0
@@ -603,8 +617,19 @@ def _process_genome_timed(
             t_total = time.perf_counter() - t_total0
 
             accounted = (
-                    t_mat + t_load + t_hmmsearch + t_parse_hits + t_best + t_gff +
-                    t_csb_find + t_csb_name + t_syn + t_path + t_rm + t_seq + t_sel
+                t_mat
+                + t_load
+                + t_hmmsearch
+                + t_parse_hits
+                + t_best
+                + t_gff
+                + t_csb_find
+                + t_csb_name
+                + t_syn
+                + t_path
+                + t_rm
+                + t_seq
+                + t_sel
             )
             t_other = t_total - accounted
 
@@ -683,21 +708,21 @@ def consecutive_hmm_search(config: Config, processes: int = 4) -> None:
     log_step = max(1, n_genomes // 100)
 
     with Pool(
-            processes=worker_processes,
-            initializer=_init_worker,
-            initargs=(
-                    config.library,
-                    threshold_dict,
-                    config_light,
-                    config.faa_files,
-                    config.gff_files,
-                    config.nucleotide_range,
-                    config.min_completeness,
-                    config.disable_synteny_completion,
-            ),  # arguments for the init worker
+        processes=worker_processes,
+        initializer=_init_worker,
+        initargs=(
+            config.library,
+            threshold_dict,
+            config_light,
+            config.faa_files,
+            config.gff_files,
+            config.nucleotide_range,
+            config.min_completeness,
+            config.disable_synteny_completion,
+        ),  # arguments for the init worker
     ) as pool:
         for protein_dict, cluster_dict in pool.imap_unordered(
-                _process_genome1, genome_ids, chunksize=chunksize
+            _process_genome1, genome_ids, chunksize=chunksize
         ):
             genomes_done += 1
             if (genomes_done % log_step == 0) or (genomes_done == n_genomes):

@@ -29,6 +29,7 @@ class PathsCfg:
         root: Project root directory.
         bin:  Executables/tools directory.
         data: Top-level data directory.
+        gpkg: Top-level gpkg directory.
         hmms: Directory containing HMM libraries.
         refseq: Directory with reference sequences.
         results: Default results directory.
@@ -38,6 +39,7 @@ class PathsCfg:
     root: str
     bin: str
     data: str
+    gpkg: str
     hmms: str
     refseq: str
     results: str
@@ -174,7 +176,7 @@ class CliReadMapping:
     """CLI options for the hidden read-mapping module."""
 
     use_read_mapping: bool = False
-
+    gpkg_sets: List[str] = field(default_factory=list)
     threads: int = 14
     evalue: float = 1e-5
     placements_cutoff: float = 0.75
@@ -188,6 +190,8 @@ class CliReadMapping:
     ram_limit_max: Optional[float] = None
 
     interleaved: bool = False
+
+    ram_profile_file: Optional[str] = None
 
 
 @dataclass(slots=True)
@@ -469,6 +473,7 @@ class Config:
 
     # Read mapping (shortcuts)
     use_read_mapping = prop("cli_readmap.use_read_mapping")
+    gpkg_sets = prop("cli_readmap.gpkg_sets")
     rm_threads = prop("cli_readmap.threads")
     rm_evalue = prop("cli_readmap.evalue")
     rm_placements_cutoff = prop("cli_readmap.placements_cutoff")
@@ -479,6 +484,7 @@ class Config:
     rm_ram_limit_min = prop("cli_readmap.ram_limit_min")
     rm_ram_limit_max = prop("cli_readmap.ram_limit_max")
     rm_interleaved = prop("cli_readmap.interleaved")
+    rm_ram_profile = prop("cli_readmap.ram_profile_file")
 
     merge_fasta = prop(
         "cli_process.merge_fasta"
@@ -569,8 +575,8 @@ class Config:
         if self.cli_ops.keywords_connector not in ("AND", "OR"):
             raise ValueError("keywords_connector must be 'AND' or 'OR'")
         if (
-                self.cli_synteny.min_completeness < 0.0
-                or self.cli_synteny.min_completeness > 1.0
+            self.cli_synteny.min_completeness < 0.0
+            or self.cli_synteny.min_completeness > 1.0
         ):
             raise ValueError("min_completeness must be within [0.0, 1.0]")
         if self.cli_csb.jaccard < 0.0 or self.cli_csb.jaccard > 1.0:

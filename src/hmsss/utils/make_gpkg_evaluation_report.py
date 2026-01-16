@@ -97,12 +97,12 @@ def print_table(rows: List[Dict[str, Any]], columns: List[str]) -> None:
 # Core API (callable as a normal function)
 # ------------------------------------------------------------
 def summarize_eval_stats(
-        root: Path,
-        *,
-        filename: str = DEFAULT_FILENAME,
-        sort: str = "overall_MCC",
-        desc: bool = False,
-        show_path: bool = False,
+    root: Path,
+    *,
+    filename: str = DEFAULT_FILENAME,
+    sort: str = "overall_MCC",
+    desc: bool = False,
+    show_path: bool = False,
 ) -> int | list[dict[str, Any]]:
     """
     Summarize evaluation_stats files under `root` as a table (one row per package).
@@ -152,25 +152,25 @@ def summarize_eval_stats(
 
         # --- Overall confusion ---
         for k in (
-                "overall_TP",
-                "overall_FP",
-                "overall_FN",
-                "overall_TN",
-                "overall_balanced_accuracy",
-                "overall_F1",
-                "overall_MCC",
+            "overall_TP",
+            "overall_FP",
+            "overall_FN",
+            "overall_TN",
+            "overall_balanced_accuracy",
+            "overall_F1",
+            "overall_MCC",
         ):
             row[k] = d.get(k)
 
         # --- Placement confusion ---
         for k in (
-                "placement_TP",
-                "placement_FP",
-                "placement_FN",
-                "placement_TN",
-                "placement_balanced_accuracy",
-                "placement_F1",
-                "placement_MCC",
+            "placement_TP",
+            "placement_FP",
+            "placement_FN",
+            "placement_TN",
+            "placement_balanced_accuracy",
+            "placement_F1",
+            "placement_MCC",
         ):
             row[k] = d.get(k)
 
@@ -204,9 +204,9 @@ def summarize_eval_stats(
 
 
 def print_eval_stats(
-        rows: list[dict],
-        *,
-        root: Path | None = None,
+    rows: list[dict],
+    *,
+    root: Path | None = None,
 ) -> int:
     """
     Print evaluation statistics for multiple packages.
@@ -269,9 +269,10 @@ def print_eval_stats(
 # Print plots routines
 # ------------------------------------------------------------
 
+
 def plot_overall_metrics_boxplots(
-        eval_stat_list: List[Dict[str, Any]],
-        out_dir: Path,
+    eval_stat_list: List[Dict[str, Any]],
+    out_dir: Path,
 ) -> None:
     """
     Create boxplots for overall balanced accuracy, F1, and MCC
@@ -324,8 +325,8 @@ def plot_overall_metrics_boxplots(
 
 
 def plot_placement_metrics_boxplots(
-        eval_stat_list: List[Dict[str, Any]],
-        out_dir: Path,
+    eval_stat_list: List[Dict[str, Any]],
+    out_dir: Path,
 ) -> None:
     """
     Create boxplots for placement balanced accuracy, F1, and MCC
@@ -377,12 +378,12 @@ def plot_placement_metrics_boxplots(
 
 
 def plot_rank_assignment_fractions_boxplot(
-        eval_stat_list: List[Dict[str, Any]],
-        out_dir: Path,
-        *,
-        ranks: List[str] = RANKS,
-        filename: str = "rank_assignment_fractions_boxplot.png",
-        title: str = "Assigned fraction per rank (assigned / TP_frags)",
+    eval_stat_list: List[Dict[str, Any]],
+    out_dir: Path,
+    *,
+    ranks: List[str] = RANKS,
+    filename: str = "rank_assignment_fractions_boxplot.png",
+    title: str = "Assigned fraction per rank (assigned / TP_frags)",
 ) -> None:
     """
     For each taxonomic rank, compute the fraction of assigned reads:
@@ -483,12 +484,12 @@ def plot_rank_assignment_fractions_boxplot(
 
 
 def plot_rank_correct_fractions_boxplot(
-        eval_stat_list: List[Dict[str, Any]],
-        out_dir: Path,
-        *,
-        ranks: List[str] = RANKS,
-        filename: str = "rank_correct_fractions_boxplot.png",
-        title: str = "Correct fraction per rank (correct / TP_frags)",
+    eval_stat_list: List[Dict[str, Any]],
+    out_dir: Path,
+    *,
+    ranks: List[str] = RANKS,
+    filename: str = "rank_correct_fractions_boxplot.png",
+    title: str = "Correct fraction per rank (correct / TP_frags)",
 ) -> None:
     """
     For each taxonomic rank, compute the fraction of correct reads:
@@ -583,12 +584,12 @@ def plot_rank_correct_fractions_boxplot(
 
 
 def plot_rank_correct_given_assigned_boxplot(
-        eval_stat_list: List[Dict[str, Any]],
-        out_dir: Path,
-        *,
-        ranks: List[str] = RANKS,
-        filename: str = "rank_correct_given_assigned_boxplot.png",
-        title: str = "Correct among assigned per rank (correct / assigned)",
+    eval_stat_list: List[Dict[str, Any]],
+    out_dir: Path,
+    *,
+    ranks: List[str] = RANKS,
+    filename: str = "rank_correct_given_assigned_boxplot.png",
+    title: str = "Correct among assigned per rank (correct / assigned)",
 ) -> None:
     """
     For each taxonomic rank, compute:
@@ -631,7 +632,11 @@ def plot_rank_correct_given_assigned_boxplot(
             assg = row.get(key_assigned)
             corr = row.get(key_correct)
 
-            if not isinstance(assg, (int, float)) or _is_nan(float(assg)) or float(assg) <= 0:
+            if (
+                not isinstance(assg, (int, float))
+                or _is_nan(float(assg))
+                or float(assg) <= 0
+            ):
                 continue
             if not isinstance(corr, (int, float)) or _is_nan(float(corr)):
                 continue
@@ -685,12 +690,12 @@ def plot_rank_correct_given_assigned_boxplot(
 
 
 def plot_rank_wrong_given_assigned_boxplot(
-        eval_stat_list: List[Dict[str, Any]],
-        out_dir: Path,
-        *,
-        ranks: List[str] = RANKS,
-        filename: str = "rank_wrong_given_assigned_boxplot.png",
-        title: str = "Wrong among assigned per rank (wrong / assigned)",
+    eval_stat_list: List[Dict[str, Any]],
+    out_dir: Path,
+    *,
+    ranks: List[str] = RANKS,
+    filename: str = "rank_wrong_given_assigned_boxplot.png",
+    title: str = "Wrong among assigned per rank (wrong / assigned)",
 ) -> None:
     """
     For each taxonomic rank, compute:
@@ -733,7 +738,11 @@ def plot_rank_wrong_given_assigned_boxplot(
             assg = row.get(key_assigned)
             wrong = row.get(key_wrong)
 
-            if not isinstance(assg, (int, float)) or _is_nan(float(assg)) or float(assg) <= 0:
+            if (
+                not isinstance(assg, (int, float))
+                or _is_nan(float(assg))
+                or float(assg) <= 0
+            ):
                 continue
             if not isinstance(wrong, (int, float)) or _is_nan(float(wrong)):
                 continue
@@ -790,12 +799,13 @@ def plot_rank_wrong_given_assigned_boxplot(
 #
 #
 
+
 def write_metric_values_tsv(
-        eval_stat_list: List[Dict[str, Any]],
-        *,
-        metric_key: str,
-        out_tsv: Path,
-        include_package_cols: bool = True,
+    eval_stat_list: List[Dict[str, Any]],
+    *,
+    metric_key: str,
+    out_tsv: Path,
+    include_package_cols: bool = True,
 ) -> Path:
     """
     Write the exact values used for a single-metric boxplot (e.g. overall_MCC)
@@ -835,12 +845,12 @@ def write_metric_values_tsv(
 
 
 def write_rank_fraction_values_tsv(
-        eval_stat_list: List[Dict[str, Any]],
-        *,
-        numerator_prefix: str,  # e.g. "assigned" / "correct" / "wrong"
-        denominator: str,  # either "TP_frags" OR another prefix like "assigned"
-        out_tsv: Path,
-        ranks: List[str] = RANKS,
+    eval_stat_list: List[Dict[str, Any]],
+    *,
+    numerator_prefix: str,  # e.g. "assigned" / "correct" / "wrong"
+    denominator: str,  # either "TP_frags" OR another prefix like "assigned"
+    out_tsv: Path,
+    ranks: List[str] = RANKS,
 ) -> Path:
     """
     Write the exact per-rank fractions used for rank boxplots to TSV.
@@ -894,7 +904,11 @@ def write_rank_fraction_values_tsv(
             # validate
             if not isinstance(num, (int, float)) or _is_nan(float(num)):
                 continue
-            if not isinstance(den, (int, float)) or _is_nan(float(den)) or float(den) <= 0:
+            if (
+                not isinstance(den, (int, float))
+                or _is_nan(float(den))
+                or float(den) <= 0
+            ):
                 continue
 
             frac = float(num) / float(den)
@@ -943,13 +957,13 @@ RANKS = ["kingdom", "phylum", "class", "order", "family", "genus", "species"]
 # Generic plotters
 # ------------------------------------------------------------
 def plot_single_metric_boxplot(
-        eval_stat_list: List[Dict[str, Any]],
-        out_dir: Path,
-        *,
-        metric_key: str,
-        title: str,
-        ylabel: str,
-        filename: str | None = None,
+    eval_stat_list: List[Dict[str, Any]],
+    out_dir: Path,
+    *,
+    metric_key: str,
+    title: str,
+    ylabel: str,
+    filename: str | None = None,
 ) -> Path | None:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1013,15 +1027,15 @@ def plot_single_metric_boxplot(
 
 
 def plot_rank_fraction_boxplots(
-        eval_stat_list: List[Dict[str, Any]],
-        out_dir: Path,
-        *,
-        numerator_prefix: str,
-        denominator: str,
-        ranks: List[str] = RANKS,
-        title: str | None = None,
-        ylabel: str | None = None,
-        filename: str | None = None,
+    eval_stat_list: List[Dict[str, Any]],
+    out_dir: Path,
+    *,
+    numerator_prefix: str,
+    denominator: str,
+    ranks: List[str] = RANKS,
+    title: str | None = None,
+    ylabel: str | None = None,
+    filename: str | None = None,
 ) -> Path | None:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1050,7 +1064,11 @@ def plot_rank_fraction_boxplots(
 
             if not isinstance(num, (int, float)) or _is_nan(float(num)):
                 continue
-            if not isinstance(den, (int, float)) or _is_nan(float(den)) or float(den) <= 0:
+            if (
+                not isinstance(den, (int, float))
+                or _is_nan(float(den))
+                or float(den) <= 0
+            ):
                 continue
 
             frac = float(num) / float(den)
@@ -1064,7 +1082,9 @@ def plot_rank_fraction_boxplots(
             counts.append(len(vals))
 
     if not data:
-        print(f"[WARN] No valid data for {numerator_prefix}/{denominator}. Skipping plot.")
+        print(
+            f"[WARN] No valid data for {numerator_prefix}/{denominator}. Skipping plot."
+        )
         return None
 
     if filename is None:
@@ -1130,8 +1150,8 @@ def plot_rank_fraction_boxplots(
 # Batch routine: "all desired plots"
 # ------------------------------------------------------------
 def make_all_evaluation_plots(
-        eval_stat_list: List[Dict[str, Any]],
-        out_dir: Path,
+    eval_stat_list: List[Dict[str, Any]],
+    out_dir: Path,
 ) -> List[Path]:
     """
     Create all requested plots:
@@ -1155,7 +1175,11 @@ def make_all_evaluation_plots(
 
     # --- Overall metrics ---
     overall_specs: List[Tuple[str, str, str]] = [
-        ("overall_balanced_accuracy", "Overall balanced accuracy", "overall balanced accuracy"),
+        (
+            "overall_balanced_accuracy",
+            "Overall balanced accuracy",
+            "overall balanced accuracy",
+        ),
         ("overall_F1", "Overall F1 score", "overall F1"),
         ("overall_MCC", "Overall MCC", "overall MCC"),
     ]
@@ -1174,7 +1198,11 @@ def make_all_evaluation_plots(
 
     # --- Placement metrics ---
     placement_specs: List[Tuple[str, str, str]] = [
-        ("placement_balanced_accuracy", "Placement balanced accuracy", "placement balanced accuracy"),
+        (
+            "placement_balanced_accuracy",
+            "Placement balanced accuracy",
+            "placement balanced accuracy",
+        ),
         ("placement_F1", "Placement F1 score", "placement F1"),
         ("placement_MCC", "Placement MCC", "placement MCC"),
     ]
@@ -1194,10 +1222,34 @@ def make_all_evaluation_plots(
     # --- Rank fraction plots ---
     rank_specs: List[Tuple[str, str, str, str, str]] = [
         # numerator, denominator, subdir, title, ylabel
-        ("assigned", "TP_frags", "rank", "Assigned fraction per rank (assigned / TP_frags)", "assigned / TP_frags"),
-        ("correct", "TP_frags", "rank", "Correct fraction per rank (correct / TP_frags)", "correct / TP_frags"),
-        ("correct", "assigned", "rank", "Correct among assigned per rank (correct / assigned)", "correct / assigned"),
-        ("wrong", "assigned", "rank", "Wrong among assigned per rank (wrong / assigned)", "wrong / assigned"),
+        (
+            "assigned",
+            "TP_frags",
+            "rank",
+            "Assigned fraction per rank (assigned / TP_frags)",
+            "assigned / TP_frags",
+        ),
+        (
+            "correct",
+            "TP_frags",
+            "rank",
+            "Correct fraction per rank (correct / TP_frags)",
+            "correct / TP_frags",
+        ),
+        (
+            "correct",
+            "assigned",
+            "rank",
+            "Correct among assigned per rank (correct / assigned)",
+            "correct / assigned",
+        ),
+        (
+            "wrong",
+            "assigned",
+            "rank",
+            "Wrong among assigned per rank (wrong / assigned)",
+            "wrong / assigned",
+        ),
     ]
     rank_dir = out_dir / "rank"
     for num, den, _, title, ylabel in rank_specs:
@@ -1235,7 +1287,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Column to sort by (default: overall_MCC)",
     )
     ap.add_argument("--desc", action="store_true", help="Sort descending")
-    ap.add_argument("--show-path", action="store_true", help="Include relative path column")
+    ap.add_argument(
+        "--show-path", action="store_true", help="Include relative path column"
+    )
     args = ap.parse_args(argv)
 
     eval_list = summarize_eval_stats(

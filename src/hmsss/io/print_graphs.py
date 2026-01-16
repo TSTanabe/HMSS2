@@ -11,14 +11,14 @@ logger = get_logger(__name__)
 
 
 def print_hit_graphs(
-        directory: str,
-        protein_dict: Dict[str, Any],
-        cluster_dict: Dict[str, Any],
-        taxon_dict: Dict[str, Dict[str, str]],
-        metabolic_dict: Dict[str, Any],
-        context_dict: Dict[str, Any] | None,
-        fetch_proteins: List[str],
-        levels: List[str],
+    directory: str,
+    protein_dict: Dict[str, Any],
+    cluster_dict: Dict[str, Any],
+    taxon_dict: Dict[str, Dict[str, str]],
+    metabolic_dict: Dict[str, Any],
+    context_dict: Dict[str, Any] | None,
+    fetch_proteins: List[str],
+    levels: List[str],
 ) -> None:
     """
     Main output routine: creates hit tables, taxonomy summaries, and protein FASTA files.

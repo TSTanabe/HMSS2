@@ -33,7 +33,9 @@ def iter_fasta(path: Path) -> Iterator[Tuple[str, str]]:
             yield header, "".join(seq_chunks)
 
 
-def reservoir_sample_fasta(path: Path, k: int, seed: int | None = None) -> List[Tuple[str, str]]:
+def reservoir_sample_fasta(
+    path: Path, k: int, seed: int | None = None
+) -> List[Tuple[str, str]]:
     """
     Reservoir sampling over FASTA records: O(k) memory, 1 pass.
     Returns up to k (header, seq) tuples.
@@ -51,14 +53,14 @@ def reservoir_sample_fasta(path: Path, k: int, seed: int | None = None) -> List[
 
 
 def make_reads_from_refseq(
-        ref_faa: Path,
-        out_faa: Path,
-        *,
-        n_reads: int = 1000,
-        min_len: int = 30,
-        max_len: int = 60,
-        seed: int | None = None,
-        reservoir_k: int = 5000,
+    ref_faa: Path,
+    out_faa: Path,
+    *,
+    n_reads: int = 1000,
+    min_len: int = 30,
+    max_len: int = 60,
+    seed: int | None = None,
+    reservoir_k: int = 5000,
 ) -> int:
     """
     Generates n_reads random fragments (length min_len..max_len) from sequences in ref_faa.
@@ -99,7 +101,7 @@ def make_reads_from_refseq(
                 continue
 
             start = rng.randint(0, len(seq) - L)
-            frag = seq[start: start + L]
+            frag = seq[start : start + L]
 
             # deterministic-ish id: read_000001|src=...
             rid = f"read_{written + 1:06d}|src={header.split()[0]}|pos={start}|len={L}"
@@ -147,12 +149,12 @@ def peak_rss_of_tree_bytes(ps_proc) -> int:
 
 
 def run_graftm_and_measure_peak_rss(
-        *,
-        gpkg_dir: Path,
-        reads_faa: Path,
-        out_dir: Path,
-        threads: int = 8,
-        poll_s: float = 0.2,
+    *,
+    gpkg_dir: Path,
+    reads_faa: Path,
+    out_dir: Path,
+    threads: int = 8,
+    poll_s: float = 0.2,
 ) -> tuple[int, float]:
     """
     Runs 'graftM graft' and measures peak RSS (GB) of graftM process tree.
@@ -207,7 +209,7 @@ def run_graftm_and_measure_peak_rss(
         if stderr:
             sys.stderr.write(stderr)
 
-        peak_gb = peak / 1024 ** 3
+        peak_gb = peak / 1024**3
         return p.returncode, peak_gb
 
     except KeyboardInterrupt:
@@ -224,12 +226,21 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument("gpkg", help="Path to a *.gpkg directory")
     ap.add_argument("--threads", type=int, default=8, help="Threads for graftM")
-    ap.add_argument("--n-reads", type=int, default=1000, help="Number of reads to generate")
+    ap.add_argument(
+        "--n-reads", type=int, default=1000, help="Number of reads to generate"
+    )
     ap.add_argument("--min-len", type=int, default=30, help="Min AA length per read")
     ap.add_argument("--max-len", type=int, default=60, help="Max AA length per read")
     ap.add_argument("--seed", type=int, default=1, help="Random seed")
-    ap.add_argument("--reservoir-k", type=int, default=5000, help="Reservoir size for refseq sampling")
-    ap.add_argument("--keep", action="store_true", help="Keep temp directory (for debugging)")
+    ap.add_argument(
+        "--reservoir-k",
+        type=int,
+        default=5000,
+        help="Reservoir size for refseq sampling",
+    )
+    ap.add_argument(
+        "--keep", action="store_true", help="Keep temp directory (for debugging)"
+    )
     args = ap.parse_args(argv)
 
     gpkg_dir = Path(args.gpkg).resolve()
@@ -278,6 +289,7 @@ def main(argv: list[str] | None = None) -> int:
             # best-effort cleanup
             try:
                 import shutil
+
                 shutil.rmtree(tmp_root, ignore_errors=True)
             except Exception:
                 pass
