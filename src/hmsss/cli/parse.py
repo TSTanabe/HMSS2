@@ -36,6 +36,222 @@ Typical usage:
 """
 
 
+class FetchHelpAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        self.print_fetch_operator_help()
+        parser.exit(0)
+
+    def print_fetch_operator_help(self) -> None:
+        """
+        Print a concise explanation of how -fd and -fc are interpreted,
+        including AND/OR logic, brackets, optional domains, and combinations.
+        """
+
+        text = """
+    FETCH OPERATORS: -fd and -fc
+    ===========================
+
+    -fd (fetch domains / proteins)
+    ------------------------------
+    Selects proteins by domain name and restricts results by genome-level co-occurrence.
+
+    Core meaning:
+      -fd A B means: select genomes where A and B co-occur in the SAME genome.
+      Output then contains the matching proteins/domains from those genomes (subject to other filters).
+
+    Rules:
+      - Multiple values are combined using logical AND at the genome level (co-occurrence in one genome).
+      - Use ':' (without whitespace) to express OR within a single slot.
+      - A trailing ':' makes a domain optional (can be omitted for that slot).
+      - Square brackets [...] define alternative requirement groups (logical OR between groups).
+
+    Examples:
+      -fd A B
+          -> genomes containing A AND B (both must be present in the same genome)
+
+      -fd A:B C
+          -> genomes containing (A OR B) AND C
+
+      -fd A:B:C D
+          -> genomes containing (A OR B OR C) AND D
+
+      -fd A:
+          -> genomes containing A OR nothing (A is optional)
+
+      -fd A: B
+          -> genomes containing (A optional) AND B
+
+      -fd [A B] [C D]
+          -> (genomes with A AND B) OR (genomes with C AND D)
+
+
+    -fc (fetch gene clusters / CSBs)
+    --------------------------------
+    Selects genomes by gene clusters (CSBs) that encode the specified domains.
+
+    Core meaning:
+      -fc A B means: select genomes that have at least one gene cluster containing A and B together.
+
+    Rules:
+      - Within a cluster definition, whitespace-separated tokens are combined using logical AND.
+      - ':' (without whitespace) expresses OR within a single token (alternative domains for that slot).
+      - A trailing ':' makes that token optional (can be omitted).
+      - Square brackets [...] define alternative cluster definitions (logical OR between groups).
+
+    Examples:
+      -fc A B
+          -> genomes with a cluster containing A AND B
+
+      -fc A:B C
+          -> genomes with a cluster containing (A OR B) AND C
+
+      -fc A:B:C D
+          -> genomes with a cluster containing (A OR B OR C) AND D
+
+      -fc A:
+          -> genomes with a cluster containing A OR no constraint for that slot
+
+      -fc [A B] [C D]
+          -> genomes with a cluster containing (A AND B) OR (C AND D)
+
+
+    -fc and -fd combined
+    -------------------
+    When used together:
+
+      -fc defines which genomes are selected based on gene clusters (hard genome filter).
+      -fd then fetches/adds proteins by domain, but ONLY within the genomes selected by -fc.
+      -fd cannot introduce new genomes beyond the -fc selection.
+
+    In short:
+      -fc defines the genome set;
+      -fd extends the protein output within that set.
+    
+    
+    -fnd (exclude domains)
+    ----------------------
+    Exclude results based on the presence of domains.
+    
+    Core meaning:
+      -fnd A B means: exclude any genome, gene cluster, or protein where A or B is present.
+      Exclusion is triggered as soon as any specified domain occurs.
+    
+    Rules:
+      - All specified domains are treated as independent exclusion criteria.
+      - Multiple values are always combined using logical OR.
+      - If any one domain matches, the result is excluded.
+    
+    Examples:
+      -fnd A
+          -> exclude results containing A
+    
+      -fnd A B
+          -> exclude results containing A or B
+    
+    Interaction with other options:
+      - Exclusion is applied after genome or cluster selection.
+      - Results matching -fnd are removed even if they satisfy -fd or -fc.
+
+    ==============
+    Important note
+    --------------
+    The fetch operators (-fd, -fc, -fnd) are evaluated only when the -r option
+    is provided.
+    
+    The -r option must point to an existing result directory from a previous run.
+    This directory is used as the input source for all fetch operations.
+    
+    If -r is not specified or does not point to a valid result directory:
+      - fetch conditions are ignored
+      - no fetch-based summaries, FASTA files, or graphs are generated
+
+    """
+
+        print(text.strip())
+
+
+class FetchOutputHelpAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        self.print_fetch_output_help()
+        parser.exit(0)
+
+    def print_fetch_output_help(self) -> None:
+        text = """
+    OUTPUT FILES
+    ============
+
+    The fetch operation produces tabular summary reports, FASTA sequence files,
+    and graphical summaries. All outputs are derived from the same final,
+    filtered result set after applying -fd, -fc and -fnd.
+
+    SUMMARY TABLES (TSV)
+    --------------------
+
+    summary_hit_table.txt
+      Main per-protein hit table (genomeID/proteinID, domains, coordinates, cluster, taxonomy).
+
+    summary_gene_taxonomy.txt
+      Protein-to-taxonomy mapping (proteinID -> full lineage string).
+
+    summary_unique_lineages.txt
+      Unique taxonomy lineages with genome counts.
+
+    summary_hit_taxonomy_counts.txt
+      Taxonomy-level presence summary for all fetched proteins.
+
+    summary_requested_hit_taxonomy_counts.txt
+      Same as above, restricted to proteins explicitly requested via -fd.
+
+    summary_metabolic_annotations.txt
+      Metabolic/functional annotations per protein/domain plus taxonomy.
+
+    summary_genecluster_overview_table.txt
+      Overview of gene cluster compositions associated with requested domains.
+
+    summary_strain_variability_by_species.txt
+      Species-level completeness/variability for requested domains.
+
+    FASTA OUTPUT
+    ------------
+
+    Protein_sequences/
+      <DOMAIN>.faa
+        All proteins containing <DOMAIN>.
+      multi_domain_<DOMAIN>.faa
+        Domain sequences extracted from fusion proteins.
+      <NAME>_ortho.faa / <NAME>_paralog.faa
+        Split by single-copy vs multi-copy per genome.
+
+    GRAPHICAL OUTPUT (JPG)
+    ----------------------
+
+    summary_hit_taxonomy_counts.jpg
+      Presence/absence and co-occurrence visualization for all fetched proteins.
+
+    summary_requested_hit_taxonomy_counts.jpg
+      Presence/absence visualization for requested proteins only.
+
+    summary_gene_taxonomy.jpg
+      Protein-to-taxonomy assignments.
+
+    summary_unique_lineages.jpg
+      Unique lineage overview with genome counts.
+
+    summary_metabolic_annotations.jpg
+      Metabolic/functional annotation overview across taxa.
+
+    summary_genecluster_overview_table.jpg
+      Gene cluster composition overview.
+
+    COMMAND-LINE RECORD
+    -------------------
+
+    command_line_args.txt
+      Exact command-line arguments used for the run (index + value).
+    """
+        print(text.strip())
+
+
 # ---------------------------------------------------------------------------
 # Utility routines
 # ---------------------------------------------------------------------------
@@ -574,6 +790,18 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
 
     # Output operators / fetch
     operators = parser.add_argument_group("Output sequences with these conditions *")
+    operators.add_argument(
+        "--help-fetch",
+        action=FetchHelpAction,
+        nargs=0,
+        help="Explain how -fd and -fc are interpreted (AND/OR logic, brackets, combinations) and exit",
+    )
+    operators.add_argument(
+        "--help-output",
+        action=FetchOutputHelpAction,
+        nargs=0,
+        help="Explain fetch output files (summary tables, FASTA outputs, graphs) and exit",
+    )
     operators.add_argument(
         "-fl",
         dest="dataset_limit_lineage",
