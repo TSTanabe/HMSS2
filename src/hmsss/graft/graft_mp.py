@@ -291,6 +291,10 @@ def _start_bestfit_tasks(
         available_tokens_gb -= best_need
 
         fut = ex.submit(_run_graft_task, task)
+        fut._hmss_task_id = task.task_id
+        fut._hmss_gpkg = getattr(task, "gpkg_name", "?")
+        fut._hmss_mem_gb = best_need
+
         future_to_tokens[fut] = best_need
         did_progress = True
 
@@ -328,8 +332,14 @@ def _collect_done_futures(
     for fut in done:
         reserved = future_to_tokens.pop(fut)
         # future_to_task.pop(fut, None)
-        logger.info(f"Reserved tokens returned: {reserved} GB")
         available_tokens_gb += reserved
+
+        logger.info(
+            "Reserved tokens returned: %.1f GB | task_id=%s | gpkg=%s",
+            reserved,
+            getattr(fut, "_hmss_task_id", "?"),
+            getattr(fut, "_hmss_gpkg", "?"),
+        )
 
         try:
             res = fut.result()
