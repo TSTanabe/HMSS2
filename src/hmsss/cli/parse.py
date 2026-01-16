@@ -880,7 +880,7 @@ def build_config_from_namespace(ns) -> Config:
         keywords_connector=getattr(ns, "keywords_connector", "OR"),
         print_fasta=getattr(ns, "print_fasta", False),
         print_graphs=bool(getattr(ns, "print_graphs", False)),
-        use_valid_hits=bool(getattr(ns, "use_valid_hits", True)),
+        use_non_valid_hits=bool(getattr(ns, "use_non_valid_hits", True)),
         graph_tax_levels=list(getattr(ns, "graph_tax_levels", ["Phylum"])),
     )
 

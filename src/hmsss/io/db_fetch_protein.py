@@ -255,6 +255,10 @@ def generate_fetch_query_covering_domains(
     )
     """
 
+    valid_and = ""
+    if not use_non_valid_hits and valid_hit_column_available:
+        valid_and = " AND p.valid_hit = 1"
+
     # CTE: alle Cluster, die das komplette erforderliche Domain-Set abdecken
     sql += """,
     clusters_covering AS (
@@ -263,6 +267,7 @@ def generate_fetch_query_covering_domains(
         {join_limiter}
         JOIN Domains d ON d.proteinID = p.proteinID
         JOIN req r     ON r.domain    = d.domain
+        WHERE 1=1 {valid_and}
         GROUP BY p.clusterID
         HAVING COUNT(DISTINCT r.domain) = (SELECT COUNT(*) FROM req)
     )
@@ -323,6 +328,7 @@ def generate_fetch_query_covering_domains(
 
     sql = sql.format(
         join_limiter=join_txt,
+        valid_and=valid_and,
         join_limiter2=join_txt,
         join_limiter3=join_txt,
         left_join_excl=left_join_excl,
@@ -427,6 +433,10 @@ def generate_fetch_query_domains_anywhere_excluding_clusters(
     )
     """
 
+    valid_where = ""
+    if (not use_non_valid_hits) and valid_hit_column_available:
+        valid_where = "WHERE p.valid_hit = 1"
+
     # 1) Genomes finden, die *alle* gewünschten Domänen haben (mind. je 1 Hit)
     #    -> zählt DISTINCT req.domains pro genomeID
     if require_all_domains_in_same_genome:
@@ -440,14 +450,20 @@ def generate_fetch_query_domains_anywhere_excluding_clusters(
         {join_limiter0}
         JOIN Domains d ON d.proteinID = p.proteinID
         JOIN req r     ON r.domain    = d.domain
+        {valid_where}
         GROUP BY p.genomeID
         HAVING COUNT(DISTINCT r.domain) = (SELECT n_req FROM req_count)
     )
     """.format(
             join_limiter0=(
                 "JOIN lim lg0 ON lg0.genomeID = p.genomeID" if use_limiter else ""
-            )
+            ),
+            valid_where=valid_where,
         )
+
+    valid_and = ""
+    if (not use_non_valid_hits) and valid_hit_column_available:
+        valid_and = " AND p.valid_hit = 1"
 
     # 2) Cluster ausschließen, die irgendeine Exklusionsdomäne enthalten
     if use_exclusions:
@@ -459,12 +475,14 @@ def generate_fetch_query_domains_anywhere_excluding_clusters(
         JOIN Domains d   ON d.proteinID = p.proteinID
         JOIN tmp_excl_domains e ON e.domain = d.domain
         WHERE p.clusterID IS NOT NULL
+        {valid_and}
         GROUP BY p.clusterID
     )
     """.format(
             join_limiter2=(
                 "JOIN lim lg2 ON lg2.genomeID = p.genomeID" if use_limiter else ""
-            )
+            ),
+            valid_and=valid_and,
         )
 
     # 3) Finale Auswahl
