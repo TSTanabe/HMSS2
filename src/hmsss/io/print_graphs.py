@@ -7,19 +7,18 @@ from hmsss.graphics import graph_occurence_network
 from hmsss.graphics import graph_gene_cluster
 from hmsss.core.logging import get_logger
 
-
 logger = get_logger(__name__)
 
 
 def print_hit_graphs(
-    directory: str,
-    protein_dict: Dict[str, Any],
-    cluster_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
-    metabolic_dict: Dict[str, Any],
-    context_dict: Dict[str, Any] | None,
-    fetch_proteins: List[str],
-    levels: List[str],
+        directory: str,
+        protein_dict: Dict[str, Any],
+        cluster_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
+        metabolic_dict: Dict[str, Any],
+        context_dict: Dict[str, Any] | None,
+        fetch_proteins: List[str],
+        levels: List[str],
 ) -> None:
     """
     Main output routine: creates hit tables, taxonomy summaries, and protein FASTA files.
@@ -61,7 +60,6 @@ def print_hit_graphs(
         min_cooccurrence=3,  # kannst du anpassen
     )
 
-    sys.exit()
     # Plot includes all proteins that were fetched extended the requested ones
     graph_presence_absence.plot_taxonomy_summary_bubbles(
         taxonomy_summary,

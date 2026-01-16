@@ -37,7 +37,7 @@ class GraftMTask:
 
     forward: str | None = None
     reverse: str | None = None  # nur zusammen mit forward
-    interleaved: str | None = None  # exklusiv (statt forward/reverse)
+    interleaved: bool | None = None  # exklusiv (statt forward/reverse)
 
     def __post_init__(self):
         # For a given gpkg in the task define the paths to diamond and decoy database
@@ -307,6 +307,7 @@ def create_task_list(
         *,
         threads: int = 1,
         evalue: str = "1e-5",
+        interleaved: bool = False,
 ) -> list[GraftMTask]:
     tasks: list[GraftMTask] = []
 
@@ -325,7 +326,7 @@ def create_task_list(
                 genome_id=genome_id,
                 forward=forward_path,
                 reverse=reverse_path,
-                interleaved=None,
+                interleaved=interleaved,
                 outdir=output_directory,
                 threads=threads,
                 evalue=evalue,
@@ -343,7 +344,7 @@ def filter_gpkg_by_ram(
         gpkg_ram_profile: dict[str, float],
         ram_limit_gb: float,
         cap_factor: float = 1.1,
-        fallback_cap_gb: float = 64.0,
+        fallback_cap_gb: float = 16.0,
 ) -> dict[str, str]:
     """
     Remove GPKGs that would exceed the RAM limit even in isolation.
@@ -361,7 +362,7 @@ def filter_gpkg_by_ram(
         if cap > ram_limit_gb:
             logger.warning(
                 f"[GPKG filter] Removing gpkg '{gpkg_name}': "
-                f"Estimated needed RAM={cap} GB > RAM LIMIT={ram_limit_gb} GB"
+                f"Estimated needed RAM={cap} GB > RAM limit={ram_limit_gb} GB"
             )
             continue
 
@@ -393,7 +394,7 @@ def initialize_task_list(config):
     gpkg_packages = filter_gpkg_by_ram(
         gpkg_packages=gpkg_packages,
         gpkg_ram_profile=gpkg_ram_dict,
-        ram_limit_gb=float(config.ram_limit),
+        ram_limit_gb=float(config.rm_ram_limit_max),
         # Ein min limit wäre auch sinnvoll wenn man gewisse gpkgs eineln laufen lassen will
     )
 
@@ -405,6 +406,7 @@ def initialize_task_list(config):
         output_directory=config.fasta_output_directory,
         length_dict=gpkg_length_dict,
         gpkg_ram_profile=gpkg_ram_dict,
+        interleaved=config.rm_interleaved,
     )
 
     return task_list

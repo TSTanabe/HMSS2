@@ -184,6 +184,11 @@ class CliReadMapping:
     restrict_read_length: Optional[int] = None
     translation_table: int = 11
 
+    ram_limit_min: Optional[float] = None
+    ram_limit_max: Optional[float] = None
+
+    interleaved: bool = False
+
 
 @dataclass(slots=True)
 class CliFlow:
@@ -471,6 +476,9 @@ class Config:
     rm_min_orf_length = prop("cli_readmap.min_orf_length")
     rm_restrict_read_length = prop("cli_readmap.restrict_read_length")
     rm_translation_table = prop("cli_readmap.translation_table")
+    rm_ram_limit_min = prop("cli_readmap.ram_limit_min")
+    rm_ram_limit_max = prop("cli_readmap.ram_limit_max")
+    rm_interleaved = prop("cli_readmap.interleaved")
 
     merge_fasta = prop(
         "cli_process.merge_fasta"
@@ -561,8 +569,8 @@ class Config:
         if self.cli_ops.keywords_connector not in ("AND", "OR"):
             raise ValueError("keywords_connector must be 'AND' or 'OR'")
         if (
-            self.cli_synteny.min_completeness < 0.0
-            or self.cli_synteny.min_completeness > 1.0
+                self.cli_synteny.min_completeness < 0.0
+                or self.cli_synteny.min_completeness > 1.0
         ):
             raise ValueError("min_completeness must be within [0.0, 1.0]")
         if self.cli_csb.jaccard < 0.0 or self.cli_csb.jaccard > 1.0:

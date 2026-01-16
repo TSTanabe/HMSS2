@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import os
 import resource
-import time
 import traceback
+from concurrent.futures import ProcessPoolExecutor, wait, FIRST_COMPLETED
 from multiprocessing import get_context
 
+from typing import Callable, Any
 from hmsss.cli.config import Config
 from hmsss.db import database
 from hmsss.graft import generate_task, graft_runner, read_models
@@ -222,16 +223,6 @@ def _task_mem_est_gb(task, default_gb: float = 4.0) -> float:
         return float(default_gb)
 
 
-import time
-from concurrent.futures import ProcessPoolExecutor, wait, FIRST_COMPLETED
-from multiprocessing import get_context
-
-from concurrent.futures import wait, FIRST_COMPLETED
-
-from __future__ import annotations
-from typing import Callable, Any
-
-
 def _start_bestfit_tasks(
         *,
         ex: object,
@@ -270,7 +261,7 @@ def _start_bestfit_tasks(
             if need > total_tokens_gb:
                 logger.warning(
                     f"[RAM tokens] Skipping task {getattr(task, 'gpkg_name', '?')} "
-                    f"(mem_est_gb={need:.1f} > ram_budget_gb={total_tokens_gb:.1f})"
+                    f"(ESTIMATED NEEDED RAM={need:.1f} GB > RAM LIMIT={total_tokens_gb:.1f}) GB"
                 )
                 pending.pop(i)
                 handle_result_fn({"ok": False})  # counts as processed consistently
@@ -296,6 +287,7 @@ def _start_bestfit_tasks(
         task = pending.pop(best_i)
         available_tokens_gb -= best_need
 
+        logger.info(f"Starting task {task.gpkg_name}")
         fut = ex.submit(_run_graft_task, task)
         future_to_tokens[fut] = best_need
         did_progress = True
@@ -355,7 +347,7 @@ def graft_mp_tokenized_executor(task_list: list, batch_size: int, config: "Confi
     n_tasks = len(task_list)
     log_step = max(1, n_tasks // 100)
 
-    total_tokens_gb = float(getattr(config, "ram_budget_gb", 128.0))
+    total_tokens_gb = float(getattr(config, "ram_limit", 16.0))
     available_tokens_gb = total_tokens_gb
 
     pending = sorted(task_list, key=lambda t: _task_mem_est_gb(t), reverse=True)

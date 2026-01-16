@@ -21,7 +21,6 @@ from hmsss.cli.config import (
 )
 from hmsss.cli import paths as paths
 
-
 """
 Argument parsing and configuration assembly for HMSS2/HMSSS.
 
@@ -493,6 +492,40 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         metavar="<int>",
         help="NCBI translation table to use (default: 11).",
     )
+    readmap.add_argument(
+        "--ram-limit-min",
+        dest="rm_ram_limit_min",
+        type=float,
+        default=0.0,
+        metavar="<float>",
+        help=(
+            "Minimum RAM limit in GB for read-mapping tasks. "
+            "Used to filter or schedule GPKGs (float, e.g. 8.0)."
+        ),
+    )
+
+    readmap.add_argument(
+        "--ram-limit-max",
+        dest="rm_ram_limit_max",
+        type=float,
+        default=16.0,
+        metavar="<float>",
+        help=(
+            "Maximum RAM limit in GB for read-mapping tasks. "
+            "Used as upper bound for per-task or global RAM usage (float, e.g. 128.0)."
+        ),
+    )
+
+    # --- Interleaved FASTQ ---
+    readmap.add_argument(
+        "--interleaved",
+        action="store_true",
+        default=False,
+        help=(
+            "Treat input FASTQ files as interleaved reads "
+            "(mutually exclusive with reverse pairs)."
+        ),
+    )
 
     # Work step regulation
     flow = parser.add_argument_group("Work step regulation")
@@ -727,7 +760,7 @@ def build_config_from_namespace(ns) -> Config:
     cli_input = CliInput(
         fasta_file_directory=_s(ns, "fasta_file_directory"),
         score_threshold_file=_s(ns, "score_threshold_file")
-        or os.path.join(paths_cfg.data, "Thresholds"),
+                             or os.path.join(paths_cfg.data, "Thresholds"),
         library=_s(ns, "library") or paths_cfg.hmms,
         result_files_directory=_s(ns, "result_files_directory") or paths_cfg.results,
         cores=int(getattr(ns, "cores", 4)),
@@ -757,11 +790,11 @@ def build_config_from_namespace(ns) -> Config:
 
     cli_synteny = CliSynteny(
         patterns_file=_s(ns, "patterns_file")
-        or os.path.join(paths_cfg.data, "Patterns"),
+                      or os.path.join(paths_cfg.data, "Patterns"),
         cooccurrence_file=_s(ns, "cooccurrence_file")
-        or os.path.join(paths_cfg.data, "Cooccurrence"),
+                          or os.path.join(paths_cfg.data, "Cooccurrence"),
         exclusion_singletons=_s(ns, "exclusion_singletons")
-        or os.path.join(paths_cfg.data, "Exclusion_singletons"),
+                             or os.path.join(paths_cfg.data, "Exclusion_singletons"),
         min_completeness=float(getattr(ns, "min_completeness", 0.5)),
         glob_chunks=int(getattr(ns, "glob_chunks", 5000)),
     )
@@ -792,6 +825,9 @@ def build_config_from_namespace(ns) -> Config:
         min_orf_length=ns.rm_min_orf_length,
         restrict_read_length=ns.rm_restrict_read_length,
         translation_table=ns.rm_translation_table,
+        ram_limit_max=ns.rm_ram_limit_max,
+        ram_limit_min=ns.rm_ram_limit_min,
+        interleaved=bool(getattr(ns, "interleaved", False)),
     )
 
     cli_flow = CliFlow(
