@@ -285,7 +285,7 @@ def _start_bestfit_tasks(
 
         # Start the selected task
         task = pending.pop(best_i)
-        logger.debug(
+        logger.info(
             f"Starting task {task.gpkg_name} Need: {need:.1f} GB; Available: {available_tokens_gb:.1f} GB; Total tokens: {total_tokens_gb:.1f} GB")
 
         available_tokens_gb -= best_need
@@ -297,6 +297,148 @@ def _start_bestfit_tasks(
         future_to_tokens[fut] = best_need
         did_progress = True
 
+    return available_tokens_gb, did_progress
+
+
+import time
+from typing import Callable
+
+
+def _start_bestfit_tasks_debug(
+        *,
+        ex: object,
+        pending: list,
+        future_to_tokens: dict,
+        available_tokens_gb: float,
+        total_tokens_gb: float,
+        max_workers: int,
+        k_scan: int = 100,
+        handle_result_fn: Callable[[dict], None],
+        debug_scan: int = 12,  # how many candidates to print per tick
+        debug_level: str = "INFO",  # "INFO" or "DEBUG"
+) -> tuple[float, bool]:
+    """
+    Debug-instrumented variant of _start_bestfit_tasks().
+    Prints scheduler state and decision reasons (worker slots vs token fit).
+    """
+    did_progress = False
+
+    def _log(msg: str, *args):
+        # Use logger if you want; prints are simplest for HPC logs
+        # Swap to logger.info/debug if preferred.
+        print(msg % args if args else msg, flush=True)
+
+    # Print entry status once per call
+    _log(
+        "[SCHED] enter: pending=%d running=%d max_workers=%d avail=%.1f total=%.1f k_scan=%d",
+        len(pending), len(future_to_tokens), max_workers, available_tokens_gb, total_tokens_gb, k_scan
+    )
+
+    # If no worker slots, we can immediately explain why nothing starts
+    if len(future_to_tokens) >= max_workers:
+        _log(
+            "[SCHED] no worker slot: running=%d >= max_workers=%d (tokens avail=%.1f)",
+            len(future_to_tokens), max_workers, available_tokens_gb
+        )
+        return available_tokens_gb, False
+
+    while pending and (len(future_to_tokens) < max_workers):
+        t0 = time.time()
+
+        best_i = None
+        best_need = 0.0
+
+        scan_n = min(k_scan, len(pending))
+
+        # Quick peek at the top-N tasks and their estimated RAM
+        peek_n = min(debug_scan, scan_n)
+        peek = []
+        for j in range(peek_n):
+            tj = pending[j]
+            nj = _task_mem_est_gb(tj)
+            peek.append((getattr(tj, "gpkg_name", "?"), nj))
+        _log(
+            "[SCHED] scan peek top-%d/%d (avail=%.1f): %s",
+            peek_n, scan_n, available_tokens_gb,
+            ", ".join([f"{n}:{gb:.1f}" for n, gb in peek]) if peek else "(none)"
+        )
+
+        removed_oversize = False
+
+        # Scan Top-K for best-fit
+        for i in range(scan_n):
+            task = pending[i]
+            need_i = _task_mem_est_gb(task)
+            name = getattr(task, "gpkg_name", "?")
+
+            # Policy: oversize -> discard with warning
+            if need_i > total_tokens_gb:
+                _log(
+                    "[SCHED] OVERSIZE -> drop %s (need=%.1f > total=%.1f). pending before=%d",
+                    name, need_i, total_tokens_gb, len(pending)
+                )
+                pending.pop(i)
+                handle_result_fn({"ok": False})
+                did_progress = True
+                removed_oversize = True
+                break  # indices shifted; restart scan
+
+            # Best fit: largest that still fits
+            if need_i <= available_tokens_gb and need_i > best_need:
+                best_need = need_i
+                best_i = i
+
+        # If we removed an oversize task, restart the loop
+        if removed_oversize:
+            _log("[SCHED] restart scan after oversize removal (pending now=%d)", len(pending))
+            continue
+
+        # No task fits into remaining tokens right now -> stop starting
+        if best_i is None:
+            # Distinguish between "tokens too low" and "no candidates" (rare)
+            # Estimate smallest need in scanned window to explain quickly.
+            min_need = None
+            for i in range(scan_n):
+                ni = _task_mem_est_gb(pending[i])
+                min_need = ni if (min_need is None or ni < min_need) else min_need
+
+            _log(
+                "[SCHED] no fit: avail=%.1f, scanned=%d, min_need_in_scan=%s; running=%d/%d",
+                available_tokens_gb,
+                scan_n,
+                f"{min_need:.1f}" if min_need is not None else "n/a",
+                len(future_to_tokens),
+                max_workers,
+            )
+            break
+
+        # Start the selected task
+        task = pending.pop(best_i)
+        name = getattr(task, "gpkg_name", "?")
+
+        _log(
+            "[SCHED] START %s need=%.1f avail_before=%.1f total=%.1f running=%d/%d pending_left=%d",
+            name, best_need, available_tokens_gb, total_tokens_gb, len(future_to_tokens), max_workers, len(pending)
+        )
+
+        available_tokens_gb -= best_need
+
+        fut = ex.submit(_run_graft_task, task)
+        fut._hmss_gpkg = name
+        fut._hmss_mem_gb = best_need
+        future_to_tokens[fut] = best_need
+
+        did_progress = True
+
+        _log(
+            "[SCHED] submitted %s; avail_after=%.1f running_now=%d/%d (tick=%.3fs)",
+            name, available_tokens_gb, len(future_to_tokens), max_workers, time.time() - t0
+        )
+
+    _log(
+        "[SCHED] exit: did_progress=%s pending=%d running=%d avail=%.1f",
+        did_progress, len(pending), len(future_to_tokens), available_tokens_gb
+    )
     return available_tokens_gb, did_progress
 
 
@@ -340,7 +482,7 @@ def graft_mp_tokenized_executor(task_list: list, batch_size: int, config: "Confi
     with ProcessPoolExecutor(max_workers=max_workers, mp_context=ctx) as ex:
         while pending or future_to_tokens:
             # 1) Refill: start as many as possible
-            available_tokens_gb, _ = _start_bestfit_tasks(
+            available_tokens_gb, _ = _start_bestfit_tasks_debug(
                 ex=ex,
                 pending=pending,
                 future_to_tokens=future_to_tokens,
