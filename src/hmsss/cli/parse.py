@@ -386,6 +386,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-v",
+        dest="verbose",
         type=int,
         default=1,
         choices=[0, 1, 2],
