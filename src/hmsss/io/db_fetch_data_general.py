@@ -133,7 +133,7 @@ def _build_limiter_dict(config: Config) -> Dict[str, Any]:
 
 
 def fetch_fasta_and_hit_data(
-    config: Config,
+        config: Config,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
     """
     Zentrale Fetch-Routine für Output-Operatoren.
@@ -189,7 +189,7 @@ def fetch_fasta_and_hit_data(
             limiter_dict=limiter_dict,
             fetch_from_gene_clusters=False,
             excluded_domains=excluded_domains,
-            use_valid_hits=config.use_valid_hits,
+            use_non_valid_hits=config.use_non_valid_hits,
         )
         return protein_dict, cluster_dict, taxon_dict
 
@@ -230,7 +230,7 @@ def fetch_fasta_and_hit_data(
             limiter_dict=sum_taxon_dict,
             fetch_from_gene_clusters=False,
             excluded_domains=excluded_domains,
-            use_valid_hits=config.use_valid_hits,
+            use_non_valid_hits=config.use_non_valid_hits,
         )
 
         # Merge-Strategie:
