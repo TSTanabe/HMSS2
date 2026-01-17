@@ -45,7 +45,7 @@ def enhance_pathway_completeness(
         Each protein ID is included at most once (set semantics).
 
     """
-    selection_comment = "Coo",  # Co occurrence
+    selection_comment = "Co",  # Co occurrence
     found_protein_ids: Set[str] = set()
     domain_to_protein: Dict[str, List[tuple[str, float]]] = {}
 

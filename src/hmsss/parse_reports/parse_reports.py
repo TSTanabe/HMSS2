@@ -660,11 +660,11 @@ def remove_unassigned_intermediate_proteins(
         if pid in trusted_protein_ids:
             protein.valid_hit = True
             for domain in protein.domains:
-                domain.add_selection_comment("Dsb")  # Detected syntenic block
+                domain.add_selection_comment("Sb")  # Detected syntenic block
         else:  # was not in trusted hits nor in a recognized gene cluster
             protein.valid_hit = False
             for domain in protein.domains:
-                domain.add_selection_comment("Nsb")  # No syntenic block
+                domain.add_selection_comment("Nb")  # No syntenic block
 
     return combined_protein_dict
 

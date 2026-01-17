@@ -373,7 +373,7 @@ def execute_pattern_completion(transition_dict, protein_dict):
 
                 for domain in protein.low_score_domains:
                     if domain.get_domain() == to_domain:
-                        selection_comment = "Pac"  # pattern completion
+                        selection_comment = "Pc"  # pattern completion
                         selection_comment = selection_comment + ",".join(domain.selection_comment_list)
                         protein.add_domain(
                             domain.domain,
