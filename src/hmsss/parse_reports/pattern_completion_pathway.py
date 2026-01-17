@@ -7,12 +7,11 @@ logger = get_logger(__name__)
 
 
 def enhance_pathway_completeness(
-    protein_dict: Dict[str, "Protein"],
-    pattern_dict: Dict[str, tuple[set, int]],
-    threshold_dict: Dict[str, float],
-    *,
-    mark_valid: bool = True,
-    selection_comment: str = "Coo",
+        protein_dict: Dict[str, "Protein"],
+        pattern_dict: Dict[str, tuple[set, int]],
+        threshold_dict: Dict[str, float],
+        *,
+        mark_valid: bool = True,
 ) -> Set[str]:
     """
     Identify proteins that contribute to fully complete pathway patterns.
@@ -46,6 +45,7 @@ def enhance_pathway_completeness(
         Each protein ID is included at most once (set semantics).
 
     """
+    selection_comment = "Coo",  # Co occurrence
     found_protein_ids: Set[str] = set()
     domain_to_protein: Dict[str, List[tuple[str, float]]] = {}
 
@@ -94,6 +94,6 @@ def enhance_pathway_completeness(
                 if protein is None:
                     continue
                 protein.valid_hit = True
-                protein.add_selection_comment(selection_comment)
+                protein.add_selection_comment_to_domain(comment=selection_comment, domain_name=domain_name)
 
     return found_protein_ids

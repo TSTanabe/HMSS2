@@ -13,19 +13,23 @@ from hmsss.core.logging import get_logger
 logger = get_logger(__name__)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class Domain:
     domain: str
     start: int
     end: int
     score: float
-    selection_comment: str = ""
+    selection_comment_list: List[str] = field(default_factory=list)
     identity: int = 1
     bsr: float = 1.0
 
     # 2.9.22
     def __hash__(self):
         return hash((self.domain, self.start, self.end, self.score))
+
+    def add_selection_comment(self, selection_comment: str):
+        self.selection_comment_list.append(selection_comment)
+        return
 
     def get_domain(self):
         return self.domain
@@ -71,16 +75,16 @@ class Protein:
     """
 
     def __init__(
-        self,
-        protein_id: str,
-        hmm: str,
-        start: int = 0,
-        end: int = 0,
-        score: float = 1,
-        genome_id: str = "",
-        ident: int = 25,
-        bsr: float = 1.0,
-        selection_comment: str = "",
+            self,
+            protein_id: str,
+            hmm: str,
+            start: int = 0,
+            end: int = 0,
+            score: float = 1,
+            genome_id: str = "",
+            ident: int = 25,
+            bsr: float = 1.0,
+            selection_comment: str = "",
     ):
         self.proteinID: str = protein_id
         self.genomeID: str = genome_id
@@ -200,10 +204,10 @@ class Protein:
 
     @staticmethod
     def best_nonoverlapping_domain_set(
-        self,
-        domains: Set[Domain],
-        *,
-        inclusive: bool = True,
+            self,
+            domains: Set[Domain],
+            *,
+            inclusive: bool = True,
     ) -> Set[Domain]:
         # intern als Liste arbeiten
         doms = sorted(domains, key=lambda d: (d.end, d.start))
@@ -255,27 +259,47 @@ class Protein:
 
         return chosen
 
-    def add_selection_comment(self, comment: str, sep: str = ",") -> None:
+    def add_selection_comment_to_domain(
+            self,
+            domain_name: str,
+            comment: str,
+            sep: str = ",",
+    ) -> None:
         """
-        Add one or multiple comment tokens to this protein.
-        - Accepts a single token ("Tc") or a CSV string ("Tc,Coo").
+        Add one or multiple selection comment tokens to a specific domain.
+
+        Parameters
+        ----------
+        domain_name : str
+            Name of the domain (HMM) to which the comment should be added.
+        comment : str
+            Single token ("Tc") or CSV string ("Tc,Coo").
+        sep : str
+            Separator used in comment string.
         """
-        if not comment:
-            return
-        tokens = [t.strip() for t in str(comment).split(sep) if t.strip()]
-        self.selection_comment = "-".join(tokens)
+
+        comments = [t.strip() for t in str(comment).split(sep) if t.strip()]  # split the comments
+
+        for dom in self.domains | self.low_score_domains:
+            if dom.domain != domain_name:
+                continue
+
+            # additive, no duplicates
+            for comment in comments:
+                if comment not in dom.selection_comment_list:
+                    dom.selection_comment_list.append(comment)
 
     def add_domain(
-        self,
-        hmm: str,
-        start: int,
-        end: int,
-        score: float,
-        ident: int = 25,
-        bsr: float = 1.0,
-        *,
-        selection_comment: str = "",
-        force: bool = False,
+            self,
+            hmm: str,
+            start: int,
+            end: int,
+            score: float,
+            ident: int = 25,
+            bsr: float = 1.0,
+            *,
+            selection_comment: str = "",
+            force: bool = False,
     ) -> None:
         """
         Adds a domain to the protein.
@@ -289,11 +313,10 @@ class Protein:
             start,
             end,
             score,
-            selection_comment=selection_comment,
             identity=ident,
             bsr=bsr,
         )
-
+        added_domain.add_selection_comment(selection_comment)
         if force:
             to_remove = set()
             for current_domain in self.domains:
@@ -330,15 +353,16 @@ class Protein:
 
         for dom in sorted(self.domains, key=lambda d: (d.start, d.end)):
             # dom.selection_comment is e.g. frozenset[str] (or set[str])
-            if not dom.selection_comment:
+            if not dom.selection_comment_list:
                 continue
 
             # deterministic order within a domain
-            parts.append(dom.selection_comment)
+            joined_domain_comment = "-".join(dom.selection_comment_list)
+            parts.append(joined_domain_comment)
 
         if parts:
             # join domains in genomic order
-            self.selection_comment = "-".join(parts)
+            self.selection_comment = ";".join(parts)
 
 
 #########################################
@@ -347,7 +371,7 @@ class Protein:
 
 
 def parse_gff_file(
-    filepath: str, protein_dict: Dict[str, Protein]
+        filepath: str, protein_dict: Dict[str, Protein]
 ) -> Dict[str, Protein]:
     """
     3.9.22
@@ -479,13 +503,13 @@ def get_locustag(locustag_pattern: re.Pattern, string: str) -> str:
 
 
 def output_genome_report(
-    output_filepath: str,
-    protein_dict: Dict[str, Any],
-    cluster_dict: Dict[str, Any],
-    taxon_dict: Dict[str, str],
-    genomeID: str = "",
-    writemode: str = "w",
-    taxon_divider: str = "\t",
+        output_filepath: str,
+        protein_dict: Dict[str, Any],
+        cluster_dict: Dict[str, Any],
+        taxon_dict: Dict[str, str],
+        genomeID: str = "",
+        writemode: str = "w",
+        taxon_divider: str = "\t",
 ) -> None:
     """
     Writes the main genome hit table (TSV).
@@ -601,13 +625,13 @@ def output_genome_report(
 
 
 def remove_unassigned_intermediate_proteins(
-    combined_protein_dict: Dict[str, Any],
-    trusted_protein_ids: set,
-    cluster_dict: Dict[str, Any],
+        combined_protein_dict: Dict[str, Any],
+        trusted_protein_ids: set,
+        cluster_dict: Dict[str, Any],
 ) -> Dict[str, Any]:
     """
-    Remove proteins from combined_protein_dict that are not present in protein_dict
-    or in the set of covered_protein_ids from any cluster.
+    Mark proteins from combined_protein_dict that are trusted hits
+    or in the set of covered_protein_ids from any cluster as valid hits.
 
     Parameters
     combined_protein_dict : dict
@@ -635,23 +659,25 @@ def remove_unassigned_intermediate_proteins(
             continue  # Skip proteins that are already recognized
         if pid in trusted_protein_ids:
             protein.valid_hit = True
-            protein.add_selection_comment("Sc")
+            for domain in protein.domains:
+                domain.add_selection_comment("Dsb")  # Detected syntenic block
         else:  # was not in trusted hits nor in a recognized gene cluster
             protein.valid_hit = False
-            protein.add_selection_comment("Nc")
+            for domain in protein.domains:
+                domain.add_selection_comment("Nsb")  # No syntenic block
 
     return combined_protein_dict
 
 
 def define_best_score_hits_for_protein_dict(
-    protein_dict: dict[str, Protein],
+        protein_dict: dict[str, Protein],
 ):
     for protein in protein_dict.values():
         protein.define_best_scoring_domains()
 
 
 def define_selection_comments_for_protein_dict(
-    protein_dict: dict[str, Protein],
+        protein_dict: dict[str, Protein],
 ):
     for protein in protein_dict.values():
         protein.define_selection_comment()
