@@ -650,7 +650,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     )
 
     resources.add_argument(
-        "--gpkgs",
+        "--gpkg-sets",
         nargs="+",
         dest="gpkg_sets",
         type=str,
@@ -681,7 +681,6 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
             ]
         ),
         default=sorted(["SQ", "Dsr", "sHdr", "Sox"]),
-        metavar="GPKG",
         help=(
             "Limit to GPKG packages (whitespace separated). Some tokens refer to the same set."
             if show_all
@@ -1045,7 +1044,7 @@ def build_config_from_namespace(ns) -> Config:
     cli_input = CliInput(
         fasta_file_directory=_s(ns, "fasta_file_directory"),
         score_threshold_file=_s(ns, "score_threshold_file")
-        or os.path.join(paths_cfg.data, "Thresholds"),
+                             or os.path.join(paths_cfg.data, "Thresholds"),
         library=_s(ns, "library") or paths_cfg.hmms,
         result_files_directory=_s(ns, "result_files_directory") or paths_cfg.results,
         cores=int(getattr(ns, "cores", 4)),
@@ -1077,11 +1076,11 @@ def build_config_from_namespace(ns) -> Config:
 
     cli_synteny = CliSynteny(
         patterns_file=_s(ns, "patterns_file")
-        or os.path.join(paths_cfg.data, "Patterns"),
+                      or os.path.join(paths_cfg.data, "Patterns"),
         cooccurrence_file=_s(ns, "cooccurrence_file")
-        or os.path.join(paths_cfg.data, "Cooccurrence"),
+                          or os.path.join(paths_cfg.data, "Cooccurrence"),
         exclusion_singletons=_s(ns, "exclusion_singletons")
-        or os.path.join(paths_cfg.data, "Exclusion_singletons"),
+                             or os.path.join(paths_cfg.data, "Exclusion_singletons"),
         min_completeness=float(getattr(ns, "min_completeness", 0.5)),
         glob_chunks=int(getattr(ns, "glob_chunks", 5000)),
     )
