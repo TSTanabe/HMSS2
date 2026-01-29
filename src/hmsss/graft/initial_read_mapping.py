@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# from graftm.external_program_suite import ExternalProgramSuite
+from graftm.external_program_suite import ExternalProgramSuite
 
 from hmsss.core import queue
 from hmsss.db import database
@@ -11,7 +11,7 @@ from hmsss.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-"""
+
 def _check_dependencies():
     commands = ExternalProgramSuite(
         [
@@ -23,7 +23,6 @@ def _check_dependencies():
             "diamond",
         ]
     )
-"""
 
 
 def initial_read_mapping(config):

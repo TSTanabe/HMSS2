@@ -1,6 +1,7 @@
 import gzip
 import os
 import multiprocessing as mp
+import subprocess
 from typing import Any
 
 from hmsss.core.logging import get_logger
@@ -22,60 +23,21 @@ def safe_read_count(path: str | None) -> int:
         logger.error("Read were not counted, file is empty: {path}")
         return 0
     try:
-        return count_reads_fasta_or_fastq(path)
+        return count_fast_external(path)
     except Exception:
         return 0
 
 
-def count_reads_fasta_or_fastq(path: str) -> int:
-    """
-    Count reads/sequences in a FASTA/FASTQ file.
-    Supports gzipped (.gz) and uncompressed files.
-
-    Rules:
-      - FASTQ: count records as total_lines // 4
-      - FASTA (and other fasta-like): count headers starting with '>'
-
-    Format detection:
-      - If first non-empty line starts with '@' -> FASTQ
-      - If first non-empty line starts with '>' -> FASTA
-      - Else: treat as FASTA-like and count '>' headers (raises if none found)
-    """
-    if not isinstance(path, str):
-        raise TypeError("path must be a string")
-    if not os.path.exists(path):
-        raise FileNotFoundError(path)
-
-    opener = gzip.open if path.endswith(".gz") else open
-
-    with opener(path, "rt") as f:
-        # read first non-empty line to detect format
-        first = ""
-        while True:
-            first = f.readline()
-            if first == "":  # EOF
-                return 0
-            if first.strip():
-                break
-
-        f.seek(0)
-
-        # FASTQ: count lines // 4 (valid FASTQ has 4 lines per record)
-        if first.startswith("@"):
-            n_lines = sum(1 for _ in f)
-            return n_lines // 4
-
-        # FASTA: count headers
-        if first.startswith(">"):
-            return sum(1 for line in f if line.startswith(">"))
-
-        # Fallback: count '>' anyway; error if none found (unknown format)
-        n_headers = sum(1 for line in f if line.startswith(">"))
-        if n_headers == 0:
-            raise ValueError(
-                f"Unknown format (neither FASTQ '@' nor FASTA '>'): {path}"
-            )
-        return n_headers
+def count_fast_external(path: str) -> int:
+    if path.endswith(".fastq.gz") or path.endswith(".fq.gz"):
+        cmd = f"zcat {path} | wc -l"
+        lines = int(subprocess.check_output(cmd, shell=True))
+        return lines // 4
+    elif path.endswith(".fasta.gz") or path.endswith(".fa.gz"):
+        cmd = f"zgrep -c '^>' {path}"
+        return int(subprocess.check_output(cmd, shell=True))
+    else:
+        raise ValueError(path)
 
 
 def metagenome_counts_from_task(task) -> dict[str, str | int | Any]:
@@ -105,10 +67,10 @@ def metagenome_counts_from_task(task) -> dict[str, str | int | Any]:
 
 
 def collect_metagenome_counts_parallel(
-    tasks: list[Any],
-    *,
-    processes: int | None = None,
-    chunksize: int = 1,
+        tasks: list[Any],
+        *,
+        processes: int | None = None,
+        chunksize: int = 1,
 ) -> tuple[dict[str, tuple[str, int, int]], set[str]]:
     """
     Run metagenome_counts_from_task(task) in parallel.
@@ -130,7 +92,7 @@ def collect_metagenome_counts_parallel(
     ctx = mp.get_context("spawn")  # safer on many HPC setups
     with ctx.Pool(processes=processes) as pool:
         for res in pool.imap_unordered(
-            metagenome_counts_from_task, tasks, chunksize=chunksize
+                metagenome_counts_from_task, tasks, chunksize=chunksize
         ):
             metagenomeID = res["metagenomeID"]
             genomeID = res["genomeID"]
