@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import numpy as np
 import argparse
 import os
 import sys
@@ -84,25 +85,25 @@ def print_table(rows: List[Dict[str, Any]], columns: List[str]) -> None:
         for c in columns:
             widths[c] = max(widths[c], len(_fmt(r.get(c))))
 
-    header = "  ".join(c.ljust(widths[c]) for c in columns)
-    sep = "  ".join("-" * widths[c] for c in columns)
+    header = "\t".join(c.ljust(widths[c]) for c in columns)
+    sep = "\t".join("-" * widths[c] for c in columns)
     print(header)
     print(sep)
 
     for r in rows:
-        print("  ".join(_fmt(r.get(c)).ljust(widths[c]) for c in columns))
+        print("\t".join(_fmt(r.get(c)).ljust(widths[c]) for c in columns))
 
 
 # ------------------------------------------------------------
 # Core API (callable as a normal function)
 # ------------------------------------------------------------
 def summarize_eval_stats(
-    root: Path,
-    *,
-    filename: str = DEFAULT_FILENAME,
-    sort: str = "overall_MCC",
-    desc: bool = False,
-    show_path: bool = False,
+        root: Path,
+        *,
+        filename: str = DEFAULT_FILENAME,
+        sort: str = "overall_MCC",
+        desc: bool = False,
+        show_path: bool = False,
 ) -> int | list[dict[str, Any]]:
     """
     Summarize evaluation_stats files under `root` as a table (one row per package).
@@ -152,25 +153,25 @@ def summarize_eval_stats(
 
         # --- Overall confusion ---
         for k in (
-            "overall_TP",
-            "overall_FP",
-            "overall_FN",
-            "overall_TN",
-            "overall_balanced_accuracy",
-            "overall_F1",
-            "overall_MCC",
+                "overall_TP",
+                "overall_FP",
+                "overall_FN",
+                "overall_TN",
+                "overall_balanced_accuracy",
+                "overall_F1",
+                "overall_MCC",
         ):
             row[k] = d.get(k)
 
         # --- Placement confusion ---
         for k in (
-            "placement_TP",
-            "placement_FP",
-            "placement_FN",
-            "placement_TN",
-            "placement_balanced_accuracy",
-            "placement_F1",
-            "placement_MCC",
+                "placement_TP",
+                "placement_FP",
+                "placement_FN",
+                "placement_TN",
+                "placement_balanced_accuracy",
+                "placement_F1",
+                "placement_MCC",
         ):
             row[k] = d.get(k)
 
@@ -204,9 +205,9 @@ def summarize_eval_stats(
 
 
 def print_eval_stats(
-    rows: list[dict],
-    *,
-    root: Path | None = None,
+        rows: list[dict],
+        *,
+        root: Path | None = None,
 ) -> int:
     """
     Print evaluation statistics for multiple packages.
@@ -271,8 +272,8 @@ def print_eval_stats(
 
 
 def plot_overall_metrics_boxplots(
-    eval_stat_list: List[Dict[str, Any]],
-    out_dir: Path,
+        eval_stat_list: List[Dict[str, Any]],
+        out_dir: Path,
 ) -> None:
     """
     Create boxplots for overall balanced accuracy, F1, and MCC
@@ -325,8 +326,8 @@ def plot_overall_metrics_boxplots(
 
 
 def plot_placement_metrics_boxplots(
-    eval_stat_list: List[Dict[str, Any]],
-    out_dir: Path,
+        eval_stat_list: List[Dict[str, Any]],
+        out_dir: Path,
 ) -> None:
     """
     Create boxplots for placement balanced accuracy, F1, and MCC
@@ -378,12 +379,12 @@ def plot_placement_metrics_boxplots(
 
 
 def plot_rank_assignment_fractions_boxplot(
-    eval_stat_list: List[Dict[str, Any]],
-    out_dir: Path,
-    *,
-    ranks: List[str] = RANKS,
-    filename: str = "rank_assignment_fractions_boxplot.png",
-    title: str = "Assigned fraction per rank (assigned / TP_frags)",
+        eval_stat_list: List[Dict[str, Any]],
+        out_dir: Path,
+        *,
+        ranks: List[str] = RANKS,
+        filename: str = "rank_assignment_fractions_boxplot.png",
+        title: str = "Assigned fraction per rank (assigned / TP_frags)",
 ) -> None:
     """
     For each taxonomic rank, compute the fraction of assigned reads:
@@ -484,12 +485,12 @@ def plot_rank_assignment_fractions_boxplot(
 
 
 def plot_rank_correct_fractions_boxplot(
-    eval_stat_list: List[Dict[str, Any]],
-    out_dir: Path,
-    *,
-    ranks: List[str] = RANKS,
-    filename: str = "rank_correct_fractions_boxplot.png",
-    title: str = "Correct fraction per rank (correct / TP_frags)",
+        eval_stat_list: List[Dict[str, Any]],
+        out_dir: Path,
+        *,
+        ranks: List[str] = RANKS,
+        filename: str = "rank_correct_fractions_boxplot.png",
+        title: str = "Correct fraction per rank (correct / TP_frags)",
 ) -> None:
     """
     For each taxonomic rank, compute the fraction of correct reads:
@@ -584,12 +585,12 @@ def plot_rank_correct_fractions_boxplot(
 
 
 def plot_rank_correct_given_assigned_boxplot(
-    eval_stat_list: List[Dict[str, Any]],
-    out_dir: Path,
-    *,
-    ranks: List[str] = RANKS,
-    filename: str = "rank_correct_given_assigned_boxplot.png",
-    title: str = "Correct among assigned per rank (correct / assigned)",
+        eval_stat_list: List[Dict[str, Any]],
+        out_dir: Path,
+        *,
+        ranks: List[str] = RANKS,
+        filename: str = "rank_correct_given_assigned_boxplot.png",
+        title: str = "Correct among assigned per rank (correct / assigned)",
 ) -> None:
     """
     For each taxonomic rank, compute:
@@ -633,9 +634,9 @@ def plot_rank_correct_given_assigned_boxplot(
             corr = row.get(key_correct)
 
             if (
-                not isinstance(assg, (int, float))
-                or _is_nan(float(assg))
-                or float(assg) <= 0
+                    not isinstance(assg, (int, float))
+                    or _is_nan(float(assg))
+                    or float(assg) <= 0
             ):
                 continue
             if not isinstance(corr, (int, float)) or _is_nan(float(corr)):
@@ -690,12 +691,12 @@ def plot_rank_correct_given_assigned_boxplot(
 
 
 def plot_rank_wrong_given_assigned_boxplot(
-    eval_stat_list: List[Dict[str, Any]],
-    out_dir: Path,
-    *,
-    ranks: List[str] = RANKS,
-    filename: str = "rank_wrong_given_assigned_boxplot.png",
-    title: str = "Wrong among assigned per rank (wrong / assigned)",
+        eval_stat_list: List[Dict[str, Any]],
+        out_dir: Path,
+        *,
+        ranks: List[str] = RANKS,
+        filename: str = "rank_wrong_given_assigned_boxplot.png",
+        title: str = "Wrong among assigned per rank (wrong / assigned)",
 ) -> None:
     """
     For each taxonomic rank, compute:
@@ -739,9 +740,9 @@ def plot_rank_wrong_given_assigned_boxplot(
             wrong = row.get(key_wrong)
 
             if (
-                not isinstance(assg, (int, float))
-                or _is_nan(float(assg))
-                or float(assg) <= 0
+                    not isinstance(assg, (int, float))
+                    or _is_nan(float(assg))
+                    or float(assg) <= 0
             ):
                 continue
             if not isinstance(wrong, (int, float)) or _is_nan(float(wrong)):
@@ -801,11 +802,11 @@ def plot_rank_wrong_given_assigned_boxplot(
 
 
 def write_metric_values_tsv(
-    eval_stat_list: List[Dict[str, Any]],
-    *,
-    metric_key: str,
-    out_tsv: Path,
-    include_package_cols: bool = True,
+        eval_stat_list: List[Dict[str, Any]],
+        *,
+        metric_key: str,
+        out_tsv: Path,
+        include_package_cols: bool = True,
 ) -> Path:
     """
     Write the exact values used for a single-metric boxplot (e.g. overall_MCC)
@@ -845,12 +846,12 @@ def write_metric_values_tsv(
 
 
 def write_rank_fraction_values_tsv(
-    eval_stat_list: List[Dict[str, Any]],
-    *,
-    numerator_prefix: str,  # e.g. "assigned" / "correct" / "wrong"
-    denominator: str,  # either "TP_frags" OR another prefix like "assigned"
-    out_tsv: Path,
-    ranks: List[str] = RANKS,
+        eval_stat_list: List[Dict[str, Any]],
+        *,
+        numerator_prefix: str,  # e.g. "assigned" / "correct" / "wrong"
+        denominator: str,  # either "TP_frags" OR another prefix like "assigned"
+        out_tsv: Path,
+        ranks: List[str] = RANKS,
 ) -> Path:
     """
     Write the exact per-rank fractions used for rank boxplots to TSV.
@@ -905,9 +906,9 @@ def write_rank_fraction_values_tsv(
             if not isinstance(num, (int, float)) or _is_nan(float(num)):
                 continue
             if (
-                not isinstance(den, (int, float))
-                or _is_nan(float(den))
-                or float(den) <= 0
+                    not isinstance(den, (int, float))
+                    or _is_nan(float(den))
+                    or float(den) <= 0
             ):
                 continue
 
@@ -950,6 +951,29 @@ def analyze_eval_stats(eval_stat_list):
 #
 #
 
+def _jitter_x(
+        x_center: float,
+        n: int,
+        *,
+        width: float = 0.18,
+        seed: int | None = None,
+):
+    """
+    Gleichmäßiger (uniform) horizontaler Jitter um x_center.
+    - width: volle Breite (Punkte liegen in [x_center - width/2, x_center + width/2])
+    - seed: für Reproduzierbarkeit (optional)
+    """
+    if n <= 1:
+        return np.array([x_center])
+
+    if seed is None:
+        rng = np.random.default_rng()
+    else:
+        rng = np.random.default_rng(seed)
+
+    return x_center + rng.uniform(-width / 2.0, width / 2.0, size=n)
+
+
 RANKS = ["kingdom", "phylum", "class", "order", "family", "genus", "species"]
 
 
@@ -957,13 +981,13 @@ RANKS = ["kingdom", "phylum", "class", "order", "family", "genus", "species"]
 # Generic plotters
 # ------------------------------------------------------------
 def plot_single_metric_boxplot(
-    eval_stat_list: List[Dict[str, Any]],
-    out_dir: Path,
-    *,
-    metric_key: str,
-    title: str,
-    ylabel: str,
-    filename: str | None = None,
+        eval_stat_list: List[Dict[str, Any]],
+        out_dir: Path,
+        *,
+        metric_key: str,
+        title: str,
+        ylabel: str,
+        filename: str | None = None,
 ) -> Path | None:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -993,15 +1017,14 @@ def plot_single_metric_boxplot(
         flierprops={"marker": ""},  # extra Sicherheit
     )
 
-    # deterministic horizontal jitter
     n = len(values)
     if n == 1:
-        xs = [1.0]
+        xs = np.array([1.0])
     else:
-        width = 0.08
-        xs = [1.0 + width * (i / (n - 1) - 0.5) for i in range(n)]
+        width = 0.08  # volle Breite des Jitters
+        rng = np.random.default_rng(42)  # Seed für Reproduzierbarkeit
+        xs = 1.0 + rng.uniform(-width / 2.0, width / 2.0, size=n)
 
-    # Punkte (genau einmal), klein, schwarz/weiß, hohl
     ax.scatter(
         xs,
         values,
@@ -1009,9 +1032,8 @@ def plot_single_metric_boxplot(
         facecolors="none",
         edgecolors="black",
         linewidths=0.8,
-        alpha=0.9,
+        alpha=0.45,  # halbiert
     )
-
     # optional: title (du hattest es auskommentiert)
     # ax.set_title(title)
 
@@ -1027,15 +1049,15 @@ def plot_single_metric_boxplot(
 
 
 def plot_rank_fraction_boxplots(
-    eval_stat_list: List[Dict[str, Any]],
-    out_dir: Path,
-    *,
-    numerator_prefix: str,
-    denominator: str,
-    ranks: List[str] = RANKS,
-    title: str | None = None,
-    ylabel: str | None = None,
-    filename: str | None = None,
+        eval_stat_list: List[Dict[str, Any]],
+        out_dir: Path,
+        *,
+        numerator_prefix: str,
+        denominator: str,
+        ranks: List[str] = RANKS,
+        title: str | None = None,
+        ylabel: str | None = None,
+        filename: str | None = None,
 ) -> Path | None:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1043,11 +1065,27 @@ def plot_rank_fraction_boxplots(
     def _is_nan(x: float) -> bool:
         return isinstance(x, float) and math.isnan(x)
 
-    def _jitter_x(x: float, n: int, width: float = 0.12) -> List[float]:
-        # deterministic jitter centered on x
+    def _jitter_x(
+            x_center: float,
+            n: int,
+            *,
+            width: float = 0.18,
+            seed: int | None = None,
+    ):
+        """
+        Gleichmäßiger (uniform) horizontaler Jitter um x_center.
+        - width: volle Breite (Punkte liegen in [x_center - width/2, x_center + width/2])
+        - seed: für Reproduzierbarkeit (optional)
+        """
         if n <= 1:
-            return [x]
-        return [x + width * (i / (n - 1) - 0.5) for i in range(n)]
+            return np.array([x_center])
+
+        if seed is None:
+            rng = np.random.default_rng()
+        else:
+            rng = np.random.default_rng(seed)
+
+        return x_center + rng.uniform(-width / 2.0, width / 2.0, size=n)
 
     data: List[List[float]] = []
     labels: List[str] = []
@@ -1065,9 +1103,9 @@ def plot_rank_fraction_boxplots(
             if not isinstance(num, (int, float)) or _is_nan(float(num)):
                 continue
             if (
-                not isinstance(den, (int, float))
-                or _is_nan(float(den))
-                or float(den) <= 0
+                    not isinstance(den, (int, float))
+                    or _is_nan(float(den))
+                    or float(den) <= 0
             ):
                 continue
 
@@ -1110,7 +1148,12 @@ def plot_rank_fraction_boxplots(
 
     # Punkte: klein, schwarz/weiß, hohl, deterministischer jitter
     for i, vals in enumerate(data, start=1):
-        xs = _jitter_x(float(i), len(vals), width=0.18)
+        xs = _jitter_x(
+            float(i),
+            len(vals),
+            width=0.18,
+            seed=i,  # stabil pro Box, aber verschieden zwischen Boxen
+        )
         ax.scatter(
             xs,
             vals,
@@ -1118,7 +1161,7 @@ def plot_rank_fraction_boxplots(
             facecolors="none",
             edgecolors="black",
             linewidths=0.8,
-            alpha=0.9,
+            alpha=0.45,  # halbiert
         )
 
     # ax.set_title(title)
@@ -1146,12 +1189,90 @@ def plot_rank_fraction_boxplots(
     return out_path
 
 
+#
+# FPR FNR Rates plotting
+#
+import math
+import matplotlib.pyplot as plt
+
+
+def _rates(tp, fp, fn, tn):
+    # robuste Division (falls mal 0)
+    fpr = fp / (fp + tn) if (fp + tn) else float("nan")
+    fnr = fn / (tp + fn) if (tp + fn) else float("nan")
+    return fpr, fnr
+
+
+def plot_fpr_fnr(points, title, out_png=None):
+    """
+    points: list of dicts with keys:
+      - label (str)
+      - TP, FP, FN, TN (ints)
+    """
+    xs, ys, labels = [], [], []
+    for p in points:
+        fpr, fnr = _rates(p["TP"], p["FP"], p["FN"], p["TN"])
+        xs.append(fpr);
+        ys.append(fnr);
+        labels.append(p["label"])
+
+    fig, ax = plt.subplots()
+    ax.scatter(xs, ys, s=25, facecolors="none", edgecolors="black", linewidths=0.8, alpha=0.7)
+
+    ax.set_xlabel("FPR = FP / (FP + TN)")
+    ax.set_ylabel("FNR = FN / (TP + FN)")
+    ax.set_title(title)
+
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+
+    # Referenzlinie: FNR = FPR
+    ax.plot([0, 1], [0, 1], linewidth=1)
+
+    # optional: Labels (nur wenn wenige Punkte)
+    if len(labels) <= 20:
+        for x, y, lab in zip(xs, ys, labels):
+            if not (math.isnan(x) or math.isnan(y)):
+                ax.annotate(lab, (x, y), fontsize=8, xytext=(4, 2), textcoords="offset points")
+
+    fig.tight_layout()
+    if out_png:
+        fig.savefig(out_png, dpi=200)
+    plt.close(fig)
+
+
 # ------------------------------------------------------------
 # Batch routine: "all desired plots"
 # ------------------------------------------------------------
+def collect_overall_confusion(eval_stat_list):
+    out = []
+    for e in eval_stat_list:
+        out.append({
+            "label": e["protein_type"],  # oder HMM-Name
+            "TP": e["overall_TP"],
+            "FP": e["overall_FP"],
+            "FN": e["overall_FN"],
+            "TN": e["overall_TN"],
+        })
+    return out
+
+
+def collect_placement_confusion(eval_stat_list):
+    out = []
+    for e in eval_stat_list:
+        out.append({
+            "label": e["protein_type"],
+            "TP": e["placement_TP"],
+            "FP": e["placement_FP"],
+            "FN": e["placement_FN"],
+            "TN": e["placement_TN"],
+        })
+    return out
+
+
 def make_all_evaluation_plots(
-    eval_stat_list: List[Dict[str, Any]],
-    out_dir: Path,
+        eval_stat_list: List[Dict[str, Any]],
+        out_dir: Path,
 ) -> List[Path]:
     """
     Create all requested plots:
@@ -1195,7 +1316,11 @@ def make_all_evaluation_plots(
         )
         if p is not None:
             written.append(p)
-
+    plot_fpr_fnr(
+        points=collect_overall_confusion(eval_stat_list),
+        title="Overall: FPR vs FNR",
+        out_png=out_dir / "overall_fpr_fnr.png",
+    )
     # --- Placement metrics ---
     placement_specs: List[Tuple[str, str, str]] = [
         (
@@ -1219,6 +1344,11 @@ def make_all_evaluation_plots(
         if p is not None:
             written.append(p)
 
+    plot_fpr_fnr(
+        points=collect_placement_confusion(eval_stat_list),
+        title="Placement: FPR vs FNR",
+        out_png=out_dir / "placement_fpr_fnr.png",
+    )
     # --- Rank fraction plots ---
     rank_specs: List[Tuple[str, str, str, str, str]] = [
         # numerator, denominator, subdir, title, ylabel
@@ -1301,7 +1431,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
     make_all_evaluation_plots(
         eval_stat_list=eval_list,
-        out_dir=Path("/home/tomohisa/PycharmProjects/HMSS2/tests/project"),
+        out_dir=Path("./"),
     )
     print_eval_stats(eval_list)
     return 0
