@@ -7,6 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import rankdata, norm
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 
 # ---------------------------------------------------------------------
@@ -73,6 +74,84 @@ def load_thresholds(threshold_file: str):
 # ---------------------------------------------------------------------
 # Core computation
 # ---------------------------------------------------------------------
+# --- Worker: läuft in separatem Prozess ---
+def _confmat_worker(db_path: str, total_proteins: int, protein_type: str, cutoff_type: str, cutoff: float):
+    # read-only Verbindung (URI) + query_only Schutz
+    conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute("PRAGMA query_only=ON;")
+
+    query = """
+    WITH dom_best AS (
+        SELECT
+            d.proteinID,
+            MAX(d.score) AS best_score,
+            p.valid_hit AS valid_hit
+        FROM Domains d
+        JOIN Proteins p ON p.proteinID = d.proteinID
+        WHERE d.domain = ?
+        GROUP BY d.proteinID
+    )
+    SELECT
+        SUM(CASE WHEN valid_hit = 1 AND best_score >= ? THEN 1 ELSE 0 END) AS TP,
+        SUM(CASE WHEN valid_hit = 0 AND best_score >= ? THEN 1 ELSE 0 END) AS FP,
+        SUM(CASE WHEN valid_hit = 1 AND best_score <  ? THEN 1 ELSE 0 END) AS FN,
+        COUNT(*) AS assigned_hits
+    FROM dom_best
+    """
+
+    row = cur.execute(query, (protein_type, cutoff, cutoff, cutoff)).fetchone()
+
+    TP = row["TP"] or 0
+    FP = row["FP"] or 0
+    FN = row["FN"] or 0
+    assigned_hits = row["assigned_hits"] or 0
+    TN = total_proteins - assigned_hits
+
+    conn.close()
+
+    return (protein_type, cutoff_type, cutoff, TP, FP, FN, TN, assigned_hits)
+
+
+def compute_confusion_matrices_parallel(
+        db_path,
+        thresholds,
+        total_proteins,
+        *,
+        max_workers: int = 8,
+        chunksize: int = 50,
+):
+    """
+    Parallelisierte Variante.
+    Yields tuples:
+    (protein_type, cutoff_type, cutoff, TP, FP, FN, TN, assigned_hits)
+    """
+
+    # Aufgabenliste bauen (damit wir Fortschritt sauber im Main-Process loggen können)
+    tasks = []
+    for cutoff_type, cutoff_dict in thresholds.items():
+        items = list(cutoff_dict.items())
+        print(f"[INFO] processing cutoff type: {cutoff_type} ({len(items)} HMMs)")
+        for i, (protein_type, cutoff) in enumerate(items, start=1):
+            # Nur Main-Process printet
+            print(f"[INFO]  {cutoff_type}: HMM {i}/{len(items)} → {protein_type} (cutoff={cutoff})")
+            tasks.append((protein_type, cutoff_type, float(cutoff)))
+
+    # Prozesse starten
+    with ProcessPoolExecutor(max_workers=max_workers) as ex:
+        # Optional: batching reduziert Overhead bei vielen tausend Jobs
+        # Wir submitten in Blöcken, um nicht zehntausende Futures auf einmal zu halten.
+        for start in range(0, len(tasks), chunksize):
+            block = tasks[start: start + chunksize]
+            futures = [
+                ex.submit(_confmat_worker, db_path, total_proteins, protein_type, cutoff_type, cutoff)
+                for (protein_type, cutoff_type, cutoff) in block
+            ]
+            for fut in as_completed(futures):
+                yield fut.result()
+
+
 def compute_confusion_matrices(db_path, thresholds, total_proteins):
     """
     Yields tuples:
@@ -455,34 +534,31 @@ def main():
     thresholds = load_thresholds(args.thresholds)
 
     with open(args.out, "w") as out:
-        for (protein_type, cutoff_type, cutoff, TP, FP, FN, TN, assigned_hits) in compute_confusion_matrices(
-                args.db, thresholds, args.total_proteins
-        ):
+        for row in compute_confusion_matrices_parallel(args.db, thresholds, args.total_proteins):
+            (protein_type, cutoff_type, cutoff, TP, FP, FN, TN, assigned_hits) = row
+
             ba = balanced_accuracy(TP, FP, FN, TN)
             f1 = f1_score(TP, FP, FN)
             mm = mcc(TP, FP, FN, TN)
 
-            out.write(
-                "\t".join([
-                    protein_type,
-                    cutoff_type,
-                    str(cutoff),
-                    str(TP),
-                    str(FP),
-                    str(FN),
-                    str(TN),
-                    str(assigned_hits),
-                    fmt(ba),
-                    fmt(f1),
-                    fmt(mm),
-                ]) + "\n"
-            )
+            line = "\t".join([
+                protein_type,
+                cutoff_type,
+                str(cutoff),
+                str(TP),
+                str(FP),
+                str(FN),
+                str(TN),
+                str(assigned_hits),
+                fmt(ba),
+                fmt(f1),
+                fmt(mm),
+            ])
 
-        for row in compute_confusion_matrices(
-                args.db, thresholds, args.total_proteins
-        ):
-            print("\t".join(map(str, row)) + "\n")
-            # out.write("\t".join(map(str, row)) + "\n")
+            out.write(line + "\n")
+            if getattr(args, "verbose", 0) >= 1:
+                print(line)
+
     if args.plot:
         if args.plot_prefix is None:
             # default prefix: strip .tsv if present

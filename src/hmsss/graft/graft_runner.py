@@ -299,17 +299,17 @@ class Run:
             )
 
         # Set the output directory if not specified and create that directory
-        print("Creating working directory: %s" % self.args.output_directory)
+        logging.debug("Creating working directory: %s" % self.args.output_directory)
         self.hk.make_working_directory(self.args.output_directory, self.args.force)
 
         # Set pipeline and evalue by checking HMM format
         if self.args.search_only:
             if self.args.search_method == self.hk.HMMSEARCH_SEARCH_METHOD:
                 hmm_type, hmm_tc = self.hk.setpipe(self.args.search_hmm_files[0])
-                print("HMM type: %s Trusted Cutoff: %s" % (hmm_type, hmm_tc))
+                logging.debug("HMM type: %s Trusted Cutoff: %s" % (hmm_type, hmm_tc))
         else:
             hmm_type, hmm_tc = self.hk.setpipe(self.args.aln_hmm_file)
-            print("HMM type: %s Trusted Cutoff: %s" % (hmm_type, hmm_tc))
+            logging.debug("HMM type: %s Trusted Cutoff: %s" % (hmm_type, hmm_tc))
 
         if self.args.search_method == self.hk.HMMSEARCH_SEARCH_METHOD:
             setattr(self.args, "type", hmm_type)
@@ -371,7 +371,7 @@ class Run:
             doing_decoy_search = False
 
         # For each pair (or single file passed to GraftM)
-        print("Working with %i file(s)" % len(self.sequence_pair_list))
+        logging.debug("Working with %i file(s)" % len(self.sequence_pair_list))
         for pair in self.sequence_pair_list:
             # Guess the sequence file type, if not already specified to GraftM
             unpack = UnpackRawReads(pair[0], self.args.input_sequence_type, INTERLEAVED)
@@ -379,7 +379,7 @@ class Run:
             # Set the basename, and make an entry to the summary table.
             base = unpack.basename()
             pair_direction = ["forward", "reverse"]
-            print("Working on %s" % base)
+            logging.info("Working on %s" % base)
 
             # Make the working base subdirectory
             self.hk.make_working_directory(
@@ -404,7 +404,7 @@ class Run:
                     direction = (
                         "interleaved" if pair[1] is None else pair_direction.pop(0)
                     )
-                    print("Working on %s reads" % direction)
+                    logging.info("Working on %s reads" % direction)
                     self.gmf = GraftMFiles(base, self.args.output_directory, direction)
                     self.hk.make_working_directory(
                         os.path.join(self.args.output_directory, base, direction),
@@ -416,7 +416,7 @@ class Run:
 
                 t0 = time.perf_counter()
                 if self.args.type == self.PIPELINE_AA:
-                    print("Running protein pipeline")
+                    logging.debug("Running protein pipeline")
                     try:
                         search_time, (result, complement_information) = (
                             self.ss.aa_db_search(
@@ -444,7 +444,7 @@ class Run:
                         )
                         exit(Run.NO_ORFS_EXITSTATUS)
                     dt = time.perf_counter() - t0
-                    print(f"[TIME] aa_db_search took {dt:.3f} seconds")
+                    logging.debug(f"[TIME] aa_db_search took {dt:.3f} seconds")
 
                 # Or the DNA pipeline
                 elif self.args.type == self.PIPELINE_NT:
@@ -487,11 +487,11 @@ class Run:
                         os.remove(result.hit_fasta())
                         continue
                 dt = time.perf_counter() - t0
-                print(f"[TIME] decoy filtering took {dt:.3f} seconds")
+                logging.debug(f"[TIME] decoy filtering took {dt:.3f} seconds")
 
                 t0 = time.perf_counter()
                 if self.args.assignment_method == Run.PPLACER_TAXONOMIC_ASSIGNMENT:
-                    print("aligning reads to reference package database")
+                    logging.info("aligning reads to reference package database")
                     hit_aligned_reads = self.gmf.aligned_fasta_output_path(base)
 
                     if reads_detected:
@@ -511,7 +511,7 @@ class Run:
                             pass  # just touch the file, nothing else
                     seqs_list.append(hit_aligned_reads)
                 dt = time.perf_counter() - t0
-                print(f"[TIME] pplacer preparation took {dt:.3f} seconds")
+                logging.debug(f"[TIME] pplacer preparation took {dt:.3f} seconds")
                 db_search_results.append(result)
                 base_list.append(base)
                 search_results.append(result.search_result)
@@ -570,7 +570,7 @@ class Run:
             clusterer = Clusterer()
             # Classification steps
             seqs_list = clusterer.cluster(seqs_list, REVERSE_PIPE)
-            print("Placing reads into phylogenetic tree")
+            logging.info("Placing reads into phylogenetic tree")
             taxonomic_assignment_time, assignments = self.p.place(
                 REVERSE_PIPE,
                 seqs_list,
@@ -600,7 +600,7 @@ class Run:
             )
 
         dt = time.perf_counter() - t0
-        print(f"[TIME] pplacer assignment phase took {dt:.3f} seconds")
+        logging.debug(f"[TIME] pplacer assignment phase took {dt:.3f} seconds")
         # Prepare read mapping und alignments for return
         read_tax_paths = {}
         alignment_paths = {}

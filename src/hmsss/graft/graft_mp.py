@@ -114,7 +114,7 @@ def _run_graft_task(task):
 
     except SystemExit as e:
         # graftM verwendet exit() an mehreren Stellen
-        print("SYSTEM EXIT ERROR")
+        print("SYSTEM EXIT ERROR:", e)
         return {
             "ok": False,
             "task": task,
@@ -504,7 +504,7 @@ def graft_mp_tokenized_executor(
     pending = sorted(task_list, key=lambda t: _task_mem_est_gb(t), reverse=True)
 
     ctx = get_context("spawn")
-    max_workers = max(1, int(config.cores) - 1)
+    max_workers = max(1, (int(config.cores) - 1) // 5)
 
     future_to_tokens: dict = {}
 
