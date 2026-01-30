@@ -416,7 +416,8 @@ class Run:
 
                 t0 = time.perf_counter()
                 if self.args.type == self.PIPELINE_AA:
-                    logging.debug("Running protein pipeline")
+                    print("Running protein pipeline")
+                    print(self.args.threads)
                     try:
                         search_time, (result, complement_information) = (
                             self.ss.aa_db_search(
@@ -444,7 +445,7 @@ class Run:
                         )
                         exit(Run.NO_ORFS_EXITSTATUS)
                     dt = time.perf_counter() - t0
-                    logging.debug(f"[TIME] aa_db_search took {dt:.3f} seconds")
+                    print(f"[TIME] aa_db_search took {dt:.3f} seconds")
 
                 # Or the DNA pipeline
                 elif self.args.type == self.PIPELINE_NT:
