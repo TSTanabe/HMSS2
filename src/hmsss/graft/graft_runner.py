@@ -299,17 +299,17 @@ class Run:
             )
 
         # Set the output directory if not specified and create that directory
-        logging.debug("Creating working directory: %s" % self.args.output_directory)
+        print("Creating working directory: %s" % self.args.output_directory)
         self.hk.make_working_directory(self.args.output_directory, self.args.force)
 
         # Set pipeline and evalue by checking HMM format
         if self.args.search_only:
             if self.args.search_method == self.hk.HMMSEARCH_SEARCH_METHOD:
                 hmm_type, hmm_tc = self.hk.setpipe(self.args.search_hmm_files[0])
-                logging.debug("HMM type: %s Trusted Cutoff: %s" % (hmm_type, hmm_tc))
+                print("HMM type: %s Trusted Cutoff: %s" % (hmm_type, hmm_tc))
         else:
             hmm_type, hmm_tc = self.hk.setpipe(self.args.aln_hmm_file)
-            logging.debug("HMM type: %s Trusted Cutoff: %s" % (hmm_type, hmm_tc))
+            print("HMM type: %s Trusted Cutoff: %s" % (hmm_type, hmm_tc))
 
         if self.args.search_method == self.hk.HMMSEARCH_SEARCH_METHOD:
             setattr(self.args, "type", hmm_type)
@@ -349,7 +349,7 @@ class Run:
             )
 
             if boots.generate_expand_search_database_from_contigs(
-                self.args.expand_search_contigs, new_database, self.args.search_method
+                    self.args.expand_search_contigs, new_database, self.args.search_method
             ):
                 if self.args.search_method == self.hk.HMMSEARCH_SEARCH_METHOD:
                     self.ss.search_hmm.append(new_database)
@@ -371,7 +371,7 @@ class Run:
             doing_decoy_search = False
 
         # For each pair (or single file passed to GraftM)
-        logging.debug("Working with %i file(s)" % len(self.sequence_pair_list))
+        print("Working with %i file(s)" % len(self.sequence_pair_list))
         for pair in self.sequence_pair_list:
             # Guess the sequence file type, if not already specified to GraftM
             unpack = UnpackRawReads(pair[0], self.args.input_sequence_type, INTERLEAVED)
@@ -379,7 +379,7 @@ class Run:
             # Set the basename, and make an entry to the summary table.
             base = unpack.basename()
             pair_direction = ["forward", "reverse"]
-            logging.info("Working on %s" % base)
+            print("Working on %s" % base)
 
             # Make the working base subdirectory
             self.hk.make_working_directory(
@@ -404,7 +404,7 @@ class Run:
                     direction = (
                         "interleaved" if pair[1] is None else pair_direction.pop(0)
                     )
-                    logging.info("Working on %s reads" % direction)
+                    print("Working on %s reads" % direction)
                     self.gmf = GraftMFiles(base, self.args.output_directory, direction)
                     self.hk.make_working_directory(
                         os.path.join(self.args.output_directory, base, direction),
@@ -416,7 +416,7 @@ class Run:
 
                 t0 = time.perf_counter()
                 if self.args.type == self.PIPELINE_AA:
-                    logging.debug("Running protein pipeline")
+                    print("Running protein pipeline")
                     try:
                         search_time, (result, complement_information) = (
                             self.ss.aa_db_search(
@@ -444,7 +444,7 @@ class Run:
                         )
                         exit(Run.NO_ORFS_EXITSTATUS)
                     dt = time.perf_counter() - t0
-                    logging.debug(f"[TIME] aa_db_search took {dt:.3f} seconds")
+                    print(f"[TIME] aa_db_search took {dt:.3f} seconds")
 
                 # Or the DNA pipeline
                 elif self.args.type == self.PIPELINE_NT:
@@ -476,7 +476,7 @@ class Run:
                 # Filter out decoys if specified
                 if reads_detected and doing_decoy_search:
                     with tempfile.NamedTemporaryFile(
-                        prefix="graftm_decoy", suffix=".fa"
+                            prefix="graftm_decoy", suffix=".fa"
                     ) as f:
                         tmpname = f.name
                     any_remaining = decoy_filter.filter(result.hit_fasta(), tmpname)
@@ -487,11 +487,11 @@ class Run:
                         os.remove(result.hit_fasta())
                         continue
                 dt = time.perf_counter() - t0
-                logging.debug(f"[TIME] decoy filtering took {dt:.3f} seconds")
+                print(f"[TIME] decoy filtering took {dt:.3f} seconds")
 
                 t0 = time.perf_counter()
                 if self.args.assignment_method == Run.PPLACER_TAXONOMIC_ASSIGNMENT:
-                    logging.info("aligning reads to reference package database")
+                    print("aligning reads to reference package database")
                     hit_aligned_reads = self.gmf.aligned_fasta_output_path(base)
 
                     if reads_detected:
@@ -505,13 +505,13 @@ class Run:
                     else:
                         aln_time = "n/a"
                     if not os.path.exists(
-                        hit_aligned_reads
+                            hit_aligned_reads
                     ):  # If all were filtered out, or there just was none..
                         with open(hit_aligned_reads, "w") as f:
                             pass  # just touch the file, nothing else
                     seqs_list.append(hit_aligned_reads)
                 dt = time.perf_counter() - t0
-                logging.debug(f"[TIME] pplacer preparation took {dt:.3f} seconds")
+                print(f"[TIME] pplacer preparation took {dt:.3f} seconds")
                 db_search_results.append(result)
                 base_list.append(base)
                 search_results.append(result.search_result)
@@ -530,7 +530,7 @@ class Run:
             exit(0)
 
         if (
-            self.args.merge_reads
+                self.args.merge_reads
         ):  # not run when diamond is the assignment mode- enforced by argparse grokking
             logging.debug("Running merge reads output")
             if self.args.interleaved:
@@ -570,7 +570,7 @@ class Run:
             clusterer = Clusterer()
             # Classification steps
             seqs_list = clusterer.cluster(seqs_list, REVERSE_PIPE)
-            logging.info("Placing reads into phylogenetic tree")
+            print("Placing reads into phylogenetic tree")
             taxonomic_assignment_time, assignments = self.p.place(
                 REVERSE_PIPE,
                 seqs_list,
@@ -600,7 +600,7 @@ class Run:
             )
 
         dt = time.perf_counter() - t0
-        logging.debug(f"[TIME] pplacer assignment phase took {dt:.3f} seconds")
+        print(f"[TIME] pplacer assignment phase took {dt:.3f} seconds")
         # Prepare read mapping und alignments for return
         read_tax_paths = {}
         alignment_paths = {}
@@ -632,12 +632,12 @@ class Run:
 
     @T.timeit
     def _assign_taxonomy_with_diamond(
-        self,
-        base_list,
-        db_search_results,
-        graftm_package,
-        graftm_files,
-        diamond_performance_parameters,
+            self,
+            base_list,
+            db_search_results,
+            graftm_package,
+            graftm_files,
+            diamond_performance_parameters,
     ):
         """Run diamond to assign taxonomy
 
@@ -687,10 +687,10 @@ class Run:
                     extra_args=diamond_performance_parameters,
                 )
                 for res in diamond_result.each(
-                    [
-                        SequenceSearchResult.QUERY_ID_FIELD,
-                        SequenceSearchResult.HIT_ID_FIELD,
-                    ]
+                        [
+                            SequenceSearchResult.QUERY_ID_FIELD,
+                            SequenceSearchResult.HIT_ID_FIELD,
+                        ]
                 ):
                     if res[0] in sequence_id_to_hit:
                         # do not accept duplicates
