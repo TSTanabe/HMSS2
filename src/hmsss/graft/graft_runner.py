@@ -488,7 +488,7 @@ class Run:
                         os.remove(result.hit_fasta())
                         continue
                 dt = time.perf_counter() - t0
-                logging.debug(f"[TIME] decoy filtering took {dt:.3f} seconds")
+                print(f"[TIME] decoy filtering took {dt:.3f} seconds")
 
                 t0 = time.perf_counter()
                 if self.args.assignment_method == Run.PPLACER_TAXONOMIC_ASSIGNMENT:
@@ -512,7 +512,7 @@ class Run:
                             pass  # just touch the file, nothing else
                     seqs_list.append(hit_aligned_reads)
                 dt = time.perf_counter() - t0
-                logging.debug(f"[TIME] pplacer preparation took {dt:.3f} seconds")
+                print(f"[TIME] pplacer preparation took {dt:.3f} seconds")
                 db_search_results.append(result)
                 base_list.append(base)
                 search_results.append(result.search_result)
@@ -571,7 +571,7 @@ class Run:
             clusterer = Clusterer()
             # Classification steps
             seqs_list = clusterer.cluster(seqs_list, REVERSE_PIPE)
-            logging.info("Placing reads into phylogenetic tree")
+            print("Placing reads into phylogenetic tree")
             taxonomic_assignment_time, assignments = self.p.place(
                 REVERSE_PIPE,
                 seqs_list,
