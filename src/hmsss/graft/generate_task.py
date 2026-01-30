@@ -305,7 +305,7 @@ def create_task_list(
         length_dict: dict[str, int],
         gpkg_ram_profile: dict[str, float],
         *,
-        threads: int = 1,
+        threads: int = 5,
         evalue: str = "1e-5",
         interleaved: bool = False,
 ) -> list[GraftMTask]:
