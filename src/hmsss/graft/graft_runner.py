@@ -418,8 +418,6 @@ class Run:
 
                 t0 = time.perf_counter()
                 if self.args.type == self.PIPELINE_AA:
-                    print("Running protein pipeline")
-                    print(self.args.threads)
                     try:
                         search_time, (result, complement_information) = (
                             self.ss.aa_db_search(
@@ -593,7 +591,7 @@ class Run:
             clusterer = Clusterer()
             # Classification steps
             seqs_list = clusterer.cluster(seqs_list, REVERSE_PIPE)
-            print("Placing reads into phylogenetic tree")
+            print("[TIME] Placing reads into phylogenetic tree")
             taxonomic_assignment_time, assignments = self.p.place(
                 REVERSE_PIPE,
                 seqs_list,
@@ -651,8 +649,8 @@ class Run:
             reverse_pipe=REVERSE_PIPE,
         )
         filepaths = self.output_filepaths(base_list=base_list)
-        filepaths[0]['kept_ids'] = kept_ids
-        print(filepaths[0]['kept_ids'])
+        filepaths[0]['non_decoy_sequences'] = kept_ids
+
         return filepaths  # filepaths to taxonomy, alignment and sequence files. Each field has a dict for the
 
     @T.timeit

@@ -75,6 +75,7 @@ def _run_graft_task(task):
         taxonomy_csv = files.get("taxonomy")
         sequence_fasta = files.get("sequences")
         alignment_fasta = files.get("alignment")
+        non_decoy_sequences = files.get("non_decoy_sequences")
 
         if (
                 not taxonomy_csv

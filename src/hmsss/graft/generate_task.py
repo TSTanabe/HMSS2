@@ -409,6 +409,7 @@ def initialize_task_list(config):
         length_dict=gpkg_length_dict,
         gpkg_ram_profile=gpkg_ram_dict,
         interleaved=config.rm_interleaved,
+        threads=20,
     )
 
     return task_list
