@@ -373,6 +373,7 @@ class Run:
 
         # For each pair (or single file passed to GraftM) do the graft phase
         logging.debug("Working with %i file(s)" % len(self.sequence_pair_list))
+        kept_ids = []
         for pair in self.sequence_pair_list:
             # Guess the sequence file type, if not already specified to GraftM
             unpack = UnpackRawReads(pair[0], self.args.input_sequence_type, INTERLEAVED)
@@ -506,6 +507,7 @@ class Run:
                         pass
 
                     any_remaining = decoy_filter.filter(result.hit_fasta(), kept_ids_path)
+                    kept_ids.append(kept_ids_path)
 
                 dt = time.perf_counter() - t0
                 print(f"[TIME] decoy filtering took {dt:.3f} seconds")
@@ -649,6 +651,8 @@ class Run:
             reverse_pipe=REVERSE_PIPE,
         )
         filepaths = self.output_filepaths(base_list=base_list)
+        filepaths[0]['kept_ids'] = kept_ids
+        print(filepaths[0]['kept_ids'])
         return filepaths  # filepaths to taxonomy, alignment and sequence files. Each field has a dict for the
 
     @T.timeit
