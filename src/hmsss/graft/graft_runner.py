@@ -356,6 +356,7 @@ class Run:
                 else:
                     diamond_db = new_database
 
+        # Define the decoy filter and set decoy filter flag
         first_search_method = self.args.search_method
         if self.args.decoy_database:
             decoy_filter = DecoyFilter(
@@ -370,7 +371,7 @@ class Run:
         else:
             doing_decoy_search = False
 
-        # For each pair (or single file passed to GraftM)
+        # For each pair (or single file passed to GraftM) do the graft phase
         logging.debug("Working with %i file(s)" % len(self.sequence_pair_list))
         for pair in self.sequence_pair_list:
             # Guess the sequence file type, if not already specified to GraftM
@@ -474,7 +475,8 @@ class Run:
                     continue
 
                 t0 = time.perf_counter()
-                # Filter out decoys if specified
+                # Filter out decoys if specified ORIGINAL BLOCK
+                """
                 if reads_detected and doing_decoy_search:
                     with tempfile.NamedTemporaryFile(
                             prefix="graftm_decoy", suffix=".fa"
@@ -487,6 +489,24 @@ class Run:
                         # No hits remain after decoy filtering.
                         os.remove(result.hit_fasta())
                         continue
+                """
+                if reads_detected and doing_decoy_search:
+                    hit_fa = result.hit_fasta()
+                    hit_dir = os.path.dirname(hit_fa)
+                    hit_base = os.path.basename(hit_fa)
+
+                    # Pfad: neben hit_fasta, klarer Prefix
+                    kept_ids_path = os.path.join(
+                        hit_dir,
+                        f"{hit_base}.decoy_filtered.faa"
+                    )
+
+                    # Datei explizit anlegen (leer oder überschreibend)
+                    with open(kept_ids_path, "wt", encoding="utf-8") as fout:
+                        pass
+
+                    any_remaining = decoy_filter.filter(result.hit_fasta(), kept_ids_path)
+
                 dt = time.perf_counter() - t0
                 print(f"[TIME] decoy filtering took {dt:.3f} seconds")
 
@@ -601,7 +621,7 @@ class Run:
             )
 
         dt = time.perf_counter() - t0
-        logging.debug(f"[TIME] pplacer assignment phase took {dt:.3f} seconds")
+        print(f"[TIME] pplacer assignment phase took {dt:.3f} seconds")
         # Prepare read mapping und alignments for return
         read_tax_paths = {}
         alignment_paths = {}
