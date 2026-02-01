@@ -359,7 +359,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     )
 
     # Input definition
-    inputdef = parser.add_argument_group("Input definition")
+    inputdef = parser.add_argument_group("Input data")
     inputdef.add_argument(
         "-f",
         dest="fasta_file_directory",
@@ -399,7 +399,27 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     )
 
     # Search parameters
-    parameters = parser.add_argument_group("Search parameters")
+    parameters = parser.add_argument_group("Annotation parameters")
+    parameters.add_argument(
+        "-n",
+        dest="name",
+        type=str,
+        default="project",
+        metavar="<string>",
+        help="Name new project" if show_all else argparse.SUPPRESS,
+    )
+    parameters.add_argument(
+        "--hmm-sets",
+        nargs="+",
+        dest="HMM_sets",
+        type=str,
+        default=sorted(["DHPS", "DMS", "Dsr", "SQ", "Aryl"]),
+        choices=sorted(["DHPS", "DMS", "Dsr", "SQ", "Aryl"]),
+        metavar="",
+        help="Limit to HMM sets (whitespace separated)"
+        if show_all
+        else argparse.SUPPRESS,
+    )
     parameters.add_argument(
         "--cut-type",
         dest="threshold_type",
@@ -408,7 +428,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         metavar="<int>",
         choices=[1, 2, 3],
         help="Choice of cutoff: 1 optimized; 2 trusted; 3 noise"
-        if show_all
+        if never_show
         else argparse.SUPPRESS,
     )
     parameters.add_argument(
@@ -418,14 +438,6 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         default=50,
         metavar="<int>",
         help="Global minimal score cutoff" if show_all else argparse.SUPPRESS,
-    )
-    parameters.add_argument(
-        "--taxonomy",
-        dest="taxonomy_file",
-        type=file_path,
-        default=None,
-        metavar="<filepath>",
-        help="Add taxonomy from this tab separated taxonomy file",
     )
     parameters.add_argument(
         "--refseq-ident",
@@ -438,12 +450,20 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         else argparse.SUPPRESS,
     )
     parameters.add_argument(
-        "-n",
-        dest="name",
-        type=str,
-        default="project",
-        metavar="<string>",
-        help="Name new project" if show_all else argparse.SUPPRESS,
+        "--blast-cross-check",
+        dest="bool_cross_check",
+        action="store_false",
+        help="Use Diamond blastp cross check for hit selection"
+        if show_all
+        else argparse.SUPPRESS,
+    )
+    parameters.add_argument(
+        "--taxonomy",
+        dest="taxonomy_file",
+        type=file_path,
+        default=None,
+        metavar="<filepath>",
+        help="Add taxonomy from this tab separated taxonomy file",
     )
     parameters.add_argument(
         "-s",
@@ -451,7 +471,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=int,
         default=0,
         choices=[0, 1, 2, 3, 4, 5],
-        help="Start at step" if show_all else argparse.SUPPRESS,
+        help="Start at step" if never_show else argparse.SUPPRESS,
     )
     parameters.add_argument(
         "-x",
@@ -459,32 +479,10 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=int,
         default=10,
         choices=[0, 1, 2, 3, 4, 5],
-        help="Exit at step" if show_all else argparse.SUPPRESS,
+        help="Exit at step" if never_show else argparse.SUPPRESS,
     )
 
-    # Search library resources
-    resources = parser.add_argument_group("Search library resources")
-    resources.add_argument(
-        "--hmm-sets",
-        nargs="+",
-        dest="HMM_sets",
-        type=str,
-        default=sorted(["DHPS", "DMS", "Dsr", "SQ", "Aryl"]),
-        choices=sorted(["DHPS", "DMS", "Dsr", "SQ", "Aryl"]),
-        metavar="",
-        help="Limit to HMM sets (whitespace separated)"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    resources.add_argument(
-        "--disable-reports",
-        dest="disable_individual_reports",
-        action="store_true",
-        help="Disable individual reports, only bulk database"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    resources.add_argument(
+    parameters.add_argument(
         "--max-seq-per-genome",
         dest="max_seqs_per_genome",
         type=int,
@@ -493,7 +491,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         if show_all
         else argparse.SUPPRESS,
     )
-    resources.add_argument(
+    parameters.add_argument(
         "--diamond-speed",
         dest="diamond_speed_mode",
         type=str,
@@ -508,15 +506,15 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         default="faster",
         help="DIAMOND blastp speed mode" if show_all else argparse.SUPPRESS,
     )
-    resources.add_argument(
-        "--blast-cross-check",
-        dest="bool_cross_check",
-        action="store_false",
-        help="Use Diamond blastp cross check for hit selection"
+    parameters.add_argument(
+        "--disable-reports",
+        dest="disable_individual_reports",
+        action="store_true",
+        help="Disable individual reports, only bulk database"
         if show_all
         else argparse.SUPPRESS,
     )
-    resources.add_argument(
+    parameters.add_argument(
         "--optimized-cutoff-cross-check",
         dest="optimized_cutoff_cross_check",
         action="store_true",
@@ -544,7 +542,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         "--stat-genomes",
         action="store_true",
         help="Print taxonomy information from database"
-        if show_all
+        if never_show
         else argparse.SUPPRESS,
     )
 
@@ -567,6 +565,14 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         default=0.51,
         metavar="<float>",
         help="Minimal fraction of predefined csb to be recognized"
+        if show_all
+        else argparse.SUPPRESS,
+    )
+    csb.add_argument(
+        "--disable-synteny-completion",
+        dest="disable_synteny_completion",
+        action="store_true",
+        help="Disable syntenic block supported annotation"
         if show_all
         else argparse.SUPPRESS,
     )
@@ -640,7 +646,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     )
 
     # Read mapping workflow algorithm
-    readmap = parser.add_argument_group("Read mapping integration")
+    readmap = parser.add_argument_group("Read mapping (optional)")
 
     readmap.add_argument(
         "--read-mapping",
@@ -649,7 +655,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help="Enable read-mapping analysis for files located in the -f directory",
     )
 
-    resources.add_argument(
+    readmap.add_argument(
         "--gpkg-sets",
         nargs="+",
         dest="gpkg_sets",
@@ -680,6 +686,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
                 "SQR",
             ]
         ),
+        metavar="<SET>",
         default=[],
         help=(
             "Select GPKG package sets (whitespace separated)"
@@ -806,14 +813,6 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     # Work step regulation
     flow = parser.add_argument_group("Work step regulation")
     flow.add_argument(
-        "--disable-synteny-completion",
-        dest="disable_synteny_completion",
-        action="store_true",
-        help="Disable syntenic block completeness enhancement"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    flow.add_argument(
         "-no_remove_intermediate",
         dest="use_remove_unassigned_intermediates",
         action="store_false",
@@ -831,7 +830,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     )
 
     # Output operators / fetch
-    operators = parser.add_argument_group("Output sequences with these conditions *")
+    operators = parser.add_argument_group("Output filtering and export")
     operators.add_argument(
         "--help-fetch",
         action=FetchHelpAction,
