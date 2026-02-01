@@ -356,7 +356,6 @@ class Run:
                 else:
                     diamond_db = new_database
 
-        # Define the decoy filter and set decoy filter flag
         first_search_method = self.args.search_method
         if self.args.decoy_database:
             decoy_filter = DecoyFilter(
@@ -371,9 +370,8 @@ class Run:
         else:
             doing_decoy_search = False
 
-        # For each pair (or single file passed to GraftM) do the graft phase
+        # For each pair (or single file passed to GraftM)
         logging.debug("Working with %i file(s)" % len(self.sequence_pair_list))
-        kept_ids = []
         for pair in self.sequence_pair_list:
             # Guess the sequence file type, if not already specified to GraftM
             unpack = UnpackRawReads(pair[0], self.args.input_sequence_type, INTERLEAVED)
@@ -381,7 +379,7 @@ class Run:
             # Set the basename, and make an entry to the summary table.
             base = unpack.basename()
             pair_direction = ["forward", "reverse"]
-            logging.info("Working on %s" % base)
+            print(f"[{self.args.graftm_package}] Working on %s" % base)
 
             # Make the working base subdirectory
             self.hk.make_working_directory(
@@ -418,6 +416,7 @@ class Run:
 
                 t0 = time.perf_counter()
                 if self.args.type == self.PIPELINE_AA:
+
                     try:
                         search_time, (result, complement_information) = (
                             self.ss.aa_db_search(
@@ -445,7 +444,7 @@ class Run:
                         )
                         exit(Run.NO_ORFS_EXITSTATUS)
                     dt = time.perf_counter() - t0
-                    print(f"[TIME] aa_db_search took {dt:.3f} seconds")
+                    print(f"[{self.args.graftm_package}] HMMsearch took {dt:.3f} seconds")
 
                 # Or the DNA pipeline
                 elif self.args.type == self.PIPELINE_NT:
@@ -474,8 +473,7 @@ class Run:
                     continue
 
                 t0 = time.perf_counter()
-                # Filter out decoys if specified ORIGINAL BLOCK
-                """
+                # Filter out decoys if specified
                 if reads_detected and doing_decoy_search:
                     with tempfile.NamedTemporaryFile(
                             prefix="graftm_decoy", suffix=".fa"
@@ -488,29 +486,9 @@ class Run:
                         # No hits remain after decoy filtering.
                         os.remove(result.hit_fasta())
                         continue
-                """
-                if reads_detected and doing_decoy_search:
-                    hit_fa = result.hit_fasta()
-                    hit_dir = os.path.dirname(hit_fa)
-                    hit_base = os.path.basename(hit_fa)
-
-                    # Pfad: neben hit_fasta, klarer Prefix
-                    kept_ids_path = os.path.join(
-                        hit_dir,
-                        f"{hit_base}.decoy_filtered.faa"
-                    )
-
-                    # Datei explizit anlegen (leer oder überschreibend)
-                    with open(kept_ids_path, "wt", encoding="utf-8") as fout:
-                        pass
-
-                    any_remaining = decoy_filter.filter(result.hit_fasta(), kept_ids_path)
-                    kept_ids.append(kept_ids_path)
-
                 dt = time.perf_counter() - t0
-                print(f"[TIME] decoy filtering took {dt:.3f} seconds")
+                print(f"[{self.args.graftm_package}] DIAMOND Blastp filtering took {dt:.3f} seconds")
 
-                t0 = time.perf_counter()
                 if self.args.assignment_method == Run.PPLACER_TAXONOMIC_ASSIGNMENT:
                     logging.info("aligning reads to reference package database")
                     hit_aligned_reads = self.gmf.aligned_fasta_output_path(base)
@@ -531,8 +509,7 @@ class Run:
                         with open(hit_aligned_reads, "w") as f:
                             pass  # just touch the file, nothing else
                     seqs_list.append(hit_aligned_reads)
-                dt = time.perf_counter() - t0
-                print(f"[TIME] pplacer preparation took {dt:.3f} seconds")
+
                 db_search_results.append(result)
                 base_list.append(base)
                 search_results.append(result.search_result)
@@ -591,7 +568,7 @@ class Run:
             clusterer = Clusterer()
             # Classification steps
             seqs_list = clusterer.cluster(seqs_list, REVERSE_PIPE)
-            print("[TIME] Placing reads into phylogenetic tree")
+            print(f"[{self.args.graftm_package}] Placing reads into phylogenetic tree")
             taxonomic_assignment_time, assignments = self.p.place(
                 REVERSE_PIPE,
                 seqs_list,
@@ -621,7 +598,8 @@ class Run:
             )
 
         dt = time.perf_counter() - t0
-        print(f"[TIME] pplacer assignment phase took {dt:.3f} seconds")
+        logging.debug(f"[{self.args.graftm_package}] pplacer assignment phase took {dt:.3f} seconds")
+
         # Prepare read mapping und alignments for return
         read_tax_paths = {}
         alignment_paths = {}
@@ -649,8 +627,6 @@ class Run:
             reverse_pipe=REVERSE_PIPE,
         )
         filepaths = self.output_filepaths(base_list=base_list)
-        filepaths[0]['non_decoy_sequences'] = kept_ids
-
         return filepaths  # filepaths to taxonomy, alignment and sequence files. Each field has a dict for the
 
     @T.timeit
