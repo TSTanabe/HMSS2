@@ -177,7 +177,8 @@ class CliReadMapping:
 
     use_read_mapping: bool = False
     gpkg_sets: List[str] = field(default_factory=list)
-    threads: int = 14
+    gpkg_packs: List[str] = field(default_factory=list)
+    threads: int = 5
     evalue: float = 1e-5
     placements_cutoff: float = 0.75
     resolve_placements: bool = False
@@ -474,6 +475,7 @@ class Config:
     # Read mapping (shortcuts)
     use_read_mapping = prop("cli_readmap.use_read_mapping")
     gpkg_sets = prop("cli_readmap.gpkg_sets")
+    gpkg_packs = prop("cli_readmap.gpkg_packs")
     rm_threads = prop("cli_readmap.threads")
     rm_evalue = prop("cli_readmap.evalue")
     rm_placements_cutoff = prop("cli_readmap.placements_cutoff")
@@ -575,14 +577,16 @@ class Config:
         if self.cli_ops.keywords_connector not in ("AND", "OR"):
             raise ValueError("keywords_connector must be 'AND' or 'OR'")
         if (
-            self.cli_synteny.min_completeness < 0.0
-            or self.cli_synteny.min_completeness > 1.0
+                self.cli_synteny.min_completeness < 0.0
+                or self.cli_synteny.min_completeness > 1.0
         ):
             raise ValueError("min_completeness must be within [0.0, 1.0]")
         if self.cli_csb.jaccard < 0.0 or self.cli_csb.jaccard > 1.0:
             raise ValueError("jaccard must be within [0.0, 1.0]")
         if self.cli_input.cores < 1:
             raise ValueError("cores must be >= 1")
+        if (self.cli_readmap.gpkg_sets or self.cli_readmap.gpkg_packs) and not self.use_read_mapping:
+            self.cli_readmap.use_read_mapping = True
 
         # Pfade der Basisstruktur prüfen
         missing: list[str] = []

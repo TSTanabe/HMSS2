@@ -386,7 +386,10 @@ def initialize_task_list(config):
         f"Forward read files: {len(forward_dict)} and reverse read files: {len(reverse_dict)}"
     )
 
+    # Select sets and/or specific gpkgs from the library
     gpkg_packages = prepare_packages.prepare_gpkg_packages(config)
+    gpkg_specifics = prepare_packages.prepare_gpkg_packs(config)
+    gpkg_packages = gpkg_packages | gpkg_specifics
     logger.info(f"Initialized {len(gpkg_packages)} gpkg packages")
 
     prepare_packages.initialize_gpkg_packages(gpkg_packages, threads=4)

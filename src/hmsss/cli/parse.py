@@ -680,13 +680,28 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
                 "SQR",
             ]
         ),
-        default=sorted(["SQ", "Dsr", "sHdr", "Sox"]),
+        default=[],
         help=(
-            "Limit to GPKG packages (whitespace separated). Some tokens refer to the same set."
+            "Select GPKG package sets (whitespace separated)"
             if show_all
             else argparse.SUPPRESS
         ),
     )
+
+    readmap.add_argument(
+        "--gpkg-packs",
+        nargs="+",
+        dest="gpkg_packs",
+        type=str,
+        default=[],
+        metavar="",
+        help=(
+            "Select specific GPKG packages (whitespace separated)"
+            if show_all
+            else argparse.SUPPRESS
+        ),
+    )
+
     readmap.add_argument(
         "--rm-threads",
         dest="rm_threads",
@@ -1105,6 +1120,7 @@ def build_config_from_namespace(ns) -> Config:
     cli_readmap = CliReadMapping(
         use_read_mapping=bool(getattr(ns, "use_read_mapping", False)),
         gpkg_sets=list(getattr(ns, "gpkg_sets", [])),
+        gpkg_packs=list(getattr(ns, "gpkg_packs", [])),
         threads=ns.rm_threads,
         evalue=ns.rm_evalue,
         placements_cutoff=ns.rm_placements_cutoff,

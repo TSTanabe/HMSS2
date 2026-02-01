@@ -341,11 +341,11 @@ def unpackgz(path: str) -> str:
 
 
 def concatenate_selected_hmms(
-    src_dir: str,
-    allowed_words: List[str],
-    prefix: str,
-    suffix: str,
-    output_library: str,
+        src_dir: str,
+        allowed_words: List[str],
+        prefix: str,
+        suffix: str,
+        output_library: str,
 ) -> None:
     """Concatenate HMM files filtered by directory name.
 
@@ -380,10 +380,10 @@ def concatenate_selected_hmms(
 
 
 def concatenate_files_shell(
-    search_directory: str,
-    allowed_prefix: str,
-    allowed_suffix: str,
-    output_file_path: str,
+        search_directory: str,
+        allowed_prefix: str,
+        allowed_suffix: str,
+        output_file_path: str,
 ) -> None:
     """Concatenate files matching prefix and suffix into a single output file.
 
@@ -405,9 +405,9 @@ def concatenate_files_shell(
     if matched_files:
         os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
         cat_command = (
-            "cat "
-            + " ".join(f'"{f}"' for f in matched_files)
-            + f' > "{output_file_path}"'
+                "cat "
+                + " ".join(f'"{f}"' for f in matched_files)
+                + f' > "{output_file_path}"'
         )
         # logger.debug(f"Running: {cat_command}")
         os.system(cat_command)
@@ -419,9 +419,9 @@ def concatenate_files_shell(
 
 
 def concatenate_hmms_from_selected_metabolism_packages(
-    src_dir: str,
-    allowed_words: list[str],
-    output_library: str,
+        src_dir: str,
+        allowed_words: list[str],
+        output_library: str,
 ) -> None:
     """
     Concatenate .hmm Dateien NUR aus den Paketen direkt unter `src_dir`,
@@ -489,62 +489,6 @@ def concatenate_hmms_from_selected_metabolism_packages(
             with open(fp, "r") as fin:
                 shutil.copyfileobj(fin, out)
     log.info("Concatenated %d HMMs into %s", len(files_to_concat), output_library)
-
-
-def collect_gpkg_from_selected_metabolism_packages(
-    src_dir: str,
-    allowed_words: list[str],
-) -> dict[str, str]:
-    """
-    Return a FLAT dictionary mapping:
-
-        { gpkg_basename : full_path_to_gpkg }
-
-    Only metabolism packages (directories directly under src_dir) whose
-    name shares at least one token with allowed_words are inspected.
-    Inside each selected metabolism package, subdirectories whose name
-    contains 'Gpkg' (case-insensitive) are searched recursively for *.gpkg.
-
-    Example return:
-        {
-            "dsr_core": "/.../v8_Gpkg_Dsr_sHdr_Sox/dsr_core.gpkg",
-            "sox_cluster": "/.../v8_Gpkg_SulfurOxidation/sox_cluster.gpkg",
-        }
-    """
-
-    def _tokenize(name: str) -> set[str]:
-        return {t.lower() for t in re.findall(r"[A-Za-z0-9]+", name)}
-
-    base = Path(src_dir)
-    if not base.is_dir():
-        raise ValueError(f"Not a directory: {src_dir}")
-
-    allowed_tokens = set().union(*(_tokenize(w) for w in allowed_words))
-
-    gpkg_map: dict[str, str] = {}
-
-    # iterate top-level metabolism packages
-    for pkg in sorted(p for p in base.iterdir() if p.is_dir()):
-        pkg_tokens = _tokenize(pkg.name)
-        if not (pkg_tokens & allowed_tokens):
-            continue
-
-        # find directories containing "Gpkg" anywhere in their name
-        gpkg_dirs: list[Path] = []
-        for root, dirs, _files in os.walk(pkg):
-            for d in dirs:
-                if "Gpkg" in d.lower() or "gpkg" in d.lower():
-                    gpkg_dirs.append(Path(root) / d)
-
-        # now collect *.gpkg files from all gpkg dirs
-        for gdir in gpkg_dirs:
-            for path in gdir.rglob("*.gpkg"):
-                if path.is_dir():
-                    key = path.stem  # filename without ".gpkg"
-                    value = str(path)
-                    gpkg_map[key] = value
-
-    return gpkg_map
 
 
 def format_pattern_files_inplace(filename: str, prefix: str, suffix: str):
