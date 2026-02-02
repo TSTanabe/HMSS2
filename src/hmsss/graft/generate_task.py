@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import math
+import sys
 from dataclasses import dataclass
 from types import SimpleNamespace
 from collections import defaultdict
@@ -391,6 +392,9 @@ def initialize_task_list(config):
     gpkg_specifics = prepare_packages.prepare_gpkg_packs(config)
     gpkg_packages = gpkg_packages | gpkg_specifics
     logger.info(f"Initialized {len(gpkg_packages)} gpkg packages")
+    if not len(gpkg_packages):
+        logger.warning("Define a gpkg set for the read mapping")
+        sys.exit()
 
     prepare_packages.initialize_gpkg_packages(gpkg_packages, threads=4)
     gpkg_length_dict = gpkg_length.collect_gpkg_reference_median_lengths(gpkg_packages)

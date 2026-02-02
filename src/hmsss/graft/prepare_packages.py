@@ -135,8 +135,7 @@ def prepare_gpkg_packages(config: Config) -> None | dict[str, str]:
             str(GPKG_DIR), allowed
         )
     else:
-        logger.warning("Define a gpkg set for the read mapping")
-        sys.exit()
+        return {}
 
 
 def prepare_gpkg_packs(config: Config) -> None | dict[str, str]:
@@ -151,8 +150,7 @@ def prepare_gpkg_packs(config: Config) -> None | dict[str, str]:
             str(GPKG_DIR), allowed
         )
     else:
-        logger.warning("Define a gpkg set for the read mapping")
-        sys.exit()
+        return {}
 
 
 def _ensure_dmnd(

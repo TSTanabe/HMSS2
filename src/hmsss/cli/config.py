@@ -585,7 +585,8 @@ class Config:
             raise ValueError("jaccard must be within [0.0, 1.0]")
         if self.cli_input.cores < 1:
             raise ValueError("cores must be >= 1")
-        if (self.cli_readmap.gpkg_sets or self.cli_readmap.gpkg_packs) and not self.use_read_mapping:
+        if (self.cli_readmap.gpkg_sets or self.cli_readmap.gpkg_packs) and not self.cli_readmap.use_read_mapping:
+            self.stage = 50
             self.cli_readmap.use_read_mapping = True
 
         # Pfade der Basisstruktur prüfen
