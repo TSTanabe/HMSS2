@@ -90,6 +90,7 @@ class CliSearchParams:
 
     threshold_type: int = 1  # 1=optimized, 2=trusted, 3=noise
     thrs_score: float = 50.0
+    threshold_factor: float = 1.0
     taxonomy_file: Optional[str] = None
     refseq_identity: int = 90
     name: str = "project"
@@ -373,6 +374,7 @@ class Config:
     name = prop("cli_params.name")  # :contentReference[oaicite:2]{index=2}
     exit = prop("cli_params.exit")  # :contentReference[oaicite:3]{index=3}
     thrs_score = prop("cli_params.thrs_score")  # :contentReference[oaicite:4]{index=4}
+    threshold_factor = prop("cli_params.threshold_factor")
     threshold_type = prop(
         "cli_params.threshold_type"
     )  # :contentReference[oaicite:5]{index=5}
@@ -574,6 +576,9 @@ class Config:
             raise ValueError(
                 "threshold_type must be 1 (optimized), 2 (trusted) or 3 (noise)"
             )
+        if self.cli_params.threshold_factor < 0.0:
+            raise ValueError("threshold_factor must be >= 0.0")
+
         if self.cli_ops.keywords_connector not in ("AND", "OR"):
             raise ValueError("keywords_connector must be 'AND' or 'OR'")
         if (

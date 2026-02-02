@@ -440,6 +440,20 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help="Global minimal score cutoff" if show_all else argparse.SUPPRESS,
     )
     parameters.add_argument(
+        "--threshold-factor",
+        dest="threshold_factor",
+        type=float,
+        default=1.0,
+        metavar="<float>",
+        help=(
+            "Multiplicative factor applied to score thresholds "
+            "(>= 0.0, default: 1.0)"
+            if show_all
+            else argparse.SUPPRESS
+        ),
+    )
+
+    parameters.add_argument(
         "--refseq-ident",
         dest="refseq_identity",
         type=int,
@@ -1068,6 +1082,7 @@ def build_config_from_namespace(ns) -> Config:
     cli_params = CliSearchParams(
         threshold_type=int(getattr(ns, "threshold_type", 1)),
         thrs_score=float(getattr(ns, "thrs_score", 50)),
+        threshold_factor=float(getattr(ns, "threshold_factor", 1.0)),
         taxonomy_file=_s(ns, "taxonomy_file"),
         refseq_identity=int(getattr(ns, "refseq_identity", 90)),
         name=getattr(ns, "name", "project"),
