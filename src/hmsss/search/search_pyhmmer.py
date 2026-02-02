@@ -52,7 +52,6 @@ def make_threshold_dict(
         3 -> noise only
     """
     thresholds: Dict[str, Union[float, Dict[str, float]]] = {}
-    print(threshold_factor)
 
     def _parse(val: str, factor: float) -> float:
         if val == "-inf":
@@ -100,7 +99,6 @@ def make_threshold_dict(
                     f"[Line {line_number}] Problem parsing: {line.strip()} — {e}"
                 )
                 continue
-    print(thresholds)
     return thresholds
 
 
