@@ -109,14 +109,13 @@ def collect_gpkg_by_filename_tokens(
     gpkg_map: dict[str, str] = {}
 
     for path in base.rglob("*.gpkg"):
-        if not path.is_file():
+        if not path.is_dir():
             continue
 
         filename_tokens = _tokenize(path.stem)
 
         if not (filename_tokens & allowed_tokens):
             continue
-
         key = path.stem
         gpkg_map[key] = str(path)
 
@@ -146,7 +145,7 @@ def prepare_gpkg_packs(config: Config) -> None | dict[str, str]:
             if isinstance(config.gpkg_packs, list)
             else config.gpkg_packs.split()
         )
-        return collect_gpkg_from_selected_metabolism_packages(
+        return collect_gpkg_by_filename_tokens(
             str(GPKG_DIR), allowed
         )
     else:
