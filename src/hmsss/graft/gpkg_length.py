@@ -33,7 +33,7 @@ def _median(values: list[int]) -> int:
 
 
 def collect_gpkg_reference_median_lengths(
-    gpkg_packages: Dict[str, str],
+        gpkg_packages: Dict[str, str],
 ) -> Dict[str, int]:
     """
     For each GPKG, read <gpkg_name>.faa and compute median sequence length.
@@ -61,4 +61,5 @@ def collect_gpkg_reference_median_lengths(
         except Exception as e:
             logger.error(f"Median length determination for gpkg packages failed {e}")
     logger.debug(f"Lengths per package {result}")
+    print(result)
     return result

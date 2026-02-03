@@ -11,7 +11,6 @@ from hmsss.io import db_fetch_data_general
 from hmsss.io import db_fetch_context
 from hmsss.db import database as database
 
-
 logger = get_logger(__name__)
 
 """
@@ -27,6 +26,7 @@ Fetch/export pipeline results to a timestamped directory:
 
 def _load_domain_annotations(tsv_path: str) -> Dict[str, Dict[str, str]]:
     """
+    Metabolic informatic / Metabolism information
     Liest Domain-Annotationen aus einer TSV:
       Spalten (Header, Tab-getrennt):
         domain    reaction    protein_description    system    metabolism

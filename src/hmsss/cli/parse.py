@@ -252,6 +252,301 @@ class FetchOutputHelpAction(argparse.Action):
         print(text.strip())
 
 
+class ReadMappingHelpAction(argparse.Action):
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        self.print_read_mapping_help()
+        parser.exit(0)
+
+    def print_read_mapping_help(self) -> None:
+        # Defaults aus deinem Setup
+        print("""
+        READ MAPPING — AVAILABLE GPKG PACKAGES & RAM REQUIREMENTS
+        =========================================================
+
+        This list shows all available graftM packages (*.gpkg) for read mapping
+        together with their estimated peak RAM usage (GB).
+
+        RAM values are based on benchmark runs with:
+          - threads = 8
+          - reads   = 100
+          - metric  = peak RSS (GB)
+
+        Package sets are derived from the parent directory:
+          gpkg/v10_gpkg_set_<SET>/.../<NAME>.gpkg
+
+
+        SET: Apr_Qmo
+        ------------
+        AprM        : 10.47 GB
+        QmoA        : 38.83 GB
+        QmoB        : 49.98 GB
+        QmoC        : 14.64 GB
+        oxAprAI     : 24.14 GB
+        oxAprAII    : 16.28 GB
+        oxAprBI     : 4.53 GB
+        oxAprBII    : 7.13 GB
+        oxSat       : 21.58 GB
+        qHdrB       : 6.71 GB
+        qHdrC       : 11.57 GB
+        redAprA     : 21.93 GB
+        redAprB     : 2.19 GB
+        redSat      : 16.59 GB
+
+
+        SET: Asr_Mcc_Phs_Ttr
+        -------------------
+        AsrA        : 7.91 GB
+        AsrB        : 6.48 GB
+        AsrC        : 7.41 GB
+        MccA        : 2.93 GB
+        MccB        : 1.33 GB
+        MccC        : 1.19 GB
+        MccD        : 2.11 GB
+        PhsA        : 29.35 GB
+        PhsB        : 7.16 GB
+        PhsC        : 12.16 GB
+        TtrA        : 12.29 GB
+        TtrB        : 3.64 GB
+        TtrC        : 4.29 GB
+
+
+        SET: CS_Aryl
+        ------------
+        AtsA        : 36.46 GB
+        AtsB        : 32.47 GB
+        CosH        : 61.94 GB
+        Cs2H        : 1.24 GB
+        DszA        : 5.77 GB
+        DszB        : 1.38 GB
+        DszC        : 4.97 GB
+        DszD        : 0.25 GB
+        SncA        : 0.58 GB
+        SncB        : 0.66 GB
+        SncC        : 0.97 GB
+        SsuD        : 1.11 GB
+        SsuE        : 0.66 GB
+        TcdH        : 0.58 GB
+        TcdS        : 0.54 GB
+        TcdT        : 0.29 GB
+
+
+        SET: DHPS_Taurine_Isethionate
+        ----------------------------
+        AdhE        : 15.01 GB
+        ComC        : 49.28 GB
+        ComD        : 2.70 GB
+        ComE        : 3.13 GB
+        HpfD        : 5.16 GB
+        HpfG        : 27.43 GB
+        HpfH        : 4.03 GB
+        HpfX        : 6.42 GB
+        HpfY        : 32.31 GB
+        HpfZ        : 24.64 GB
+        HpsG        : 26.94 GB
+        HpsH        : 9.78 GB
+        HpsN        : 46.88 GB
+        HpsO        : 30.49 GB
+        HpsP        : 27.35 GB
+        IseJ        : 59.44 GB
+        IsfD        : 11.50 GB
+        SarD        : 5.08 GB
+        SauS        : 10.17 GB
+        SauT        : 15.21 GB
+        SlcC        : 37.33 GB
+        SlcD        : 21.90 GB
+        SuyA        : 5.41 GB
+        SuyB        : 29.91 GB
+        TauX        : 2.25 GB
+        TauY        : 7.98 GB
+        Toa         : 162.91 GB
+        Tpa         : 86.53 GB
+
+
+        SET: DMS
+        --------
+        AcuI        : 17.89 GB
+        AcuK        : 200.63 GB
+        AcuN        : 294.56 GB
+        DddA        : 73.16 GB
+        DddC        : 108.97 GB
+        DddD        : 4.19 GB
+        DddL        : 0.25 GB
+        DddP        : 4.20 GB
+        DddQ        : 0.33 GB
+        DddT        : 30.86 GB
+        DddW        : 0.44 GB
+        DddY        : 0.32 GB
+        DdhA        : 2.46 GB
+        DdhB        : 0.64 GB
+        DdhC        : 0.29 GB
+        DdhD        : 0.29 GB
+        DmdA        : 5.11 GB
+        DmdB        : 112.81 GB
+        DmdD        : 5.24 GB
+        DmoA        : 59.96 GB
+        DmsA        : 115.08 GB
+        DmsB        : 20.31 GB
+        DmsC        : 2.60 GB
+        DmsD        : 2.31 GB
+        DorA        : 0.29 GB
+        DorC        : 1.06 GB
+        DorD        : 0.28 GB
+        DsoA        : 0.27 GB
+        DsoB        : 7.86 GB
+        DsoC        : 1.56 GB
+        DsoD        : 17.85 GB
+        DsoE        : 0.99 GB
+        DsoF        : 15.65 GB
+        MarB        : 1.00 GB
+        MarD        : 1.17 GB
+        MarH        : 1.02 GB
+        MarK        : 1.59 GB
+        MddA        : 5.11 GB
+        MddH        : 2.98 GB
+        MsmA        : 3.87 GB
+        MsmB        : 1.37 GB
+        MsmC        : 0.70 GB
+        MsmD        : 3.80 GB
+        MsuC        : 58.78 GB
+        MsuD        : 29.14 GB
+        MsuE        : 5.20 GB
+        Mtox        : 10.76 GB
+        SnfG        : 16.97 GB
+
+
+        SET: Sor_Soe
+        ------------
+        SoeA        : 103.17 GB
+        SoeB        : 27.15 GB
+        SoeC        : 35.04 GB
+        SorA        : 5.48 GB
+        SorB        : 1.46 GB
+
+
+        SET: SQR
+        --------
+        CstA        : 66.29 GB
+        CstB        : 2.46 GB
+        SQRI        : 52.44 GB
+        SQRII       : 57.44 GB
+        SQRIII     : 176.69 GB
+        SQRIV       : 28.31 GB
+        SQRV        : 539.77 GB
+        SQRVI       : 35.51 GB
+
+
+        SET: SQ_SQDG
+        ------------
+        SftD        : 0.42 GB
+        SftI        : 26.44 GB
+        SftT        : 3.58 GB
+        SftX        : 1.19 GB
+        Sgdh        : 3.67 GB
+        SmoB        : 10.29 GB
+        SmoC        : 13.10 GB
+        SqdA        : 0.22 GB
+        SqdB        : 16.14 GB
+        SqdC        : 4.12 GB
+        SqdX        : 12.05 GB
+        Sqald       : 1.35 GB
+        Sqdh        : 1.79 GB
+        SqgA        : 27.61 GB
+        SqiA        : 1.03 GB
+        SqiK        : 1.23 GB
+        Sql         : 1.79 GB
+        SqoD        : 1.23 GB
+        SqvB        : 1.69 GB
+        SqwD        : 1.51 GB
+        SqwF        : 2.76 GB
+        SqwG        : 4.58 GB
+        SqwH        : 5.13 GB
+        SqwI        : 1.67 GB
+        SqwK        : 1.00 GB
+        SqwL        : 0.84 GB
+        YihQ        : 38.88 GB
+        YihR        : 2.52 GB
+        YihS        : 1.89 GB
+        YihT        : 1.70 GB
+        YihU        : 0.77 GB
+        YihV        : 1.72 GB
+
+
+        SET: sHdr_Dsr_Sox
+        -----------------
+        DoxA        : 0.29 GB
+        DoxD        : 0.29 GB
+        DsrE        : 10.34 GB
+        DsrE3A      : 21.29 GB
+        DsrE3B      : 0.95 GB
+        DsrE3C      : 4.92 GB
+        DsrF        : 9.80 GB
+        DsrH        : 5.90 GB
+        DsrL        : 34.79 GB
+        DsrR        : 2.06 GB
+        DsrS        : 1.60 GB
+        EMO         : 43.40 GB
+        FccA        : 3.75 GB
+        FccB        : 10.52 GB
+        LipS1       : 16.61 GB
+        LipS2       : 16.91 GB
+        LipT        : 12.86 GB
+        LbpA1       : 1.07 GB
+        LbpA2       : 7.61 GB
+        Rhd442      : 0.90 GB
+        SOR         : 1.47 GB
+        SoxA        : 16.65 GB
+        SoxB        : 47.30 GB
+        SoxC        : 28.96 GB
+        SoxD        : 16.64 GB
+        SoxE        : 3.96 GB
+        SoxF        : 14.71 GB
+        SoxG        : 5.73 GB
+        SoxH        : 8.91 GB
+        SoxR        : 3.80 GB
+        SoxS        : 4.40 GB
+        SoxT1       : 16.11 GB
+        SoxT2       : 15.13 GB
+        SoxV        : 9.16 GB
+        SoxW        : 7.06 GB
+        SoxX        : 7.12 GB
+        SoxY        : 6.79 GB
+        SoxZ        : 7.09 GB
+        oxDsrA      : 20.74 GB
+        oxDsrB      : 16.19 GB
+        oxDsrC      : 10.55 GB
+        oxDsrJ      : 2.90 GB
+        oxDsrK      : 30.78 GB
+        oxDsrM      : 12.78 GB
+        oxDsrN      : 22.31 GB
+        oxDsrO      : 10.95 GB
+        oxDsrP      : 18.26 GB
+        redDsrA     : 20.40 GB
+        redDsrB     : 19.39 GB
+        redDsrC     : 4.73 GB
+        redDsrD     : 2.17 GB
+        redDsrE     : 2.16 GB
+        redDsrF     : 1.86 GB
+        redDsrH     : 1.97 GB
+        redDsrJ     : 6.80 GB
+        redDsrK     : 29.03 GB
+        redDsrM     : 17.91 GB
+        redDsrN     : 17.01 GB
+        redDsrO     : 13.17 GB
+        redDsrP     : 24.67 GB
+        sHdrA       : 6.90 GB
+        sHdrB1      : 7.08 GB
+        sHdrB2      : 4.65 GB
+        sHdrB3      : 3.20 GB
+        sHdrC1      : 4.66 GB
+        sHdrC2      : 3.76 GB
+        sHdrH       : 5.13 GB
+        sHdrI       : 1.53 GB
+        sHdrT       : 9.40 GB
+        sLplAB      : 26.01 GB
+        """)
+
+
 # ---------------------------------------------------------------------------
 # Utility routines
 # ---------------------------------------------------------------------------
@@ -667,6 +962,13 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="use_read_mapping",
         action="store_true",
         help="Enable read-mapping analysis for files located in the -f directory",
+    )
+
+    readmap.add_argument(
+        "--help-read-mapping",
+        action=ReadMappingHelpAction,
+        nargs=0,
+        help="Explain read-mapping workflow and list available GPKG packages (set + estimated RAM) and exit",
     )
 
     readmap.add_argument(
