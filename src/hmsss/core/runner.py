@@ -104,6 +104,7 @@ def run_pipeline(config) -> None:
 
     if config.stage == 50:
         print_header("Mapping reads to protein and nucleotide fasta files")
+        ressource_prep.ressource_preparation(config)
         initial_read_mapping.initial_read_mapping(config)
         # TODO Ungetestet ist bisher das parsing des outputs. Das muss noch erstellt werden
         #
