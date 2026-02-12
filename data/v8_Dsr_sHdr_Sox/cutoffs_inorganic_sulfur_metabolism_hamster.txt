@@ -129,7 +129,7 @@ grp3_oxAprAI	960.4	1231.1	29.1
 grp3_oxAprAII	894.6	1133.9	455.2
 grp3_oxAprBI	267.3	302.3	153.9
 grp3_oxAprBII	179.8	262.7	77.4
-grp3_oxDsrA	168.2	730.0	108.2
+grp3_oxDsrA	168.2	730.0	68.2
 grp3_oxDsrB	282.0	645.2	85.6
 grp3_oxDsrC	143.1	178.2	64.1
 grp3_oxDsrJ	143.2	178.2	97.1
