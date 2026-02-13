@@ -73,11 +73,11 @@ def make_threshold_dict(
                 noise = default_score
 
                 if len(parts) > 1:
-                    optimized = _parse(parts[1], threshold_factor)
+                    optimized = _parse(parts[1], 1.0)  # Keep trusted cutoff
                 if len(parts) > 2:
-                    trusted = _parse(parts[2], threshold_factor)
+                    trusted = _parse(parts[2], 1.0)  # Keep trusted cutoff
                 if len(parts) > 3:
-                    noise = _parse(parts[3], threshold_factor)
+                    noise = _parse(parts[3], threshold_factor)  # modify noise cutoff higher sensitivity
 
                 if threshold_type == 0:
                     thresholds[hmm_id] = {
