@@ -112,6 +112,7 @@ class CliResources:
     """
 
     HMM_sets: List[str] = field(default_factory=list)
+    HMM_packages: List[str] = field(default_factory=list)
     clean_reports: bool = False
     disable_individual_reports: bool = True
     max_seqs_per_genome: int = 4
@@ -402,6 +403,7 @@ class Config:
 
     # Ressourcen / Operators / Limiter
     hmm_sets = prop("cli_resources.HMM_sets")  # :contentReference[oaicite:14]{index=14}
+    hmm_packages = prop("cli_resources.HMM_packages")
     clean_reports = prop("cli_resources.clean_reports")
     bool_cross_check = prop("cli_resources.bool_cross_check")
     disable_individual_reports = prop("cli_resources.disable_individual_reports")
@@ -572,6 +574,11 @@ class Config:
             ValueError: On invalid parameter ranges (e.g., `jaccard` not in [0,1]).
             FileNotFoundError: If one of the canonical project directories is missing.
         """
+        if self.hmm_packages:
+            for p in self.hmm_packages:
+                if "_" in p:
+                    raise ValueError("hmm_packages must be version prefixes only (e.g. 'v8', not 'v8_Sulfur')")
+
         if self.cli_params.threshold_type not in (1, 2, 3):
             raise ValueError(
                 "threshold_type must be 1 (optimized), 2 (trusted) or 3 (noise)"

@@ -716,6 +716,18 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         else argparse.SUPPRESS,
     )
     parameters.add_argument(
+        "--hmm-packages",
+        nargs="+",
+        dest="HMM_packages",
+        type=str,
+        default=sorted(["v8"]),
+        choices=sorted(["v7", "v8", "chen"]),
+        metavar="",
+        help="Limit to specific HMM packages (whitespace separated)"
+        if show_all
+        else argparse.SUPPRESS,
+    )
+    parameters.add_argument(
         "--cut-type",
         dest="threshold_type",
         type=int,
@@ -1394,6 +1406,7 @@ def build_config_from_namespace(ns) -> Config:
 
     cli_resources = CliResources(
         HMM_sets=list(getattr(ns, "HMM_sets", [])),
+        HMM_packages=list(getattr(ns, "HMM_packages", [])),
         disable_individual_reports=bool(
             getattr(ns, "disable_individual_reports", False)
         ),

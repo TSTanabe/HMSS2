@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import re
+import shutil
 from pathlib import Path
 
 from hmsss.core.logging import get_logger, print_header
@@ -47,6 +49,88 @@ def _require_path_exists(p: str, desc: str) -> None:
         raise SystemExit(f"Missing required resource: {desc} -> {p}")
 
 
+def concatenate_hmms_from_selected_metabolism_packages(
+        src_dir: str,
+        allowed_words: list[str],
+        output_library: str,
+        allowed_versions: set[str] | None = None,
+) -> None:
+    """
+    ... wie zuvor ...
+
+    Zusätzlich:
+    - `allowed_versions` filtert nach Paket-Version = Prefix bis zum ersten "_" im
+      Top-Level-Ordnernamen unter src_dir (z.B. "v8_Sulfur" -> "v8").
+    - Wenn allowed_versions None oder leer: kein Versionsfilter.
+    """
+
+    def _tokenize(name: str) -> set[str]:
+        return {t.lower() for t in re.findall(r"[A-Za-z0-9]+", name)}
+
+    def _pkg_version(pkg_name: str) -> str | None:
+        # "v8_Sulfur" -> "v8"; wenn kein "_" vorhanden, keine Version ableitbar
+        if "_" not in pkg_name:
+            return None
+        return pkg_name.split("_", 1)[0]
+
+    base = Path(src_dir)
+    allowed_tokens = set().union(*(_tokenize(w) for w in allowed_words))
+    files_to_concat: list[str] = []
+
+    if not base.is_dir():
+        raise ValueError(f"Not a directory: {src_dir}")
+
+    # normalize versions once
+    allowed_versions_norm: set[str] | None = None
+    if allowed_versions:
+        allowed_versions_norm = {v.strip().lower() for v in allowed_versions if v.strip()}
+
+    # Nur Top-Level-Pakete (direkte Unterordner von src_dir)
+    for pkg in sorted(p for p in base.iterdir() if p.is_dir()):
+        # NEW: Versionsfilter auf Paketebene
+        if allowed_versions_norm is not None:
+            v = _pkg_version(pkg.name)
+            if v is None or v.lower() not in allowed_versions_norm:
+                continue
+
+        # bisheriger Filter: Paketname muss Tokens mit allowed_words teilen
+        pkg_tokens = _tokenize(pkg.name)
+        if not (pkg_tokens & allowed_tokens):
+            continue
+
+        # Nur Ordner innerhalb des Pakets, deren Name "HMMs" enthält
+        hmm_dirs: list[Path] = []
+        for root, dirs, _files in os.walk(pkg):
+            for d in dirs:
+                if "hmms" in d.lower():
+                    hmm_dirs.append(Path(root) / d)
+
+        # Rekursiv *.hmm aus allen passenden HMM-Ordnern einsammeln
+        for hmm_dir in hmm_dirs:
+            for path in hmm_dir.rglob("*.hmm"):
+                if path.is_file():
+                    files_to_concat.append(str(path))
+
+    # deterministische Reihenfolge
+    files_to_concat = sorted(set(files_to_concat))
+
+    if not files_to_concat:
+        log.warning(
+            "No HMM files found for selected packages in '%s' with hmm_sets=%s and packages=%s",
+            src_dir,
+            allowed_words,
+            sorted(allowed_versions_norm) if allowed_versions_norm is not None else None,
+        )
+        return
+
+    os.makedirs(os.path.dirname(output_library) or ".", exist_ok=True)
+    with open(output_library, "w") as out:
+        for fp in files_to_concat:
+            with open(fp, "r") as fin:
+                shutil.copyfileobj(fin, out)
+    log.info("Concatenated %d HMMs into %s", len(files_to_concat), output_library)
+
+
 def ressource_preparation(config) -> None:
     """Prepare the result space and all required resources.
 
@@ -79,6 +163,12 @@ def ressource_preparation(config) -> None:
     # ---- HMM-Sets (optional eingeschränkt) ----
     if config.hmm_sets:
         log.info(f"For the library collecting HMMs with token {config.hmm_sets}")
+        packages = (
+            config.hmm_packages
+            if isinstance(config.hmm_packages, list)
+            else config.hmm_packages.split()
+        )
+
         allowed = (
             config.hmm_sets
             if isinstance(config.hmm_sets, list)
@@ -86,8 +176,8 @@ def ressource_preparation(config) -> None:
         )
 
         # baut aus DATA_ROOT/<grp>/*.hmm eine Library
-        queue.concatenate_hmms_from_selected_metabolism_packages(
-            str(DATA_DIR), allowed, config.library
+        concatenate_hmms_from_selected_metabolism_packages(
+            str(DATA_DIR), allowed, config.library, packages
         )
 
     # ---- Library, Cutoffs, Cooccurrence, Patterns, Metabolism ggf. zusammenführen ----
