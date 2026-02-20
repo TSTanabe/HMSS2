@@ -379,7 +379,7 @@ class Run:
             # Set the basename, and make an entry to the summary table.
             base = unpack.basename()
             pair_direction = ["forward", "reverse"]
-            print(f"[{self.args.graftm_package}] Working on %s" % base)
+            print(f"[{os.path.basename(self.args.graftm_package)}] Working on %s" % base)
 
             # Make the working base subdirectory
             self.hk.make_working_directory(
@@ -444,7 +444,8 @@ class Run:
                         )
                         exit(Run.NO_ORFS_EXITSTATUS)
                     dt = time.perf_counter() - t0
-                    print(f"[{self.args.graftm_package}] HMMsearch took {dt:.3f} seconds")
+                    print(
+                        f"[{os.path.basename(self.args.graftm_package)}] HMMsearch took {dt:.3f} seconds read_file {os.path.basename(read_file)}")
 
                 # Or the DNA pipeline
                 elif self.args.type == self.PIPELINE_NT:
@@ -487,7 +488,8 @@ class Run:
                         os.remove(result.hit_fasta())
                         continue
                 dt = time.perf_counter() - t0
-                print(f"[{self.args.graftm_package}] DIAMOND Blastp filtering took {dt:.3f} seconds")
+                print(
+                    f"[{os.path.basename(self.args.graftm_package)}] DIAMOND Blastp filtering took {dt:.3f} seconds for read_file {os.path.basename(read_file)}")
 
                 if self.args.assignment_method == Run.PPLACER_TAXONOMIC_ASSIGNMENT:
                     logging.info("aligning reads to reference package database")
@@ -568,7 +570,7 @@ class Run:
             clusterer = Clusterer()
             # Classification steps
             seqs_list = clusterer.cluster(seqs_list, REVERSE_PIPE)
-            print(f"[{self.args.graftm_package}] Placing reads into phylogenetic tree")
+            print(f"[{os.path.basename(self.args.graftm_package)}] Placing reads into phylogenetic tree")
             taxonomic_assignment_time, assignments = self.p.place(
                 REVERSE_PIPE,
                 seqs_list,
@@ -598,7 +600,7 @@ class Run:
             )
 
         dt = time.perf_counter() - t0
-        logging.debug(f"[{self.args.graftm_package}] pplacer assignment phase took {dt:.3f} seconds")
+        print(f"[{os.path.basename(self.args.graftm_package)}] pplacer assignment took {dt:.3f} seconds")
 
         # Prepare read mapping und alignments for return
         read_tax_paths = {}

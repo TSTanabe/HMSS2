@@ -23,6 +23,7 @@ def safe_read_count(path: str | None) -> int:
         logger.error("Read were not counted, file is empty: {path}")
         return 0
     try:
+        logger.debug("Counting read for path: {path}")
         return count_fast_external(path)
     except Exception:
         return 0
