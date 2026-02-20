@@ -721,7 +721,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="HMM_packages",
         type=str,
         default=sorted(["v8"]),
-        choices=sorted(["v7", "v8", "chen"]),
+        choices=sorted(["v7", "v8", "chen", "disco", "hmss2"]),
         metavar="",
         help="Limit to specific HMM packages (whitespace separated)"
         if show_all

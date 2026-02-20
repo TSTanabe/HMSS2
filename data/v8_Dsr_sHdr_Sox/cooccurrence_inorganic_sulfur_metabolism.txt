@@ -8,6 +8,8 @@ TsdA TsdB
 Tth
 TusA TusB TusC TusD TusE
 Otr
+Npsr
+Nsr
 SOR
 SQRI
 SQRII
@@ -17,6 +19,10 @@ SQRV
 SQRVI
 SDOI
 SDOII
+SdoI
+ETHE1
+SdoSI
+SdoSII
 SQRI SDOI
 SQRI SDOII
 SQRII SDOI
