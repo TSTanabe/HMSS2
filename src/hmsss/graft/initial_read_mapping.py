@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from typing import Any
 
 from graftm.external_program_suite import ExternalProgramSuite
 
@@ -36,9 +37,19 @@ def initial_read_mapping(config):
     task_list = generate_task.initialize_task_list(config)
 
     logger.info("Counting reads for all (meta-)genomes")
+
+    # deduplicate by metagenome_id so each fastq is counted once
+    unique_tasks_by_meta: dict[str, Any] = {}
+    for t in task_list:
+        # keep first occurrence; all have same forward/reverse for same metagenome_id
+        unique_tasks_by_meta.setdefault(t.metagenome_id, t)
+
+    dedup_tasks = list(unique_tasks_by_meta.values())
+
     meta_dict, genome_id_set = read_counter.collect_metagenome_counts_parallel(
-        task_list, processes=4, chunksize=4
+        dedup_tasks, processes=4, chunksize=4
     )
+
     # 1) GenomeIDs sicherstellen (FK-Voraussetzung)
     database.insert_database_genome_ids(
         config.database_directory,

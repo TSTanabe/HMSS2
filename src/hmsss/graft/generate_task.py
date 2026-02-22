@@ -392,6 +392,7 @@ def initialize_task_list(config):
     gpkg_specifics = prepare_packages.prepare_gpkg_packs(config)
     gpkg_packages = gpkg_packages | gpkg_specifics
     logger.info(f"Initialized {len(gpkg_packages)} gpkg packages")
+    logger.debug(f"{gpkg_packages}")
     if not len(gpkg_packages):
         logger.warning("Define a gpkg set for the read mapping")
         sys.exit()
