@@ -83,7 +83,7 @@ def _run_graft_task(task):
                 or not alignment_fasta
                 or not os.path.isfile(alignment_fasta)
                 or not os.path.isfile(taxonomy_csv)
-                or not os.path.isfile(sequence_fasta)
+                # or not os.path.isfile(sequence_fasta) does not work if fw & rv are provided
         ):
             raise FileNotFoundError(
                 f"Missing or empty input file(s): "
