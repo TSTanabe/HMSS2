@@ -104,7 +104,7 @@ def _run_graft_task(task):
         for read in read_dict.values():
             read.metagenomeID = task.metagenome_id
             read.genomeID = task.genome_id
-        # _dump_read_batch(read_dict)
+        _dump_read_batch(read_dict)
         return {
             "ok": True,
             "task": task,
