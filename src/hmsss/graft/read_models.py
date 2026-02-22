@@ -52,7 +52,7 @@ class Read:
         seq_len = _ungapped_len(self.sequence or "")
 
         if seq_len <= 0:
-            self.coverage = 0.0
+            self.coverage = 1.0  # Sequence missing, report anyway
             return self.coverage
 
         denominator = seq_len
@@ -318,12 +318,18 @@ def build_reads_from_outputs(
             reads=reads, fasta_path=sequence_fasta, gpkg_name=gpkg_name
         )
 
-    load_alignments_into_reads(
-        reads=reads, alignment_fasta=alignment_fasta, gpkg_name=gpkg_name
-    )
+        load_alignments_into_reads(
+            reads=reads, alignment_fasta=alignment_fasta, gpkg_name=gpkg_name
+        )
 
-    # remove reads below coverage cutoff.
-    finalize_reads(reads, min_coverage=min_coverage, hmm_length=hmm_length)
+        # remove reads below coverage cutoff.
+        finalize_reads(reads, min_coverage=min_coverage, hmm_length=hmm_length)
+    else:
+        # Falls forward und reverse genutzt wurden nur alignment aufnehmen
+        # Statt diese Workaround sollte man die orf files aus den subfoldern lesen
+        load_alignments_into_reads(
+            reads=reads, alignment_fasta=alignment_fasta, gpkg_name=gpkg_name
+        )
 
     load_read_taxonomy_into_reads(
         taxonomy_tsv=taxonomy_csv, reads=reads, gpkg_name=gpkg_name
