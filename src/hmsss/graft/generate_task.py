@@ -233,8 +233,8 @@ def build_graft_args(task: GraftMTask) -> SimpleNamespace:
         search_only=False,
         search_and_align_only=False,
         # Merge-Reads Verhalten deterministisch halten (optional)
-        merge_reads=False,
-        no_merge_reads=True,
+        merge_reads=(task.reverse is not None and not task.interleaved),
+        no_merge_reads=not (task.reverse is not None and not task.interleaved),
         # Search / assignment
         search_method="hmmsearch+diamond",
         assignment_method="pplacer",
