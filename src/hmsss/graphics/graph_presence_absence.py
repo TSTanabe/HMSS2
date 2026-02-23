@@ -5,12 +5,12 @@ from typing import Dict, Any, Optional, Set, Tuple, List
 
 
 def plot_taxonomy_summary_bubbles(
-    output_file: str,
-    protein_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
-    allowed_types: Optional[List[str]] = None,
-    allowed_levels: Optional[Set[str]] = None,
-    preferred_order: Optional[List[str]] = None,
+        output_file: str,
+        protein_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
+        allowed_types: Optional[List[str]] = None,
+        allowed_levels: Optional[Set[str]] = None,
+        preferred_order: Optional[List[str]] = None,
 ) -> None:
     """
     Erzeugt eine Abbildung einer "Presence/Absence"-ähnlichen Matrix:
@@ -203,8 +203,44 @@ def plot_taxonomy_summary_bubbles(
         genome_count = len(genomes_per_taxon.get(key, set()))
         rows.append((key, genome_count, level_counts))
 
-    # sortiert nach Level-Hierarchie, dann Taxon-Name
-    rows.sort(key=lambda r: (level_index.get(r[0][0], 999), r[0][1].casefold()))
+    # sortiert nach Level-Hierarchie, dann nach übergeordneten Taxa (Lineage),
+    # dann Taxon-Name. Damit werden z.B. Archaea/Bacteria sauber getrennt.
+    def _row_sort_key(row):
+        key, _, _ = row
+        level, tax_name = key
+
+        # Level-Priorität bleibt wie vorher
+        lvl_rank = level_index.get(level, 999)
+
+        gids = genomes_per_taxon.get(key, set())
+        if not gids:
+            return (lvl_rank, "", "", "", "", "", "", "", tax_name.casefold())
+
+        # bis zu welchem Rang soll sortiert werden? (inkl. aktuellem level)
+        max_i = level_index.get(level, 999)
+
+        def norm(v):
+            return "" if v is None else str(v).strip()
+
+        # repräsentative Lineage bestimmen (deterministisch: lexikographisch kleinste)
+        lineage_candidates = []
+        for gid in gids:
+            rec = taxon_dict.get(gid)
+            if not isinstance(rec, dict):
+                continue
+            lineage = [norm(rec.get(lvl)).casefold() for lvl in tax_levels[: max_i + 1]]
+            lineage_candidates.append(tuple(lineage))
+
+        if not lineage_candidates:
+            return (lvl_rank, "", "", "", "", "", "", "", tax_name.casefold())
+
+        rep = min(lineage_candidates)
+        pad = ("",) * (len(tax_levels) - len(rep))
+
+        # Key: (Level-Rank, Superkingdom, Phylum, ..., bis Level, [padding], Taxonname)
+        return (lvl_rank,) + rep + pad + (tax_name.casefold(),)
+
+    rows.sort(key=_row_sort_key)
 
     multiple_levels = len({lvl for (lvl, _), _, _ in rows}) > 1
 
@@ -254,7 +290,7 @@ def plot_taxonomy_summary_bubbles(
             radius = min_radius
         else:
             radius = min_radius + (max_radius - min_radius) * (frac / max_frac)
-        sizes.append(radius**2)
+        sizes.append(radius ** 2)
 
     fig_width = max(4, 1.0 + 0.6 * n_cols)
     fig_height = max(3, 0.4 * n_rows + 1.0)
@@ -308,3 +344,48 @@ def plot_taxonomy_summary_bubbles(
     fig.tight_layout()
     fig.savefig(output_file, dpi=300, bbox_inches="tight")
     plt.close(fig)
+
+
+def _row_lineage_key(key: Tuple[str, str]) -> tuple:
+    """
+    Liefert einen Sortierschlüssel, der übergeordnete Ebenen berücksichtigt.
+
+    key = (level, tax_name)
+    Wir nehmen die GenomeIDs der Zeile und lesen deren Taxonomie aus taxon_dict.
+    Dann bilden wir eine Lineage-Tuple (Superkingdom, Phylum, Class, ...),
+    und wählen als repräsentativen Schlüssel die lexikographisch kleinste Lineage.
+    """
+    level, tax_name = key
+    gids = genomes_per_taxon.get(key, set())
+    if not gids:
+        return (999, "", "", "", "", "", "", "")
+
+    # bis zu welchem Rang soll sortiert werden?
+    # (bei Phylum nur Superkingdom+Phylum, bei Class bis Class, usw.)
+    try:
+        max_i = level_index.get(level, 999)
+    except Exception:
+        max_i = 999
+
+    def norm(v):
+        return "" if v is None else str(v).strip()
+
+    lineage_candidates = []
+    for gid in gids:
+        rec = taxon_dict.get(gid)
+        if not isinstance(rec, dict):
+            continue
+        lineage = [norm(rec.get(lvl)) for lvl in tax_levels[: max_i + 1]]
+        # case-insensitive sort, aber originalwerte bleiben egal: wir nutzen casefold
+        lineage_candidates.append(tuple(x.casefold() for x in lineage))
+
+    if not lineage_candidates:
+        return (999, "", "", "", "", "", "", "")
+
+    # Repräsentant: kleinste Lineage (stabil, deterministisch)
+    rep = min(lineage_candidates)
+
+    # Primär: Level-Hierarchie, Sekundär: Lineage
+    # rep enthält bis max_i; wir padden für einheitliche Tuple-Länge
+    pad = ("",) * (len(tax_levels) - len(rep))
+    return (level_index.get(level, 999),) + rep + pad
