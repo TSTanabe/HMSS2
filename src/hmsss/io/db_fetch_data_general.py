@@ -55,7 +55,87 @@ def _split_or_token(token: str) -> List[str]:
     return [token]
 
 
-def expand_required_proteins(raw: List[str]) -> List[List[str]]:
+def _expand_optional_group_tokens(group_text: str) -> list[str]:
+    """
+    Für 'A B C' erzeugt:
+      ['A: B C', 'A B: C', 'A B C:']
+    (genau ein Token optional pro Variante)
+    """
+    toks = [t for t in group_text.split() if t]
+    if len(toks) <= 1:
+        # bei 0/1 Token macht die "genau eins optional" Semantik kaum Sinn;
+        # wir behandeln es als "Token optional"
+        return [f"{toks[0]}:"] if toks else []
+    out = []
+    for i in range(len(toks)):
+        vt = toks.copy()
+        vt[i] = vt[i] + ":"
+        out.append(" ".join(vt))
+    return out
+
+
+def expand_required_proteins(raw: list[str]) -> list[list[str]]:
+    if not raw:
+        return []
+
+    argument = " ".join(raw).strip()
+    if not argument:
+        return []
+
+    # 1) Argument in "Chunks" zerlegen, wobei [...](:?) als Einheit behandelt wird
+    #    Wir bauen eine Liste von Gruppenstrings, die später wie bisher verarbeitet werden.
+    group_strings: list[str] = []
+
+    pos = 0
+    for m in re.finditer(r"\[(.*?)\](:?)", argument):
+        # Text vor der Klammer: als "normale" Gruppe(n) behandeln
+        prefix = argument[pos:m.start()].strip()
+        if prefix:
+            # prefix kann selbst mehrere bracket-freie "Gruppen" enthalten.
+            # simplest: als eine Gruppe weiterreichen
+            group_strings.append(prefix)
+
+        inner = (m.group(1) or "").strip()
+        has_colon = (m.group(2) == ":")
+
+        if inner:
+            if has_colon:
+                # 2) Makro-Expansion: genau ein Token optional pro Variante
+                for variant in _expand_optional_group_tokens(inner):
+                    group_strings.append(variant)
+            else:
+                group_strings.append(inner)
+
+        pos = m.end()
+
+    # Rest nach letztem Match
+    suffix = argument[pos:].strip()
+    if suffix:
+        group_strings.append(suffix)
+
+    # 3) Bestehende Kombinatorik: jede group_string wie bisher expandieren
+    all_combos: list[list[str]] = []
+    for group in group_strings:
+        tokens = group.split()
+        option_groups: list[list[str]] = []
+        for token in tokens:
+            alts = _split_or_token(token)  # bleibt unverändert
+            if not alts:
+                continue
+            option_groups.append(alts)
+
+        if not option_groups:
+            continue
+
+        for combo in product(*option_groups):
+            filtered = [x for x in combo if x != ""]
+            if filtered:
+                all_combos.append(filtered)
+
+    return all_combos
+
+
+def deprecated_expand_required_proteins(raw: List[str]) -> List[List[str]]:
     """
     Expandiert eine Liste von Tokens mit OR-Gruppen zu allen Kombinationen.
 

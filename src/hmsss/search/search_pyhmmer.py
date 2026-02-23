@@ -230,7 +230,12 @@ def _init_worker(
             hmm.cutoffs.trusted = (float(trusted), float(trusted))
         else:
             logger.warning("There was not cutoff for {hmm_id} defined")
-
+        # print(
+        #    hmm.name.decode(),
+        #    "NC:", hmm.cutoffs.noise,
+        #    "TC:", hmm.cutoffs.trusted,
+        #    "GA:", hmm.cutoffs.gathering
+        # )
     # 3) CSB Patterns + Trie einmal laden/bauen (wie in parse_reports.main_parse_summary_hmmreport) :contentReference[oaicite:4]{index=4}
     patterns_file = config_light["patterns_file"]
     cooc_file = config_light["cooccurrence_file"]
@@ -271,11 +276,12 @@ def hmm_identity(aln, min_identity: float | None = 0.25) -> int:
     return int(round(identity_frac * 100))
 
 
-def domain_query_coverage(dom, *, max_indel_frac=0.30):
+def domain_query_coverage(dom, *, max_indel_frac=1.0):
     aln = dom.alignment
 
     hmm_span = aln.hmm_to - aln.hmm_from + 1
     if hmm_span <= 0:
+        # print("WARNING: hmm_span <= 0")
         return 0.0
 
     env_span = dom.env_to - dom.env_from + 1
@@ -284,9 +290,11 @@ def domain_query_coverage(dom, *, max_indel_frac=0.30):
     insert_frac = (env_span - hmm_span) / hmm_span
 
     if hmm_cov < 1.0 - max_indel_frac:
+        # print("WARNING: hmm_cov < 1.0 - max_indel_frac")
         return 0.0
 
     if insert_frac > max_indel_frac:
+        # print("WARNING: insert_frac > max_indel_frac")
         return 0.0
 
     return hmm_cov
@@ -371,9 +379,10 @@ def add_pyhmmer_hits_to_protein_dict(
                 hmm_cov = domain_query_coverage(dom)
                 hmm_ident = hmm_identity(dom.alignment)
                 # debug_pyhmmer_domain(dom)
-                # print(f"Domain hit for {prot_id} {hmm_name} from {start} to {end} \t coverage {hmm_cov} \t identitiy {hmm_ident}")
+                # print(
+                #    f"Domain hit for {prot_id} {hmm_name} from {start} to {end} \t coverage {hmm_cov} \t identitiy {hmm_ident}")
                 # print(domain_query_coverage(dom))
-                if hmm_cov and hmm_ident:
+                if hmm_cov or hmm_ident:
                     protein = protein_dict.get(prot_id)
                     valid_hit = False
                     if score >= trusted:
@@ -409,6 +418,8 @@ def add_pyhmmer_hits_to_protein_dict(
                             bsr=hmm_cov,
                             ident=hmm_ident,
                         )
+                        if valid_hit:
+                            protein.valid_hit = True
 
     return protein_dict
 
