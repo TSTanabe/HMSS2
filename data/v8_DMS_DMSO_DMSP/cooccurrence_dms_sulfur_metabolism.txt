@@ -8,6 +8,11 @@ MsuC MsuD MsuE
 DorC DorA DorD
 SnfG MsmA MsmB MsmC MsmD
 SnfG MsuD MsuE
+DmoA
+MddA
+MddH
+MddA Mtox
+MddH Mtox
 DmoA Mtox
 DddA DmoA Mtox
 DddL DmoA Mtox
@@ -27,3 +32,9 @@ DddP Mtox
 DddQ Mtox
 DddW Mtox
 DddY Mtox
+DddX
+DddY
+DddW
+DddD
+DddP
+DddQ

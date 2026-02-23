@@ -16,6 +16,9 @@ AcuI AcuK AcuN DmdB
 AcuI AcuK AcuN DmdB SnfG
 AcuI AcuK AcuN DmdC
 AcuI AcuK AcuN DmoA
+AcuI DddY
+AcuI DddL
+DddA DddC DddY
 DddA DddC DddD
 DddA DddC DddD DddT
 DddA DddC DddD DddT DmdB
