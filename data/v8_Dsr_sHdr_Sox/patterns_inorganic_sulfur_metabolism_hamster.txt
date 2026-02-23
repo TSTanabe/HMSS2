@@ -1572,6 +1572,11 @@ SoxT2 TtrA TtrB TtrC TtrR TtrS
 SoxV SoxW SoxX SoxY SoxZ
 SoxV redDsrA redDsrB redDsrC redDsrN
 SoxW sHdrA sHdrB1 sHdrC1 sLplAB
+SoxY SoxZ
+SoxX SoxA
+SoxC SoxD
+SoxV SoxW
+SoxA SoxB
 SoxZ oxDsrC oxDsrK oxDsrM oxDsrO
 SudA SudB dHdrA dHdrB dHdrC
 SudA SudB dHdrA dHdrB sHdrB3 sLplAB
@@ -1754,12 +1759,13 @@ sHdrA sHdrB1 sHdrC1 sHdrC2 sHdrH
 sHdrA sHdrB1 sHdrC1 sHdrC2 sHdrH sLplAB
 sHdrA sHdrB1 sHdrC1 sHdrH sLplAB
 sHdrA sHdrB2 sHdrC2 sHdrH sHdrI
-CstA CstB SqrI TauE
-CstA CstB SqrII TauE
-CstA CstB SqrIII TauE
-CstA CstB SqrIV TauE
-CstA CstB SqrV TauE
-CstA CstB SqrVI TauE
+sHdrB2 sHdrC2
+CstA CstB SQRI TauE
+CstA CstB SQRII TauE
+CstA CstB SQRIII TauE
+CstA CstB SQRIV TauE
+CstA CstB SQRV TauE
+CstA CstB SQRVI TauE
 CstA CstB TauE
 HmcA HmcB HmcC HmcD HmcE HmcF
 HmcA HmcB HmcC HmcE
@@ -1828,4 +1834,16 @@ Rhd442 SQRV SDOI TauE
 Rhd442 SQRV SDOII TauE
 Rhd442 SQRVI SDOI TauE
 Rhd442 SQRVI SDOII TauE
+SQRI DsrE4
+SQRII DsrE4
+SQRIII DsrE4
+SQRIV DsrE4
+SQRV DsrE4
+SQRVI DsrE4
+SQRI DsrE4 TusA
+SQRII DsrE4 TusA
+SQRIII DsrE4 TusA
+SQRIV DsrE4 TusA
+SQRV DsrE4 TusA
+SQRVI DsrE4 TusA
 TusB TusC TusD TusE
