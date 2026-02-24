@@ -379,8 +379,8 @@ def add_pyhmmer_hits_to_protein_dict(
                 hmm_cov = domain_query_coverage(dom)
                 hmm_ident = hmm_identity(dom.alignment)
                 # debug_pyhmmer_domain(dom)
-                # print(
-                #    f"Domain hit for {prot_id} {hmm_name} from {start} to {end} \t coverage {hmm_cov} \t identitiy {hmm_ident}")
+                print(
+                    f"Domain hit for {prot_id} {hmm_name} from {start} to {end} \t coverage {hmm_cov} \t identitiy {hmm_ident}")
                 # print(domain_query_coverage(dom))
                 if hmm_cov or hmm_ident:
                     protein = protein_dict.get(prot_id)
@@ -739,7 +739,7 @@ def consecutive_hmm_search(config: Config, processes: int = 4) -> None:
             if (genomes_done % log_step == 0) or (genomes_done == n_genomes):
                 pct = (genomes_done * 100) // max(1, n_genomes)
                 logger.info(
-                    f"[Genome progress] {genomes_done}/{n_genomes} ({pct}%) genomes processed"
+                    f"[Genome progress] {genomes_done}/{n_genomes} ({pct}%) genomes processed {len(protein_batch)}"
                 )
 
             # Batch sammeln
