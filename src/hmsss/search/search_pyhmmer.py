@@ -276,7 +276,7 @@ def hmm_identity(aln, min_identity: float | None = 0.25) -> int:
     return int(round(identity_frac * 100))
 
 
-def domain_query_coverage(dom, *, max_indel_frac=7.0):
+def domain_query_coverage(dom, *, max_indel_frac=0.7):
     aln = dom.alignment
 
     hmm_span = aln.hmm_to - aln.hmm_from + 1
