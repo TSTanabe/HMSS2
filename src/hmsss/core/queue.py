@@ -248,9 +248,7 @@ def remove_genomes_already_in_db_from_queue(config) -> int:
     if not os.path.isfile(config.database_directory):
         return 0
 
-    existing: Set[str] = database.fetch_genome_ids(
-        config.database_directory
-    )  # :contentReference[oaicite:3]{index=3}
+    existing: Set[str] = database.fetch_genome_ids_with_proteins(config.database_directory)
 
     queued = list(getattr(config, "queued_genomes", []))
     if not queued:
