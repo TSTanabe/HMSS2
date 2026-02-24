@@ -276,7 +276,7 @@ def hmm_identity(aln, min_identity: float | None = 0.25) -> int:
     return int(round(identity_frac * 100))
 
 
-def domain_query_coverage(dom, *, max_indel_frac=1.0):
+def domain_query_coverage(dom, *, max_indel_frac=7.0):
     aln = dom.alignment
 
     hmm_span = aln.hmm_to - aln.hmm_from + 1
@@ -749,6 +749,7 @@ def consecutive_hmm_search(config: Config, processes: int = 4) -> None:
 
             # Flush
             if batch_counter >= batch_size:
+                logger.debug("Insert information to database")
                 database.insert_database_proteins(
                     config.database_directory, protein_batch
                 )
