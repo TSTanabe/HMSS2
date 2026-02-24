@@ -379,8 +379,8 @@ def add_pyhmmer_hits_to_protein_dict(
                 hmm_cov = domain_query_coverage(dom)
                 hmm_ident = hmm_identity(dom.alignment)
                 # debug_pyhmmer_domain(dom)
-                print(
-                    f"Domain hit for {prot_id} {hmm_name} from {start} to {end} \t coverage {hmm_cov} \t identitiy {hmm_ident}")
+                # print(
+                #    f"Domain hit for {prot_id} {hmm_name} from {start} to {end} \t coverage {hmm_cov} \t identitiy {hmm_ident}")
                 # print(domain_query_coverage(dom))
                 if hmm_cov and hmm_ident:
                     protein = protein_dict.get(prot_id)
