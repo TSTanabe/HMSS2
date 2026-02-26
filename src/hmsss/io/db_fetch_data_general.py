@@ -304,10 +304,11 @@ def fetch_fasta_and_hit_data(
     # Addition von einzelnen proteinen
     for combo in additional_proteins:
         logger.debug(f"Fetching combination: {combo}")
+        fd_limiter = sum_taxon_dict if not config.fd_can_add_genomes else {}
         protein_dict, cluster_dict, taxon_dict = db_fetch_protein.fetch_bulk_data(
             database=config.database_directory,
             syntenic_domains=combo,
-            limiter_dict=sum_taxon_dict,
+            limiter_dict=fd_limiter,
             fetch_from_gene_clusters=False,
             excluded_domains=excluded_domains,
             use_non_valid_hits=config.use_non_valid_hits,

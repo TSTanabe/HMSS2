@@ -11,14 +11,14 @@ logger = get_logger(__name__)
 
 
 def print_hit_graphs(
-    directory: str,
-    protein_dict: Dict[str, Any],
-    cluster_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
-    metabolic_dict: Dict[str, Any],
-    context_dict: Dict[str, Any] | None,
-    fetch_proteins: List[str],
-    levels: List[str],
+        directory: str,
+        protein_dict: Dict[str, Any],
+        cluster_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
+        metabolic_dict: Dict[str, Any],
+        context_dict: Dict[str, Any] | None,
+        fetch_proteins: List[str],
+        levels: List[str],
 ) -> None:
     """
     Main output routine: creates hit tables, taxonomy summaries, and protein FASTA files.
@@ -40,9 +40,9 @@ def print_hit_graphs(
     )  # individual hit table in tsv file
     gene_taxonomy = os.path.join(directory, "summary_gene_taxonomy.jpg")
     unique_file = os.path.join(directory, "summary_unique_lineages.jpg")
-    taxonomy_summary = os.path.join(directory, "summary_hit_taxonomy_counts.jpg")
+    taxonomy_summary = os.path.join(directory, "summary_hit_taxonomy_counts.svg")
     taxonomy_summary2 = os.path.join(
-        directory, "summary_requested_hit_taxonomy_counts.jpg"
+        directory, "summary_requested_hit_taxonomy_counts.svg"
     )
     metabolic_annotation = os.path.join(directory, "summary_metabolic_annotations.jpg")
     cluster_overview_report = os.path.join(

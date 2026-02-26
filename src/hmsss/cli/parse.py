@@ -1228,6 +1228,12 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help="Select gene clusters encoding the given proteins (whitespace separated). The ':' without whitespace will be interpreted as logical OR",
     )
     operators.add_argument(
+        "--allow-fd-adds-genomes",
+        dest="fd_can_add_genomes",
+        action="store_true",
+        help="When -fc and -fd are combined, allow -fd to add genomes beyond the -fc selection.",
+    )
+    operators.add_argument(
         "-fnd",
         nargs="+",
         dest="exclude_domains",
@@ -1480,6 +1486,7 @@ def build_config_from_namespace(ns) -> Config:
         fetch_csbs=list(getattr(ns, "fetch_csbs", [])),
         fetch_not_csb_with_these_domains=list(getattr(ns, "exclude_domains", [])),
         fetch_keywords=list(getattr(ns, "fetch_keywords", [])),
+        fd_can_add_genomes=ns.fd_can_add_genomes,
         keywords_connector=getattr(ns, "keywords_connector", "OR"),
         print_fasta=getattr(ns, "print_fasta", False),
         print_graphs=bool(getattr(ns, "print_graphs", False)),

@@ -80,6 +80,7 @@ AprM oxAprAI oxAprBI redAprA redAprB redSat
 AprM oxAprAI oxAprBI oxSat sHdrA sHdrB1 sHdrB2 sHdrC1 sHdrC2 sHdrH
 AprM oxAprAI oxAprBI oxSat sHdrB1 sHdrC1
 AsrA AsrB AsrC SudA SudB
+DoxD DoxA
 DsrE DsrE2 DsrF DsrH DsrL DsrR SoxA TusA oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP
 DsrE DsrE2 DsrF DsrH DsrL FccA FccB SoeA SoeB SoeC SoxT1 TusA oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrP
 DsrE DsrE2 DsrF DsrH DsrL GcvH SoxT2 oxDsrA oxDsrB oxDsrC oxDsrK oxDsrM oxDsrN oxDsrO oxDsrP

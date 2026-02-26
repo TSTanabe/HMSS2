@@ -376,8 +376,8 @@ def add_pyhmmer_hits_to_protein_dict(
                 # Koordinaten: HMMER/pyhmmer nutzt i.d.R. 1-based inkl. Endpunkt
                 start = int(dom.alignment.target_from)
                 end = int(dom.alignment.target_to)
-                hmm_cov = domain_query_coverage(dom)
-                hmm_ident = hmm_identity(dom.alignment)
+                hmm_cov = domain_query_coverage(dom, max_indel_frac=0.7)  # TODO diese parameter sollten con CLI kommen
+                hmm_ident = hmm_identity(dom.alignment, min_identity=0.2)
                 # debug_pyhmmer_domain(dom)
                 # print(
                 #    f"Domain hit for {prot_id} {hmm_name} from {start} to {end} \t coverage {hmm_cov} \t identitiy {hmm_ident}")
