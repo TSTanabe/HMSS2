@@ -709,7 +709,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="HMM_sets",
         type=str,
         default=sorted(["DHPS", "DMS", "Dsr", "SQ", "Aryl"]),
-        choices=sorted(["DHPS", "DMS", "Dsr", "SQ", "Aryl"]),
+        choices=sorted(["DHPS", "DMS", "Dsr", "SQ", "Aryl", "Sulfobacin"]),
         metavar="",
         help="Limit to HMM sets (whitespace separated)"
         if show_all
