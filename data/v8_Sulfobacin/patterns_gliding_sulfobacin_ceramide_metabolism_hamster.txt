@@ -1,3 +1,5 @@
 GldA GldK GldL GldM GldN
 GldA GldK GldL GldM GldO
+SprA SprB SprC SprD SprE SprF
+SecE SecG SecY
 SulA SulS CapA

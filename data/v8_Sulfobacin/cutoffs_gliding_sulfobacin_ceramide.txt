@@ -28,5 +28,5 @@ grp2_SprF	586.5	643.8	520.0
 grp2_Spt	660.7	-inf	395.4
 grp2_bCerS	495.0	-inf	309.1
 grp2_CapA	372.5	463.2	11.2
-grp2_SulA	654.3	-inf	193.1
+grp2_SulA	654.3	-inf	93.1
 grp2_SulS	493.7	810.5	11.1
