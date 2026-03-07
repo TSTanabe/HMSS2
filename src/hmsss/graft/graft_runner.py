@@ -77,28 +77,32 @@ class Run:
 
     def output_filepaths(self, base_list):
         """
-        summarise - write summary information to file, including otu table, biom
-                    file, krona plot, and timing information
+        Collect output paths for taxonomy, alignment and sequence files.
 
-        Parameters
-        ----------
-        base_list : array
-            list of each of the files processed by graftm, with the path and
-            and suffixed removed
-        trusted_placements : dict
-            dictionary of placements with entry as the key, a taxonomy string
-            as the value
-        reverse_pipe : bool
-            True = run reverse pipe, False = run normal pipeline
+        For paired forward/reverse runs, the forward and reverse nucleotide hit
+        FASTA files are concatenated into one combined sequence file, and that
+        combined file is returned as "sequences".
+
+        For single-end runs, behaviour remains unchanged.
         """
+        filepaths = []
 
-        # Summary steps.
-        placements_list = []
-        filepaths = []  # filepaths to taxonomy, alignment and sequence files
+        def _combine_fasta_files(input_files, output_file):
+            existing_files = [fp for fp in input_files if fp and os.path.isfile(fp)]
+
+            if not existing_files:
+                return None
+
+            with open(output_file, "w") as out:
+                for fp in existing_files:
+                    with open(fp, "r") as handle:
+                        shutil.copyfileobj(handle, out)
+
+            return output_file
+
+        reverse_pipe = True if self.args.reverse else False
+
         for base in base_list:
-            # First assign the hash that contains all of the trusted placements
-            # to a variable to it can be passed to otu_builder, to be written
-            # to a file. :)
             taxonomy_file = GraftMFiles(
                 base, self.args.output_directory, False
             ).read_tax_output_path(base)
@@ -107,9 +111,32 @@ class Run:
                 base, self.args.output_directory, False
             ).aligned_fasta_output_path(base)
 
+            # Default / previous behaviour for single-end runs
             sequence_file = GraftMFiles(
                 base, self.args.output_directory, False
             ).fa_output_path(base)
+
+            # For paired forward/reverse runs, combine both sequence FASTA files
+            if reverse_pipe:
+                gmf_forward = GraftMFiles(base, self.args.output_directory, "forward")
+                gmf_reverse = GraftMFiles(base, self.args.output_directory, "reverse")
+
+                forward_sequence_file = gmf_forward.fa_output_path(base)
+                reverse_sequence_file = gmf_reverse.fa_output_path(base)
+
+                combined_sequence_file = os.path.join(
+                    self.args.output_directory,
+                    base,
+                    f"{base}_combined_hits.fa",
+                )
+
+                combined = _combine_fasta_files(
+                    [forward_sequence_file, reverse_sequence_file],
+                    combined_sequence_file,
+                )
+
+                if combined is not None:
+                    sequence_file = combined
 
             filepaths.append(
                 {
@@ -242,6 +269,35 @@ class Run:
                 )
 
         # logging.info('Done, thanks for using graftM!\n')
+
+    def _combine_sequence_fastas(self, input_files, output_file):
+        """
+        Concatenate multiple FASTA files into a single output FASTA.
+
+        Parameters
+        ----------
+        input_files : list[str]
+            FASTA files to concatenate. Non-existing files are skipped.
+        output_file : str
+            Path of the combined FASTA file.
+
+        Returns
+        -------
+        str | None
+            Path to the combined FASTA file if at least one input existed,
+            otherwise None.
+        """
+        existing_files = [fp for fp in input_files if fp and os.path.isfile(fp)]
+
+        if not existing_files:
+            return None
+
+        with open(output_file, "w") as out:
+            for fp in existing_files:
+                with open(fp, "r") as f:
+                    shutil.copyfileobj(f, out)
+
+        return output_file
 
     def graft(self):
         # The Graft pipeline:
