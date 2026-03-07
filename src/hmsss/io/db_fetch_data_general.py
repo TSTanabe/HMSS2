@@ -16,11 +16,13 @@ Funktionen in diesem Modul:
 import sys
 import re
 from itertools import product
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Set
 
 from hmsss.cli.config import Config
 from hmsss.core.logging import get_logger
-from hmsss.io import db_fetch_taxonomy, db_fetch_protein
+from hmsss.io import db_fetch_taxonomy, db_fetch_protein, db_fetch_read
+
+from hmsss.graft.read_models import Read
 
 logger = get_logger(__name__)
 
@@ -331,3 +333,37 @@ def fetch_fasta_and_hit_data(
     )
 
     return sum_protein_dict, sum_cluster_dict, sum_taxon_dict
+
+
+#
+# Fetch routines for read mapping of metagenomes
+#
+
+
+def fetch_read_and_hit_data(
+        config: Config,
+) -> Tuple[
+    Dict[Tuple[str, str, str], Read],
+    Dict[str, Dict[str, Any]],
+    Dict[str, Dict[str, Any]],
+]:
+    """
+    Central general fetch routine for read/metagenome output mode.
+
+    Returns
+    -------
+    read_dict
+        Keyed by (readID, gpkg_name, metagenomeID)
+    metagenome_dict
+        Keyed by metagenomeID
+    lineage_dict
+        Keyed by lineageID
+    """
+
+    read_dict, metagenome_dict, lineage_dict = db_fetch_read.fetch_bulk_read_data(
+        database=config.database_directory,
+        domain_types=config.fetch_reads,  # oder eigener fetch_read_types Operator
+        metagenome_ids=config.fetch_metagenomes,
+    )
+
+    return read_dict, metagenome_dict, lineage_dict

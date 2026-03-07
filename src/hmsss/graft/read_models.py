@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 from dataclasses import dataclass, field
 from typing import Dict, Tuple, Iterator
 
@@ -167,6 +168,25 @@ def load_alignments_into_reads(
             r.alignment = aln
 
 
+def _normalize_lineage(lineage: str) -> str:
+    parts = []
+    for part in lineage.split(";"):
+        part = part.strip()
+        if not part:
+            continue
+
+        if "__" in part:
+            rank, taxon = part.split("__", 1)
+            taxon = re.sub(r"_graftm_\d+$", "", taxon)
+            part = f"{rank}__{taxon}"
+        else:
+            part = re.sub(r"_graftm_\d+$", "", part)
+
+        parts.append(part)
+
+    return ";".join(parts)
+
+
 def _lineage_to_id(lineage: str, n_hex: int = 12) -> str:
     canonical = ";".join(p.strip() for p in lineage.split(";") if p.strip())
     return hashlib.blake2s(
@@ -245,7 +265,7 @@ def load_read_taxonomy_into_reads(
 
             # rid = first token; lineage = rest of line
             rid, lineage = line.split(None, 1)
-            lineage = lineage.strip()
+            lineage = _normalize_lineage(lineage.strip())
 
             read = reads.get((rid, gpkg_name))  # Tuple key
             if read is None:

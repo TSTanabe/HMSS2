@@ -241,6 +241,8 @@ class CliOperators:
     fetch_genomes: List[str] = field(default_factory=list)
     fetch_proteins: List[str] = field(default_factory=list)
     fetch_csbs: List[str] = field(default_factory=list)
+    fetch_metagenomes: List[str] = field(default_factory=list)
+    fetch_reads: List[str] = field(default_factory=list)
     fetch_keywords: List[str] = field(default_factory=list)
     fetch_not_csb_with_these_domains: List[str] = field(default_factory=list)
     fd_can_add_genomes: bool = False
@@ -423,6 +425,8 @@ class Config:
         "cli_ops.fetch_proteins"
     )  # :contentReference[oaicite:17]{index=17}
     fetch_csbs = prop("cli_ops.fetch_csbs")  # :contentReference[oaicite:18]{index=18}
+    fetch_metagenomes = prop("cli_ops.fetch_metagenomes")
+    fetch_reads = prop("cli_ops.fetch_reads")
     fetch_keywords = prop(
         "cli_ops.fetch_keywords"
     )  # :contentReference[oaicite:19]{index=19}

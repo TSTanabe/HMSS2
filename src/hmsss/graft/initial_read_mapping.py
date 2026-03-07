@@ -48,7 +48,7 @@ def initial_read_mapping(config):
 
     meta_dict, genome_id_set = read_counter.collect_metagenome_counts_parallel(
         dedup_tasks, processes=4, chunksize=4
-    )
+    )  # TODO hier gibt es noch probleme beim zählen. das hängt sich irgendwie auf. Möglicherweise das zählen aussetzen
 
     # 1) GenomeIDs sicherstellen (FK-Voraussetzung)
     database.insert_database_genome_ids(

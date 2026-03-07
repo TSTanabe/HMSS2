@@ -60,12 +60,9 @@ def _run_graft_task(task):
 
         args = generate_task.build_graft_args(task)
         # logger.debug(args)
-        # Commented because is done separately in the main process
-        # forward_read_number = read_counter.safe_read_count(task.forward)
-        # reverse_read_number = read_counter.safe_read_count(task.reverse)
+
         hmm_length = task.length
         min_coverage = task.min_coverage
-        # logger.info(hmm_length, forward_read_number, reverse_read_number)
 
         # Make the graftM read assignment
         filepaths = graft_runner.Run(args).main()
@@ -75,7 +72,7 @@ def _run_graft_task(task):
         taxonomy_csv = files.get("taxonomy")
         sequence_fasta = files.get("sequences")
         alignment_fasta = files.get("alignment")
-        non_decoy_sequences = files.get("non_decoy_sequences")
+        # non_decoy_sequences = files.get("non_decoy_sequences")
         print(taxonomy_csv)
         print(sequence_fasta)
         print(alignment_fasta)

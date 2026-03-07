@@ -1228,10 +1228,12 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help="Select gene clusters encoding the given proteins (whitespace separated). The ':' without whitespace will be interpreted as logical OR",
     )
     operators.add_argument(
-        "--allow-fd-adds-genomes",
+        "--fd-add-genomes",
         dest="fd_can_add_genomes",
         action="store_true",
-        help="When -fc and -fd are combined, allow -fd to add genomes beyond the -fc selection.",
+        help="When -fc and -fd are combined, allow -fd to add genomes beyond the -fc selection."
+        if show_all
+        else argparse.SUPPRESS,
     )
     operators.add_argument(
         "-fnd",
@@ -1264,6 +1266,24 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help="Select cluster with keywords connected by AND or OR"
         if never_show
         else argparse.SUPPRESS,
+    )
+    operators.add_argument(
+        "-fm",
+        nargs="+",
+        dest="fetch_metagenomes",
+        type=str,
+        default=[],
+        metavar="",
+        help="Select only metagenomes with these identifiers (whitespace separated)",
+    )
+    operators.add_argument(
+        "-fr",
+        nargs="+",
+        dest="fetch_reads",
+        type=str,
+        default=[],
+        metavar="",
+        help="Select reads assigned to these domain types (whitespace separated)",
     )
     operators.add_argument(
         "--disable-filters",
@@ -1485,6 +1505,8 @@ def build_config_from_namespace(ns) -> Config:
         fetch_proteins=list(getattr(ns, "fetch_proteins", [])),
         fetch_csbs=list(getattr(ns, "fetch_csbs", [])),
         fetch_not_csb_with_these_domains=list(getattr(ns, "exclude_domains", [])),
+        fetch_metagenomes=list(getattr(ns, "fetch_metagenomes", [])),
+        fetch_reads=list(getattr(ns, "fetch_reads", [])),
         fetch_keywords=list(getattr(ns, "fetch_keywords", [])),
         fd_can_add_genomes=ns.fd_can_add_genomes,
         keywords_connector=getattr(ns, "keywords_connector", "OR"),
@@ -1549,6 +1571,8 @@ def _needs_stage_101(ns: argparse.Namespace) -> bool:
             bool(getattr(ns, "fetch_proteins", [])),
             bool(getattr(ns, "fetch_csbs", [])),
             bool(getattr(ns, "fetch_keywords", [])),
+            bool(getattr(ns, "fetch_metagenomes", [])),
+            bool(getattr(ns, "fetch_reads", [])),
             bool(getattr(ns, "dataset_limit_lineage", None)),
             bool(getattr(ns, "dataset_limit_taxon", None)),
             getattr(ns, "dataset_limit_proteins", "0") not in (None, "0"),

@@ -6,7 +6,7 @@ from typing import Dict
 
 from hmsss.cli.config import Config
 from hmsss.core.logging import get_logger, print_header
-from hmsss.io import print_reports, print_command_args, print_graphs
+from hmsss.io import print_reports, print_command_args, print_graphs, print_reads
 from hmsss.io import db_fetch_data_general
 from hmsss.io import db_fetch_context
 from hmsss.db import database as database
@@ -121,7 +121,13 @@ def output_operator(config: Config) -> None:
     print_command_args.print_command_line_args(
         os.path.join(directory, "logged_fetch_command.txt")
     )
+    if config.fetch_reads or config.fetch_metagenomes:
+        run_read_fetch_output(config, directory)
+    else:
+        run_protein_fetch_output(config, directory)
 
+
+def run_protein_fetch_output(config: Config, directory: str) -> None:
     # The fetch function collects the protein_dict and taxon_dict, cluster_dict is empty
     protein_dict, cluster_dict, taxon_dict = (
         db_fetch_data_general.fetch_fasta_and_hit_data(config)
@@ -181,3 +187,48 @@ def output_statistics(config: Config) -> None:
     """
 
     database.fetch_genome_statistic(config.database_directory)
+
+
+def run_read_fetch_output(config: Config, directory: str) -> None:
+    """
+    Fetch and print read/metagenome based output files.
+
+    This routine is the dedicated output path for read data. It retrieves
+    read placements from the database and writes read-based summary tables.
+
+    Parameters
+    ----------
+    config : Config
+        Global configuration object.
+    directory : str
+        Output directory for the fetch results.
+    """
+    logger.info("Running read/metagenome fetch output")
+
+    read_dict, metagenome_dict, lineage_dict = (
+        db_fetch_data_general.fetch_read_and_hit_data(config)
+    )
+
+    logger.info(
+        "Read fetch returned %s placements across %s metagenomes and %s lineages",
+        len(read_dict),
+        len(metagenome_dict),
+        len(lineage_dict),
+    )
+
+    if not read_dict:
+        logger.warning("No read placements matched the requested filters.")
+        return
+
+    print_reads.print_read_hit_reports(
+        directory=directory,
+        read_dict=read_dict,
+        metagenome_dict=metagenome_dict,
+        lineage_dict=lineage_dict,
+    )
+
+    if config.print_fasta:
+        print_reads.output_read_fastas(
+            directory=directory,
+            read_dict=read_dict,
+        )
