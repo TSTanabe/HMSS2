@@ -346,6 +346,7 @@ def fetch_read_and_hit_data(
     Dict[Tuple[str, str, str], Read],
     Dict[str, Dict[str, Any]],
     Dict[str, Dict[str, Any]],
+    Dict[str, int],
 ]:
     """
     Central general fetch routine for read/metagenome output mode.
@@ -366,4 +367,9 @@ def fetch_read_and_hit_data(
         metagenome_ids=config.fetch_metagenomes,
     )
 
-    return read_dict, metagenome_dict, lineage_dict
+    gpkg_length_dict = db_fetch_read.fetch_gpkg_lengths(
+        database=config.database_directory,
+        domain_types=config.fetch_reads if config.fetch_reads else None,
+    )
+
+    return read_dict, metagenome_dict, lineage_dict, gpkg_length_dict

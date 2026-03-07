@@ -353,6 +353,79 @@ def build_reads_from_query(
     return read_dict, metagenome_dict, lineage_dict
 
 
+def fetch_gpkg_lengths(
+        database: str,
+        domain_types: Optional[Iterable[str]] = None,
+) -> Dict[str, int]:
+    """
+    Fetch gpkg / protein lengths from the GpkgLengths table.
+
+    Parameters
+    ----------
+    database : str
+        Path to SQLite database.
+    domain_types : iterable[str] | None
+        Restrict the fetch to these domain_type / gpkg names.
+
+    Returns
+    -------
+    dict
+        Mapping {domain_type: protein_length}
+    """
+    abs_db = os.path.abspath(database)
+    db_path = f"file:{abs_db}?mode=ro&immutable=1"
+
+    result: Dict[str, int] = {}
+    req_domains = _clean_values(domain_types)
+
+    with sqlite3.connect(db_path, uri=True) as con:
+        con.row_factory = sqlite3.Row
+        cur = con.cursor()
+
+        cur.execute("PRAGMA foreign_keys = ON;")
+        cur.execute("PRAGMA cache_size = 100000;")
+        cur.execute("PRAGMA synchronous = OFF;")
+
+        if req_domains:
+            cur.execute(
+                """
+                CREATE TEMP TABLE IF NOT EXISTS tmp_req_gpkg_lengths (
+                    domain_type TEXT PRIMARY KEY
+                );
+                """
+            )
+            cur.execute("DELETE FROM tmp_req_gpkg_lengths;")
+            cur.executemany(
+                "INSERT OR IGNORE INTO tmp_req_gpkg_lengths(domain_type) VALUES (?)",
+                ((d,) for d in req_domains),
+            )
+
+            cur.execute(
+                """
+                SELECT
+                    g.domain_type,
+                    g.protein_length
+                FROM GpkgLengths g
+                JOIN tmp_req_gpkg_lengths t
+                  ON t.domain_type = g.domain_type
+                """
+            )
+        else:
+            cur.execute(
+                """
+                SELECT
+                    g.domain_type,
+                    g.protein_length
+                FROM GpkgLengths g
+                """
+            )
+
+        for row in cur:
+            result[row["domain_type"]] = int(row["protein_length"])
+
+    return result
+
+
 def fetch_bulk_read_data(
         database: str,
         domain_types: Optional[Iterable[str]] = None,

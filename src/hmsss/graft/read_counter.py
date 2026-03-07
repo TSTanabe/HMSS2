@@ -33,11 +33,24 @@ def count_fast_external(path: str) -> int:
     if path.endswith(".fastq.gz") or path.endswith(".fq.gz"):
         cmd = f"zcat {path} | wc -l"
         lines = int(subprocess.check_output(cmd, shell=True))
+        # print("Counting reads with zcat")
         return lines // 4
     elif path.endswith(".fasta.gz") or path.endswith(".fa.gz"):
         cmd = f"zgrep -c '^>' {path}"
+        # print("Counting reads with zgrep")
         return int(subprocess.check_output(cmd, shell=True))
+    elif path.endswith(".fasta") or path.endswith(".fa"):
+        cmd = f"grep -c '^>' {path}"
+        # print("Counting reads with grep")
+        return int(subprocess.check_output(cmd, shell=True, text=True).strip())
+    elif path.endswith(".fastq") or path.endswith(".fq"):
+        cmd = f"wc -l < {path}"
+        # print("Counting reads with wc")
+        lines = int(subprocess.check_output(cmd, shell=True, text=True).strip())
+        return lines // 4
+
     else:
+        print("Not counting because error")
         raise ValueError(path)
 
 

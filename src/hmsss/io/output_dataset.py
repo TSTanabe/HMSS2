@@ -205,7 +205,7 @@ def run_read_fetch_output(config: Config, directory: str) -> None:
     """
     logger.info("Running read/metagenome fetch output")
 
-    read_dict, metagenome_dict, lineage_dict = (
+    read_dict, metagenome_dict, lineage_dict, gpkg_lengths = (
         db_fetch_data_general.fetch_read_and_hit_data(config)
     )
 
@@ -225,6 +225,7 @@ def run_read_fetch_output(config: Config, directory: str) -> None:
         read_dict=read_dict,
         metagenome_dict=metagenome_dict,
         lineage_dict=lineage_dict,
+        gpkg_length_dict=gpkg_lengths,
     )
 
     if config.print_fasta:

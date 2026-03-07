@@ -420,4 +420,4 @@ def initialize_task_list(config):
         threads=20,
     )
 
-    return task_list
+    return task_list, gpkg_length_dict

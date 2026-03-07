@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 from typing import Any
 
 from graftm.external_program_suite import ExternalProgramSuite
@@ -34,8 +35,13 @@ def initial_read_mapping(config):
     queue.queue_read_mapping_fastq_inputs(config)  # declares config.fastq_files
 
     create_database(config.database_directory)
-    task_list = generate_task.initialize_task_list(config)
+    task_list, gpkg_length_dict = generate_task.initialize_task_list(config)
 
+    # Insert gpkg lengths into database
+    database.insert_database_gpkg_lengths(
+        config.database_directory,
+        gpkg_length_dict,
+    )
     logger.info("Counting reads for all (meta-)genomes")
 
     # deduplicate by metagenome_id so each fastq is counted once

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import re
 from collections import defaultdict
 from typing import Any, Dict, Tuple
 
@@ -16,6 +17,7 @@ def print_read_hit_reports(
         read_dict: Dict[Tuple[str, str, str], Read],
         metagenome_dict: Dict[str, Dict[str, Any]],
         lineage_dict: Dict[str, Dict[str, Any]],
+        gpkg_length_dict: Dict[str, int],
 ) -> None:
     """
     Write all read-based report files.
@@ -63,6 +65,15 @@ def print_read_hit_reports(
         metagenome_dict=metagenome_dict,
         lineage_dict=lineage_dict,
         filename="summary_read_lineage_counts.txt",
+    )
+
+    output_read_taxonomy_level_counts(
+        directory=directory,
+        read_dict=read_dict,
+        metagenome_dict=metagenome_dict,
+        lineage_dict=lineage_dict,
+        gpkg_length_dict=gpkg_length_dict,
+        filename="summary_read_taxonomy_level_counts.txt",
     )
 
 
@@ -392,9 +403,6 @@ def output_read_fastas(
     <TYPE>.faa_aln
         aligned protein sequences for reads assigned to this type
     """
-    import os
-    import re
-    from collections import defaultdict
 
     def sanitize_filename(name: str) -> str:
         """
@@ -450,4 +458,149 @@ def output_read_fastas(
         total_dna_written,
         total_protein_written,
         len(grouped_reads),
+    )
+
+
+def _calculate_effective_library_reads(meta: Dict[str, Any]) -> float:
+    """
+    Calculate effective library size for RPKM.
+
+    If prokaryotic_fraction is given, multiply forward and reverse reads
+    individually by that fraction before summing them.
+    """
+    try:
+        forward_reads = float(meta.get("forward_reads") or 0.0)
+    except Exception:
+        forward_reads = 0.0
+
+    try:
+        reverse_reads = float(meta.get("reverse_reads") or 0.0)
+    except Exception:
+        reverse_reads = 0.0
+
+    try:
+        fraction = float(meta.get("prokaryotic_fraction")) if meta.get("prokaryotic_fraction") is not None else 1.0
+    except Exception:
+        fraction = 1.0
+
+    return (forward_reads * fraction) + (reverse_reads * fraction)
+
+
+def output_read_taxonomy_level_counts(
+        directory: str,
+        read_dict: Dict[Tuple[str, str, str], Read],
+        metagenome_dict: Dict[str, Dict[str, Any]],
+        lineage_dict: Dict[str, Dict[str, Any]],
+        gpkg_length_dict: Dict[str, int | float],
+        filename: str = "summary_read_taxonomy_level_counts.txt",
+) -> None:
+    """
+    Summarise reads per metagenome, protein type, and taxonomic level,
+    and calculate RPKM values.
+
+    Aggregation level
+    -----------------
+    (metagenomeID, gpkg_name, taxonomic_level, taxon_name)
+
+    Output columns
+    --------------
+    metagenomeID
+    protein_name
+    taxonomic_level
+    read_count
+    taxon_name
+    forward_reads
+    reverse_reads
+    prokaryotic_fraction
+    protein_length
+    effective_library_reads
+    rpkm
+    """
+    outpath = os.path.join(directory, filename)
+
+    tax_levels = [
+        ("kingdom", "Kingdom"),
+        ("phylum", "Phylum"),
+        ("class", "Class"),
+        ("order", "Order"),
+        ("family", "Family"),
+        ("genus", "Genus"),
+        ("species", "Species"),
+    ]
+
+    counts: Dict[Tuple[str, str, str, str], int] = defaultdict(int)
+
+    # Count reads per metagenome, protein, taxonomic level, and taxon name
+    for (_, gpkg_name, metagenomeID), read in read_dict.items():
+        lineageID = _safe_str(getattr(read, "lineageID", None), default="NA")
+        lineage_meta = lineage_dict.get(lineageID, {})
+
+        for dict_key, label in tax_levels:
+            taxon_name = _safe_str(lineage_meta.get(dict_key), default="")
+            if not taxon_name or taxon_name == "NA":
+                continue
+
+            counts[(metagenomeID, gpkg_name, label, taxon_name)] += 1
+
+    level_order = {label: i for i, (_, label) in enumerate(tax_levels)}
+
+    sorted_keys = sorted(
+        counts.keys(),
+        key=lambda x: (
+            _safe_str(x[0]).casefold(),  # metagenomeID
+            _safe_str(x[1]).casefold(),  # protein_name / gpkg_name
+            level_order.get(x[2], 999),  # taxonomic level order
+            _safe_str(x[3]).casefold(),  # taxon name
+        )
+    )
+
+    with open(outpath, "w") as out:
+        out.write(
+            "metagenomeID\tprotein_name\ttaxonomic_level\tread_count\ttaxon_name\tforward_reads\treverse_reads\tprokaryotic_fraction\tprotein_length\teffective_library_reads\trpkm\n"
+        )
+
+        for metagenomeID, gpkg_name, level, taxon_name in sorted_keys:
+            meta = metagenome_dict.get(metagenomeID, {})
+
+            forward_reads_raw = meta.get("forward_reads")
+            reverse_reads_raw = meta.get("reverse_reads")
+            prokaryotic_fraction_raw = meta.get("prokaryotic_fraction")
+
+            forward_reads = _safe_str(forward_reads_raw)
+            reverse_reads = _safe_str(reverse_reads_raw)
+            prokaryotic_fraction = _safe_str(prokaryotic_fraction_raw)
+
+            effective_library_reads = _calculate_effective_library_reads(meta)
+
+            try:
+                protein_length = float(gpkg_length_dict.get(gpkg_name, 0))
+            except Exception:
+                protein_length = 0.0
+
+            read_count = counts[(metagenomeID, gpkg_name, level, taxon_name)]
+
+            if effective_library_reads > 0 and protein_length > 0:
+                rpkm = (float(read_count) * 1_000_000_000.0) / (
+                        effective_library_reads * protein_length
+                )
+            else:
+                rpkm = 0.0
+
+            out.write(
+                f"{metagenomeID}\t"
+                f"{gpkg_name}\t"
+                f"{level}\t"
+                f"{read_count}\t"
+                f"{taxon_name}\t"
+                f"{forward_reads}\t"
+                f"{reverse_reads}\t"
+                f"{prokaryotic_fraction}\t"
+                f"{protein_length}\t"
+                f"{effective_library_reads}\t"
+                f"{rpkm:.10f}\n"
+            )
+
+    logger.info(
+        "Wrote metagenome/protein/taxonomy level summary table with RPKM: %s",
+        outpath,
     )

@@ -101,12 +101,19 @@ def create_database(database: str) -> None:
             genomeID             varchar(32)  NOT NULL,
             forward_reads        INTEGER      DEFAULT NULL,
             reverse_reads        INTEGER      DEFAULT NULL,
-            prokaryotic_fraction REAL         DEFAULT NULL,
+            prokaryotic_fraction REAL         DEFAULT 1.0,
 
             FOREIGN KEY (genomeID)
                 REFERENCES Genomes(genomeID)
                 ON DELETE CASCADE
                 ON UPDATE CASCADE
+        );
+        """)
+
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS GpkgLengths (
+            domain_type    VARCHAR(64) PRIMARY KEY NOT NULL,
+            protein_length INTEGER     NOT NULL
         );
         """)
 
@@ -783,6 +790,30 @@ def insert_database_placements(database: str, reads: Dict[tuple, "Read"]) -> Non
         con.commit()
     con.close()
     return
+
+
+def insert_database_gpkg_lengths(
+        database: str,
+        gpkg_length_dict: Dict[str, int],
+) -> None:
+    with sqlite3.connect(database) as con:
+        cur = con.cursor()
+        cur.execute("PRAGMA foreign_keys = ON;")
+        cur.execute("PRAGMA synchronous = OFF;")
+        cur.execute("PRAGMA journal_mode = OFF;")
+
+        records = [(k, int(v)) for k, v in gpkg_length_dict.items()]
+
+        cur.executemany(
+            """
+            INSERT INTO GpkgLengths (domain_type, protein_length)
+            VALUES (?, ?)
+            ON CONFLICT(domain_type) DO UPDATE SET
+                protein_length = excluded.protein_length
+            """,
+            records,
+        )
+        con.commit()
 
 
 ##############################################################
