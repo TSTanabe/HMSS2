@@ -73,9 +73,9 @@ def _run_graft_task(task):
         sequence_fasta = files.get("sequences")
         alignment_fasta = files.get("alignment")
         # non_decoy_sequences = files.get("non_decoy_sequences")
-        print(taxonomy_csv)
-        print(sequence_fasta)
-        print(alignment_fasta)
+        # print(taxonomy_csv)
+        # print(sequence_fasta)
+        # print(alignment_fasta)
         if (
                 not taxonomy_csv
                 or not sequence_fasta
@@ -103,7 +103,7 @@ def _run_graft_task(task):
         for read in read_dict.values():
             read.metagenomeID = task.metagenome_id
             read.genomeID = task.genome_id
-        _dump_read_batch(read_dict)
+        # _dump_read_batch(read_dict) Debugging
         return {
             "ok": True,
             "task": task,
