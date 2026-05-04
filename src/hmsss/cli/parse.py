@@ -17,7 +17,7 @@ from hmsss.cli.config import (
     CliCsb,
     CliFlow,
     CliOperators,
-    CliReadMapping,
+    CliReadMapping, CliLimiter,
 )
 from hmsss.cli import paths as paths
 
@@ -1471,7 +1471,13 @@ def build_config_from_namespace(ns) -> Config:
         max_domain_repeats=int(getattr(ns, "max_domain_repeats", 4)),
         jaccard=float(getattr(ns, "jaccard", 0.0)),
     )
-
+    cli_limiter = CliLimiter(
+        dataset_limit_lineage=getattr(ns, "dataset_limit_lineage", None),
+        dataset_limit_taxon=getattr(ns, "dataset_limit_taxon", None),
+        dataset_limit_proteins=getattr(ns, "dataset_limit_proteins", "0"),
+        dataset_limit_keywords=getattr(ns, "dataset_limit_keywords", "0"),
+        dataset_divide_sign=getattr(ns, "dataset_divide_sign", "."),
+    )
     cli_readmap = CliReadMapping(
         use_read_mapping=bool(getattr(ns, "use_read_mapping", False)),
         gpkg_sets=list(getattr(ns, "gpkg_sets", [])),
@@ -1527,6 +1533,7 @@ def build_config_from_namespace(ns) -> Config:
         cli_readmap=cli_readmap,
         cli_flow=cli_flow,
         cli_ops=cli_ops,
+        cli_limiter=cli_limiter,
     )
     cfg.validate()
     return cfg
