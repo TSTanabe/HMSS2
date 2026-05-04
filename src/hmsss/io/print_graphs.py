@@ -5,6 +5,7 @@ from typing import Dict, Any, Optional, Set, Tuple, List
 from hmsss.graphics import graph_presence_absence
 from hmsss.graphics import graph_occurence_network
 from hmsss.graphics import graph_gene_cluster
+from hmsss.graphics import graph_strain_variability
 from hmsss.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -48,6 +49,8 @@ def print_hit_graphs(
     cluster_overview_report = os.path.join(
         directory, "summary_genecluster_overview_table.jpg"
     )
+    path_strain_variability_tsv = os.path.join(directory, "summary_strain_variability_by_taxonomy.txt")
+    path_strain_variability_plot = os.path.join(directory, "summary_strain_variability_by_taxonomy")
 
     # Plots the network for presence absence
     graph_occurence_network.plot_taxonomy_cooccurrence_network(
@@ -77,6 +80,13 @@ def print_hit_graphs(
         allowed_types=fetch_proteins,
         allowed_levels=set(levels),
         preferred_order=fetch_proteins,
+    )
+
+    graph_strain_variability.plot_taxonomy_stacked_bars(
+        input_tsv=path_strain_variability_tsv,
+        outdir=path_strain_variability_plot,
+        top_n=15,
+        min_category_fraction=0.05,
     )
 
     # RAM usage is too high.

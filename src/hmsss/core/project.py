@@ -63,10 +63,10 @@ def prepare_result_space(config, project: str = "project") -> None:
 
         else:
             # No existing was found, save new project to given location
+            logger.info(f"Creating new database in in project directory in {config.cli_result_dir_in}")
             config.result_files_directory = create_project(
                 config.cli_result_dir_in, project
             )
-            new_project = True
 
     # The project directory is now saved in config.result_files_directory
     # Setup the project folders
@@ -81,10 +81,10 @@ def prepare_result_space(config, project: str = "project") -> None:
         config.result_files_directory, "global_report.cat_hmmreport"
     )
     config.glob_trusted_hitreport = (
-        config.result_files_directory + "/global_trusted_hits_summary.db"
+            config.result_files_directory + "/global_trusted_hits_summary.db"
     )
     config.glob_intermediate_hitreport = (
-        config.result_files_directory + "/global_intermediate_hits_summary.db"
+            config.result_files_directory + "/global_intermediate_hits_summary.db"
     )
     config.csb_output_file = config.csb_directory + "/Csb_output.txt"
     config.gene_clusters_file = config.csb_directory + "/All_gene_clusters.txt"
@@ -134,8 +134,8 @@ def create_project(directory, projectname="project") -> str:
 
 
 def find_database_in_directory(
-    directory: str | Path,
-    db_name: str = "database.db",
+        directory: str | Path,
+        db_name: str = "database.db",
 ) -> Optional[Tuple[Path, Path]]:
     """Search for a database file under the given directory.
 
@@ -190,9 +190,9 @@ def any_process_args_provided(args, default_values: dict) -> bool:
 
 # Routinen für den config file
 def write_config_to_tsv(
-    config: Any,
-    output_directory: str | os.PathLike,
-    filename: str = "parameters_summary.tsv",
+        config: Any,
+        output_directory: str | os.PathLike,
+        filename: str = "parameters_summary.tsv",
 ) -> str:
     """Write a (nested) Config object into a flat TSV file.
 

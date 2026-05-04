@@ -129,7 +129,7 @@ def output_operator(config: Config) -> None:
 
 def run_protein_fetch_output(config: Config, directory: str) -> None:
     # The fetch function collects the protein_dict and taxon_dict, cluster_dict is empty
-    protein_dict, cluster_dict, taxon_dict = (
+    protein_dict, cluster_dict, taxon_dict, combo_dict = (
         db_fetch_data_general.fetch_fasta_and_hit_data(config)
     )
 
@@ -147,8 +147,10 @@ def run_protein_fetch_output(config: Config, directory: str) -> None:
 
     print_reports.print_hit_reports(
         directory=directory,
+        database=config.database_directory,
         protein_dict=protein_dict,
         cluster_dict=cluster_dict,
+        combo_dict=combo_dict,
         taxon_dict=taxon_dict,
         metabolic_dict=metabolic_dict,
         context_dict=cluster_context_dict,

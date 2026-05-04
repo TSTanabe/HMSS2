@@ -1,5 +1,7 @@
 #!/usr/bin/python
 import os
+import sqlite3
+from itertools import combinations
 from collections import defaultdict, Counter
 from typing import Any, Dict, List, Optional, Set, Tuple, Iterable
 from hmsss.core.logging import get_logger
@@ -28,13 +30,13 @@ def _get_cluster_info(clusterID, cluster_dict):
 
 
 def _output_genome_report(
-    output_filepath: str,
-    protein_dict: Dict[str, Any],
-    cluster_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Any],
-    genomeID: str = "",
-    writemode: str = "w",
-    taxon_divider: str = ".",
+        output_filepath: str,
+        protein_dict: Dict[str, Any],
+        cluster_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Any],
+        genomeID: str = "",
+        writemode: str = "w",
+        taxon_divider: str = ".",
 ) -> None:
     """
     Writes the main genome hit table (TSV).
@@ -137,10 +139,10 @@ def _output_genome_report(
 
 
 def _output_protein_taxonomy(
-    output_filepath: str,
-    protein_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
-    writemode: str = "w",
+        output_filepath: str,
+        protein_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
+        writemode: str = "w",
 ) -> None:
     """
     Writes a 2-column TSV file:
@@ -197,11 +199,11 @@ def _output_protein_taxonomy(
 
 
 def _output_taxonomy_summary(
-    output_file: str,
-    protein_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
-    allowed_types: Optional[List[str]] = None,
-    preferred_order: Optional[List[str]] = None,
+        output_file: str,
+        protein_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
+        allowed_types: Optional[List[str]] = None,
+        preferred_order: Optional[List[str]] = None,
 ) -> None:
     """
     Summarise protein-type presence per taxonomic level and taxon.
@@ -389,9 +391,9 @@ def _output_taxonomy_summary(
 
 
 def _output_unique_taxonomy_table(
-    output_file: str,
-    protein_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
+        output_file: str,
+        protein_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
 ) -> str:
     """
     Write a non-redundant taxonomy table from a structured taxonomy dict.
@@ -454,17 +456,14 @@ def _output_unique_taxonomy_table(
     return unique_file
 
 
-def _output_strain_variability_by_species(
-    directory: str,
-    protein_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
-    required_domains: Set[str],
-    *,
-    unknown_label: str = "Unknown",
+def _output_strain_variability_by_species_deprecated(
+        directory: str,
+        protein_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
+        required_domains: Set[str],
+        *,
+        unknown_label: str = "Unknown",
 ) -> str:
-    import os
-    from collections import defaultdict
-
     os.makedirs(directory, exist_ok=True)
     outpath = os.path.join(directory, "summary_strain_variability_by_species.txt")
 
@@ -539,12 +538,273 @@ def _output_strain_variability_by_species(
     return outpath
 
 
+def _output_strain_variability_by_species(
+        directory: str,
+        database: str,
+        combo_dict: Dict[Tuple[str, ...], Set[str]],
+        taxon_dict: Dict[str, Dict[str, str]],
+        *,
+        intersection_level: int = 2,
+        unknown_label: str = "Unknown",
+) -> str:
+    """
+    Write a taxonomy-stratified strain variability table.
+
+    Rules
+    -----
+    - Each genome is assigned to exactly one output category.
+    - The category with the highest complexity wins.
+      Complexity = number of combo-sets in the category:
+        level 1 -> single combo
+        level 2 -> pairwise intersection
+        level 3 -> triple intersection
+        ...
+    - If a genome matches multiple categories of the same highest complexity,
+      a warning is emitted because a higher intersection_level would be needed
+      to resolve the ambiguity cleanly.
+    - Rows with no category occurrences are skipped.
+    - Total genome counts are fetched directly from SQLite Genomes.
+
+    Output columns
+    --------------
+    taxonomic_level
+    taxon_name
+    genome_count_total_database
+    <category_1>
+    <category_2>
+    ...
+    """
+    os.makedirs(directory, exist_ok=True)
+    outpath = os.path.join(directory, "summary_strain_variability_by_taxonomy.txt")
+
+    if intersection_level < 1:
+        raise ValueError("intersection_level must be >= 1")
+
+    tax_levels: List[Tuple[str, str, str]] = [
+        ("Superkingdom", "Superkingdom", "Superkingdom"),
+        ("Phylum", "Phylum", "Phylum"),
+        ("Class", "Class", "Class"),
+        ("Order", "Ordnung", "Order"),
+        ("Family", "Family", "Family"),
+        ("Genus", "Genus", "Genus"),
+        ("Species", "Species", "Species"),
+    ]
+
+    def _norm(v: Any) -> str:
+        if v is None:
+            return ""
+        return str(v).strip()
+
+    def _is_empty_or_na(v: Any) -> bool:
+        s = _norm(v)
+        return (not s) or s.upper() in {"NA", "NULL"}
+
+    def _normalize_taxon_name(v: Any) -> str:
+        s = _norm(v)
+        return unknown_label if _is_empty_or_na(s) else s
+
+    def _combo_label(combo: Tuple[str, ...]) -> str:
+        return ",".join(combo)
+
+    def _category_label(combo_group: Tuple[Tuple[str, ...], ...]) -> str:
+        return "&".join(_combo_label(c) for c in combo_group)
+
+    # ------------------------------------------------------------
+    # 1) Kategorien bis intersection_level vorbereiten
+    # ------------------------------------------------------------
+    combo_items: List[Tuple[Tuple[str, ...], Set[str]]] = sorted(
+        [(tuple(combo), set(map(str, genomes))) for combo, genomes in combo_dict.items()],
+        key=lambda kv: (len(kv[0]), _combo_label(kv[0]).casefold()),
+    )
+
+    max_r = min(intersection_level, len(combo_items))
+
+    # category_defs:
+    # [
+    #   {
+    #     "label": "A&B",
+    #     "level": 2,
+    #     "genomes": {...},
+    #   },
+    #   ...
+    # ]
+    category_defs: List[Dict[str, Any]] = []
+
+    for r in range(1, max_r + 1):
+        for combo_group in combinations(combo_items, r):
+            combo_names = tuple(c for c, _ in combo_group)
+            genome_sets = [g for _, g in combo_group]
+            inter = set.intersection(*genome_sets) if genome_sets else set()
+
+            category_defs.append(
+                {
+                    "label": _category_label(combo_names),
+                    "level": r,
+                    "genomes": inter,
+                }
+            )
+
+    # Falls keine Kategorien vorhanden
+    if not category_defs:
+        with open(outpath, "w", encoding="utf-8", newline="") as out:
+            out.write("taxonomic_level\ttaxon_name\tgenome_count_total_database\n")
+        return outpath
+
+    # ------------------------------------------------------------
+    # 2) Pro Genom genau eine Kategorie bestimmen
+    # ------------------------------------------------------------
+    # Nur Genome betrachten, die überhaupt in irgendeiner Kategorie vorkommen
+    all_candidate_genomes: Set[str] = set()
+    for cat in category_defs:
+        all_candidate_genomes.update(cat["genomes"])
+
+    # genome_id -> assigned category index
+    genome_to_category_idx: Dict[str, int] = {}
+
+    # Für Warnungen
+    ambiguous_examples: List[Tuple[str, int, List[str]]] = []
+
+    for gid in sorted(all_candidate_genomes):
+        matching: List[Tuple[int, Dict[str, Any]]] = [
+            (idx, cat)
+            for idx, cat in enumerate(category_defs)
+            if gid in cat["genomes"]
+        ]
+
+        if not matching:
+            continue
+
+        max_level = max(cat["level"] for _, cat in matching)
+        best = [(idx, cat) for idx, cat in matching if cat["level"] == max_level]
+
+        if len(best) == 1:
+            genome_to_category_idx[gid] = best[0][0]
+            continue
+
+        # Mehrdeutig: mehrere Kategorien gleicher höchster Komplexität
+        labels = [cat["label"] for _, cat in best]
+        ambiguous_examples.append((gid, max_level, labels))
+
+        rec = taxon_dict.get(gid, {}) if isinstance(taxon_dict, dict) else {}
+
+        tax_parts = []
+        for level_name in ["Superkingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"]:
+            val = rec.get(level_name, "")
+            val = str(val).strip() if val is not None else ""
+            if val and val.upper() not in {"NA", "NULL"}:
+                tax_parts.append(f"{val}")
+
+        taxonomy_str = "; ".join(tax_parts) if tax_parts else "taxonomy=unavailable"
+
+        logger.warning(
+            "Genome %s (%s) matches multiple output categories of highest complexity %d: %s. ",
+            gid,
+            taxonomy_str,
+            max_level,
+            labels,
+        )
+
+        # deterministischer Fallback:
+        # erste Kategorie alphabetisch nehmen, damit das Genom trotzdem genau einer
+        # Spalte zugeordnet wird
+        best_sorted = sorted(best, key=lambda x: x[1]["label"].casefold())
+        genome_to_category_idx[gid] = best_sorted[0][0]
+
+    if ambiguous_examples:
+        logger.warning(
+            "Detected %d ambiguous genome assignments. "
+            "Increase intersection_level or reduce requested categories to assign uniquely by complexity.",
+            len(ambiguous_examples),
+        )
+
+    # ------------------------------------------------------------
+    # 3) taxon_dict indexieren
+    # ------------------------------------------------------------
+    subset_taxon_to_genomes: Dict[Tuple[str, str], Set[str]] = {}
+
+    for genome_id, rec in (taxon_dict or {}).items():
+        if not isinstance(rec, dict):
+            continue
+
+        gid = str(genome_id)
+        for level_label, _db_col, taxon_key in tax_levels:
+            taxon_name = _normalize_taxon_name(rec.get(taxon_key))
+            key = (level_label, taxon_name)
+            if key not in subset_taxon_to_genomes:
+                subset_taxon_to_genomes[key] = set()
+            subset_taxon_to_genomes[key].add(gid)
+
+    # ------------------------------------------------------------
+    # 4) Kategorie -> Genome-Set aus finaler Zuordnung ableiten
+    # ------------------------------------------------------------
+    assigned_category_to_genomes: List[Set[str]] = [set() for _ in category_defs]
+    for gid, idx in genome_to_category_idx.items():
+        assigned_category_to_genomes[idx].add(gid)
+
+    # ------------------------------------------------------------
+    # 5) Schreiben (streaming), Zeilen ohne Vorkommen überspringen
+    # ------------------------------------------------------------
+    header = [
+        "taxonomic_level",
+        "taxon_name",
+        "genome_count_total_database",
+        *[cat["label"] for cat in category_defs],
+    ]
+
+    with open(outpath, "w", encoding="utf-8", newline="") as out:
+        out.write("\t".join(header) + "\n")
+
+        with sqlite3.connect(database) as con:
+            cur = con.cursor()
+
+            for level_label, db_col, _taxon_key in tax_levels:
+                query = f"""
+                    SELECT
+                        CASE
+                            WHEN {db_col} IS NULL THEN ?
+                            WHEN TRIM({db_col}) = '' THEN ?
+                            WHEN UPPER(TRIM({db_col})) IN ('NA', 'NULL') THEN ?
+                            ELSE TRIM({db_col})
+                        END AS taxon_name,
+                        COUNT(*) AS genome_count
+                    FROM Genomes
+                    GROUP BY taxon_name
+                    ORDER BY taxon_name
+                """
+                cur.execute(query, (unknown_label, unknown_label, unknown_label))
+
+                for taxon_name, total_db_count in cur:
+                    subset_genomes = subset_taxon_to_genomes.get(
+                        (level_label, str(taxon_name)),
+                        set(),
+                    )
+
+                    counts_int = [
+                        len(subset_genomes & assigned_genomes)
+                        for assigned_genomes in assigned_category_to_genomes
+                    ]
+
+                    # Zeilen ohne irgendein Auftreten nicht schreiben
+                    if not any(counts_int):
+                        continue
+
+                    row = [
+                        level_label,
+                        str(taxon_name),
+                        str(total_db_count),
+                        *map(str, counts_int),
+                    ]
+                    out.write("\t".join(row) + "\n")
+
+    return outpath
+
+
 def _output_cluster_overview_by_required(
-    output_filepath: str,
-    protein_dict: Dict[str, Any],
-    required_domains: Set[str],
-    *,
-    writemode: str = "w",
+        output_filepath: str,
+        protein_dict: Dict[str, Any],
+        required_domains: Set[str],
+        *,
+        writemode: str = "w",
 ) -> None:
     """
     Eine Zeile pro Gencluster, der mindestens eines der `required_domains` enthält.
@@ -633,10 +893,10 @@ def _output_cluster_overview_by_required(
 
 
 def _output_distinct_fasta_reports(
-    directory: str,
-    protein_dict: Dict[str, Any],
-    cluster_dict: Dict[str, Any],
-    writemode: str = "w",
+        directory: str,
+        protein_dict: Dict[str, Any],
+        cluster_dict: Dict[str, Any],
+        writemode: str = "w",
 ) -> Set[str]:
     """Writes all protein sequences into distinct FASTA files by domain class and for fusion domains.
 
@@ -703,7 +963,7 @@ def _output_distinct_fasta_reports(
         sequence = str(protein.protein_sequence).replace("*", "")
         for domain in protein.domains:
             domain_name = domain.domain
-            domain_sequence = sequence[domain.start : domain.end]
+            domain_sequence = sequence[domain.start: domain.end]
             filepath = os.path.join(directory, f"multi_domain_{domain_name}.faa")
             files.add(filepath)
             with open(filepath, "a") as writer:
@@ -786,9 +1046,9 @@ def _singletons(directory, filepaths):
 
 
 def _output_cluster_context_report(
-    output_filepath: str,
-    context_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
+        output_filepath: str,
+        context_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
 ) -> None:
     """
     Write an extended cluster context table.
@@ -879,11 +1139,11 @@ def _clean_empty_files(directory: str) -> None:
 
 
 def _output_domain_function_report(
-    output_filepath: str,
-    protein_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
-    domain_annotations: Dict[str, Dict[str, str]],
-    writemode: str = "w",
+        output_filepath: str,
+        protein_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
+        domain_annotations: Dict[str, Dict[str, str]],
+        writemode: str = "w",
 ) -> None:
     """
     Schreibt pro Protein/Domain Funktionszeilen:
@@ -1012,13 +1272,15 @@ def _output_domain_function_report(
 
 
 def print_hit_reports(
-    directory: str,
-    protein_dict: Dict[str, Any],
-    cluster_dict: Dict[str, Any],
-    taxon_dict: Dict[str, Dict[str, str]],
-    metabolic_dict: Dict[str, Any],
-    context_dict: Dict[str, Any] | None,
-    fetch_proteins: List[str],
+        directory: str,
+        database: str,
+        protein_dict: Dict[str, Any],
+        cluster_dict: Dict[str, Any],
+        taxon_dict: Dict[str, Dict[str, str]],
+        combo_dict: Dict[Tuple[str, ...], Set[str]],
+        metabolic_dict: Dict[str, Any],
+        context_dict: Dict[str, Any] | None,
+        fetch_proteins: List[str],
 ) -> None:
     """
     Main output routine: creates hit tables, taxonomy summaries, and protein FASTA files.
@@ -1075,7 +1337,11 @@ def print_hit_reports(
 
     # Output strain variability summary
     _output_strain_variability_by_species(
-        directory, protein_dict, taxon_dict, set(fetch_proteins)
+        directory=directory,
+        database=database,
+        combo_dict=combo_dict,
+        taxon_dict=taxon_dict,
+        intersection_level=2,  # ← dein gewünschtes Verhalten
     )
 
     # Output for each protein the genomic context

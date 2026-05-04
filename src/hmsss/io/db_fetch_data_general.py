@@ -216,7 +216,7 @@ def _build_limiter_dict(config: Config) -> Dict[str, Any]:
 
 def fetch_fasta_and_hit_data(
         config: Config,
-) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
+) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
     """
     Zentrale Fetch-Routine für Output-Operatoren.
 
@@ -279,6 +279,7 @@ def fetch_fasta_and_hit_data(
     sum_protein_dict: Dict[str, Any] = {}
     sum_cluster_dict: Dict[str, Any] = {}
     sum_taxon_dict: Dict[str, Any] = {}
+    sum_combo_to_genomes_dict: Dict[str, Any] = {}
 
     # Jede Kombination sequenziell abfragen und zusammenführen
     for combo in required_combinations:
@@ -302,6 +303,8 @@ def fetch_fasta_and_hit_data(
             sum_cluster_dict.update(cluster_dict)
         if taxon_dict:
             sum_taxon_dict.update(taxon_dict)
+            combo_key = tuple(combo)
+            sum_combo_to_genomes_dict.setdefault(combo_key, set()).update(taxon_dict.keys())
 
     # Addition von einzelnen proteinen
     for combo in additional_proteins:
@@ -326,13 +329,17 @@ def fetch_fasta_and_hit_data(
             sum_cluster_dict.update(cluster_dict)
         if taxon_dict:
             sum_taxon_dict.update(taxon_dict)
+
+        # Für die strain variability muss hier noch die gesamtheit der genomeIDs gespeichert werden
+        # combo => genomeIDs
+
     logger.info(
         "Fetch summary: %d proteins, %d taxa",
         len(sum_protein_dict),
         len(sum_taxon_dict),
     )
 
-    return sum_protein_dict, sum_cluster_dict, sum_taxon_dict
+    return sum_protein_dict, sum_cluster_dict, sum_taxon_dict, sum_combo_to_genomes_dict
 
 
 #
