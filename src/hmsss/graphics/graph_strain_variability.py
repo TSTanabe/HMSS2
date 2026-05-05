@@ -62,6 +62,25 @@ def plot_taxonomy_stacked_bars(
     levels = df["taxonomic_level"].dropna().astype(str).unique().tolist()
     written: List[str] = []
 
+    # Globales Farbmapping: gleiche Kategorie = gleiche Farbe in allen Plots
+    all_category_cols = [
+        c for c in df.columns
+        if c not in fixed_cols
+    ]
+
+    all_category_cols = sorted(all_category_cols, key=lambda s: s.casefold())
+
+    cmap = cm.get_cmap("tab20", max(1, len(all_category_cols)))
+
+    color_map = {
+        col: cmap(i)
+        for i, col in enumerate(all_category_cols)
+    }
+
+    # Sonderkategorien fest setzen
+    color_map["Unassigned"] = "white"
+    color_map["Other categories"] = "grey"
+
     for level in levels:
         sub = df[df["taxonomic_level"] == level].copy()
         if sub.empty:
