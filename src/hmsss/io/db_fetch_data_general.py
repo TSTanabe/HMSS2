@@ -273,7 +273,7 @@ def fetch_fasta_and_hit_data(
             excluded_domains=excluded_domains,
             use_non_valid_hits=config.use_non_valid_hits,
         )
-        return protein_dict, cluster_dict, taxon_dict
+        return protein_dict, cluster_dict, taxon_dict, {}
 
     # Sammel-Container über alle Kombinationen
     sum_protein_dict: Dict[str, Any] = {}
