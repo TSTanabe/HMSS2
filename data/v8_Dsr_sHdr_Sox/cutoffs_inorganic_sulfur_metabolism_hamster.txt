@@ -116,7 +116,7 @@ grp3_SoxZ	79.6	160.6	44.5
 grp3_SoxT2	326.4	511.1	216.3
 grp3_SudA	517.6	898.1	191.7
 grp3_SudB	400.4	469.7	178.4
-grp3_TsdA	341.2	285.9	198.5
+grp3_TsdA	341.2	285.9	147.5
 grp3_TsdB	216.1	246.5	172.3
 grp3_TtrA	1282.8	1547.9	486.5
 grp3_TtrC	202.8	369.3	202.8
@@ -132,7 +132,7 @@ grp3_oxAprBII	179.8	262.7	123.9
 grp3_oxDsrA	168.2	730.0	108.2
 grp3_oxDsrB	282.0	645.2	258.1
 grp3_oxDsrC	143.1	178.2	104.4
-grp3_oxDsrJ	143.2	178.2	143.2
+grp3_oxDsrJ	143.2	178.2	90.2
 grp3_oxDsrM	154.3	310.3	147.1
 grp3_oxDsrO	221.3	399.6	164.4
 grp3_oxDsrP	293.5	629.9	183.2
@@ -141,14 +141,14 @@ grp3_redAprA	994.7	1013.6	686.6
 grp3_redAprB	170.1	257.4	148.3
 grp3_redDsrA	294.7	663.9	294.7
 grp3_redDsrB	246.7	608.9	246.7
-grp3_redDsrC	141.9	190.0	84.7
+grp3_redDsrC	141.9	190.0	68.7
 grp3_redDsrD	121.5	121.5	21.5
 grp3_redDsrE	68.9	131.9	18.9
 grp3_redDsrF	65.3	137.7	15.3
 grp0_redDsrH	67.5	139.8	15.3
 grp3_redDsrJ	125.7	193.0	97.4
-grp3_redDsrK	370.5	929.4	370.5
-grp3_redDsrM	353.6	553.8	179.6
+grp3_redDsrK	370.5	929.4	255.5
+grp3_redDsrM	353.6	553.8	100.6
 grp3_redDsrN	549.9	704.3	335.7
 grp3_redDsrO	270.5	408.5	172.3
 grp3_redDsrP	530.9	653.5	68.0
