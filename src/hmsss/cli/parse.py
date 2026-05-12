@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from pathlib import Path
 from typing import List, Sequence, Any
 
 from hmsss.cli.config import (
@@ -641,6 +642,26 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
 
     never_show = False  # Always hide these arguments, because currently unused
 
+    # ---- Dynamic argument choices ---
+    paths_cfg = _paths_cfg_from_paths_module()
+    data_dir = Path(paths_cfg.data)
+
+    AVAILABLE_HMM_PACKS = sorted({
+        p.name.split("_")[0]
+        for p in data_dir.iterdir()
+        if p.is_dir() and "_" in p.name
+    })
+
+    AVAILABLE_HMM_SETS = _discover_hmm_sets_from_data_dir(paths_cfg.data)
+
+    DEFAULT_HMM_SETS = [
+        x for x in ["DHPS", "DMS", "Dsr", "SQ", "Aryl"]
+        if x in AVAILABLE_HMM_SETS
+    ]
+
+    if not DEFAULT_HMM_SETS:
+        DEFAULT_HMM_SETS = AVAILABLE_HMM_SETS
+
     # ---- Argument groups ----
     parser = argparse.ArgumentParser(
         description="HMSS2: Sulfur metabolism annotation",
@@ -708,8 +729,8 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         nargs="+",
         dest="HMM_sets",
         type=str,
-        default=sorted(["DHPS", "DMS", "Dsr", "SQ", "Aryl"]),
-        choices=sorted(["DHPS", "DMS", "Dsr", "SQ", "Aryl", "Sulfobacin"]),
+        default=DEFAULT_HMM_SETS,  # sorted(["DHPS", "DMS", "Dsr", "SQ", "Aryl"]),
+        choices=AVAILABLE_HMM_SETS,  # sorted(["DHPS", "DMS", "Dsr", "SQ", "Aryl", "Sulfobacin"]),
         metavar="",
         help="Limit to HMM sets (whitespace separated)"
         if show_all
@@ -721,7 +742,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="HMM_packages",
         type=str,
         default=sorted(["v8"]),
-        choices=sorted(["v7", "v8", "chen", "disco", "hmss2"]),
+        choices=AVAILABLE_HMM_PACKS,  # sorted(["v7", "v8", "chen", "disco", "hmss2"]),
         metavar="",
         help="Limit to specific HMM packages (whitespace separated)"
         if show_all
@@ -1386,6 +1407,33 @@ def _paths_cfg_from_paths_module() -> PathsCfg:
         package=d["PACKAGE_DIR"],
         gpkg=d["GPKG_DIR"],
     )
+
+
+def _discover_hmm_sets_from_data_dir(data_dir: str) -> list[str]:
+    data_path = Path(data_dir)
+
+    if not data_path.exists():
+        return []
+
+    hmm_sets = set()
+
+    for p in data_path.iterdir():
+        if not p.is_dir():
+            continue
+
+        name = p.name
+
+        if "_" not in name:
+            continue
+
+        parts = name.split("_")
+
+        # alles nach dem Prefix sammeln
+        for element in parts[1:]:
+            if element:
+                hmm_sets.add(element)
+
+    return sorted(hmm_sets)
 
 
 def build_config_from_namespace(ns) -> Config:
