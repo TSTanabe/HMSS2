@@ -782,24 +782,6 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     )
 
     parameters.add_argument(
-        "--refseq-ident",
-        dest="refseq_identity",
-        type=int,
-        default=90,
-        metavar="<int>",
-        help="Minimal percent identity to reference sequence set cross check"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    parameters.add_argument(
-        "--blast-cross-check",
-        dest="bool_cross_check",
-        action="store_false",
-        help="Use Diamond blastp cross check for hit selection"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    parameters.add_argument(
         "--taxonomy",
         dest="taxonomy_file",
         type=file_path,
@@ -824,30 +806,6 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help="Exit at step" if never_show else argparse.SUPPRESS,
     )
 
-    parameters.add_argument(
-        "--max-seq-per-genome",
-        dest="max_seqs_per_genome",
-        type=int,
-        default=4,
-        help="Max. number of paralogs per genome forwarded to cross check via Diamond"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    parameters.add_argument(
-        "--diamond-speed",
-        dest="diamond_speed_mode",
-        type=str,
-        choices=[
-            "faster",
-            "fast",
-            "mid-sensitive",
-            "more-sensitive",
-            "very-sensitive",
-            "ultra-sensitive",
-        ],
-        default="faster",
-        help="DIAMOND blastp speed mode" if show_all else argparse.SUPPRESS,
-    )
     parameters.add_argument(
         "--disable-reports",
         dest="disable_individual_reports",
@@ -984,6 +942,50 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         metavar="<int>",
         help="Chunk size for parsing results from glob before entering into database"
         if never_show
+        else argparse.SUPPRESS,
+    )
+    cross_check = parser.add_argument_group("Cross-check parameters")
+    cross_check.add_argument(
+        "--max-seq-per-genome",
+        dest="max_seqs_per_genome",
+        type=int,
+        default=4,
+        metavar="<int>",
+        help="Max. number of paralogs per genome forwarded to cross check via Diamond"
+        if show_all
+        else argparse.SUPPRESS,
+    )
+    cross_check.add_argument(
+        "--diamond-speed",
+        dest="diamond_speed_mode",
+        type=str,
+        choices=[
+            "faster",
+            "fast",
+            "mid-sensitive",
+            "more-sensitive",
+            "very-sensitive",
+            "ultra-sensitive",
+        ],
+        default="faster",
+        help="DIAMOND blastp speed mode" if show_all else argparse.SUPPRESS,
+    )
+    cross_check.add_argument(
+        "--refseq-ident",
+        dest="refseq_identity",
+        type=int,
+        default=90,
+        metavar="<int>",
+        help="Minimal percent identity to reference sequence set cross check"
+        if show_all
+        else argparse.SUPPRESS,
+    )
+    cross_check.add_argument(
+        "--disable-blast-cross-check",
+        dest="bool_cross_check",
+        action="store_false",
+        help="Use Diamond blastp cross check for hit selection from reference sequences"
+        if show_all
         else argparse.SUPPRESS,
     )
 
