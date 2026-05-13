@@ -752,11 +752,11 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         "--cut-type",
         dest="threshold_type",
         type=int,
-        default=1,
+        default=0,
         metavar="<int>",
-        choices=[1, 2, 3],
-        help="Choice of cutoff: 1 optimized; 2 trusted; 3 noise"
-        if never_show
+        choices=[0, 1, 2, 3, 4],
+        help="Choice of cutoff: 0 all cutoffs, 1 no trusted; 2 trusted only; 3 noise only; 4 global minimal only"
+        if show_all
         else argparse.SUPPRESS,
     )
     parameters.add_argument(

@@ -585,7 +585,7 @@ class Config:
                 if "_" in p:
                     raise ValueError("hmm_packages must be version prefixes only (e.g. 'v8', not 'v8_Sulfur')")
 
-        if self.cli_params.threshold_type not in (1, 2, 3):
+        if self.cli_params.threshold_type not in (0, 1, 2, 3, 4):
             raise ValueError(
                 "threshold_type must be 1 (optimized), 2 (trusted) or 3 (noise)"
             )

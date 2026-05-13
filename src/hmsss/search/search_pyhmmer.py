@@ -32,7 +32,7 @@ logger = get_logger(__name__)
 
 def make_threshold_dict(
         file_path: str,
-        threshold_type: int = 1,
+        threshold_type: int = 0,
         default_score: float = 50.0,
         threshold_factor: float = 1.0,
 ) -> Dict[str, Union[float, Dict[str, float]]]:
@@ -50,8 +50,10 @@ def make_threshold_dict(
         1 -> optimized only   (backward compatible)
         2 -> trusted only
         3 -> noise only
+        4 -> user selection
     """
     thresholds: Dict[str, Union[float, Dict[str, float]]] = {}
+    sentinel = 5000.0
 
     def _parse(val: str, factor: float) -> float:
         if val == "-inf":
@@ -66,18 +68,27 @@ def make_threshold_dict(
 
             hmm_id = parts[0]
 
+            # prüfen ob es drei weitere felder sind und diese eintragen
+            # falls es nur eins ist dann ist das noise cutoff
+            # falls typ 4 angegeben wurde eingabe auf nc und gc tc auf sentinel setzen
+            # falls 1 angegeben wurde dann tc auf sentinel
+            # falls 3 angegeben wurde dann gc tc auf sentinel
+            # falls 2 angegeben wurde dann alles auf tc
+
             try:
                 # normalize columns
                 optimized = default_score
                 trusted = default_score
                 noise = default_score
 
-                if len(parts) > 1:
+                if len(parts) == 4:
                     optimized = _parse(parts[1], 1.0)  # Keep trusted cutoff
-                if len(parts) > 2:
                     trusted = _parse(parts[2], 1.0)  # Keep trusted cutoff
-                if len(parts) > 3:
                     noise = _parse(parts[3], threshold_factor)  # modify noise cutoff higher sensitivity
+                elif len(parts) > 1:
+                    trusted = sentinel
+                    optimized = sentinel
+                    noise = _parse(parts[-1], threshold_factor)  # Falls nur ein cutoff gegeben wurde
 
                 if threshold_type == 0:
                     thresholds[hmm_id] = {
@@ -86,11 +97,35 @@ def make_threshold_dict(
                         "noise": noise,
                     }
                 elif threshold_type == 1:
-                    thresholds[hmm_id] = optimized
+                    thresholds[hmm_id] = {
+                        "optimized": optimized,
+                        "trusted": sentinel,
+                        "noise": noise,
+                    }
                 elif threshold_type == 2:
-                    thresholds[hmm_id] = trusted
+                    thresholds[hmm_id] = {
+                        "optimized": trusted,
+                        "trusted": trusted,
+                        "noise": trusted,
+                    }
                 elif threshold_type == 3:
-                    thresholds[hmm_id] = noise
+                    thresholds[hmm_id] = {
+                        "optimized": sentinel,
+                        "trusted": sentinel,
+                        "noise": noise,
+                    }
+                elif threshold_type == 4:
+                    thresholds[hmm_id] = {
+                        "optimized": optimized,
+                        "trusted": sentinel,
+                        "noise": optimized,
+                    }
+                elif threshold_type == 5:
+                    thresholds[hmm_id] = {
+                        "optimized": sentinel,
+                        "trusted": sentinel,
+                        "noise": default_score,
+                    }
                 else:
                     raise ValueError(f"Unknown threshold_type={threshold_type}")
 
@@ -686,7 +721,7 @@ def consecutive_hmm_search(config: Config, processes: int = 4) -> None:
     database.insert_database_genome_ids(config.database_directory, set(genome_ids))
 
     threshold_dict = make_threshold_dict(
-        config.score_threshold_file, 0, config.thrs_score, config.threshold_factor
+        config.score_threshold_file, config.threshold_type, config.thrs_score, config.threshold_factor
     )
 
     # Für CSB pattern building im worker initializer: nur “leichte” config-Infos
@@ -739,7 +774,7 @@ def consecutive_hmm_search(config: Config, processes: int = 4) -> None:
             if (genomes_done % log_step == 0) or (genomes_done == n_genomes):
                 pct = (genomes_done * 100) // max(1, n_genomes)
                 logger.info(
-                    f"[Genome progress] {genomes_done}/{n_genomes} ({pct}%) genomes processed {len(protein_batch)}"
+                    f"[Genome progress] {genomes_done}/{n_genomes} ({pct}%) genomes processed"
                 )
 
             # Batch sammeln
