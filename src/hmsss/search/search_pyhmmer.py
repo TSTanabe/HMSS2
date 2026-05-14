@@ -249,6 +249,7 @@ def _init_worker(
         )
         thr = _G_THRESH.get(hmm_id)
         if not thr:
+            logger.warning(f"Fallback cutoffs for {hmm_id} defined as noise:10 trusted:1000")
             noise = 10
             trusted = 1000
         else:
