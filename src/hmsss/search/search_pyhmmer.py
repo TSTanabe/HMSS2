@@ -290,50 +290,36 @@ def _init_worker(
 #
 
 
-def hmm_identity(aln, min_identity: float | None = 0.25) -> int:
+def hmm_identity(aln) -> int:
     ident = 0
     aligned = 0
 
     for h, i in zip(aln.hmm_sequence, aln.identity_sequence):
         if h == "-":
-            continue  # skip non–match states
+            continue
+
         aligned += 1
+
         if i not in (" ", "+"):
             ident += 1
 
     if aligned == 0:
         return 0
 
-    identity_frac = ident / aligned  # 0.0–1.0
-
-    if min_identity is not None and identity_frac < min_identity:
-        return 0
+    identity_frac = ident / aligned
 
     return int(round(identity_frac * 100))
 
 
-def domain_query_coverage(dom, *, max_indel_frac=0.7):
+def domain_query_coverage(dom) -> float:
     aln = dom.alignment
 
     hmm_span = aln.hmm_to - aln.hmm_from + 1
+
     if hmm_span <= 0:
-        # print("WARNING: hmm_span <= 0")
         return 0.0
 
-    env_span = dom.env_to - dom.env_from + 1
-
-    hmm_cov = hmm_span / aln.hmm_length
-    insert_frac = (env_span - hmm_span) / hmm_span
-
-    if hmm_cov < 1.0 - max_indel_frac:
-        # print("WARNING: hmm_cov < 1.0 - max_indel_frac")
-        return 0.0
-
-    if insert_frac > max_indel_frac:
-        # print("WARNING: insert_frac > max_indel_frac")
-        return 0.0
-
-    return hmm_cov
+    return hmm_span / aln.hmm_length
 
 
 def debug_pyhmmer_domain(dom) -> None:
@@ -378,13 +364,11 @@ def add_pyhmmer_hits_to_protein_dict(
         genome_id: str,
         tophits_iter,
 ) -> dict[str, Protein]:
-    """
-    Füllt protein_dict mit Domains aus pyhmmer hmmsearch.
-    - verwirft dom.score < noise (pro HMM)
-    - setzt Tc für dom.score >= trusted (optional, wenn du das gleich markieren willst)
-    - alle >= noise bleiben als Domains im Protein (wie im report-parser) :contentReference[oaicite:2]{index=2}
-    """
     protein_dict = {}
+
+    min_identity = 20  # Prozent
+    min_hmm_cov = 0.3  # entspricht 1.0 - max_indel_frac bei 0.7
+    max_indel_frac = 0.7
 
     for tophits in tophits_iter:
         hmm_id = (
@@ -392,12 +376,13 @@ def add_pyhmmer_hits_to_protein_dict(
             if isinstance(tophits.query.name, (bytes, bytearray))
             else str(tophits.query.name)
         )
+
         parts = hmm_id.split("_", 1)
         hmm_name = parts[1] if len(parts) == 2 else hmm_id
 
         thr = _G_THRESH.get(hmm_id)
-        trusted = float(thr["trusted"]) if not thr is None else 1000
-        optimized = float(thr["optimized"]) if not thr is None else 100
+        trusted = float(thr["trusted"]) if thr is not None else 1000
+        optimized = float(thr["optimized"]) if thr is not None else 100
 
         for hit in tophits:
             prot_id = (
@@ -405,57 +390,74 @@ def add_pyhmmer_hits_to_protein_dict(
                 if isinstance(hit.name, (bytes, bytearray))
                 else str(hit.name)
             )
+
             score = hit.score
 
-            start, end, hmm_cov = 0, 1, 0
             for dom in hit.domains:
-                # Koordinaten: HMMER/pyhmmer nutzt i.d.R. 1-based inkl. Endpunkt
                 start = int(dom.alignment.target_from)
                 end = int(dom.alignment.target_to)
-                hmm_cov = domain_query_coverage(dom, max_indel_frac=0.7)  # TODO diese parameter sollten con CLI kommen
-                hmm_ident = hmm_identity(dom.alignment, min_identity=0.2)
-                # debug_pyhmmer_domain(dom)
-                # print(
-                #    f"Domain hit for {prot_id} {hmm_name} from {start} to {end} \t coverage {hmm_cov} \t identitiy {hmm_ident}")
-                # print(domain_query_coverage(dom))
-                if hmm_cov and hmm_ident:
-                    protein = protein_dict.get(prot_id)
-                    valid_hit = False
-                    if score >= trusted:
-                        valid_hit = True
-                        selection_comment = "Tc"
-                    elif score >= optimized:
-                        selection_comment = "Gc"
-                    else:
-                        selection_comment = "Nc"
 
-                    if protein is None:
-                        protein = Protein(
-                            protein_id=prot_id,
-                            hmm=hmm_name,
-                            start=start,
-                            end=end,
-                            score=int(score),
-                            selection_comment=selection_comment,
-                            ident=hmm_ident,
-                            genome_id=genome_id,
-                            bsr=hmm_cov,
-                        )
-                        if valid_hit:
-                            protein.valid_hit = True
-                        protein_dict[prot_id] = protein
-                    else:
-                        protein.add_domain(
-                            hmm=hmm_name,
-                            start=start,
-                            end=end,
-                            score=int(score),
-                            selection_comment=selection_comment,
-                            bsr=hmm_cov,
-                            ident=hmm_ident,
-                        )
-                        if valid_hit:
-                            protein.valid_hit = True
+                hmm_cov = domain_query_coverage(dom)
+                hmm_ident = hmm_identity(dom.alignment)
+
+                hmm_span = dom.alignment.hmm_to - dom.alignment.hmm_from + 1
+                env_span = dom.env_to - dom.env_from + 1
+
+                if hmm_span > 0:
+                    insert_frac = (env_span - hmm_span) / hmm_span
+                else:
+                    insert_frac = 1.0
+
+                passes_alignment_filter = (
+                        hmm_cov >= min_hmm_cov
+                        and hmm_ident >= min_identity
+                        and insert_frac <= max_indel_frac
+                )
+
+                if not passes_alignment_filter:
+                    selection_comment = "Bc"
+                    valid_hit = False
+                elif score >= trusted:
+                    selection_comment = "Tc"
+                    valid_hit = True
+                elif score >= optimized:
+                    selection_comment = "Gc"
+                    valid_hit = False
+                else:
+                    selection_comment = "Nc"
+                    valid_hit = False
+                # debug_pyhmmer_domain(dom)
+                print(
+                    f"Domain hit for {prot_id} {hmm_name} from {start} to {end} \t coverage {hmm_cov} \t identitiy {hmm_ident}")
+                # print(domain_query_coverage(dom))
+                protein = protein_dict.get(prot_id)
+
+                if protein is None:
+                    protein = Protein(
+                        protein_id=prot_id,
+                        hmm=hmm_name,
+                        start=start,
+                        end=end,
+                        score=int(score),
+                        selection_comment=selection_comment,
+                        ident=hmm_ident,
+                        genome_id=genome_id,
+                        bsr=hmm_cov,
+                    )
+                    protein_dict[prot_id] = protein
+                else:
+                    protein.add_domain(
+                        hmm=hmm_name,
+                        start=start,
+                        end=end,
+                        score=int(score),
+                        selection_comment=selection_comment,
+                        bsr=hmm_cov,
+                        ident=hmm_ident,
+                    )
+
+                if valid_hit:
+                    protein.valid_hit = True
 
     return protein_dict
 
@@ -463,7 +465,7 @@ def add_pyhmmer_hits_to_protein_dict(
 # -----------------------------
 # Worker: verarbeitet ein Batch
 # -----------------------------
-def _process_genome1(
+def search_n_process_genome(
         genome_id: str,
 ) -> tuple[dict[str, Protein], dict[str, Any]] | None:
     """
@@ -491,6 +493,7 @@ def _process_genome1(
             )
 
             # -- 2) combined protein hits, includes intermediates, valid hits = >trusted cutoff ---
+            # Filters by coverage and identity and adds Bc comment for all hits below these cutoffs
             protein_dict = add_pyhmmer_hits_to_protein_dict(
                 genome_id=genome_id,
                 tophits_iter=tophits_iter,
@@ -520,9 +523,12 @@ def _process_genome1(
                 )
 
             # --- 7) all named gene clusters are marked as valid hits --
-            parse_reports.remove_unassigned_intermediate_proteins(
+            parse_reports.update_protein_validity_by_synteny(
                 protein_dict, set(), cluster_dict
-            )  # labelled alles was in gencluster liegt oder unter trusted fällt
+            )
+
+            # --- 7.5) remove below cutoff hits that are not rescued by synteny or pattern
+            protein_dict = parse_reports.remove_invalid_bc_only_proteins(protein_dict)
 
             # --- 8) add sequences to proteins
             parse_reports.get_protein_sequence(faa_file, protein_dict)
@@ -646,7 +652,7 @@ def _process_genome_timed(
 
             # --- 8) all named gene clusters are marked as valid hits ---
             t0 = time.perf_counter()
-            parse_reports.remove_unassigned_intermediate_proteins(
+            parse_reports.update_protein_validity_by_synteny(
                 protein_dict, set(), cluster_dict
             )
             t_rm = time.perf_counter() - t0
@@ -769,7 +775,7 @@ def consecutive_hmm_search(config: Config, processes: int = 4) -> None:
             ),  # arguments for the init worker
     ) as pool:
         for protein_dict, cluster_dict in pool.imap_unordered(
-                _process_genome1, genome_ids, chunksize=chunksize
+                search_n_process_genome, genome_ids, chunksize=chunksize
         ):
             genomes_done += 1
             if (genomes_done % log_step == 0) or (genomes_done == n_genomes):
