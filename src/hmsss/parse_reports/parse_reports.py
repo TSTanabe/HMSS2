@@ -233,11 +233,22 @@ class Protein:
                 return a[0] > b[0]
             return a[1] > b[1]
 
+        def effective_score(d: Domain) -> float:
+            score = float(d.score)
+
+            if "Bc" in d.selection_comment_list:  # if below minimal cutoff, add penalty to domain score for calculation
+                return score * 0.01
+
+            return score
+
         for i, d in enumerate(doms):
             best_skip = dp[i - 1] if i > 0 else (0.0, 0)
 
             prev = dp[p[i]] if p[i] >= 0 else (0.0, 0)
-            best_take = (prev[0] + float(d.score), prev[1] + dom_len(d))
+            best_take = (
+                prev[0] + effective_score(d),
+                prev[1] + dom_len(d),
+            )
 
             if better(best_take, best_skip):
                 dp[i] = best_take
@@ -550,7 +561,11 @@ def output_genome_report(
 
     # sortiert nach genomeID, contig, start
     proteinID_list = sorted(
-        protein_dict,
+        [
+            proteinID
+            for proteinID, protein in protein_dict.items()
+            if not genomeID or protein.genomeID == genomeID
+        ],
         key=lambda x: (
             protein_dict[x].genomeID,
             protein_dict[x].gene_contig,
@@ -624,7 +639,7 @@ def output_genome_report(
 #########################################################################################
 
 
-def remove_unassigned_intermediate_proteins(
+def update_protein_validity_by_synteny(
         combined_protein_dict: Dict[str, Any],
         trusted_protein_ids: set,
         cluster_dict: Dict[str, Any],
@@ -667,6 +682,36 @@ def remove_unassigned_intermediate_proteins(
                 domain.add_selection_comment("Nb")  # No syntenic block
 
     return combined_protein_dict
+
+
+def remove_invalid_bc_only_proteins(
+        protein_dict: dict[str, Protein],
+) -> dict[str, Protein]:
+    to_remove = []
+
+    allowed_comments = {"Bc", "Nb"}
+
+    for protein_id, protein in protein_dict.items():
+
+        if protein.valid_hit:
+            continue
+
+        if not protein.domains:
+            continue
+
+        only_bc_like = all(
+            set(domain.selection_comment_list).issubset(allowed_comments)
+            and "Bc" in set(domain.selection_comment_list)
+            for domain in protein.domains
+        )
+
+        if only_bc_like:
+            to_remove.append(protein_id)
+
+    for protein_id in to_remove:
+        del protein_dict[protein_id]
+
+    return protein_dict
 
 
 def define_best_score_hits_for_protein_dict(

@@ -869,10 +869,10 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         else argparse.SUPPRESS,
     )
     csb.add_argument(
-        "--disable-synteny-completion",
+        "--disable-pathway-completion",
         dest="disable_synteny_completion",
         action="store_true",
-        help="Disable syntenic block supported annotation"
+        help="Disable the probability based completion of pathways"
         if show_all
         else argparse.SUPPRESS,
     )
@@ -967,7 +967,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
             "very-sensitive",
             "ultra-sensitive",
         ],
-        default="faster",
+        default="fast",
         help="DIAMOND blastp speed mode" if show_all else argparse.SUPPRESS,
     )
     cross_check.add_argument(
