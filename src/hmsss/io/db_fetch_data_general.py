@@ -137,63 +137,6 @@ def expand_required_proteins(raw: list[str]) -> list[list[str]]:
     return all_combos
 
 
-def deprecated_expand_required_proteins(raw: List[str]) -> List[List[str]]:
-    """
-    Expandiert eine Liste von Tokens mit OR-Gruppen zu allen Kombinationen.
-
-    Idee:
-      Jeder Eingabetoken kann eine Liste von Alternativen definieren.
-      Aus dem kartesischen Produkt aller Alternativ-Listen entstehen
-      vollständige Anforderungen, die jeweils an fetch_bulk_data übergeben werden.
-
-    Beispiele:
-        ["A", "B"] ->
-            [["A", "B"]]
-
-        ["A", "B|C"] ->
-            [["A", "B"],
-             ["A", "C"]]
-
-        ["A", "B|C", "D|E|F"] ->
-            [["A", "B", "D"],
-             ["A", "B", "E"],
-             ["A", "B", "F"],
-             ["A", "C", "D"],
-             ["A", "C", "E"],
-             ["A", "C", "F"]]
-    """
-    if not raw:
-        return []
-
-    argument = " ".join(raw)
-    groups = [g.strip() for g in re.split(r"[\[\]]", argument) if g.strip()]
-
-    all_combos: List[List[str]] = []
-
-    for group in groups:
-        tokens = group.split(" ")
-
-        option_groups: List[List[str]] = []
-
-        for token in tokens:
-            alts = _split_or_token(token)
-            # Leere Tokens ignorieren
-            if not alts:
-                continue
-            option_groups.append(alts)
-
-        if not option_groups:
-            return []
-        # Kartesisches Produkt innerhalb der Gruppe
-        for combo in product(*option_groups):
-            # '' bedeutet "optional weglassen"
-            filtered = [x for x in combo if x != ""]
-            if filtered:  # skip completely empty list
-                all_combos.append(filtered)
-
-    return all_combos
-
-
 def _build_limiter_dict(config: Config) -> Dict[str, Any]:
     """
     Erzeugt das limiter_dict:

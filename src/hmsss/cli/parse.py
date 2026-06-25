@@ -794,7 +794,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="stage",
         type=int,
         default=0,
-        choices=[0, 1, 2, 3, 4, 5],
+        choices=[0, 1, 2, 3, 4, 5, 6, 7, 8],
         help="Start at step" if never_show else argparse.SUPPRESS,
     )
     parameters.add_argument(
@@ -802,7 +802,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="exit",
         type=int,
         default=10,
-        choices=[0, 1, 2, 3, 4, 5],
+        choices=[0, 1, 2, 3, 4, 5, 6, 7, 8],
         help="Exit at step" if never_show else argparse.SUPPRESS,
     )
 
