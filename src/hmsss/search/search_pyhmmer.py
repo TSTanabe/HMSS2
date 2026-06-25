@@ -294,7 +294,7 @@ def _init_worker(
                 plausibility_models_path
             )
         )
-        logger.info(
+        logger.debug(
             f"Loaded {len(_G_PLAUSIBILITY_MODELS):,} plausibility models"
         )
     else:
