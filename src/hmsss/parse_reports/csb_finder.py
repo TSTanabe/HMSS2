@@ -536,6 +536,7 @@ def name_syntenic_blocks_trie(
         # print("covered_protein_ids before:", cluster.covered_protein_ids)
         # cluster.add_covered_types(covered_types)
         # print("covered_protein_ids after:", cluster.covered_protein_ids)
-        # cluster.add_covered_types(covered_types)
+
+        cluster.add_covered_types(covered_types)
 
     return cluster_dict
