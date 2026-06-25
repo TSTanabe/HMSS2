@@ -113,6 +113,9 @@ class Protein:
 
     def get_domains(self) -> str:
         listing = [dom.domain for dom in sorted(self.domains, key=lambda d: d.start)]
+        # collapse identical domains, e.g. SoxX-SoxX -> SoxX
+        if listing and len(set(listing)) == 1:
+            return listing[0]
         return "-".join(listing)
 
     def get_domain_listing(self):
