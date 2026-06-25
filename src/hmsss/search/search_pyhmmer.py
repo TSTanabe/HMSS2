@@ -16,6 +16,7 @@ from hmsss.parse_reports import (
     parse_reports,
     pattern_completion_synteny,
     pattern_completion_pathway,
+    plausibility_filter,
 )
 from hmsss.parse_reports import csb_trie_algorithm
 from hmsss.parse_reports import csb_finder
@@ -156,6 +157,7 @@ _G_HMMS: list = []
 _G_THRESH: dict = {}
 _G_CSB_PATTERNS = None
 _G_COOCCURRENCE: Optional[Dict[str, tuple[set, int]]] = None
+_G_PLAUSIBILITY_MODELS: dict[str, dict[str, Any]] = {}
 _G_INDEX_TRIE: TrieIndex = None
 _G_CONFIG_LIGHT = None  # falls du einzelne Config-Flags brauchst
 _G_OPT_THRESH: dict[str, float] = {}
@@ -166,7 +168,7 @@ _G_GFF_FILES: Optional[Dict[str, str]] = None
 _G_QUEUE: Optional[SimpleQueue] = None
 _G_NUCLEOTIDE_RANGE: Optional[int] = None
 _G_MIN_COMPLETENESS: Optional[float] = None
-_G_USE_SYNTENY_COMPLETION: Optional[bool] = None
+_G_DISABLE_PATTERN_COMPLETION: Optional[bool] = None
 
 
 def _build_optimized_suffix_thresholds(
@@ -201,7 +203,8 @@ def _init_worker(
         gff_files: Dict[str, str],
         nucleotide_range: int,
         min_completeness: float,
-        disable_synteny_completion: bool,
+        disable_pattern_completion: bool,
+        plausibility_models_path: str | None = None
 ):
     """
     Lädt schwere/konstante Daten einmal pro Worker.
@@ -215,13 +218,14 @@ def _init_worker(
         _G_OPT_THRESH, \
         _G_CSB_PATTERNS, \
         _G_COOCCURRENCE, \
+        _G_PLAUSIBILITY_MODELS, \
         _G_INDEX_TRIE, \
         _G_CONFIG_LIGHT, \
         _G_FAA_FILES, \
         _G_GFF_FILES, \
         _G_NUCLEOTIDE_RANGE, \
         _G_MIN_COMPLETENESS, \
-        _G_USE_SYNTENY_COMPLETION
+        _G_DISABLE_PATTERN_COMPLETION
 
     _G_CONFIG_LIGHT = config_light
     _G_THRESH = threshold_dict
@@ -232,7 +236,7 @@ def _init_worker(
 
     _G_NUCLEOTIDE_RANGE = nucleotide_range
     _G_MIN_COMPLETENESS = min_completeness
-    _G_USE_SYNTENY_COMPLETION = disable_synteny_completion
+    _G_DISABLE_PATTERN_COMPLETION = disable_pattern_completion
 
     # 1) HMMlib laden (einmal pro Worker)
     with pyhmmer.plan7.HMMFile(hmm_path) as hf:
@@ -283,6 +287,18 @@ def _init_worker(
 
     # Trie Index für pattern hierarchical tree
     _G_INDEX_TRIE = csb_trie_algorithm.build_trie_index(only_pattern_dict)
+
+    if plausibility_models_path:
+        _G_PLAUSIBILITY_MODELS = (
+            plausibility_filter.load_plausibility_models(
+                plausibility_models_path
+            )
+        )
+        logger.info(
+            f"Loaded {len(_G_PLAUSIBILITY_MODELS):,} plausibility models"
+        )
+    else:
+        _G_PLAUSIBILITY_MODELS = {}
 
 
 #
@@ -427,8 +443,8 @@ def add_pyhmmer_hits_to_protein_dict(
                     selection_comment = "Nc"
                     valid_hit = False
                 # debug_pyhmmer_domain(dom)
-                print(
-                    f"Domain hit for {prot_id} {hmm_name} from {start} to {end} \t coverage {hmm_cov} \t identitiy {hmm_ident}")
+                # print(
+                #    f"Domain hit for {prot_id} {hmm_name} from {start} to {end} \t coverage {hmm_cov} \t identitiy {hmm_ident}")
                 # print(domain_query_coverage(dom))
                 protein = protein_dict.get(prot_id)
 
@@ -517,7 +533,7 @@ def search_n_process_genome(
             )
 
             # --- 6) Co-occurrence patterns added to valid hits
-            if not _G_USE_SYNTENY_COMPLETION:
+            if not _G_DISABLE_PATTERN_COMPLETION:
                 pattern_completion_pathway.enhance_pathway_completeness(
                     protein_dict, _G_COOCCURRENCE, _G_OPT_THRESH
                 )
@@ -529,6 +545,18 @@ def search_n_process_genome(
 
             # --- 7.5) remove below cutoff hits that are not rescued by synteny or pattern
             protein_dict = parse_reports.remove_invalid_bc_only_proteins(protein_dict)
+
+            # --- 7.4) to do calculate plausability for singleton non valid hits and add above threshold hits
+            # Currently disabled as models add more noise than true values
+            # protein_dict = (
+            #    plausibility_filter.apply_plausibility_thresholds_to_protein_dict(
+            #        protein_dict=protein_dict,
+            #        plausibility_models=_G_PLAUSIBILITY_MODELS,
+            #        comment="Pt",
+            #    )
+            # )
+
+            # --- 7.7) assign functional guild by key marker genes
 
             # --- 8) add sequences to proteins
             parse_reports.get_protein_sequence(faa_file, protein_dict)
@@ -643,7 +671,7 @@ def _process_genome_timed(
             t_syn = time.perf_counter() - t0
 
             # --- 7) Co-occurrence patterns added to valid hits (optional) ---
-            if _G_USE_SYNTENY_COMPLETION:
+            if _G_DISABLE_PATTERN_COMPLETION:
                 t0 = time.perf_counter()
                 pattern_completion_pathway.enhance_pathway_completeness(
                     protein_dict, _G_COOCCURRENCE, _G_OPT_THRESH
@@ -771,7 +799,8 @@ def consecutive_hmm_search(config: Config, processes: int = 4) -> None:
                     config.gff_files,
                     config.nucleotide_range,
                     config.min_completeness,
-                    config.disable_synteny_completion,
+                    config.disable_synteny_completion,  # sollte disable_pattern_completion heißen
+                    getattr(config, "plausibility_models", None),  # can be missing or disabled
             ),  # arguments for the init worker
     ) as pool:
         for protein_dict, cluster_dict in pool.imap_unordered(

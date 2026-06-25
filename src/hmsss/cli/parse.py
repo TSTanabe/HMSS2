@@ -1499,6 +1499,8 @@ def build_config_from_namespace(ns) -> Config:
                       or os.path.join(paths_cfg.data, "Patterns"),
         cooccurrence_file=_s(ns, "cooccurrence_file")
                           or os.path.join(paths_cfg.data, "Cooccurrence"),
+        plausibility_models=_s(ns, "plausibility_models")
+                            or os.path.join(paths_cfg.data, "Plausibility_models.jsonl"),
         exclusion_singletons=_s(ns, "exclusion_singletons")
                              or os.path.join(paths_cfg.data, "Exclusion_singletons"),
         min_completeness=float(getattr(ns, "min_completeness", 0.5)),
@@ -1677,6 +1679,7 @@ def _apply_runtime_defaults(ns: argparse.Namespace) -> argparse.Namespace:
     _set_default("library", str(paths.SRC_FILE_HMM_LIBRARY))
     _set_default("patterns_file", str(paths.SRC_FILE_PATTERNS))
     _set_default("cooccurrence_file", str(paths.SRC_FILE_COOCCURRENCE))
+    _set_default("plausibility_models", str(paths.SRC_FILE_PLAUSIBILITY_MODELS))
     _set_default("exclusion_singletons", str(paths.SRC_FILE_EXCLUSION_SINGLETONS))
     _set_default("metabolism_information", str(paths.SRC_FILE_METABOLISM_INFORMATION))
     _set_default("result_files_directory", str(paths.RESULTS_DIR))

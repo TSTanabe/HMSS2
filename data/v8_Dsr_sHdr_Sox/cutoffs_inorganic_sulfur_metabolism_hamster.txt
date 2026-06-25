@@ -28,6 +28,10 @@ grp0_sHdrJ	300	361.5	100
 grp0_sHdrR	25	104.8	22.5
 grp0_TmcD	510	501.9	100
 grp0_HmcD	10	60.4	10
+grp0_TusB	20.7	98.9	70.8
+grp0_TusC	114	133.4	60.3
+grp0_TusD	167	173.3	139.9
+grp0_TusE	142	223	123.6
 grp0_Tth	715.3	793.3	397.6
 grp1_HmcA	291.0	291.0	205.3
 grp1_HmcB	385.9	385.9	141.8

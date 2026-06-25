@@ -135,6 +135,7 @@ class CliSynteny:
 
     patterns_file: Optional[str] = None
     cooccurrence_file: Optional[str] = None
+    plausibility_models: Optional[str] = None
     exclusion_singletons: Optional[str] = None
     min_completeness: float = 0.5
     glob_chunks: int = 5000
@@ -456,6 +457,9 @@ class Config:
     cooccurrence_file = prop(
         "cli_synteny.cooccurrence_file"
     )  # :contentReference[oaicite:24]{index=24}
+    plausibility_models = prop(
+        "cli_synteny.plausibility_models"
+    )
     exclusion_singletons = prop(
         "cli_synteny.exclusion_singletons"
     )  # :contentReference[oaicite:25]{index=25}

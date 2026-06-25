@@ -3,8 +3,22 @@ from pathlib import Path
 from typing import List
 
 import pandas as pd
+import hashlib
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+
+UNASSIGNED_LABEL = "Target genes absent"
+OTHER_LABEL = "Collapsed categories"
+
+
+def stable_color_for_label(label: str, palette: list):
+    """
+    Deterministic color assignment.
+    Same label always receives same color.
+    """
+    digest = hashlib.md5(label.encode("utf-8")).hexdigest()
+    idx = int(digest, 16) % len(palette)
+    return palette[idx]
 
 
 def plot_taxonomy_stacked_bars(
@@ -70,16 +84,26 @@ def plot_taxonomy_stacked_bars(
 
     all_category_cols = sorted(all_category_cols, key=lambda s: s.casefold())
 
-    cmap = cm.get_cmap("tab20", max(1, len(all_category_cols)))
+    # Farbpalette ohne Grautöne
+    palette = list(cm.get_cmap("tab20b").colors) + list(cm.get_cmap("tab20c").colors)
+
+    # explizit Grautöne entfernen
+    filtered_palette = [
+        c for c in palette
+        if not (
+                abs(c[0] - c[1]) < 0.08 and
+                abs(c[1] - c[2]) < 0.08
+        )
+    ]
 
     color_map = {
-        col: cmap(i)
-        for i, col in enumerate(all_category_cols)
+        col: stable_color_for_label(col, filtered_palette)
+        for col in all_category_cols
     }
 
     # Sonderkategorien fest setzen
-    color_map["Unassigned"] = "white"
-    color_map["Other categories"] = "grey"
+    color_map[UNASSIGNED_LABEL] = "#d9d9d9"  # hellgrau
+    color_map[OTHER_LABEL] = "#7f7f7f"  # deutlich dunkleres grau
 
     for level in levels:
         sub = df[df["taxonomic_level"] == level].copy()
@@ -109,8 +133,8 @@ def plot_taxonomy_stacked_bars(
 
         # Unassigned berechnen
         assigned_sum = sub[category_cols].sum(axis=1) if category_cols else 0
-        sub["Unassigned"] = sub["genome_count_total_database"] - assigned_sum
-        sub["Unassigned"] = sub["Unassigned"].clip(lower=0)
+        sub[UNASSIGNED_LABEL] = sub["genome_count_total_database"] - assigned_sum
+        sub[UNASSIGNED_LABEL] = sub[UNASSIGNED_LABEL].clip(lower=0)
 
         # "Other categories" nur anwenden, wenn genug Kategorien vorhanden sind
         kept_category_cols: List[str] = []
@@ -118,15 +142,31 @@ def plot_taxonomy_stacked_bars(
 
         use_other = len(category_cols) > other_threshold_n_categories
 
-        total_displayed_counts = 0
-        if category_cols:
-            total_displayed_counts += int(sub[category_cols].sum(axis=0).sum())
-        total_displayed_counts += int(sub["Unassigned"].sum())
+        category_totals = {
+            col: int(sub[col].sum())
+            for col in category_cols
+        }
 
-        if use_other and category_cols and total_displayed_counts > 0:
+        total_assigned_counts = sum(category_totals.values())
+
+        top_always_keep_n = 5
+
+        top_category_cols = {
+            col
+            for col, total in sorted(
+                category_totals.items(),
+                key=lambda x: x[1],
+                reverse=True,
+            )[:top_always_keep_n]
+        }
+
+        if use_other and category_cols and total_assigned_counts > 0:
             for col in category_cols:
-                frac = sub[col].sum() / total_displayed_counts
-                if frac < min_category_fraction:
+                frac = category_totals[col] / total_assigned_counts
+
+                if col in top_category_cols:
+                    kept_category_cols.append(col)
+                elif frac < min_category_fraction:
                     small_category_cols.append(col)
                 else:
                     kept_category_cols.append(col)
@@ -134,10 +174,10 @@ def plot_taxonomy_stacked_bars(
             kept_category_cols = list(category_cols)
 
         if use_other and small_category_cols:
-            sub["Other categories"] = sub[small_category_cols].sum(axis=1)
-            plot_cols = kept_category_cols + ["Other categories", "Unassigned"]
+            sub[OTHER_LABEL] = sub[small_category_cols].sum(axis=1)
+            plot_cols = kept_category_cols + [OTHER_LABEL, UNASSIGNED_LABEL]
         else:
-            plot_cols = kept_category_cols + ["Unassigned"]
+            plot_cols = kept_category_cols + [UNASSIGNED_LABEL]
 
         # Für barh: größte Zuordnung oben -> DataFrame aufsteigend sortieren,
         # weil die letzte Zeile oben erscheint
@@ -159,14 +199,20 @@ def plot_taxonomy_stacked_bars(
 
         for i, col in enumerate(plot_cols):
             values = sub[col].tolist()
-            ax.barh(y, values, left=left, label=col, color=colors(i))
+            ax.barh(
+                y,
+                values,
+                left=left,
+                label=col,
+                color=color_map[col],
+            )
             left = [l + v for l, v in zip(left, values)]
 
         ax.set_yticks(list(y))
         ax.set_yticklabels(sub["taxon_name"].tolist())
         ax.set_xlabel("Number of genomes")
         ax.set_ylabel(level)
-        ax.set_title(f"Assigned categories by {level}")
+        ax.set_title(f"Taxonomic level: {level}")
 
         ax.legend(
             title="Category",
@@ -177,7 +223,7 @@ def plot_taxonomy_stacked_bars(
 
         plt.tight_layout()
 
-        outfile = os.path.join(outdir, f"stacked_barplot_{level}.png")
+        outfile = os.path.join(outdir, f"stacked_barplot_{level}.svg")
         fig.savefig(outfile, dpi=300, bbox_inches="tight")
         plt.close(fig)
 
