@@ -94,13 +94,20 @@ def _log_report_progress(
 
 
 def _protein_from_row(row: sqlite3.Row) -> parse_reports.Protein:
-    """Create a Protein object from one protein-domain SQL row."""
+    """Create a Protein object from one protein-domain SQL row.
+
+    Important: p.comment is stored as the domain-level selection comment.
+    The downstream output routine rebuilds protein.selection_comment from
+    Domain.selection_comment_list, so the comment must be passed into the
+    Protein constructor and not only assigned to protein.selection_comment.
+    """
     protein = parse_reports.Protein(
         row["proteinID"],
         row["domain"],
         row["domStart"],
         row["domEnd"],
         row["score"],
+        selection_comment=row["comment"] or "",
     )
     protein.genomeID = row["genomeID"] or ""
     protein.clusterID = row["clusterID"] or ""
@@ -108,6 +115,7 @@ def _protein_from_row(row: sqlite3.Row) -> parse_reports.Protein:
     protein.gene_start = row["gene_start"] or 0
     protein.gene_end = row["gene_end"] or 0
     protein.gene_strand = row["gene_strand"] or "."
+    protein.gene_locustag = row["locustag"] or ""
     protein.protein_sequence = row["protein_sequence"] or ""
     protein.selection_comment = row["comment"] or ""
     protein.alternative_hit = row["alternative_hit"] or ""
@@ -198,6 +206,7 @@ def _stream_hit_rows(
             p.start           AS gene_start,
             p.end             AS gene_end,
             p.strand          AS gene_strand,
+            p.locustag        AS locustag,
             p.sequence        AS protein_sequence,
             p.comment         AS comment,
             p.alternative_hit AS alternative_hit,
@@ -374,6 +383,7 @@ def write_individual_genome_reports(config) -> None:
                     row["domStart"],
                     row["domEnd"],
                     row["score"],
+                    selection_comment=row["comment"] or "",
                 )
 
         # Flush final genome with hits.
