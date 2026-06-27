@@ -301,6 +301,9 @@ class ProjectFields:
     glob_intermediate_hitreport: Optional[str] = None
     csb_output_file: Optional[str] = None
     gene_clusters_file: Optional[str] = None
+    metabolic_pathway_directory: Optional[str] = None
+    pathway_file: Optional[str] = None
+    pathway_report_file: Optional[str] = None
 
 
 # ======================
@@ -551,6 +554,9 @@ class Config:
     gene_clusters_file = prop(
         "project.gene_clusters_file"
     )  # :contentReference[oaicite:51]{index=51}
+    metabolic_pathway_directory = prop("project.metabolic_pathway_directory")
+    pathway_file = prop("project.pathway_file")
+    pathway_report_file = prop("project.pathway_report_file")
     glob_trusted_hitreport = prop("project.glob_trusted_hitreport")
     glob_intermediate_hitreport = prop("project.glob_intermediate_hitreport")
 

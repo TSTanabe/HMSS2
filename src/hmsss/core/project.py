@@ -8,6 +8,7 @@ from dataclasses import is_dataclass, asdict
 from pathlib import Path
 from typing import Any, Mapping, Iterable, Tuple, Optional
 
+from hmsss.cli import paths
 from hmsss.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -80,14 +81,23 @@ def prepare_result_space(config, project: str = "project") -> None:
     config.glob_report = os.path.join(
         config.result_files_directory, "global_report.cat_hmmreport"
     )
-    config.glob_trusted_hitreport = (
-            config.result_files_directory + "/global_trusted_hits_summary.db"
-    )
-    config.glob_intermediate_hitreport = (
-            config.result_files_directory + "/global_intermediate_hits_summary.db"
-    )
+    # config.glob_trusted_hitreport = (
+    #        config.result_files_directory + "/global_trusted_hits_summary.db"
+    # )
+    # config.glob_intermediate_hitreport = (
+    #        config.result_files_directory + "/global_intermediate_hits_summary.db"
+    # )
     config.csb_output_file = config.csb_directory + "/Csb_output.txt"
     config.gene_clusters_file = config.csb_directory + "/All_gene_clusters.txt"
+    config.metabolic_pathway_directory = os.path.join(
+        config.result_files_directory,
+        "Metabolic_pathways",
+    )
+    config.pathway_file = str(paths.SRC_FILE_PRECOMPUTED_PATHWAYS)
+    config.pathway_report_file = os.path.join(
+        config.metabolic_pathway_directory,
+        "metabolic_pathway_report.tsv",
+    )
 
     # Create required directories
     for path in [
@@ -95,6 +105,7 @@ def prepare_result_space(config, project: str = "project") -> None:
         config.fasta_output_directory,
         config.cross_check_directory,
         config.csb_directory,
+        config.metabolic_pathway_directory,
     ]:
         if not os.path.exists(path):
             os.mkdir(path)

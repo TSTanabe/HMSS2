@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import sys
+from pathlib import Path
 
 from hmsss.db.database import index_database
 from hmsss.graft import initial_read_mapping
@@ -15,6 +16,7 @@ from hmsss.stages import process_seqfiles  # import process_operator
 
 from hmsss.core import project as project, ressource_prep
 from hmsss.io import print_command_args, db_fetch_genome_reports, output_dataset
+from hmsss.io import metabolic_pathway_sankey
 
 from hmsss.core.logging import setup_logging, print_header, get_logger
 
@@ -97,9 +99,11 @@ def run_pipeline(config) -> None:
         print_header("Assigning taxonomy information")
         taxonomy.collect_taxonomy_information(config)
 
-    if not config.disable_individual_reports and (config.stage <= 7 <= config.exit):
-        print_header("Writing individual hit reports")
+    if config.stage <= 7 <= config.exit:
+        print_header("Writing individual hit reports and metabolic pathway report")
         db_fetch_genome_reports.write_individual_genome_reports(config)
+        print_header("Creating metabolic pathway plots")
+        metabolic_pathway_sankey.create_metabolic_pathway_plots(config)
 
     if config.stage == 50:
         print_header("Mapping reads to protein and nucleotide fasta files")

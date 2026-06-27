@@ -5,8 +5,9 @@ from __future__ import annotations
 
 import os
 import sqlite3
+import csv
 from pathlib import Path
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Dict, Iterable, Optional, List, Set, TextIO
 
 from hmsss.core.logging import get_logger
 from hmsss.parse_reports import parse_reports
@@ -84,13 +85,12 @@ def _log_report_progress(
         return
 
     percent = (written_reports / total_reports) * 100.0
-    logger.info(
-        "Wrote %d/%d genome reports (%.2f%%); streamed %d domain rows",
-        written_reports,
-        total_reports,
-        percent,
-        n_rows,
+    msg = (
+        f"Wrote {written_reports}/{total_reports} genome reports "
+        f"({percent:.2f}%); streamed {n_rows} domain rows"
     )
+    logger.info(msg)
+    # print(msg, flush=True)
 
 
 def _protein_from_row(row: sqlite3.Row) -> parse_reports.Protein:
@@ -150,28 +150,176 @@ def _empty_taxon_from_genomes_row(row: sqlite3.Row) -> Dict[str, str]:
     }
 
 
+PATHWAY_INPUT_COL = "input_sulfur_species_or_compound"
+PATHWAY_OUTPUT_COL = "output_sulfur_species_or_compound"
+PATHWAY_ENZYME_COL = "enzyme_abbreviation"
+PATHWAY_PATHWAY_COL = "pathway"
+
+
+def _split_enzyme_field(value: str) -> Set[str]:
+    if value is None:
+        return set()
+    return {x.strip() for x in str(value).split(";") if x.strip()}
+
+
+def _normalize_domain_name(domain: str) -> str:
+    domain = str(domain).strip()
+    if not domain:
+        return ""
+    return domain.rsplit("_", 1)[-1]
+
+
+def _protein_domain_set(protein_dict: Dict[str, parse_reports.Protein]) -> Set[str]:
+    domains: Set[str] = set()
+    for protein in protein_dict.values():
+        dom_string = protein.get_domains()
+        if not dom_string:
+            continue
+        for part in str(dom_string).split("-"):
+            part = _normalize_domain_name(part)
+            if part:
+                domains.add(part)
+    return domains
+
+
+def _load_pathway_rows(pathway_file: str | Path | None) -> List[Dict[str, str]]:
+    if not pathway_file:
+        return []
+    path = Path(pathway_file)
+    if not path.is_file():
+        raise FileNotFoundError(f"Pathway file not found: {path}")
+
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        sample = handle.read(4096)
+        handle.seek(0)
+        dialect = csv.Sniffer().sniff(sample, delimiters="\t,")
+        reader = csv.DictReader(handle, dialect=dialect)
+        required = [PATHWAY_INPUT_COL, PATHWAY_OUTPUT_COL, PATHWAY_ENZYME_COL, PATHWAY_PATHWAY_COL]
+        missing = [col for col in required if col not in (reader.fieldnames or [])]
+        if missing:
+            raise ValueError(f"Pathway file {path} is missing required columns: {missing}. Found: {reader.fieldnames}")
+        rows: List[Dict[str, str]] = []
+        for row in reader:
+            enzymes = _split_enzyme_field(row.get(PATHWAY_ENZYME_COL, ""))
+            if not enzymes:
+                continue
+            rows.append({
+                PATHWAY_INPUT_COL: row.get(PATHWAY_INPUT_COL, "") or "",
+                PATHWAY_OUTPUT_COL: row.get(PATHWAY_OUTPUT_COL, "") or "",
+                PATHWAY_ENZYME_COL: ";".join(sorted(enzymes)),
+                PATHWAY_PATHWAY_COL: row.get(PATHWAY_PATHWAY_COL, "") or "",
+                "_enzyme_set": enzymes,
+            })
+    return rows
+
+
+def _collapse_nested_pathways(calls):
+    kept = []
+
+    for i, call in enumerate(calls):
+        enzymes_i = call["_enzyme_set"]
+        remove = False
+
+        for j, other in enumerate(calls):
+            if i == j:
+                continue
+
+            enzymes_j = other["_enzyme_set"]
+
+            if enzymes_i < enzymes_j:
+                remove = True
+                break
+
+        if not remove:
+            kept.append(call)
+
+    return kept
+
+
+def _write_pathway_report_header(writer: TextIO) -> None:
+    writer.write("genomeID\tspecies\tinput\toutput\tenzymes\n")
+
+
+def _write_genome_pathways(*, writer, genome_id, species, protein_dict, pathway_rows) -> int:
+    if not pathway_rows or not protein_dict:
+        return 0
+
+    present = _protein_domain_set(protein_dict)
+
+    calls = []
+    for pathway in pathway_rows:
+        required = pathway["_enzyme_set"]
+        if required <= present:
+            calls.append(pathway)
+
+    calls = _collapse_nested_pathways(calls)
+
+    n_written = 0
+    for pathway in calls:
+        writer.write("\t".join([
+            genome_id,
+            species or "",
+            pathway[PATHWAY_INPUT_COL],
+            pathway[PATHWAY_OUTPUT_COL],
+            pathway[PATHWAY_ENZYME_COL],
+        ]) + "\n")
+        n_written += 1
+
+    return n_written
+
+
 def _write_one_report(
         *,
         out_dir: Path,
         genome_id: str,
         protein_dict: Dict[str, parse_reports.Protein],
         taxon_rec: Optional[Dict[str, str]],
-) -> None:
-    """Finalize a genome-sized protein dict and write one TSV report."""
+        pathway_rows: Optional[List[Dict[str, str]]] = None,
+        pathway_writer: Optional[TextIO] = None,
+        write_individual_report: bool = True,
+) -> int:
+    """
+    Finalize one genome-sized protein dict and write one genome TSV report.
+
+    If pathway_rows and pathway_writer are supplied, also append matching
+    pathway calls to the global pathway report.
+
+    Returns
+    -------
+    int
+        Number of pathway rows written for this genome.
+    """
     if protein_dict:
         parse_reports.define_best_score_hits_for_protein_dict(protein_dict)
         parse_reports.define_selection_comments_for_protein_dict(protein_dict)
 
-    out_file = out_dir / f"{genome_id}.tsv"
-    parse_reports.output_genome_report(
-        output_filepath=str(out_file),
-        protein_dict=protein_dict,
-        cluster_dict={},
-        taxon_dict={genome_id: taxon_rec or {}},
-        genomeID="",
-        writemode="w",
-        taxon_divider="\t",
-    )
+    if write_individual_report:
+        out_file = out_dir / f"{genome_id}.tsv"
+        parse_reports.output_genome_report(
+            output_filepath=str(out_file),
+            protein_dict=protein_dict,
+            cluster_dict={},
+            taxon_dict={genome_id: taxon_rec or {}},
+            genomeID="",
+            writemode="w",
+            taxon_divider="\t",
+        )
+
+    n_pathway_rows = 0
+    if pathway_rows and pathway_writer is not None:
+        species = ""
+        if taxon_rec:
+            species = taxon_rec.get("Species", "") or ""
+
+        n_pathway_rows = _write_genome_pathways(
+            writer=pathway_writer,
+            genome_id=genome_id,
+            species=species,
+            protein_dict=protein_dict,
+            pathway_rows=pathway_rows,
+        )
+
+    return n_pathway_rows
 
 
 def _stream_hit_rows(
@@ -240,6 +388,7 @@ def _write_empty_reports_for_missing_genomes(
         total_reports: int,
         n_rows: int,
         log_every: int = 10000,
+        write_individual_reports: bool = True,
 ) -> int:
     """
     Write empty report files for genomes that had no streamed hit rows.
@@ -274,6 +423,7 @@ def _write_empty_reports_for_missing_genomes(
             genome_id=gid,
             protein_dict={},
             taxon_rec=_empty_taxon_from_genomes_row(row),
+            write_individual_report=write_individual_reports,
         )
         written_genome_ids.add(gid)
         n_empty += 1
@@ -306,11 +456,20 @@ def write_individual_genome_reports(config) -> None:
         Progress is logged as written/total reports plus percentage.
     """
     out_dir = Path(config.fasta_initial_hit_directory)
-    out_dir.mkdir(parents=True, exist_ok=True)
+    write_individual_reports = not bool(getattr(config, "disable_individual_reports", False))
+
+    if write_individual_reports:
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+    pathway_file = getattr(config, "pathway_file", None)
+    pathway_report_file = getattr(config, "pathway_report_file", None)
+    pathway_rows = _load_pathway_rows(pathway_file) if pathway_file else []
+    if pathway_rows and not pathway_report_file:
+        pathway_report_file = str(out_dir / "genome_pathway_report.tsv")
 
     db_path = _db_uri_ro_immutable(config.database_directory)
     use_non_valid = bool(getattr(config, "use_non_valid_hits", False))
-    write_empty = bool(getattr(config, "write_empty_genome_reports", True))
+    write_empty = bool(getattr(config, "write_empty_genome_reports", False))
     log_every = int(getattr(config, "report_stream_log_every", 10000))
 
     written_genome_ids: set[str] = set()
@@ -320,106 +479,159 @@ def write_individual_genome_reports(config) -> None:
 
     n_rows = 0
     n_reports_with_hits = 0
+    n_pathway_rows = 0
 
-    logger.info("Streaming individual genome reports to %s", out_dir)
+    if write_individual_reports:
+        start_msg = f"Streaming individual genome reports to {out_dir}"
+    else:
+        start_msg = "Individual genome reports disabled; streaming genomes for pathway report only"
+    logger.info(start_msg)
+    # print(start_msg, flush=True)
 
-    with sqlite3.connect(db_path, uri=True) as con:
-        con.row_factory = sqlite3.Row
-        cur = con.cursor()
+    if pathway_rows:
+        msg1 = f"Loaded {len(pathway_rows)} precomputed pathway definitions from {pathway_file}"
+        msg2 = f"Writing genome pathway report to {pathway_report_file}"
+        logger.info(msg1)
+        logger.info(msg2)
+        # print(msg1, flush=True)
+        # print(msg2, flush=True)
 
-        cur.execute("PRAGMA foreign_keys = ON;")
-        cur.execute("PRAGMA temp_store = MEMORY;")
-        cur.execute("PRAGMA cache_size = 200000;")
+    pathway_handle = None
+    try:
+        if pathway_rows:
+            pathway_report_path = Path(pathway_report_file)
+            pathway_report_path.parent.mkdir(parents=True, exist_ok=True)
+            pathway_handle = pathway_report_path.open("w", encoding="utf-8")
+            _write_pathway_report_header(pathway_handle)
 
-        valid_col = _has_column(cur, "Proteins", "valid_hit")
-        total_reports = _count_total_reports(
-            cur,
-            write_empty=write_empty,
-            use_non_valid_hits=use_non_valid,
-            valid_hit_column_available=valid_col,
-        )
-        logger.info("Expected genome reports to write: %d", total_reports)
+        with sqlite3.connect(db_path, uri=True) as con:
+            con.row_factory = sqlite3.Row
+            cur = con.cursor()
 
-        for row in _stream_hit_rows(
+            cur.execute("PRAGMA foreign_keys = ON;")
+            cur.execute("PRAGMA temp_store = MEMORY;")
+            cur.execute("PRAGMA cache_size = 200000;")
+
+            valid_col = _has_column(cur, "Proteins", "valid_hit")
+            total_reports = _count_total_reports(
                 cur,
+                write_empty=(write_empty and write_individual_reports),
                 use_non_valid_hits=use_non_valid,
                 valid_hit_column_available=valid_col,
-        ):
-            n_rows += 1
-            gid = row["genomeID"]
-            pid = row["proteinID"]
+            )
+            if write_individual_reports:
+                expected_msg = f"Expected genome reports to write: {total_reports}"
+            else:
+                expected_msg = f"Expected genomes with hits to stream for pathway report: {total_reports}"
+            logger.info(expected_msg)
+            # print(expected_msg, flush=True)
 
-            if current_gid is None:
-                current_gid = gid
-                current_taxon = _taxon_from_row(row)
+            for row in _stream_hit_rows(
+                    cur,
+                    use_non_valid_hits=use_non_valid,
+                    valid_hit_column_available=valid_col,
+            ):
+                n_rows += 1
+                gid = row["genomeID"]
+                pid = row["proteinID"]
 
-            if gid != current_gid:
-                _write_one_report(
+                if current_gid is None:
+                    current_gid = gid
+                    current_taxon = _taxon_from_row(row)
+
+                if gid != current_gid:
+                    n_pathway_rows += _write_one_report(
+                        out_dir=out_dir,
+                        genome_id=current_gid,
+                        protein_dict=current_proteins,
+                        taxon_rec=current_taxon,
+                        pathway_rows=pathway_rows,
+                        pathway_writer=pathway_handle,
+                        write_individual_report=write_individual_reports,
+                    )
+                    written_genome_ids.add(current_gid)
+                    n_reports_with_hits += 1
+
+                    _log_report_progress(
+                        written_reports=len(written_genome_ids),
+                        total_reports=total_reports,
+                        n_rows=n_rows,
+                        log_every=log_every,
+                    )
+
+                    current_gid = gid
+                    current_taxon = _taxon_from_row(row)
+                    current_proteins = {}
+
+                protein = current_proteins.get(pid)
+                if protein is None:
+                    current_proteins[pid] = _protein_from_row(row)
+                else:
+                    protein.add_domain(
+                        row["domain"],
+                        row["domStart"],
+                        row["domEnd"],
+                        row["score"],
+                        selection_comment=row["comment"] or "",
+                    )
+
+            # Flush final genome with hits.
+            if current_gid is not None:
+                n_pathway_rows += _write_one_report(
                     out_dir=out_dir,
                     genome_id=current_gid,
                     protein_dict=current_proteins,
                     taxon_rec=current_taxon,
+                    pathway_rows=pathway_rows,
+                    pathway_writer=pathway_handle,
+                    write_individual_report=write_individual_reports,
                 )
                 written_genome_ids.add(current_gid)
                 n_reports_with_hits += 1
-
                 _log_report_progress(
                     written_reports=len(written_genome_ids),
                     total_reports=total_reports,
                     n_rows=n_rows,
+                    force=True,
                     log_every=log_every,
                 )
 
-                current_gid = gid
-                current_taxon = _taxon_from_row(row)
-                current_proteins = {}
-
-            protein = current_proteins.get(pid)
-            if protein is None:
-                current_proteins[pid] = _protein_from_row(row)
-            else:
-                protein.add_domain(
-                    row["domain"],
-                    row["domStart"],
-                    row["domEnd"],
-                    row["score"],
-                    selection_comment=row["comment"] or "",
+            n_empty = 0
+            if write_empty and write_individual_reports:
+                n_empty = _write_empty_reports_for_missing_genomes(
+                    cur,
+                    out_dir=out_dir,
+                    written_genome_ids=written_genome_ids,
+                    total_reports=total_reports,
+                    n_rows=n_rows,
+                    log_every=log_every,
+                    write_individual_reports=write_individual_reports,
                 )
 
-        # Flush final genome with hits.
-        if current_gid is not None:
-            _write_one_report(
-                out_dir=out_dir,
-                genome_id=current_gid,
-                protein_dict=current_proteins,
-                taxon_rec=current_taxon,
-            )
-            written_genome_ids.add(current_gid)
-            n_reports_with_hits += 1
-            _log_report_progress(
-                written_reports=len(written_genome_ids),
-                total_reports=total_reports,
-                n_rows=n_rows,
-                force=True,
-                log_every=log_every,
-            )
+    finally:
+        if pathway_handle is not None:
+            pathway_handle.close()
 
+    if 'n_empty' not in locals():
         n_empty = 0
-        if write_empty:
-            n_empty = _write_empty_reports_for_missing_genomes(
-                cur,
-                out_dir=out_dir,
-                written_genome_ids=written_genome_ids,
-                total_reports=total_reports,
-                n_rows=n_rows,
-                log_every=log_every,
-            )
 
-    logger.info(
-        "Finished streaming genome reports: %d/%d written (100.00%% if complete), %d with hits, %d empty, %d domain rows streamed",
-        len(written_genome_ids),
-        total_reports if 'total_reports' in locals() else len(written_genome_ids),
-        n_reports_with_hits,
-        n_empty,
-        n_rows,
-    )
+    if write_individual_reports:
+        final_msg = (
+            f"Finished streaming genome reports: {len(written_genome_ids)}/"
+            f"{total_reports if 'total_reports' in locals() else len(written_genome_ids)} written; "
+            f"{n_reports_with_hits} with hits, {n_empty} empty, "
+            f"{n_rows} domain rows streamed"
+        )
+    else:
+        final_msg = (
+            f"Finished streaming genomes for pathway report: {len(written_genome_ids)}/"
+            f"{total_reports if 'total_reports' in locals() else len(written_genome_ids)} genomes with hits processed; "
+            f"{n_rows} domain rows streamed"
+        )
+    logger.info(final_msg)
+    # print(final_msg, flush=True)
+
+    if pathway_rows:
+        pathway_msg = f"Finished genome pathway report: {n_pathway_rows} pathway rows written"
+        logger.info(pathway_msg)
+        # print(pathway_msg, flush=True)
