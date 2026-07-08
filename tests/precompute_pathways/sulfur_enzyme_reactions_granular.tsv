@@ -1,0 +1,143 @@
+input_sulfur_species_or_compound	output_sulfur_species_or_compound	enzyme_abbreviation	pathway
+DMSP	DMS; acrylate	DddD	DMSP degradation
+DMSP	DMS; acrylate	DddK	DMSP degradation
+DMSP	DMS; acrylate	DddL	DMSP degradation
+DMSP	DMS; acrylate	DddP	DMSP degradation
+DMSP	DMS; acrylate	DddQ	DMSP degradation
+DMSP	DMS; acrylate	DddW	DMSP degradation
+DMSP	DMS; acrylate	DddY	DMSP degradation
+DMSOP	DMSO; acrylate	DddD	DMSP degradation
+DMSOP	DMSO; acrylate	DddK	DMSP degradation
+DMSOP	DMSO; acrylate	DddL	DMSP degradation
+DMSOP	DMSO; acrylate	DddP	DMSP degradation
+DMSOP	DMSO; acrylate	DddQ	DMSP degradation
+DMSOP	DMSO; acrylate	DddW	DMSP degradation
+DMSOP	DMSO; acrylate	DddY	DMSP degradation
+DMSP	3-hydroxypropionate; DMS	DddA	DMSP degradation
+3-hydroxypropionate	malonate semialdehyde	DddC	DMSP degradation
+acrylate	3-hydroxypropionate	AcuN;AcuK	DMSP degradation
+acryloyl-CoA	propionyl-CoA	AcuI	DMSP degradation
+DMSP	MMPA	DmdA	DMSP demethylation
+MMPA	MMPA-CoA	DmdB	DMSP demethylation
+MMPA-CoA	methylthioacryloyl-CoA	DmdC	DMSP demethylation
+methylthioacryloyl-CoA	acetaldehyde; methanethiol; CO2	DmdD	DMSP demethylation
+methanethiol	DMS	MddA	DMS formation
+methanethiol	DMS	MddH	DMS formation
+methanethiol	sulfide; formaldehyde	Mtox	Methanethiol decomposition
+DMS	methanethiol; formaldehyde	DmoA	DMS oxidation
+DMSO	DMS	DmsA;DmsB;DmsC	DMSO reduction
+DMSO	DMS	DorA;DorC	DMSO reduction
+DMS	DMSO2	DsoA;DsoB;DsoC;DsoD;DsoE;DsoF	Assimilatory DMS monooxygenase
+DMSO2	methanesulfinate; formaldehyde	SnfG	Assimilatory DMSO2 monooxygenase
+methanesulfonate	formaldehyde; sulfite	MsuD	Assimilatory methanesulfonate monooxygenase
+methanesulfonate	formaldehyde; sulfite	MsmA;MsmB;MsmC;MsmD	Dissimilatory methanesulfonate monooxygenase
+isethionate	sulfoacetaldehyde	IsfJ	Isethionate degradation
+isethionate	acetaldehyde; sulfite	IsrB;IsrH;IsrD;IsrK	Isethionate reduction
+taurine	sulfoacetaldehyde	Tpa	Taurine degradation
+taurine	sulfoacetaldehyde	Toa	Taurine degradation
+taurine	aminoacetaldehyde; sulfite	TauD	Taurine degradation
+taurine	sulfoacetaldehyde	TauX;TauY	Taurine dehydrogenase pathway
+sulfoacetaldehyde	acetyl phosphate; sulfite	Xsc	Taurine/Isethionate degradation
+sulfoacetaldehyde	isethionate	IsfD	Isethionate formation
+sulfoacetaldehyde	isethionate	SarD	Isethionate formation
+isethionate	acetaldehyde; sulfite	HpsG;HpsH	Isethionate desulfonation
+acetaldehyde	acetyl-CoA	AdhE	Isethionate desulfonation
+DHPS	sulfolactate	HpsN	DHPS degradation
+DHPS	sulfolactate	DhpA	DHPS degradation
+DHPS	hydroxyacetone; sulfite	HpsG;HpsH	DHPS desulfonation
+DHPS	3-sulfopropionaldehyde	HpfG;HpfH	DHPS dehydration
+3-sulfopropionaldehyde	3-sulfopropionyl-CoA	HpfX	DHPS degradation
+3-sulfopropionaldehyde	3-hydroxypropane-1-sulfonate	HpfD	DHPS degradation
+3-sulfopropionyl-CoA	3-sulfopropionate	HpfY;HpfZ	DHPS degradation
+sulfolactate	pyruvate; sulfite	SuyA;SuyB	Sulfolactate degradation
+acetyl phosphate	acetyl-CoA	Pta	Sulfolactate degradation
+sulfopyruvate	sulfoacetaldehyde; CO2	ComD;ComE	Sulfolactate degradation
+sulfolactate	sulfopyruvate	SlcD	Sulfolactate degradation
+sulfolactate	sulfopyruvate	ComC	Sulfolactate degradation
+sulfopyruvate	sulfolactate	ComC	Sulfolactate degradation
+sulfolactate	sulfopyruvate	SlcC	Sulfolactate degradation
+L-cysteate	pyruvate; sulfite	CuyA	Cysteate degradation
+sulfoacetyl-CoA	sulfoacetaldehyde	SauS	Sulfoacetate degradation
+sulfoacetate	sulfoacetyl-CoA	SauT	Sulfoacetate degradation
+alkanesulfonate	aldehyde; sulfite	SsuD	Alkanesulfonate degradation
+sulfoquinovosyl diacylglycerol / sulfoquinovoside	sulfoquinovose	YihQ	Sulfoquinovose degradation Sulfo-EMP
+sulfoquinovose	sulfofructose	YihS	Sulfoquinovose degradation Sulfo-EMP
+sulfofructose	sulfofructose-1-phosphate	YihV	Sulfoquinovose degradation Sulfo-EMP
+sulfofructose	sulfofructose-1-phosphate	SqiA	Sulfoquinovose degradation Sulfo-EMP
+sulfofructose-1-phosphate	dihydroxyacetone phosphate; sulfolactaldehyde	YihT	Sulfoquinovose degradation Sulfo-EMP
+sulfofructose-1-phosphate	dihydroxyacetone phosphate; sulfolactaldehyde	SqiK	Sulfoquinovose degradation Sulfo-EMP
+sulfolactaldehyde	DHPS	YihU	Sulfoquinovose degradation Sulfo-EMP
+sulfoquinovose	sulfogluconolactone	Sqdh	Sulfoquinovose degradation Sulfo-ED
+sulfogluconolactone	sulfogluconate	Sgl	Sulfoquinovose degradation Sulfo-ED
+sulfogluconate	KDSG	Sgdh	Sulfoquinovose degradation Sulfo-ED
+KDSG	pyruvate; sulfolactaldehyde	Sgald	Sulfoquinovose degradation Sulfo-ED
+sulfolactaldehyde	sulfolactate	Sladh	Sulfoquinovose degradation Sulfo-ED
+sulfoquinovose	oxoglucose	SmoC	Sulfoquinovose degradation Sulfo-monooxygenase
+sulfoquinovose	oxoglucose	SqoD	Sulfoquinovose degradation Sulfo-monooxygenase
+oxoglucose	glucose	SmoB	Sulfoquinovose degradation Sulfo-monooxygenase
+sulfoquinovosyl diacylglycerol / sulfoquinovoside	sulfoquinovose	SmoI	Sulfoquinovose degradation Sulfo-monooxygenase
+sulfoquinovosyl diacylglycerol / sulfoquinovoside	sulfoquinovose	SqgA	Sulfoquinovose degradation Sulfo-monooxygenase
+sulfoquinovosyl diacylglycerol / sulfoquinovoside	sulfoquinovose	SftG	Sulfoquinovose degradation transaldolase
+sulfoquinovose	sulfofructose	SftI	Sulfoquinovose degradation transaldolase
+sulfofructose	sulfolactaldehyde	SftT	Sulfoquinovose degradation transaldolase
+sulfolactaldehyde	sulfolactate	SftD	Sulfoquinovose degradation transaldolase
+sulfolactaldehyde	DHPS	SftR	Sulfoquinovose degradation transaldolase
+4-deoxy-4-sulfoerythrose	4-deoxy-4-sulfoerythrulose	SqwI	Sulfoquinovose degradation transketolase
+sulfofructose	sulfoacetaldehyde	SqwG;SqwH;SqwI	Sulfoquinovose degradation transketolase
+sulfoacetaldehyde	isethionate	SqwF	Sulfoquinovose degradation transketolase
+sulfoacetaldehyde	sulfoacetyl-CoA	SqwD	Sulfoquinovose degradation transketolase
+sulfoacetate	sulfoacetate	SqwK;SqwL	Sulfoquinovose degradation transketolase
+sulfofucose	sulfogalactonolactone	SfcH	Sulfofucose degradation
+sulfogalactonolactone	sulfogalactonate	SfcD	Sulfofucose degradation
+sulfogalactonate	KDSGal	SfcF	Sulfofucose degradation
+KDSGal	pyruvate; sulfolactaldehyde	SfcE	Sulfofucose degradation
+UDP-glucose; sulfite	UDP-sulfoquinovose	SqdB	Sulfoquinovose synthesis
+UDP-sulfoquinovose; diacylglycerol	sulfoquinovosyl diacylglycerol	SqdD	Sulfoquinovose synthesis
+dibenzothiophene	dibenzothiophene sulfoxide	DszC;DszD	Dibenzothiophene desulfurization
+dibenzothiophene sulfoxide	dibenzothiophene sulfone	DszC;DszD	Dibenzothiophene desulfurization
+dibenzothiophene sulfone	2-hydroxybiphenyl-2-sulfinate	DszA;DszD	Dibenzothiophene desulfurization
+2-hydroxybiphenyl-2-sulfinate	2-hydroxybiphenyl; sulfite	DszB	Dibenzothiophene desulfurization
+aryl sulfate	phenol; sulfate	AtsA	Arylsulfatases
+methylthioalkane	alkane; methanethiol	MarK;MarD;MarH;MarB	Methylthioalkane reductase
+thiocyanate	cyanate; elemental sulfur	TcDH	Thiocyanate oxidation
+thiocyanate	carbonyl sulfide; ammonia	SncA;SncB;SncC	Thiocyanate hydrolysis
+carbon disulfide	carbonyl sulfide; sulfide	Cs2H	Growth on CS2
+carbonyl sulfide	carbon dioxide; sulfide	CosH	Growth on CS2
+sulfate	APS	redSat	Dissimilatory sulfate reduction
+APS	sulfite	redAprA;redAprB	Dissimilatory sulfate reduction
+sulfite	sulfide	redDsrA;redDsrB;redDsrC;redDsrM;redDsrK	Dissimilatory sulfate reduction
+sulfite	sulfide	redDsrA;redDsrB	Dissimilatory sulfate reduction
+APS	sulfite	assAprA;assAprB	Assimilatory reduction of APS
+sulfite	sulfide	AsrA;AsrB;AsrC	Sulfite reduction
+sulfite	sulfide	MccA;MccB;MccC;MccD	Sulfite reduction
+polysulfide	sulfide	PhsA;PhsB;PhsC	Reduction of polysulfides/thiosulfate/sulfur
+elemental sulfur	sulfide	PhsA;PhsB;PhsC	Reduction of polysulfides/thiosulfate/sulfur
+thiosulfate	sulfide	PhsA;PhsB;PhsC	Reduction of polysulfides/thiosulfate/sulfur
+elemental sulfur	sulfide	SudA;SudB	Reduction of polysulfides/thiosulfate/sulfur
+elemental sulfur	sulfide	ShyA;ShyB;ShyC;ShyD	Reduction of polysulfides/thiosulfate/sulfur
+tetrathionate	thiosulfate	TtrA;TtrB;TtrC	Reduction of tetrathionate
+tetrathionate	thiosulfate	Otr	Reduction of tetrathionate
+thiosulfate	tetrathionate	TsdA	Thiosulfate/tetrathionate conversion
+tetrathionate	thiosulfate	TsdA	Thiosulfate/tetrathionate conversion
+thiosulfate	tetrathionate	DoxA;DoxD	Thiosulfate/tetrathionate conversion
+tetrathionate	sulfate; elemental sulfur; thiosulfate	Tth	Tetrathionate oxidation
+elemental sulfur	sulfite; sulfide	SOR	Elemental sulfur oxidation
+thiosulfate	sulfate	SoxA;SoxX;SoxY;SoxZ;SoxB;SoxC;SoxD	Thiosulfate oxidation in periplasm
+thiosulfate	sulfane sulfur	SoxA;SoxX;SoxY;SoxZ;SoxB	Thiosulfate oxidation in periplasm
+sulfide	sulfane sulfur	FccA;FccB	Sulfide oxidation
+sulfide	sulfane sulfur	SQRI	Sulfide oxidation
+sulfide	sulfane sulfur	SQRII	Sulfide oxidation
+sulfide	sulfane sulfur	SQRIII	Sulfide oxidation
+sulfide	sulfane sulfur	SQRIV	Sulfide oxidation
+sulfide	sulfane sulfur	SQRV	Sulfide oxidation
+sulfide	sulfane sulfur	SQRVI	Sulfide oxidation
+sulfane sulfur	sulfite	SDOI	Sulfide detoxification: sulfane sulfur oxidation
+sulfane sulfur	sulfite	SDOII	Sulfide detoxification: sulfane sulfur oxidation
+sulfane sulfur	sulfite	oxDsrA;oxDsrB	Sulfane sulfur oxidation in cytoplasm
+sulfite	APS	oxAprAI;oxAprBI	Sulfite oxidation in cytoplasm
+sulfite	APS	oxAprAII;oxAprBII	Sulfite oxidation in cytoplasm
+sulfite	sulfate	oxSat	Sulfite oxidation in cytoplasm
+sulfite	sulfate	SoeA;SoeB;SoeC	Sulfite oxidation in cytoplasm
+sulfite	sulfate	SorA;SorB	Sulfite oxidation in periplasm
+sulfane sulfur	sulfite	sHdrA;sHdrB1;sHdrB2;sHdrC1;sHdrC2	Sulfane sulfur oxidation in cytoplasm
+sulfur carrier protein-bound sulfur	2-thiouridine sulfur	TusA;TusB;TusC;TusD;TusE	2-thiouridine synthesis

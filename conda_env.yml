@@ -28,3 +28,8 @@ dependencies:
   - mfqe
   - pplacer
   - fasttree
+
+  # --- Python packages via pip
+  - pip
+  - pip:
+      - kaleido==0.2.1
