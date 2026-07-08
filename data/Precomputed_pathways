@@ -1113,7 +1113,7 @@ pathway_id	input_sulfur_species_or_compound	output_sulfur_species_or_compound	en
 001093	tetrathionate	sulfite	TsdA;SoxA;SoxX;SoxY;SoxZ;SoxB;SDOI	
 001094	tetrathionate	sulfite	TsdA;SoxA;SoxX;SoxY;SoxZ;SoxB;SDOII	
 001095	tetrathionate	sulfite	TsdA;SoxA;SoxX;SoxY;SoxZ;SoxB;oxDsrA;oxDsrB	
-001096	tetrathionate	sulfite	TsdA;SoxA;SoxX;SoxY;SoxZ;SoxB;sHdrA;sHdrB1;sHdrB2;sHdrC1;sHdrC2	
+001096	thiosulfate	sulfite	TsdA;SoxA;SoxX;SoxY;SoxZ;SoxB;sHdrA;sHdrB1;sHdrB2;sHdrC1;sHdrC2
 001097	tetrathionate	sulfane sulfur	Tth;PhsA;PhsB;PhsC;FccA;FccB	
 001098	tetrathionate	sulfane sulfur	Tth;PhsA;PhsB;PhsC;SQRI	
 001099	tetrathionate	sulfane sulfur	Tth;PhsA;PhsB;PhsC;SQRII	
@@ -3479,10 +3479,10 @@ pathway_id	input_sulfur_species_or_compound	output_sulfur_species_or_compound	en
 003459	tetrathionate	sulfate	TsdA;SoxA;SoxX;SoxY;SoxZ;SoxB;oxDsrA;oxDsrB;oxAprAII;oxAprBII;oxSat	
 003460	tetrathionate	sulfate	TsdA;SoxA;SoxX;SoxY;SoxZ;SoxB;oxDsrA;oxDsrB;SoeA;SoeB;SoeC	
 003461	tetrathionate	sulfate	TsdA;SoxA;SoxX;SoxY;SoxZ;SoxB;oxDsrA;oxDsrB;SorA;SorB	
-003462	tetrathionate	sulfate	TsdA;SoxA;SoxX;SoxY;SoxZ;SoxB;sHdrA;sHdrB1;sHdrB2;sHdrC1;sHdrC2;oxAprAI;oxAprBI;oxSat	
-003463	tetrathionate	sulfate	TsdA;SoxA;SoxX;SoxY;SoxZ;SoxB;sHdrA;sHdrB1;sHdrB2;sHdrC1;sHdrC2;oxAprAII;oxAprBII;oxSat	
-003464	tetrathionate	sulfate	TsdA;SoxA;SoxX;SoxY;SoxZ;SoxB;sHdrA;sHdrB1;sHdrB2;sHdrC1;sHdrC2;SoeA;SoeB;SoeC	
-003465	tetrathionate	sulfate	TsdA;SoxA;SoxX;SoxY;SoxZ;SoxB;sHdrA;sHdrB1;sHdrB2;sHdrC1;sHdrC2;SorA;SorB	
+003462	thiosulfate	sulfate	TsdA;SoxA;SoxX;SoxY;SoxZ;SoxB;sHdrA;sHdrB1;sHdrB2;sHdrC1;sHdrC2;oxAprAI;oxAprBI;oxSat
+003463	thiosulfate	sulfate	TsdA;SoxA;SoxX;SoxY;SoxZ;SoxB;sHdrA;sHdrB1;sHdrB2;sHdrC1;sHdrC2;oxAprAII;oxAprBII;oxSat
+003464	thiosulfate	sulfate	TsdA;SoxA;SoxX;SoxY;SoxZ;SoxB;sHdrA;sHdrB1;sHdrB2;sHdrC1;sHdrC2;SoeA;SoeB;SoeC
+003465	thiosulfate	sulfate	TsdA;SoxA;SoxX;SoxY;SoxZ;SoxB;sHdrA;sHdrB1;sHdrB2;sHdrC1;sHdrC2;SorA;SorB
 003466	tetrathionate	sulfite	Tth;PhsA;PhsB;PhsC;FccA;FccB;SDOI	
 003467	tetrathionate	sulfite	Tth;PhsA;PhsB;PhsC;FccA;FccB;SDOII	
 003468	tetrathionate	sulfite	Tth;PhsA;PhsB;PhsC;FccA;FccB;oxDsrA;oxDsrB	
