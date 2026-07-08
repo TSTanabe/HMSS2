@@ -18,6 +18,7 @@ dependencies:
   - pytest=8.4.1
   - graftm
   - pyrodigal
+  - plotly
 
   # --- Bioinformatics tools ---
   - diamond
