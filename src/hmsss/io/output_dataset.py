@@ -133,8 +133,8 @@ def run_protein_fetch_output(config: Config, directory: str) -> None:
         db_fetch_data_general.fetch_fasta_and_hit_data(config)
     )
 
-    # metabolic_dict = _load_domain_annotations(config.metabolic_information)
-    metabolic_dict = {}
+    metabolic_dict = _load_domain_annotations(config.metabolic_information)
+    # metabolic_dict = {}
 
     # cluster_context_dict = db_fetch_context.fetch_cluster_context_for_proteins(
     #    database=config.database_directory,

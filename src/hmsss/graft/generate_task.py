@@ -397,7 +397,7 @@ def initialize_task_list(config):
         logger.warning("Define a gpkg set for the read mapping")
         sys.exit()
 
-    prepare_packages.initialize_gpkg_packages(gpkg_packages, threads=4)
+    prepare_packages.initialize_gpkg_packages(gpkg_packages, threads=4)  # creates refseq.dmnd and decoy.dmnd
     gpkg_length_dict = gpkg_length.collect_gpkg_reference_median_lengths(gpkg_packages)
     gpkg_ram_dict = gpkg_ram.collect_gpkg_ram(gpkg_packages)
 

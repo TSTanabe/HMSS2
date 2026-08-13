@@ -488,7 +488,7 @@ def write_individual_genome_reports(config) -> None:
     logger.info(start_msg)
     # print(start_msg, flush=True)
 
-    if pathway_rows:
+    if pathway_rows:  # Writes metabolic_pathway_report.tsv
         msg1 = f"Loaded {len(pathway_rows)} precomputed pathway definitions from {pathway_file}"
         msg2 = f"Writing genome pathway report to {pathway_report_file}"
         logger.info(msg1)
