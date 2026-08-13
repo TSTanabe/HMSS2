@@ -281,7 +281,68 @@ class Protein:
             else:
                 i -= 1
 
-        return chosen
+        # ------------------------------------------------------------------
+        # Collapse consecutive selected domains of the same type
+        # ------------------------------------------------------------------
+
+        chosen_sorted = sorted(chosen, key=lambda d: (d.start, d.end))
+
+        if not chosen_sorted:
+            return set()
+
+        collapsed: set[Domain] = set()
+
+        current_group = [chosen_sorted[0]]
+
+        def collapse_group(group: list[Domain]) -> Domain:
+            """
+            Collapse consecutive domains of the same type into one Domain.
+
+            - domain:    same domain name
+            - start:     start of first domain
+            - end:       end of last domain
+            - score:     score of first domain
+            - comments:  unique comments from all merged domains
+            - identity:  identity of first domain
+            - bsr:       BSR of first domain
+            """
+
+            first = group[0]
+            last = group[-1]
+
+            # Merge selection comments, preserving their order
+            comments = []
+
+            for dom in group:
+                for comment in dom.selection_comment_list:
+                    if comment not in comments:
+                        comments.append(comment)
+
+            return Domain(
+                domain=first.domain,
+                start=first.start,
+                end=last.end,
+                score=first.score,
+                selection_comment_list=comments,
+                identity=first.identity,
+                bsr=first.bsr,
+            )
+
+        for dom in chosen_sorted[1:]:
+            if dom.domain == current_group[-1].domain:
+                # same domain type -> add to current group
+                current_group.append(dom)
+
+            else:
+                # different domain type -> finish previous group
+                collapsed.add(collapse_group(current_group))
+
+                current_group = [dom]
+
+        # Finish final group
+        collapsed.add(collapse_group(current_group))
+
+        return collapsed
 
     def add_selection_comment_to_domain(
         self,
