@@ -75,16 +75,16 @@ class Protein:
     """
 
     def __init__(
-            self,
-            protein_id: str,
-            hmm: str,
-            start: int = 0,
-            end: int = 0,
-            score: float = 1,
-            genome_id: str = "",
-            ident: int = 25,
-            bsr: float = 1.0,
-            selection_comment: str = "",
+        self,
+        protein_id: str,
+        hmm: str,
+        start: int = 0,
+        end: int = 0,
+        score: float = 1,
+        genome_id: str = "",
+        ident: int = 25,
+        bsr: float = 1.0,
+        selection_comment: str = "",
     ):
         self.proteinID: str = protein_id
         self.genomeID: str = genome_id
@@ -207,10 +207,10 @@ class Protein:
 
     @staticmethod
     def best_nonoverlapping_domain_set(
-            self,
-            domains: Set[Domain],
-            *,
-            inclusive: bool = True,
+        self,
+        domains: Set[Domain],
+        *,
+        inclusive: bool = True,
     ) -> Set[Domain]:
         # intern als Liste arbeiten
         doms = sorted(domains, key=lambda d: (d.end, d.start))
@@ -220,8 +220,16 @@ class Protein:
             return start - 1 if inclusive else start
 
         p: List[int] = []
-        for d in doms:
-            j = bisect_right(ends, compatible_end_value(d.start)) - 1
+        for i, d in enumerate(doms):
+            j = (
+                bisect_right(
+                    ends,
+                    compatible_end_value(d.start),
+                    0,
+                    i,
+                )
+                - 1
+            )
             p.append(j)
 
         n = len(doms)
@@ -239,7 +247,9 @@ class Protein:
         def effective_score(d: Domain) -> float:
             score = float(d.score)
 
-            if "Bc" in d.selection_comment_list:  # if below minimal cutoff, add penalty to domain score for calculation
+            if (
+                "Bc" in d.selection_comment_list
+            ):  # if below minimal cutoff, add penalty to domain score for calculation
                 return score * 0.01
 
             return score
@@ -274,10 +284,10 @@ class Protein:
         return chosen
 
     def add_selection_comment_to_domain(
-            self,
-            domain_name: str,
-            comment: str,
-            sep: str = ",",
+        self,
+        domain_name: str,
+        comment: str,
+        sep: str = ",",
     ) -> None:
         """
         Add one or multiple selection comment tokens to a specific domain.
@@ -292,7 +302,9 @@ class Protein:
             Separator used in comment string.
         """
 
-        comments = [t.strip() for t in str(comment).split(sep) if t.strip()]  # split the comments
+        comments = [
+            t.strip() for t in str(comment).split(sep) if t.strip()
+        ]  # split the comments
 
         for dom in self.domains | self.low_score_domains:
             if dom.domain != domain_name:
@@ -304,16 +316,16 @@ class Protein:
                     dom.selection_comment_list.append(comment)
 
     def add_domain(
-            self,
-            hmm: str,
-            start: int,
-            end: int,
-            score: float,
-            ident: int = 25,
-            bsr: float = 1.0,
-            *,
-            selection_comment: str = "",
-            force: bool = False,
+        self,
+        hmm: str,
+        start: int,
+        end: int,
+        score: float,
+        ident: int = 25,
+        bsr: float = 1.0,
+        *,
+        selection_comment: str = "",
+        force: bool = False,
     ) -> None:
         """
         Adds a domain to the protein.
@@ -385,7 +397,7 @@ class Protein:
 
 
 def parse_gff_file(
-        filepath: str, protein_dict: Dict[str, Protein]
+    filepath: str, protein_dict: Dict[str, Protein]
 ) -> Dict[str, Protein]:
     """
     3.9.22
@@ -517,13 +529,13 @@ def get_locustag(locustag_pattern: re.Pattern, string: str) -> str:
 
 
 def output_genome_report(
-        output_filepath: str,
-        protein_dict: Dict[str, Any],
-        cluster_dict: Dict[str, Any],
-        taxon_dict: Dict[str, str],
-        genomeID: str = "",
-        writemode: str = "w",
-        taxon_divider: str = "\t",
+    output_filepath: str,
+    protein_dict: Dict[str, Any],
+    cluster_dict: Dict[str, Any],
+    taxon_dict: Dict[str, str],
+    genomeID: str = "",
+    writemode: str = "w",
+    taxon_divider: str = "\t",
 ) -> None:
     """
     Writes the main genome hit table (TSV).
@@ -643,9 +655,9 @@ def output_genome_report(
 
 
 def update_protein_validity_by_synteny(
-        combined_protein_dict: Dict[str, Any],
-        trusted_protein_ids: set,
-        cluster_dict: Dict[str, Any],
+    combined_protein_dict: Dict[str, Any],
+    trusted_protein_ids: set,
+    cluster_dict: Dict[str, Any],
 ) -> Dict[str, Any]:
     """
     Mark proteins from combined_protein_dict that are trusted hits
@@ -688,14 +700,13 @@ def update_protein_validity_by_synteny(
 
 
 def remove_invalid_bc_only_proteins(
-        protein_dict: dict[str, Protein],
+    protein_dict: dict[str, Protein],
 ) -> dict[str, Protein]:
     to_remove = []
 
     allowed_comments = {"Bc", "Nb"}
 
     for protein_id, protein in protein_dict.items():
-
         if protein.valid_hit:
             continue
 
@@ -718,14 +729,14 @@ def remove_invalid_bc_only_proteins(
 
 
 def define_best_score_hits_for_protein_dict(
-        protein_dict: dict[str, Protein],
+    protein_dict: dict[str, Protein],
 ):
     for protein in protein_dict.values():
         protein.define_best_scoring_domains()
 
 
 def define_selection_comments_for_protein_dict(
-        protein_dict: dict[str, Protein],
+    protein_dict: dict[str, Protein],
 ):
     for protein in protein_dict.values():
         protein.define_selection_comment()
