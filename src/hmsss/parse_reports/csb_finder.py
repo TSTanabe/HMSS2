@@ -40,17 +40,17 @@ class Cluster:
         )  # proteinIDs which are part of matching patterns
 
     def add_gene(
-            self,
-            protein_id: str,
-            types: str,
-            start: Optional[int] = None,
-            end: Optional[int] = None,
+        self,
+        protein_id: str,
+        types: str,
+        start: Optional[int] = None,
+        end: Optional[int] = None,
     ) -> None:
         self.genes.append(protein_id)
         self.types.append(types)
 
         if self.cluster_start is None or (
-                start is not None and start < self.cluster_start
+            start is not None and start < self.cluster_start
         ):
             self.cluster_start = start
         if self.cluster_end is None or (end is not None and end > self.cluster_end):
@@ -64,13 +64,13 @@ class Cluster:
             self.type_to_proteins[typ].add(protein_id)
 
     def add_keyword(
-            self,
-            keyword: str,
-            completeness: float = 0.0,
-            csb: str = ".",
-            missing: Optional[tuple[str]] = None,
-            additional_elements: Optional[tuple[str]] = None,
-            keyword_id: Any = ".",
+        self,
+        keyword: str,
+        completeness: float = 0.0,
+        csb: str = ".",
+        missing: Optional[tuple[str]] = None,
+        additional_elements: Optional[tuple[str]] = None,
+        keyword_id: Any = ".",
     ) -> None:
         missing = missing or []
         keyword_id = keyword if keyword_id == "." else keyword_id
@@ -79,7 +79,7 @@ class Cluster:
         )
 
     def add_covered_types(
-            self, covered_types: Set[str] | List[str] | tuple[str, ...]
+        self, covered_types: Set[str] | List[str] | tuple[str, ...]
     ) -> Set[str]:
         """
         Given a set/list/tuple of covered protein 'types' (domain names),
@@ -175,14 +175,14 @@ class Keyword:
     """
 
     def __init__(
-            self,
-            keyword: str,
-            completeness: float = 0.0,
-            csb: str = ".",
-            missing: Optional[tuple[str]] = None,
-            additional: Optional[tuple[str]] = None,
-            keyword_id: Any = ".",
-            transitions=None,
+        self,
+        keyword: str,
+        completeness: float = 0.0,
+        csb: str = ".",
+        missing: Optional[tuple[str]] = None,
+        additional: Optional[tuple[str]] = None,
+        keyword_id: Any = ".",
+        transitions=None,
     ) -> None:
         self.keyword: str = str(keyword)
         self.csb: str = csb  # Collinear to the reference pattern
@@ -280,7 +280,7 @@ def make_pattern_dict(filepath: str) -> Dict[str, Tuple[Set[str], int]]:
 
 
 def find_syntenic_blocks(
-        genome_id: str, protein_dict: Dict[str, Any], distance: int = 3500
+    genome_id: str, protein_dict: Dict[str, Any], distance: int = 3500
 ) -> Dict[str, Cluster]:
     """
     Drop-in replacement: gleicher Output wie vorher, aber schneller.
@@ -350,10 +350,10 @@ def find_syntenic_blocks(
 
 
 def name_syntenic_blocks(
-        patterns: Dict[str, Any],
-        cluster_id_dict: Dict[str, Cluster],
-        min_completeness: float = 0.5,
-        collinearity_check: int = 1,
+    patterns: Dict[str, Any],
+    cluster_id_dict: Dict[str, Cluster],
+    min_completeness: float = 0.5,
+    collinearity_check: int = 1,
 ) -> Dict[str, Cluster]:
     """
     3.9.22
@@ -434,12 +434,12 @@ from typing import Dict, Any, List
 
 
 def name_syntenic_blocks_trie(
-        cluster_dict: Dict[str, Any],
-        index: TrieIndex,
-        *,
-        min_completeness: float = 0.5,
-        only_terminal_node_patterns: bool = False,  # True: nur exakte Patterns, die am Endknoten terminieren
-        include_partials: bool = True,  # True: zusätzlich auch Teiltreffer (unvollständige Patterns) aufnehmen
+    cluster_dict: Dict[str, Any],
+    index: TrieIndex,
+    *,
+    min_completeness: float = 0.5,
+    only_terminal_node_patterns: bool = False,  # True: nur exakte Patterns, die am Endknoten terminieren
+    include_partials: bool = True,  # True: zusätzlich auch Teiltreffer (unvollständige Patterns) aufnehmen
 ) -> dict[str, Any]:
     """
     Benennt Syntenie-Cluster anhand des vorbereiteten TrieIndex.
@@ -455,8 +455,8 @@ def name_syntenic_blocks_trie(
 
     # Über alle Cluster iterieren, die annotiert werden sollen
     for (
-            cluster_id,
-            cluster,
+        cluster_id,
+        cluster,
     ) in cluster_dict.items():  # <- alle Cluster einmal durchgehen
         # Alle Domains (als Strings) aus dem Cluster holen
         present_names: set[str] = set(cluster.get_protein_type_set())
@@ -492,7 +492,7 @@ def name_syntenic_blocks_trie(
         for pid, k in pids_k.items():
             meta = index.pattern_meta[pid]
             if (
-                    meta.length == 0
+                meta.length == 0
             ):  # Leere Patterns (sollten praktisch nicht vorkommen) überspringen
                 continue
 

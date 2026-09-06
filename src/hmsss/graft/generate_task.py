@@ -54,14 +54,14 @@ class GraftMTask:
         object.__setattr__(self, "decoy_db", decoy_db)
 
     def apply_ram_profile(
-            self,
-            peak_gb: float | None,
-            *,
-            est_factor: float = 1.02,
-            cap_factor: float = 1.1,
-            fallback_est_gb: float = 16.0,
-            fallback_cap_gb: float = 24.0,
-            rounding: str = "ceil",
+        self,
+        peak_gb: float | None,
+        *,
+        est_factor: float = 1.02,
+        cap_factor: float = 1.1,
+        fallback_est_gb: float = 16.0,
+        fallback_cap_gb: float = 24.0,
+        rounding: str = "ceil",
     ) -> None:
         """
         Set mem_est_gb and mem_cap_gb based on a measured peak RAM (GB).
@@ -88,10 +88,10 @@ class GraftMTask:
 
 
 def merge_read_mapping_inputs(
-        *,
-        fna_files: Dict[str, str],
-        faa_files: Dict[str, str],
-        fastq_files: Dict[str, str],
+    *,
+    fna_files: Dict[str, str],
+    faa_files: Dict[str, str],
+    fastq_files: Dict[str, str],
 ) -> Dict[str, str]:
     """
     Merge FNA, FAA and FASTQ input dictionaries into a single mapping:
@@ -116,9 +116,9 @@ def merge_read_mapping_inputs(
 
 
 def automatic_forward_reverse_file_detection(
-        files: Dict[str, str],
-        forward_extension: str | None = None,
-        reverse_extension: str | None = None,
+    files: Dict[str, str],
+    forward_extension: str | None = None,
+    reverse_extension: str | None = None,
 ) -> Tuple[Dict[str, str], Dict[str, str]]:
     # immer absolute Pfade
 
@@ -134,7 +134,7 @@ def automatic_forward_reverse_file_detection(
             name = os.path.basename(path)
             for token in ("_R1", "_R2", "_1", "_2"):
                 if token in name:
-                    suffix = name[name.index(token):]
+                    suffix = name[name.index(token) :]
                     suffix_counter[suffix] += 1
 
         if len(suffix_counter) == 0:
@@ -299,16 +299,16 @@ def read_basename(read_file: str) -> str:
 
 
 def create_task_list(
-        gpkg_packages: dict[str, str],
-        forward_dict: dict[str, str],
-        reverse_dict: dict[str, str],
-        output_directory: str,
-        length_dict: dict[str, int],
-        gpkg_ram_profile: dict[str, float],
-        *,
-        threads: int = 5,
-        evalue: str = "1e-5",
-        interleaved: bool = False,
+    gpkg_packages: dict[str, str],
+    forward_dict: dict[str, str],
+    reverse_dict: dict[str, str],
+    output_directory: str,
+    length_dict: dict[str, int],
+    gpkg_ram_profile: dict[str, float],
+    *,
+    threads: int = 5,
+    evalue: str = "1e-5",
+    interleaved: bool = False,
 ) -> list[GraftMTask]:
     tasks: list[GraftMTask] = []
 
@@ -340,12 +340,12 @@ def create_task_list(
 
 
 def filter_gpkg_by_ram(
-        *,
-        gpkg_packages: dict[str, str],
-        gpkg_ram_profile: dict[str, float],
-        ram_limit_gb: float,
-        cap_factor: float = 1.1,
-        fallback_cap_gb: float = 16.0,
+    *,
+    gpkg_packages: dict[str, str],
+    gpkg_ram_profile: dict[str, float],
+    ram_limit_gb: float,
+    cap_factor: float = 1.1,
+    fallback_cap_gb: float = 16.0,
 ) -> dict[str, str]:
     """
     Remove GPKGs that would exceed the RAM limit even in isolation.
@@ -397,7 +397,9 @@ def initialize_task_list(config):
         logger.warning("Define a gpkg set for the read mapping")
         sys.exit()
 
-    prepare_packages.initialize_gpkg_packages(gpkg_packages, threads=4)  # creates refseq.dmnd and decoy.dmnd
+    prepare_packages.initialize_gpkg_packages(
+        gpkg_packages, threads=4
+    )  # creates refseq.dmnd and decoy.dmnd
     gpkg_length_dict = gpkg_length.collect_gpkg_reference_median_lengths(gpkg_packages)
     gpkg_ram_dict = gpkg_ram.collect_gpkg_ram(gpkg_packages)
 

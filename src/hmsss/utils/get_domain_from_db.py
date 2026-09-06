@@ -128,12 +128,12 @@ def fetch_paralog_counts_for_rank(con, domains, taxon_rank):
         rows = con.execute(query, (domain,)).fetchall()
 
         for (
-                domain_name,
-                taxon,
-                genome_id,
-                total_paralogs,
-                valid_paralogs,
-                invalid_paralogs,
+            domain_name,
+            taxon,
+            genome_id,
+            total_paralogs,
+            valid_paralogs,
+            invalid_paralogs,
         ) in rows:
             rows_out.append(
                 {
@@ -183,13 +183,10 @@ def summarize_taxon_paralogs(genome_rows):
                 "domain": domain,
                 "rank": rank,
                 "taxon": taxon,
-
                 "genomes_with_domain": len(rows),
-
                 "total_hits": sum(total_counts),
                 "valid_hits": sum(valid_counts),
                 "invalid_hits": sum(invalid_counts),
-
                 "genomes_with_2plus_total_paralogs": sum(
                     1 for x in total_counts if x >= 2
                 ),
@@ -199,15 +196,12 @@ def summarize_taxon_paralogs(genome_rows):
                 "genomes_with_2plus_invalid_paralogs": sum(
                     1 for x in invalid_counts if x >= 2
                 ),
-
                 "mean_total_paralogs_per_positive_genome": mean_total,
                 "median_total_paralogs_per_positive_genome": median_total,
                 "max_total_paralogs_per_genome": max_total,
-
                 "mean_valid_paralogs_per_positive_genome": mean_valid,
                 "median_valid_paralogs_per_positive_genome": median_valid,
                 "max_valid_paralogs_per_genome": max_valid,
-
                 "mean_invalid_paralogs_per_positive_genome": mean_invalid,
                 "median_invalid_paralogs_per_positive_genome": median_invalid,
                 "max_invalid_paralogs_per_genome": max_invalid,
@@ -248,7 +242,9 @@ def make_paralog_distribution(genome_rows):
 
     distribution_rows = []
 
-    for (domain, rank, taxon, paralog_type, paralogs), genomes in sorted(counter.items()):
+    for (domain, rank, taxon, paralog_type, paralogs), genomes in sorted(
+        counter.items()
+    ):
         distribution_rows.append(
             {
                 "domain": domain,
@@ -288,13 +284,10 @@ def summarize_domain_level(genome_rows):
         summary_rows.append(
             {
                 "domain": domain,
-
                 "genome_taxon_rows": len(rows),
-
                 "total_hits": sum(total_counts),
                 "valid_hits": sum(valid_counts),
                 "invalid_hits": sum(invalid_counts),
-
                 "genome_taxon_rows_with_2plus_total_paralogs": sum(
                     1 for x in total_counts if x >= 2
                 ),
@@ -304,15 +297,12 @@ def summarize_domain_level(genome_rows):
                 "genome_taxon_rows_with_2plus_invalid_paralogs": sum(
                     1 for x in invalid_counts if x >= 2
                 ),
-
                 "mean_total_paralogs_per_positive_genome_taxon_row": mean_total,
                 "median_total_paralogs_per_positive_genome_taxon_row": median_total,
                 "max_total_paralogs_per_genome_taxon_row": max_total,
-
                 "mean_valid_paralogs_per_positive_genome_taxon_row": mean_valid,
                 "median_valid_paralogs_per_positive_genome_taxon_row": median_valid,
                 "max_valid_paralogs_per_genome_taxon_row": max_valid,
-
                 "mean_invalid_paralogs_per_positive_genome_taxon_row": mean_invalid,
                 "median_invalid_paralogs_per_positive_genome_taxon_row": median_invalid,
                 "max_invalid_paralogs_per_genome_taxon_row": max_invalid,
@@ -402,10 +392,7 @@ def main():
 
     if not args.include_na:
         before = len(all_genome_rows)
-        all_genome_rows = [
-            row for row in all_genome_rows
-            if row["taxon"] != "NA"
-        ]
+        all_genome_rows = [row for row in all_genome_rows if row["taxon"] != "NA"]
         print(
             f"[INFO] Removed NA taxonomy rows: {len(all_genome_rows):,}/{before:,} retained",
             flush=True,
@@ -431,25 +418,19 @@ def main():
         "domain",
         "rank",
         "taxon",
-
         "genomes_with_domain",
-
         "total_hits",
         "valid_hits",
         "invalid_hits",
-
         "genomes_with_2plus_total_paralogs",
         "genomes_with_2plus_valid_paralogs",
         "genomes_with_2plus_invalid_paralogs",
-
         "mean_total_paralogs_per_positive_genome",
         "median_total_paralogs_per_positive_genome",
         "max_total_paralogs_per_genome",
-
         "mean_valid_paralogs_per_positive_genome",
         "median_valid_paralogs_per_positive_genome",
         "max_valid_paralogs_per_genome",
-
         "mean_invalid_paralogs_per_positive_genome",
         "median_invalid_paralogs_per_positive_genome",
         "max_invalid_paralogs_per_genome",
@@ -466,25 +447,19 @@ def main():
 
     domain_summary_fields = [
         "domain",
-
         "genome_taxon_rows",
-
         "total_hits",
         "valid_hits",
         "invalid_hits",
-
         "genome_taxon_rows_with_2plus_total_paralogs",
         "genome_taxon_rows_with_2plus_valid_paralogs",
         "genome_taxon_rows_with_2plus_invalid_paralogs",
-
         "mean_total_paralogs_per_positive_genome_taxon_row",
         "median_total_paralogs_per_positive_genome_taxon_row",
         "max_total_paralogs_per_genome_taxon_row",
-
         "mean_valid_paralogs_per_positive_genome_taxon_row",
         "median_valid_paralogs_per_positive_genome_taxon_row",
         "max_valid_paralogs_per_genome_taxon_row",
-
         "mean_invalid_paralogs_per_positive_genome_taxon_row",
         "median_invalid_paralogs_per_positive_genome_taxon_row",
         "max_invalid_paralogs_per_genome_taxon_row",

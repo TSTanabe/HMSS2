@@ -91,14 +91,14 @@ def expand_required_proteins(raw: list[str]) -> list[list[str]]:
     pos = 0
     for m in re.finditer(r"\[(.*?)\](:?)", argument):
         # Text vor der Klammer: als "normale" Gruppe(n) behandeln
-        prefix = argument[pos:m.start()].strip()
+        prefix = argument[pos : m.start()].strip()
         if prefix:
             # prefix kann selbst mehrere bracket-freie "Gruppen" enthalten.
             # simplest: als eine Gruppe weiterreichen
             group_strings.append(prefix)
 
         inner = (m.group(1) or "").strip()
-        has_colon = (m.group(2) == ":")
+        has_colon = m.group(2) == ":"
 
         if inner:
             if has_colon:
@@ -158,7 +158,7 @@ def _build_limiter_dict(config: Config) -> Dict[str, Any]:
 
 
 def fetch_fasta_and_hit_data(
-        config: Config,
+    config: Config,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
     """
     Zentrale Fetch-Routine für Output-Operatoren.
@@ -247,7 +247,9 @@ def fetch_fasta_and_hit_data(
         if taxon_dict:
             sum_taxon_dict.update(taxon_dict)
             combo_key = tuple(combo)
-            sum_combo_to_genomes_dict.setdefault(combo_key, set()).update(taxon_dict.keys())
+            sum_combo_to_genomes_dict.setdefault(combo_key, set()).update(
+                taxon_dict.keys()
+            )
 
     # Addition von einzelnen proteinen
     for combo in additional_proteins:
@@ -291,7 +293,7 @@ def fetch_fasta_and_hit_data(
 
 
 def fetch_read_and_hit_data(
-        config: Config,
+    config: Config,
 ) -> Tuple[
     Dict[Tuple[str, str, str], Read],
     Dict[str, Dict[str, Any]],

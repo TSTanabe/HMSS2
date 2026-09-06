@@ -13,11 +13,11 @@ logger = get_logger(__name__)
 
 
 def print_read_hit_reports(
-        directory: str,
-        read_dict: Dict[Tuple[str, str, str], Read],
-        metagenome_dict: Dict[str, Dict[str, Any]],
-        lineage_dict: Dict[str, Dict[str, Any]],
-        gpkg_length_dict: Dict[str, int],
+    directory: str,
+    read_dict: Dict[Tuple[str, str, str], Read],
+    metagenome_dict: Dict[str, Dict[str, Any]],
+    lineage_dict: Dict[str, Dict[str, Any]],
+    gpkg_length_dict: Dict[str, int],
 ) -> None:
     """
     Write all read-based report files.
@@ -137,7 +137,7 @@ def _build_lineage_string(lineage_meta: Dict[str, Any]) -> str:
 
 
 def _aggregate_reads_by_metagenome_gpkg_lineage(
-        read_dict: Dict[Tuple[str, str, str], Read],
+    read_dict: Dict[Tuple[str, str, str], Read],
 ) -> Dict[Tuple[str, str, str], int]:
     """
     Aggregate reads by (metagenomeID, gpkg_name, lineageID).
@@ -157,11 +157,11 @@ def _aggregate_reads_by_metagenome_gpkg_lineage(
 
 
 def output_read_hit_table(
-        directory: str,
-        read_dict: Dict[Tuple[str, str, str], Read],
-        metagenome_dict: Dict[str, Dict[str, Any]],
-        lineage_dict: Dict[str, Dict[str, Any]],
-        filename: str = "summary_read_hit_table.txt",
+    directory: str,
+    read_dict: Dict[Tuple[str, str, str], Read],
+    metagenome_dict: Dict[str, Dict[str, Any]],
+    lineage_dict: Dict[str, Dict[str, Any]],
+    filename: str = "summary_read_hit_table.txt",
 ) -> None:
     """
     Write aggregated read hit table.
@@ -229,11 +229,11 @@ def output_read_hit_table(
 
 
 def output_read_hit_details(
-        directory: str,
-        read_dict: Dict[Tuple[str, str, str], Read],
-        metagenome_dict: Dict[str, Dict[str, Any]],
-        lineage_dict: Dict[str, Dict[str, Any]],
-        filename: str = "summary_read_hits_detailed.txt",
+    directory: str,
+    read_dict: Dict[Tuple[str, str, str], Read],
+    metagenome_dict: Dict[str, Dict[str, Any]],
+    lineage_dict: Dict[str, Dict[str, Any]],
+    filename: str = "summary_read_hits_detailed.txt",
 ) -> None:
     """
     Write detailed per-read placement table.
@@ -267,8 +267,12 @@ def output_read_hit_details(
             lineage_meta = lineage_dict.get(lineageID, {})
             lineage = _build_lineage_string(lineage_meta)
 
-            sequence_length = len(read.sequence) if getattr(read, "sequence", None) else 0
-            alignment_length = len(read.alignment) if getattr(read, "alignment", None) else 0
+            sequence_length = (
+                len(read.sequence) if getattr(read, "sequence", None) else 0
+            )
+            alignment_length = (
+                len(read.alignment) if getattr(read, "alignment", None) else 0
+            )
 
             out.write(
                 f"{_safe_str(metagenomeID)}\t"
@@ -288,11 +292,11 @@ def output_read_hit_details(
 
 
 def output_read_lineage_counts(
-        directory: str,
-        read_dict: Dict[Tuple[str, str, str], Read],
-        metagenome_dict: Dict[str, Dict[str, Any]],
-        lineage_dict: Dict[str, Dict[str, Any]],
-        filename: str = "summary_read_lineage_counts.txt",
+    directory: str,
+    read_dict: Dict[Tuple[str, str, str], Read],
+    metagenome_dict: Dict[str, Dict[str, Any]],
+    lineage_dict: Dict[str, Dict[str, Any]],
+    filename: str = "summary_read_lineage_counts.txt",
 ) -> None:
     """
     Write lineage summary separated by gpkg/domain type.
@@ -345,9 +349,7 @@ def output_read_lineage_counts(
     sorted_keys = sorted(lineage_read_counts.keys(), key=taxonomy_sort_key)
 
     with open(outpath, "w") as out:
-        out.write(
-            "gpkg_name\tread_count\tmetagenome_count\tlineage\n"
-        )
+        out.write("gpkg_name\tread_count\tmetagenome_count\tlineage\n")
 
         for lineageID, gpkg_name in sorted_keys:
             lineage_meta = lineage_dict.get(lineageID, {})
@@ -389,8 +391,8 @@ def output_read_lineage_counts(
 
 
 def output_read_fastas(
-        directory: str,
-        read_dict: Dict[Tuple[str, str, str], Read],
+    directory: str,
+    read_dict: Dict[Tuple[str, str, str], Read],
 ) -> None:
     """
     Write separate FASTA files per protein/gpkg type.
@@ -430,7 +432,9 @@ def output_read_fastas(
         protein_written = 0
 
         with open(dna_path, "w") as dna_out, open(protein_path, "w") as prot_out:
-            for readID, gpkg_name, metagenomeID, read in sorted(grouped_reads[gpkg_name]):
+            for readID, gpkg_name, metagenomeID, read in sorted(
+                grouped_reads[gpkg_name]
+            ):
                 header = f"{readID}|{metagenomeID}|{gpkg_name}"
 
                 if getattr(read, "sequence", None):
@@ -479,7 +483,11 @@ def _calculate_effective_library_reads(meta: Dict[str, Any]) -> float:
         reverse_reads = 0.0
 
     try:
-        fraction = float(meta.get("prokaryotic_fraction")) if meta.get("prokaryotic_fraction") is not None else 1.0
+        fraction = (
+            float(meta.get("prokaryotic_fraction"))
+            if meta.get("prokaryotic_fraction") is not None
+            else 1.0
+        )
     except Exception:
         fraction = 1.0
 
@@ -487,12 +495,12 @@ def _calculate_effective_library_reads(meta: Dict[str, Any]) -> float:
 
 
 def output_read_taxonomy_level_counts(
-        directory: str,
-        read_dict: Dict[Tuple[str, str, str], Read],
-        metagenome_dict: Dict[str, Dict[str, Any]],
-        lineage_dict: Dict[str, Dict[str, Any]],
-        gpkg_length_dict: Dict[str, int | float],
-        filename: str = "summary_read_taxonomy_level_counts.txt",
+    directory: str,
+    read_dict: Dict[Tuple[str, str, str], Read],
+    metagenome_dict: Dict[str, Dict[str, Any]],
+    lineage_dict: Dict[str, Dict[str, Any]],
+    gpkg_length_dict: Dict[str, int | float],
+    filename: str = "summary_read_taxonomy_level_counts.txt",
 ) -> None:
     """
     Summarise reads per metagenome, protein type, and taxonomic level,
@@ -551,7 +559,7 @@ def output_read_taxonomy_level_counts(
             _safe_str(x[1]).casefold(),  # protein_name / gpkg_name
             level_order.get(x[2], 999),  # taxonomic level order
             _safe_str(x[3]).casefold(),  # taxon name
-        )
+        ),
     )
 
     with open(outpath, "w") as out:
@@ -581,7 +589,7 @@ def output_read_taxonomy_level_counts(
 
             if effective_library_reads > 0 and protein_length > 0:
                 rpkm = (float(read_count) * 1_000_000_000.0) / (
-                        effective_library_reads * protein_length
+                    effective_library_reads * protein_length
                 )
             else:
                 rpkm = 0.0

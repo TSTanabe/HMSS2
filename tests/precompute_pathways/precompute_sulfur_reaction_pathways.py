@@ -54,7 +54,9 @@ def load_reactions(path):
         required = [INPUT_COL, OUTPUT_COL, ENZYME_COL, PATHWAY_COL]
         missing = [c for c in required if c not in reader.fieldnames]
         if missing:
-            raise ValueError(f"Missing required columns: {missing}\nFound: {reader.fieldnames}")
+            raise ValueError(
+                f"Missing required columns: {missing}\nFound: {reader.fieldnames}"
+            )
 
         reactions = []
         for idx, row in enumerate(reader, start=1):
@@ -66,16 +68,18 @@ def load_reactions(path):
             in_parts = split_compounds(in_raw)
             out_parts = split_compounds(out_raw)
 
-            reactions.append({
-                "id": idx,
-                "input_raw": in_raw,
-                "output_raw": out_raw,
-                "enzyme_raw": enzyme_raw,
-                "pathway_raw": pathway_raw,
-                "input_norm": {normalize_compound(x) for x in in_parts},
-                "output_norm": {normalize_compound(x) for x in out_parts},
-                "enzymes": split_enzymes(enzyme_raw),
-            })
+            reactions.append(
+                {
+                    "id": idx,
+                    "input_raw": in_raw,
+                    "output_raw": out_raw,
+                    "enzyme_raw": enzyme_raw,
+                    "pathway_raw": pathway_raw,
+                    "input_norm": {normalize_compound(x) for x in in_parts},
+                    "output_norm": {normalize_compound(x) for x in out_parts},
+                    "enzymes": split_enzymes(enzyme_raw),
+                }
+            )
 
     return reactions
 
@@ -119,16 +123,22 @@ def combine_two_step(reactions):
 
                 pathway = a["pathway_raw"]
                 if b["pathway_raw"] and b["pathway_raw"] != pathway:
-                    pathway = f"{pathway} + {b['pathway_raw']}" if pathway else b["pathway_raw"]
+                    pathway = (
+                        f"{pathway} + {b['pathway_raw']}"
+                        if pathway
+                        else b["pathway_raw"]
+                    )
 
-                combos.append({
-                    "input": a["input_raw"],
-                    "output": b["output_raw"],
-                    "enzymes": join_unique(a["enzymes"] + b["enzymes"]),
-                    "pathway": pathway,
-                    "reaction_ids": f"{a['id']};{b['id']}",
-                    "intermediate": intermediate,
-                })
+                combos.append(
+                    {
+                        "input": a["input_raw"],
+                        "output": b["output_raw"],
+                        "enzymes": join_unique(a["enzymes"] + b["enzymes"]),
+                        "pathway": pathway,
+                        "reaction_ids": f"{a['id']};{b['id']}",
+                        "intermediate": intermediate,
+                    }
+                )
 
     return combos
 
@@ -144,11 +154,13 @@ def combine_paths(reactions, max_steps):
     active = []
     for r in reactions:
         if r["input_norm"] and r["output_norm"]:
-            active.append({
-                "ids": [r["id"]],
-                "input_seen": set(r["input_norm"]),
-                "outputs": set(r["output_norm"]),
-            })
+            active.append(
+                {
+                    "ids": [r["id"]],
+                    "input_seen": set(r["input_norm"]),
+                    "outputs": set(r["output_norm"]),
+                }
+            )
 
     all_paths = []
     seen_final = set()
@@ -175,11 +187,14 @@ def combine_paths(reactions, max_steps):
                         continue
                     seen_paths_this_round.add(path_key)
 
-                    new_active.append({
-                        "ids": new_ids,
-                        "input_seen": set(path["input_seen"]) | set(nxt["input_norm"]),
-                        "outputs": set(nxt["output_norm"]),
-                    })
+                    new_active.append(
+                        {
+                            "ids": new_ids,
+                            "input_seen": set(path["input_seen"])
+                            | set(nxt["input_norm"]),
+                            "outputs": set(nxt["output_norm"]),
+                        }
+                    )
 
                     first = by_id[new_ids[0]]
                     last_r = by_id[new_ids[-1]]
@@ -192,18 +207,24 @@ def combine_paths(reactions, max_steps):
                         if r["pathway_raw"] and r["pathway_raw"] not in pathway_parts:
                             pathway_parts.append(r["pathway_raw"])
 
-                    final_key = (tuple(new_ids), first["input_raw"], last_r["output_raw"])
+                    final_key = (
+                        tuple(new_ids),
+                        first["input_raw"],
+                        last_r["output_raw"],
+                    )
                     if final_key in seen_final:
                         continue
                     seen_final.add(final_key)
 
-                    all_paths.append({
-                        "input": first["input_raw"],
-                        "output": last_r["output_raw"],
-                        "enzymes": join_unique(enzymes),
-                        "pathway": " + ".join(pathway_parts),
-                        "reaction_ids": ";".join(map(str, new_ids)),
-                    })
+                    all_paths.append(
+                        {
+                            "input": first["input_raw"],
+                            "output": last_r["output_raw"],
+                            "enzymes": join_unique(enzymes),
+                            "pathway": " + ".join(pathway_parts),
+                            "reaction_ids": ";".join(map(str, new_ids)),
+                        }
+                    )
 
         active = new_active
 
@@ -224,13 +245,15 @@ def write_reaction_format_tsv(rows, out_path):
         writer.writeheader()
 
         for idx, row in enumerate(rows, start=1):
-            writer.writerow({
-                "pathway_id": f"{idx:06d}",
-                INPUT_COL: row["input"],
-                OUTPUT_COL: row["output"],
-                ENZYME_COL: row["enzymes"],
-                PATHWAY_COL: "",
-            })
+            writer.writerow(
+                {
+                    "pathway_id": f"{idx:06d}",
+                    INPUT_COL: row["input"],
+                    OUTPUT_COL: row["output"],
+                    ENZYME_COL: row["enzymes"],
+                    PATHWAY_COL: "",
+                }
+            )
 
 
 def main():
@@ -249,7 +272,9 @@ def main():
     args = parser.parse_args()
 
     reactions = load_reactions(args.input)
-    usable = [r for r in reactions if r["input_norm"] and r["output_norm"] and r["enzymes"]]
+    usable = [
+        r for r in reactions if r["input_norm"] and r["output_norm"] and r["enzymes"]
+    ]
 
     if args.max_steps == 2:
         combinations = combine_two_step(usable)
@@ -283,7 +308,9 @@ def main():
 
     if len(combinations) > n:
         print()
-        print(f"... {len(combinations) - n} further combinations not shown. Use --print-all to print all.")
+        print(
+            f"... {len(combinations) - n} further combinations not shown. Use --print-all to print all."
+        )
 
 
 if __name__ == "__main__":

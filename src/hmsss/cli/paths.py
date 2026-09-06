@@ -188,7 +188,7 @@ def refresh_paths(base: str | Path | None = None) -> None:
 
 
 def as_dict(
-        str_paths: bool = True, include_sources: bool = False
+    str_paths: bool = True, include_sources: bool = False
 ) -> Dict[str, str | Path]:
     """Return all core paths as a dictionary (for logs/debugging).
 

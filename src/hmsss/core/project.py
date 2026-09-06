@@ -64,7 +64,9 @@ def prepare_result_space(config, project: str = "project") -> None:
 
         else:
             # No existing was found, save new project to given location
-            logger.info(f"Creating new database in in project directory in {config.cli_result_dir_in}")
+            logger.info(
+                f"Creating new database in in project directory in {config.cli_result_dir_in}"
+            )
             config.result_files_directory = create_project(
                 config.cli_result_dir_in, project
             )
@@ -145,8 +147,8 @@ def create_project(directory, projectname="project") -> str:
 
 
 def find_database_in_directory(
-        directory: str | Path,
-        db_name: str = "database.db",
+    directory: str | Path,
+    db_name: str = "database.db",
 ) -> Optional[Tuple[Path, Path]]:
     """Search for a database file under the given directory.
 
@@ -201,9 +203,9 @@ def any_process_args_provided(args, default_values: dict) -> bool:
 
 # Routinen für den config file
 def write_config_to_tsv(
-        config: Any,
-        output_directory: str | os.PathLike,
-        filename: str = "parameters_summary.tsv",
+    config: Any,
+    output_directory: str | os.PathLike,
+    filename: str = "parameters_summary.tsv",
 ) -> str:
     """Write a (nested) Config object into a flat TSV file.
 

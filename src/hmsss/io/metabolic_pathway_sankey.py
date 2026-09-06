@@ -177,14 +177,16 @@ def read_pathway_report(path: str | Path) -> pd.DataFrame:
     for col in REQUIRED_COLUMNS:
         df[col] = df[col].fillna("").astype(str).str.strip()
 
-    df.loc[df["species"].isin(["", "nan", "NaN", "None"]), "species"] = "Unknown species"
+    df.loc[df["species"].isin(["", "nan", "NaN", "None"]), "species"] = (
+        "Unknown species"
+    )
 
     df = df[
         (df["genomeID"] != "")
         & (df["input"] != "")
         & (df["output"] != "")
         & (df["enzymes"] != "")
-        ].copy()
+    ].copy()
 
     for col in ["species", "input", "output", "enzymes"]:
         df[col] = df[col].map(normalize_text)
@@ -193,10 +195,10 @@ def read_pathway_report(path: str | Path) -> pd.DataFrame:
 
 
 def limit_species(
-        df: pd.DataFrame,
-        *,
-        top_n_species: int = 40,
-        other_label: str = "Other species",
+    df: pd.DataFrame,
+    *,
+    top_n_species: int = 40,
+    other_label: str = "Other species",
 ) -> pd.DataFrame:
     out = df.copy()
 
@@ -216,11 +218,11 @@ def limit_species(
 
 
 def aggregate_paths(
-        df: pd.DataFrame,
-        *,
-        columns: Sequence[str],
-        top_n: int | None = 40,
-        min_genomes: int = 1,
+    df: pd.DataFrame,
+    *,
+    columns: Sequence[str],
+    top_n: int | None = 40,
+    min_genomes: int = 1,
 ) -> pd.DataFrame:
     use_cols = list(columns)
     work = df.copy()
@@ -252,13 +254,13 @@ def aggregate_paths(
 
 
 def weighted_barycentric_order(
-        *,
-        items: list[str],
-        edges: pd.DataFrame,
-        item_col: str,
-        neighbor_col: str,
-        neighbor_order: list[str],
-        weight_col: str = "n_genomes",
+    *,
+    items: list[str],
+    edges: pd.DataFrame,
+    item_col: str,
+    neighbor_col: str,
+    neighbor_order: list[str],
+    weight_col: str = "n_genomes",
 ) -> list[str]:
     neighbor_rank = {name: i for i, name in enumerate(neighbor_order)}
 
@@ -290,7 +292,9 @@ def weighted_barycentric_order(
     return ordered + missing
 
 
-def optimize_layer_orders(path_df: pd.DataFrame, columns: Sequence[str]) -> list[list[str]]:
+def optimize_layer_orders(
+    path_df: pd.DataFrame, columns: Sequence[str]
+) -> list[list[str]]:
     columns = list(columns)
 
     first_col = columns[0]
@@ -298,8 +302,7 @@ def optimize_layer_orders(path_df: pd.DataFrame, columns: Sequence[str]) -> list
         path_df.groupby(first_col, dropna=False)["n_genomes"]
         .sum()
         .sort_values(ascending=False)
-        .index
-        .tolist()
+        .index.tolist()
     )
 
     orders = [first_order]
@@ -339,10 +342,10 @@ def make_label(column: str, value: str) -> str:
 
 
 def _build_internal_columns_and_dataframe(
-        path_df: pd.DataFrame,
-        columns: list[str],
-        *,
-        split_middle_by_previous: bool,
+    path_df: pd.DataFrame,
+    columns: list[str],
+    *,
+    split_middle_by_previous: bool,
 ) -> tuple[pd.DataFrame, list[str], dict[str, str]]:
     """
     Optionally duplicate the second layer by the previous layer.
@@ -368,7 +371,9 @@ def _build_internal_columns_and_dataframe(
     return plot_df, internal_columns, lane_visible_column
 
 
-def _visible_value(column: str, value: str, lane_visible_column: dict[str, str]) -> tuple[str, str]:
+def _visible_value(
+    column: str, value: str, lane_visible_column: dict[str, str]
+) -> tuple[str, str]:
     """
     Return visible column name and visible value for normal or lane columns.
     """
@@ -379,40 +384,37 @@ def _visible_value(column: str, value: str, lane_visible_column: dict[str, str])
 
 
 def _dominant_first_value(
-        plot_df: pd.DataFrame,
-        *,
-        first_col: str,
-        column: str,
-        value: str,
+    plot_df: pd.DataFrame,
+    *,
+    first_col: str,
+    column: str,
+    value: str,
 ) -> str:
     sub = plot_df[plot_df[column] == value]
     return (
-        sub.groupby(first_col)["n_genomes"]
-        .sum()
-        .sort_values(ascending=False)
-        .index[0]
+        sub.groupby(first_col)["n_genomes"].sum().sort_values(ascending=False).index[0]
     )
 
 
 def build_sankey_figure(
-        path_df: pd.DataFrame,
-        *,
-        columns: Sequence[str],
-        title: str,
-        split_middle_by_previous: bool = False,
-        link_alpha: float = 0.62,
-        right_link_alpha: float = 0.42,
-        node_pad: int = 12,
-        node_thickness: int = 18,
-        font_size: int = 12,
-        width: int = 1600,
-        height: int | None = None,
-        compact_height_per_node: int = 24,
-        min_height: int = 700,
-        margin_left: int = 50,
-        margin_right: int = 50,
-        margin_top: int = 55,
-        margin_bottom: int = 50,
+    path_df: pd.DataFrame,
+    *,
+    columns: Sequence[str],
+    title: str,
+    split_middle_by_previous: bool = False,
+    link_alpha: float = 0.62,
+    right_link_alpha: float = 0.42,
+    node_pad: int = 12,
+    node_thickness: int = 18,
+    font_size: int = 12,
+    width: int = 1600,
+    height: int | None = None,
+    compact_height_per_node: int = 24,
+    min_height: int = 700,
+    margin_left: int = 50,
+    margin_right: int = 50,
+    margin_top: int = 55,
+    margin_bottom: int = 50,
 ) -> go.Figure:
     """
     Build a Sankey plot for arbitrary ordered columns.
@@ -428,10 +430,12 @@ def build_sankey_figure(
     if len(columns) not in {3, 4}:
         raise ValueError("This module expects three or four columns per Sankey plot.")
 
-    plot_df, internal_columns, lane_visible_column = _build_internal_columns_and_dataframe(
-        path_df,
-        columns,
-        split_middle_by_previous=split_middle_by_previous,
+    plot_df, internal_columns, lane_visible_column = (
+        _build_internal_columns_and_dataframe(
+            path_df,
+            columns,
+            split_middle_by_previous=split_middle_by_previous,
+        )
     )
 
     orders = optimize_layer_orders(plot_df, internal_columns)
@@ -453,7 +457,9 @@ def build_sankey_figure(
             node_id = make_layer_node_id(layer_idx, column, raw_value)
             node_ids.append(node_id)
 
-            visible_col, visible_val = _visible_value(column, raw_value, lane_visible_column)
+            visible_col, visible_val = _visible_value(
+                column, raw_value, lane_visible_column
+            )
             labels.append(make_label(visible_col, visible_val))
 
             if layer_idx == 0:
@@ -493,10 +499,7 @@ def build_sankey_figure(
     # they remain separate links with their original color instead of being merged
     # and recolored by a dominant node. This makes values traceable through the
     # whole Sankey path.
-    rank_maps = [
-        {v: i for i, v in enumerate(order)}
-        for order in orders
-    ]
+    rank_maps = [{v: i for i, v in enumerate(order)} for order in orders]
     plot_df = plot_df.copy()
     for idx, col in enumerate(internal_columns):
         plot_df[f"_rank_{idx}"] = plot_df[col].map(rank_maps[idx])
@@ -509,7 +512,9 @@ def build_sankey_figure(
         first_value = row[internal_columns[0]]
         first_hex = first_to_hex[first_value]
 
-        for layer_idx, (left_col, right_col) in enumerate(zip(internal_columns[:-1], internal_columns[1:])):
+        for layer_idx, (left_col, right_col) in enumerate(
+            zip(internal_columns[:-1], internal_columns[1:])
+        ):
             left_value = row[left_col]
             right_value = row[right_col]
 
@@ -522,8 +527,12 @@ def build_sankey_figure(
             target.append(node_index[right_node])
             value.append(int(row["n_genomes"]))
 
-            visible_left_col, visible_left_val = _visible_value(left_col, left_value, lane_visible_column)
-            visible_right_col, visible_right_val = _visible_value(right_col, right_value, lane_visible_column)
+            visible_left_col, visible_left_val = _visible_value(
+                left_col, left_value, lane_visible_column
+            )
+            visible_right_col, visible_right_val = _visible_value(
+                right_col, right_value, lane_visible_column
+            )
 
             customdata.append(
                 f"{DISPLAY_PREFIX.get(visible_left_col, visible_left_col)}: {visible_left_val}<br>"
@@ -597,27 +606,29 @@ def write_figure(fig: go.Figure, output_file: str | Path) -> None:
 
 
 def create_sankey_for_mode(
-        report_file: str | Path,
-        output_file: str | Path,
-        *,
-        mode: str,
-        top_n: int | None = 40,
-        min_genomes: int = 1,
-        top_n_species: int = 40,
-        split_middle_by_previous: bool = False,
-        title: str | None = None,
-        width: int = 1600,
-        height: int | None = None,
-        node_pad: int = 8,
-        node_thickness: int = 22,
-        font_size: int = 16,
-        compact_height_per_node: int = 24,
-        min_height: int = 700,
-        link_alpha: float = 0.62,
-        right_link_alpha: float = 0.42,
+    report_file: str | Path,
+    output_file: str | Path,
+    *,
+    mode: str,
+    top_n: int | None = 40,
+    min_genomes: int = 1,
+    top_n_species: int = 40,
+    split_middle_by_previous: bool = False,
+    title: str | None = None,
+    width: int = 1600,
+    height: int | None = None,
+    node_pad: int = 8,
+    node_thickness: int = 22,
+    font_size: int = 16,
+    compact_height_per_node: int = 24,
+    min_height: int = 700,
+    link_alpha: float = 0.62,
+    right_link_alpha: float = 0.42,
 ) -> go.Figure:
     if mode not in MODE_TO_COLUMNS:
-        raise ValueError(f"Unknown mode {mode!r}. Valid modes: {sorted(MODE_TO_COLUMNS)}")
+        raise ValueError(
+            f"Unknown mode {mode!r}. Valid modes: {sorted(MODE_TO_COLUMNS)}"
+        )
 
     columns = MODE_TO_COLUMNS[mode]
     df = read_pathway_report(report_file)
@@ -655,9 +666,9 @@ def create_sankey_for_mode(
 
 
 def create_sankey_input_output_enzymes(
-        report_file: str | Path,
-        output_file: str | Path,
-        **kwargs,
+    report_file: str | Path,
+    output_file: str | Path,
+    **kwargs,
 ) -> go.Figure:
     return create_sankey_for_mode(
         report_file,
@@ -668,9 +679,9 @@ def create_sankey_input_output_enzymes(
 
 
 def create_sankey_species_input_enzymes(
-        report_file: str | Path,
-        output_file: str | Path,
-        **kwargs,
+    report_file: str | Path,
+    output_file: str | Path,
+    **kwargs,
 ) -> go.Figure:
     return create_sankey_for_mode(
         report_file,
@@ -681,9 +692,9 @@ def create_sankey_species_input_enzymes(
 
 
 def create_sankey_species_output_enzymes(
-        report_file: str | Path,
-        output_file: str | Path,
-        **kwargs,
+    report_file: str | Path,
+    output_file: str | Path,
+    **kwargs,
 ) -> go.Figure:
     return create_sankey_for_mode(
         report_file,
@@ -694,9 +705,9 @@ def create_sankey_species_output_enzymes(
 
 
 def create_sankey_input_output_enzymes_species(
-        report_file: str | Path,
-        output_file: str | Path,
-        **kwargs,
+    report_file: str | Path,
+    output_file: str | Path,
+    **kwargs,
 ) -> go.Figure:
     return create_sankey_for_mode(
         report_file,
@@ -707,23 +718,23 @@ def create_sankey_input_output_enzymes_species(
 
 
 def create_all_standard_sankeys(
-        report_file: str | Path,
-        output_dir: str | Path,
-        *,
-        extension: str = "svg",
-        top_n: int | None = 40,
-        min_genomes: int = 1,
-        top_n_species: int = 40,
-        split_middle_by_previous: bool = False,
-        width: int = 1600,
-        height: int | None = None,
-        node_pad: int = 8,
-        node_thickness: int = 22,
-        font_size: int = 16,
-        compact_height_per_node: int = 24,
-        min_height: int = 700,
-        link_alpha: float = 0.62,
-        right_link_alpha: float = 0.42,
+    report_file: str | Path,
+    output_dir: str | Path,
+    *,
+    extension: str = "svg",
+    top_n: int | None = 40,
+    min_genomes: int = 1,
+    top_n_species: int = 40,
+    split_middle_by_previous: bool = False,
+    width: int = 1600,
+    height: int | None = None,
+    node_pad: int = 8,
+    node_thickness: int = 22,
+    font_size: int = 16,
+    compact_height_per_node: int = 24,
+    min_height: int = 700,
+    link_alpha: float = 0.62,
+    right_link_alpha: float = 0.42,
 ) -> dict[str, Path]:
     output_dir = Path(output_dir)
     extension = extension.lstrip(".")
@@ -781,16 +792,23 @@ def create_metabolic_pathway_plots(config) -> None:
     pathway_plot_dir = getattr(config, "metabolic_pathway_directory", None)
 
     if not pathway_report_file:
-        logger.info("No metabolic pathway report file configured; skipping metabolic pathway plots")
+        logger.info(
+            "No metabolic pathway report file configured; skipping metabolic pathway plots"
+        )
         return
 
     pathway_report_path = Path(pathway_report_file)
     if not pathway_report_path.is_file():
-        logger.info("No metabolic pathway report found at %s; skipping metabolic pathway plots", pathway_report_path)
+        logger.info(
+            "No metabolic pathway report found at %s; skipping metabolic pathway plots",
+            pathway_report_path,
+        )
         return
 
     if pathway_report_path.stat().st_size == 0:
-        logger.info("Metabolic pathway report is empty; skipping metabolic pathway plots")
+        logger.info(
+            "Metabolic pathway report is empty; skipping metabolic pathway plots"
+        )
         return
 
     if pathway_plot_dir is None:
@@ -807,19 +825,28 @@ def create_metabolic_pathway_plots(config) -> None:
             top_n=int(getattr(config, "metabolic_sankey_top_n", 45)),
             min_genomes=int(getattr(config, "metabolic_sankey_min_genomes", 1)),
             top_n_species=int(getattr(config, "metabolic_sankey_top_n_species", 35)),
-            split_middle_by_previous=bool(getattr(config, "metabolic_sankey_split_middle", True)),
+            split_middle_by_previous=bool(
+                getattr(config, "metabolic_sankey_split_middle", True)
+            ),
             width=int(getattr(config, "metabolic_sankey_width", 1600)),
             height=getattr(config, "metabolic_sankey_height", None),
             node_pad=int(getattr(config, "metabolic_sankey_node_pad", 12)),
             node_thickness=int(getattr(config, "metabolic_sankey_node_thickness", 26)),
             font_size=int(getattr(config, "metabolic_sankey_font_size", 14)),
-            compact_height_per_node=int(getattr(config, "metabolic_sankey_height_per_node", 24)),
+            compact_height_per_node=int(
+                getattr(config, "metabolic_sankey_height_per_node", 24)
+            ),
             min_height=int(getattr(config, "metabolic_sankey_min_height", 700)),
             link_alpha=float(getattr(config, "metabolic_sankey_link_alpha", 0.62)),
-            right_link_alpha=float(getattr(config, "metabolic_sankey_right_link_alpha", 0.42)),
+            right_link_alpha=float(
+                getattr(config, "metabolic_sankey_right_link_alpha", 0.42)
+            ),
         )
     except ImportError as exc:
-        logger.warning("Could not create metabolic pathway Sankey plots because a dependency is missing: %s", exc)
+        logger.warning(
+            "Could not create metabolic pathway Sankey plots because a dependency is missing: %s",
+            exc,
+        )
         return
     except Exception as exc:
         logger.warning("Could not create metabolic pathway Sankey plots: %s", exc)
@@ -830,15 +857,32 @@ def create_metabolic_pathway_plots(config) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Create HMSS3 metabolic pathway Sankey plots.")
-    parser.add_argument("-i", "--input", required=True, type=Path, help="metabolic_pathway_report.tsv")
-    parser.add_argument("-o", "--output", required=True, type=Path,
-                        help="Output file or output directory for --mode all.")
-    parser.add_argument("--mode", choices=["all"] + sorted(MODE_TO_COLUMNS), default="all")
-    parser.add_argument("--extension", default="svg", help="Used only with --mode all. Default: svg.")
-    parser.add_argument("--top-n", type=int, default=45, help="Top N paths. Use 0 for all.")
+    parser = argparse.ArgumentParser(
+        description="Create HMSS3 metabolic pathway Sankey plots."
+    )
+    parser.add_argument(
+        "-i", "--input", required=True, type=Path, help="metabolic_pathway_report.tsv"
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        required=True,
+        type=Path,
+        help="Output file or output directory for --mode all.",
+    )
+    parser.add_argument(
+        "--mode", choices=["all"] + sorted(MODE_TO_COLUMNS), default="all"
+    )
+    parser.add_argument(
+        "--extension", default="svg", help="Used only with --mode all. Default: svg."
+    )
+    parser.add_argument(
+        "--top-n", type=int, default=45, help="Top N paths. Use 0 for all."
+    )
     parser.add_argument("--min-genomes", type=int, default=1)
-    parser.add_argument("--top-n-species", type=int, default=35, help="Top N species. Use 0 for all.")
+    parser.add_argument(
+        "--top-n-species", type=int, default=35, help="Top N species. Use 0 for all."
+    )
     parser.add_argument(
         "--split-middle-by-previous",
         action="store_true",
@@ -856,7 +900,9 @@ def main() -> None:
     parser.add_argument("--min-height", type=int, default=700)
     parser.add_argument("--link-alpha", type=float, default=0.62)
     parser.add_argument("--right-link-alpha", type=float, default=0.42)
-    parser.add_argument("--title", default=None, help="Only used for single-mode output.")
+    parser.add_argument(
+        "--title", default=None, help="Only used for single-mode output."
+    )
 
     args = parser.parse_args()
     top_n = None if args.top_n == 0 else args.top_n

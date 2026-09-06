@@ -176,8 +176,8 @@ def cross_check_candidates_with_reference_seqs(config) -> List[str]:
 #################### Promote hits with refseq hit ###########################
 #############################################################################
 def set_valid_hit_true_for_protein_ids(
-        database: str,
-        protein_ids,
+    database: str,
+    protein_ids,
 ) -> int:
     """
     Set Proteins.valid_hit = 1 for given proteinIDs using a temporary table.
@@ -280,11 +280,11 @@ def _crosscheck_worker(hmm_id: str, crosscheck_dir: str, queue) -> None:
 
 
 def promote_crosschecked_hits_to_db(
-        *,
-        crosscheck_dir: str,
-        database_path: str,
-        processes: int = 4,
-        writer_batch_size: int = 50000,
+    *,
+    crosscheck_dir: str,
+    database_path: str,
+    processes: int = 4,
+    writer_batch_size: int = 50000,
 ):
     """
     Run crosscheck promotion with:

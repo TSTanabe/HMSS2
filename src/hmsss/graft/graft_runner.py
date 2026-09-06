@@ -405,7 +405,7 @@ class Run:
             )
 
             if boots.generate_expand_search_database_from_contigs(
-                    self.args.expand_search_contigs, new_database, self.args.search_method
+                self.args.expand_search_contigs, new_database, self.args.search_method
             ):
                 if self.args.search_method == self.hk.HMMSEARCH_SEARCH_METHOD:
                     self.ss.search_hmm.append(new_database)
@@ -435,7 +435,9 @@ class Run:
             # Set the basename, and make an entry to the summary table.
             base = unpack.basename()
             pair_direction = ["forward", "reverse"]
-            print(f"[{os.path.basename(self.args.graftm_package)}] Working on %s" % base)
+            print(
+                f"[{os.path.basename(self.args.graftm_package)}] Working on %s" % base
+            )
 
             # Make the working base subdirectory
             self.hk.make_working_directory(
@@ -472,7 +474,6 @@ class Run:
 
                 t0 = time.perf_counter()
                 if self.args.type == self.PIPELINE_AA:
-
                     try:
                         search_time, (result, complement_information) = (
                             self.ss.aa_db_search(
@@ -501,7 +502,8 @@ class Run:
                         exit(Run.NO_ORFS_EXITSTATUS)
                     dt = time.perf_counter() - t0
                     print(
-                        f"[{os.path.basename(self.args.graftm_package)}] HMMsearch took {dt:.3f} seconds read_file {os.path.basename(read_file)}")
+                        f"[{os.path.basename(self.args.graftm_package)}] HMMsearch took {dt:.3f} seconds read_file {os.path.basename(read_file)}"
+                    )
 
                 # Or the DNA pipeline
                 elif self.args.type == self.PIPELINE_NT:
@@ -533,7 +535,7 @@ class Run:
                 # Filter out decoys if specified
                 if reads_detected and doing_decoy_search:
                     with tempfile.NamedTemporaryFile(
-                            prefix="graftm_decoy", suffix=".fa"
+                        prefix="graftm_decoy", suffix=".fa"
                     ) as f:
                         tmpname = f.name
                     any_remaining = decoy_filter.filter(result.hit_fasta(), tmpname)
@@ -545,7 +547,8 @@ class Run:
                         continue
                 dt = time.perf_counter() - t0
                 print(
-                    f"[{os.path.basename(self.args.graftm_package)}] DIAMOND Blastp filtering took {dt:.3f} seconds for read_file {os.path.basename(read_file)}")
+                    f"[{os.path.basename(self.args.graftm_package)}] DIAMOND Blastp filtering took {dt:.3f} seconds for read_file {os.path.basename(read_file)}"
+                )
 
                 if self.args.assignment_method == Run.PPLACER_TAXONOMIC_ASSIGNMENT:
                     logging.info("aligning reads to reference package database")
@@ -562,7 +565,7 @@ class Run:
                     else:
                         aln_time = "n/a"
                     if not os.path.exists(
-                            hit_aligned_reads
+                        hit_aligned_reads
                     ):  # If all were filtered out, or there just was none..
                         with open(hit_aligned_reads, "w") as f:
                             pass  # just touch the file, nothing else
@@ -586,7 +589,7 @@ class Run:
             exit(0)
 
         if (
-                self.args.merge_reads
+            self.args.merge_reads
         ):  # not run when diamond is the assignment mode- enforced by argparse grokking
             logging.debug("Running merge reads output")
             if self.args.interleaved:
@@ -626,7 +629,9 @@ class Run:
             clusterer = Clusterer()
             # Classification steps
             seqs_list = clusterer.cluster(seqs_list, REVERSE_PIPE)
-            print(f"[{os.path.basename(self.args.graftm_package)}] Placing reads into phylogenetic tree")
+            print(
+                f"[{os.path.basename(self.args.graftm_package)}] Placing reads into phylogenetic tree"
+            )
             taxonomic_assignment_time, assignments = self.p.place(
                 REVERSE_PIPE,
                 seqs_list,
@@ -656,7 +661,9 @@ class Run:
             )
 
         dt = time.perf_counter() - t0
-        print(f"[{os.path.basename(self.args.graftm_package)}] pplacer assignment took {dt:.3f} seconds")
+        print(
+            f"[{os.path.basename(self.args.graftm_package)}] pplacer assignment took {dt:.3f} seconds"
+        )
 
         # Prepare read mapping und alignments for return
         read_tax_paths = {}
@@ -689,12 +696,12 @@ class Run:
 
     @T.timeit
     def _assign_taxonomy_with_diamond(
-            self,
-            base_list,
-            db_search_results,
-            graftm_package,
-            graftm_files,
-            diamond_performance_parameters,
+        self,
+        base_list,
+        db_search_results,
+        graftm_package,
+        graftm_files,
+        diamond_performance_parameters,
     ):
         """Run diamond to assign taxonomy
 
@@ -744,10 +751,10 @@ class Run:
                     extra_args=diamond_performance_parameters,
                 )
                 for res in diamond_result.each(
-                        [
-                            SequenceSearchResult.QUERY_ID_FIELD,
-                            SequenceSearchResult.HIT_ID_FIELD,
-                        ]
+                    [
+                        SequenceSearchResult.QUERY_ID_FIELD,
+                        SequenceSearchResult.HIT_ID_FIELD,
+                    ]
                 ):
                     if res[0] in sequence_id_to_hit:
                         # do not accept duplicates

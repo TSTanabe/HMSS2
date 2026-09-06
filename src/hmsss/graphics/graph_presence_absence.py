@@ -5,12 +5,12 @@ from typing import Dict, Any, Optional, Set, Tuple, List
 
 
 def plot_taxonomy_summary_bubbles(
-        output_file: str,
-        protein_dict: Dict[str, Any],
-        taxon_dict: Dict[str, Dict[str, str]],
-        allowed_types: Optional[List[str]] = None,
-        allowed_levels: Optional[Set[str]] = None,
-        preferred_order: Optional[List[str]] = None,
+    output_file: str,
+    protein_dict: Dict[str, Any],
+    taxon_dict: Dict[str, Dict[str, str]],
+    allowed_types: Optional[List[str]] = None,
+    allowed_levels: Optional[Set[str]] = None,
+    preferred_order: Optional[List[str]] = None,
 ) -> None:
     """
     Erzeugt eine Abbildung einer "Presence/Absence"-ähnlichen Matrix:
@@ -290,7 +290,7 @@ def plot_taxonomy_summary_bubbles(
             radius = min_radius
         else:
             radius = min_radius + (max_radius - min_radius) * (frac / max_frac)
-        sizes.append(radius ** 2)
+        sizes.append(radius**2)
 
     fig_width = max(4, 1.0 + 0.6 * n_cols)
     fig_height = max(3, 0.4 * n_rows + 1.0)

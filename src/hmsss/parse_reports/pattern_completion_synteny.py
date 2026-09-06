@@ -14,11 +14,11 @@ logger = get_logger(__name__)
 
 
 def _select_balanced_best_keywords(
-        keywords: Iterable[Keyword],
-        pattern_dict: dict[str, tuple[List[str], int]],
-        min_length: int,
-        *,
-        strict_equal: bool = False,
+    keywords: Iterable[Keyword],
+    pattern_dict: dict[str, tuple[List[str], int]],
+    min_length: int,
+    *,
+    strict_equal: bool = False,
 ) -> List[Keyword]:
     """
     Wähle die besten Keywords in einem Pass:
@@ -37,7 +37,7 @@ def _select_balanced_best_keywords(
         Liste der besten Keyword-Objekte (kann mehrere bei Gleichstand enthalten).
     """
     best_fitting_keywords: List["Keyword"] = []
-    best_missing: int = 10 ** 9
+    best_missing: int = 10**9
     best_len: int = -1
 
     for kw in keywords:
@@ -97,11 +97,11 @@ def _find_best_keywords(cluster_dict: Dict[str, Any], pattern_dict: Dict[str, An
 
 
 def _find_possible_transitions(
-        protein_id: str,
-        protein: object,
-        current_domain: str,
-        missing_domains: Set[str],
-        transition_dict: Dict[str, Set[Tuple[str, float]]],
+    protein_id: str,
+    protein: object,
+    current_domain: str,
+    missing_domains: Set[str],
+    transition_dict: Dict[str, Set[Tuple[str, float]]],
 ) -> Dict[str, Set[Tuple[str, float]]]:
     """
     Find possible transitions from a current domain to any missing domains
@@ -141,8 +141,8 @@ def _find_possible_transitions(
 
 
 def _solve_assignment(
-        cost_matrix: NDArray[np.float64],
-        cluster_id: Optional[str] = None,
+    cost_matrix: NDArray[np.float64],
+    cluster_id: Optional[str] = None,
 ) -> Tuple[Optional[NDArray[np.int_]], Optional[NDArray[np.int_]]]:
     """
     Solve a (possibly sparse) assignment problem using the Hungarian algorithm.
@@ -170,15 +170,15 @@ def _solve_assignment(
 
     def _matrix_str(matrix: NDArray[np.float64]) -> str:
         with np.printoptions(
-                precision=2, suppress=True, linewidth=120, nanstr="nan", infstr="inf"
+            precision=2, suppress=True, linewidth=120, nanstr="nan", infstr="inf"
         ):
             return "\n" + "\n".join(" ".join(f"{x:7}" for x in row) for row in matrix)
 
     # Infeasible if empty or any remaining row/col is still all inf
     if (
-            reduced.size == 0
-            or np.any(np.all(np.isinf(reduced), axis=1))
-            or np.any(np.all(np.isinf(reduced), axis=0))
+        reduced.size == 0
+        or np.any(np.all(np.isinf(reduced), axis=1))
+        or np.any(np.all(np.isinf(reduced), axis=0))
     ):
         logger.debug(
             f"[Assignment] Infeasible cost matrix for cluster {cluster_id or ''}:{_matrix_str(cost_matrix)}"
@@ -203,10 +203,10 @@ def _solve_assignment(
 
 
 def _get_optimal_transitions(
-        transition_dict,
-        missing_domains,
-        initial_completeness=0.0,
-        total_domains=None,
+    transition_dict,
+    missing_domains,
+    initial_completeness=0.0,
+    total_domains=None,
 ):
     """
     Calculates the optimal set of transitions to cover as many missing domains as possible,
@@ -273,10 +273,10 @@ def _get_optimal_transitions(
 
 
 def get_all_optimized_transitions(
-        best_keywords_dict: Dict[str, Any],
-        cluster_dict: Dict[str, Any],
-        protein_dict: Dict[str, Any],
-        pattern_dict: Dict[str, Any],
+    best_keywords_dict: Dict[str, Any],
+    cluster_dict: Dict[str, Any],
+    protein_dict: Dict[str, Any],
+    pattern_dict: Dict[str, Any],
 ):
     transitions_per_cluster = {}
     for cluster_id, best_keywords in best_keywords_dict.items():
@@ -300,9 +300,9 @@ def get_all_optimized_transitions(
             domains = cluster.get_domains()
             for current_domain, protein_id in zip(domains, genes):
                 if (
-                        current_domain in additional_domains
-                        # and protein_id in intermediate_protein_dict
-                        # and "Tc" not in protein.selection_comment
+                    current_domain in additional_domains
+                    # and protein_id in intermediate_protein_dict
+                    # and "Tc" not in protein.selection_comment
                 ):
                     protein = protein_dict[protein_id]
                     _find_possible_transitions(
@@ -374,7 +374,11 @@ def execute_pattern_completion(transition_dict, protein_dict):
                 for domain in protein.low_score_domains:
                     if domain.get_domain() == to_domain:
                         selection_comment = "Pc"  # pattern completion
-                        selection_comment = "-".join(domain.selection_comment_list) + "-" + selection_comment
+                        selection_comment = (
+                            "-".join(domain.selection_comment_list)
+                            + "-"
+                            + selection_comment
+                        )
                         protein.add_domain(
                             domain.domain,
                             domain.start,
@@ -387,9 +391,9 @@ def execute_pattern_completion(transition_dict, protein_dict):
 
 
 def enhance_syntenic_block_completeness(
-        cluster_dict,
-        combined_protein_dict,
-        pattern_dict,
+    cluster_dict,
+    combined_protein_dict,
+    pattern_dict,
 ):
     """
     Enhance syntenic block completeness by swapping additional protein domains with missing ones if possible.

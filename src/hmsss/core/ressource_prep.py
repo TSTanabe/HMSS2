@@ -50,10 +50,10 @@ def _require_path_exists(p: str, desc: str) -> None:
 
 
 def concatenate_hmms_from_selected_metabolism_packages(
-        src_dir: str,
-        allowed_words: list[str],
-        output_library: str,
-        allowed_versions: set[str] | None = None,
+    src_dir: str,
+    allowed_words: list[str],
+    output_library: str,
+    allowed_versions: set[str] | None = None,
 ) -> None:
     """
     ... wie zuvor ...
@@ -83,7 +83,9 @@ def concatenate_hmms_from_selected_metabolism_packages(
     # normalize versions once
     allowed_versions_norm: set[str] | None = None
     if allowed_versions:
-        allowed_versions_norm = {v.strip().lower() for v in allowed_versions if v.strip()}
+        allowed_versions_norm = {
+            v.strip().lower() for v in allowed_versions if v.strip()
+        }
 
     # Nur Top-Level-Pakete (direkte Unterordner von src_dir)
     for pkg in sorted(p for p in base.iterdir() if p.is_dir()):
@@ -119,7 +121,9 @@ def concatenate_hmms_from_selected_metabolism_packages(
             "No HMM files found for selected packages in '%s' with hmm_sets=%s and packages=%s",
             src_dir,
             allowed_words,
-            sorted(allowed_versions_norm) if allowed_versions_norm is not None else None,
+            sorted(allowed_versions_norm)
+            if allowed_versions_norm is not None
+            else None,
         )
         return
 

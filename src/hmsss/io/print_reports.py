@@ -30,13 +30,13 @@ def _get_cluster_info(clusterID, cluster_dict):
 
 
 def _output_genome_report(
-        output_filepath: str,
-        protein_dict: Dict[str, Any],
-        cluster_dict: Dict[str, Any],
-        taxon_dict: Dict[str, Any],
-        genomeID: str = "",
-        writemode: str = "w",
-        taxon_divider: str = ".",
+    output_filepath: str,
+    protein_dict: Dict[str, Any],
+    cluster_dict: Dict[str, Any],
+    taxon_dict: Dict[str, Any],
+    genomeID: str = "",
+    writemode: str = "w",
+    taxon_divider: str = ".",
 ) -> None:
     """
     Writes the main genome hit table (TSV).
@@ -139,10 +139,10 @@ def _output_genome_report(
 
 
 def _output_protein_taxonomy(
-        output_filepath: str,
-        protein_dict: Dict[str, Any],
-        taxon_dict: Dict[str, Dict[str, str]],
-        writemode: str = "w",
+    output_filepath: str,
+    protein_dict: Dict[str, Any],
+    taxon_dict: Dict[str, Dict[str, str]],
+    writemode: str = "w",
 ) -> None:
     """
     Writes a 2-column TSV file:
@@ -199,11 +199,11 @@ def _output_protein_taxonomy(
 
 
 def _output_taxonomy_summary(
-        output_file: str,
-        protein_dict: Dict[str, Any],
-        taxon_dict: Dict[str, Dict[str, str]],
-        allowed_types: Optional[List[str]] = None,
-        preferred_order: Optional[List[str]] = None,
+    output_file: str,
+    protein_dict: Dict[str, Any],
+    taxon_dict: Dict[str, Dict[str, str]],
+    allowed_types: Optional[List[str]] = None,
+    preferred_order: Optional[List[str]] = None,
 ) -> None:
     """
     Summarise protein-type presence per taxonomic level and taxon.
@@ -391,9 +391,9 @@ def _output_taxonomy_summary(
 
 
 def _output_unique_taxonomy_table(
-        output_file: str,
-        protein_dict: Dict[str, Any],
-        taxon_dict: Dict[str, Dict[str, str]],
+    output_file: str,
+    protein_dict: Dict[str, Any],
+    taxon_dict: Dict[str, Dict[str, str]],
 ) -> str:
     """
     Write a non-redundant taxonomy table from a structured taxonomy dict.
@@ -457,12 +457,12 @@ def _output_unique_taxonomy_table(
 
 
 def _output_strain_variability_by_species_deprecated(
-        directory: str,
-        protein_dict: Dict[str, Any],
-        taxon_dict: Dict[str, Dict[str, str]],
-        required_domains: Set[str],
-        *,
-        unknown_label: str = "Unknown",
+    directory: str,
+    protein_dict: Dict[str, Any],
+    taxon_dict: Dict[str, Dict[str, str]],
+    required_domains: Set[str],
+    *,
+    unknown_label: str = "Unknown",
 ) -> str:
     os.makedirs(directory, exist_ok=True)
     outpath = os.path.join(directory, "summary_strain_variability_by_species.txt")
@@ -539,13 +539,13 @@ def _output_strain_variability_by_species_deprecated(
 
 
 def _output_strain_variability_by_species(
-        directory: str,
-        database: str,
-        combo_dict: Dict[Tuple[str, ...], Set[str]],
-        taxon_dict: Dict[str, Dict[str, str]],
-        *,
-        intersection_level: int = 2,
-        unknown_label: str = "Unknown",
+    directory: str,
+    database: str,
+    combo_dict: Dict[Tuple[str, ...], Set[str]],
+    taxon_dict: Dict[str, Dict[str, str]],
+    *,
+    intersection_level: int = 2,
+    unknown_label: str = "Unknown",
 ) -> str:
     """
     Write a taxonomy-stratified strain variability table.
@@ -613,7 +613,10 @@ def _output_strain_variability_by_species(
     # 1) Kategorien bis intersection_level vorbereiten
     # ------------------------------------------------------------
     combo_items: List[Tuple[Tuple[str, ...], Set[str]]] = sorted(
-        [(tuple(combo), set(map(str, genomes))) for combo, genomes in combo_dict.items()],
+        [
+            (tuple(combo), set(map(str, genomes)))
+            for combo, genomes in combo_dict.items()
+        ],
         key=lambda kv: (len(kv[0]), _combo_label(kv[0]).casefold()),
     )
 
@@ -666,9 +669,7 @@ def _output_strain_variability_by_species(
 
     for gid in sorted(all_candidate_genomes):
         matching: List[Tuple[int, Dict[str, Any]]] = [
-            (idx, cat)
-            for idx, cat in enumerate(category_defs)
-            if gid in cat["genomes"]
+            (idx, cat) for idx, cat in enumerate(category_defs) if gid in cat["genomes"]
         ]
 
         if not matching:
@@ -688,7 +689,15 @@ def _output_strain_variability_by_species(
         rec = taxon_dict.get(gid, {}) if isinstance(taxon_dict, dict) else {}
 
         tax_parts = []
-        for level_name in ["Superkingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"]:
+        for level_name in [
+            "Superkingdom",
+            "Phylum",
+            "Class",
+            "Order",
+            "Family",
+            "Genus",
+            "Species",
+        ]:
             val = rec.get(level_name, "")
             val = str(val).strip() if val is not None else ""
             if val and val.upper() not in {"NA", "NULL"}:
@@ -800,11 +809,11 @@ def _output_strain_variability_by_species(
 
 
 def _output_cluster_overview_by_required(
-        output_filepath: str,
-        protein_dict: Dict[str, Any],
-        required_domains: Set[str],
-        *,
-        writemode: str = "w",
+    output_filepath: str,
+    protein_dict: Dict[str, Any],
+    required_domains: Set[str],
+    *,
+    writemode: str = "w",
 ) -> None:
     """
     Eine Zeile pro Gencluster, der mindestens eines der `required_domains` enthält.
@@ -893,10 +902,10 @@ def _output_cluster_overview_by_required(
 
 
 def _output_distinct_fasta_reports(
-        directory: str,
-        protein_dict: Dict[str, Any],
-        cluster_dict: Dict[str, Any],
-        writemode: str = "w",
+    directory: str,
+    protein_dict: Dict[str, Any],
+    cluster_dict: Dict[str, Any],
+    writemode: str = "w",
 ) -> Set[str]:
     """Writes all protein sequences into distinct FASTA files by domain class and for fusion domains.
 
@@ -963,7 +972,7 @@ def _output_distinct_fasta_reports(
         sequence = str(protein.protein_sequence).replace("*", "")
         for domain in protein.domains:
             domain_name = domain.domain
-            domain_sequence = sequence[domain.start: domain.end]
+            domain_sequence = sequence[domain.start : domain.end]
             filepath = os.path.join(directory, f"multi_domain_{domain_name}.faa")
             files.add(filepath)
             with open(filepath, "a") as writer:
@@ -1046,9 +1055,9 @@ def _singletons(directory, filepaths):
 
 
 def _output_cluster_context_report(
-        output_filepath: str,
-        context_dict: Dict[str, Any],
-        taxon_dict: Dict[str, Dict[str, str]],
+    output_filepath: str,
+    context_dict: Dict[str, Any],
+    taxon_dict: Dict[str, Dict[str, str]],
 ) -> None:
     """
     Write an extended cluster context table.
@@ -1139,11 +1148,11 @@ def _clean_empty_files(directory: str) -> None:
 
 
 def _output_domain_function_report(
-        output_filepath: str,
-        protein_dict: Dict[str, Any],
-        taxon_dict: Dict[str, Dict[str, str]],
-        domain_annotations: Dict[str, Dict[str, str]],
-        writemode: str = "w",
+    output_filepath: str,
+    protein_dict: Dict[str, Any],
+    taxon_dict: Dict[str, Dict[str, str]],
+    domain_annotations: Dict[str, Dict[str, str]],
+    writemode: str = "w",
 ) -> None:
     """
     Schreibt pro Protein/Domain Funktionszeilen:
@@ -1272,15 +1281,15 @@ def _output_domain_function_report(
 
 
 def print_hit_reports(
-        directory: str,
-        database: str,
-        protein_dict: Dict[str, Any],
-        cluster_dict: Dict[str, Any],
-        taxon_dict: Dict[str, Dict[str, str]],
-        combo_dict: Dict[Tuple[str, ...], Set[str]],
-        metabolic_dict: Dict[str, Any],
-        context_dict: Dict[str, Any] | None,
-        fetch_proteins: List[str],
+    directory: str,
+    database: str,
+    protein_dict: Dict[str, Any],
+    cluster_dict: Dict[str, Any],
+    taxon_dict: Dict[str, Dict[str, str]],
+    combo_dict: Dict[Tuple[str, ...], Set[str]],
+    metabolic_dict: Dict[str, Any],
+    context_dict: Dict[str, Any] | None,
+    fetch_proteins: List[str],
 ) -> None:
     """
     Main output routine: creates hit tables, taxonomy summaries, and protein FASTA files.

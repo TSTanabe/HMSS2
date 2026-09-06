@@ -21,7 +21,7 @@ def resolve_next_to_script(filename: str) -> str:
 
 def chunked(values: List[Any], size: int):
     for i in range(0, len(values), size):
-        yield values[i:i + size]
+        yield values[i : i + size]
 
 
 def readonly_connection(database: str) -> sqlite3.Connection:
@@ -94,8 +94,8 @@ def fetch_all_genomes(database: str) -> List[str]:
 
 
 def fetch_positive_genomes_for_domain(
-        database: str,
-        target_domain: str,
+    database: str,
+    target_domain: str,
 ) -> List[str]:
     query = """
         SELECT DISTINCT p.genomeID
@@ -117,7 +117,7 @@ def fetch_positive_genomes_for_domain(
 
 
 def fetch_domains_for_genome_chunk(
-        args: Tuple[str, List[str]],
+    args: Tuple[str, List[str]],
 ) -> Dict[str, Dict[str, List[str]]]:
     database, genome_chunk = args
 
@@ -153,35 +153,29 @@ def fetch_domains_for_genome_chunk(
 
 
 def fetch_pam_for_genomes(
-        database: str,
-        genome_ids: List[str],
-        chunk_size: int,
-        cores: int,
+    database: str,
+    genome_ids: List[str],
+    chunk_size: int,
+    cores: int,
 ) -> Dict[str, Dict[str, List[str]]]:
     if not genome_ids:
         return {}
 
     genome_chunks = list(chunked(genome_ids, chunk_size))
 
-    worker_args = [
-        (database, chunk)
-        for chunk in genome_chunks
-    ]
+    worker_args = [(database, chunk) for chunk in genome_chunks]
 
     pam = defaultdict(lambda: defaultdict(list))
 
     with Pool(processes=cores) as pool:
-
         for i, partial in enumerate(
-                pool.imap_unordered(
-                    fetch_domains_for_genome_chunk,
-                    worker_args,
-                ),
-                1,
+            pool.imap_unordered(
+                fetch_domains_for_genome_chunk,
+                worker_args,
+            ),
+            1,
         ):
-
             for genome_id, domain_map in partial.items():
-
                 for domain, protein_ids in domain_map.items():
                     pam[genome_id][domain].extend(protein_ids)
 
@@ -196,8 +190,8 @@ def fetch_pam_for_genomes(
 
 
 def subset_pam(
-        pam: Dict[str, Dict[str, List[str]]],
-        genome_ids: List[str],
+    pam: Dict[str, Dict[str, List[str]]],
+    genome_ids: List[str],
 ) -> Dict[str, Dict[str, List[str]]]:
     genome_set = set(genome_ids)
 
@@ -209,8 +203,8 @@ def subset_pam(
 
 
 def split_positive_genomes(
-        genome_ids: List[str],
-        seed: int,
+    genome_ids: List[str],
+    seed: int,
 ) -> Tuple[List[str], List[str], List[str]]:
     ids = list(genome_ids)
 
@@ -225,64 +219,51 @@ def split_positive_genomes(
 
     train = ids[:n_train]
 
-    calibration = ids[
-        n_train:
-        n_train + n_calibration
-    ]
+    calibration = ids[n_train : n_train + n_calibration]
 
-    test = ids[
-        n_train + n_calibration:
-    ]
+    test = ids[n_train + n_calibration :]
 
     return train, calibration, test
 
 
 def train_positive_support_model_from_pam(
-        pam: Dict[str, Dict[str, List[str]]],
-        target_domain: str,
-        alpha: float,
-        min_feature_genomes: int,
-        max_model_features: int | None,
-        excluded_features: set[str],
+    pam: Dict[str, Dict[str, List[str]]],
+    target_domain: str,
+    alpha: float,
+    min_feature_genomes: int,
+    max_model_features: int | None,
+    excluded_features: set[str],
 ) -> Dict[str, Any]:
     positive_genomes = [
         genome_id
         for genome_id, dommap in pam.items()
-        if target_domain in dommap
-           and dommap[target_domain]
+        if target_domain in dommap and dommap[target_domain]
     ]
 
     if not positive_genomes:
-        raise ValueError(
-            f"No positive training genomes for "
-            f"{target_domain}"
-        )
+        raise ValueError(f"No positive training genomes for {target_domain}")
 
     n_train = len(positive_genomes)
 
     feature_counts: Dict[str, int] = {}
 
     for genome_id in positive_genomes:
-
         dommap = pam[genome_id]
 
         for domain, protein_ids in dommap.items():
-
             if domain == target_domain:
                 continue
 
             if protein_ids:
-                feature_counts[domain] = (
-                        feature_counts.get(domain, 0) + 1
-                )
+                feature_counts[domain] = feature_counts.get(domain, 0) + 1
 
     initial_features = sorted(
         feature
         for feature, count in feature_counts.items()
         if (
-                count >= min_feature_genomes
-                and feature not in excluded_features
-                and feature != target_domain
+            count >= min_feature_genomes
+            and feature not in excluded_features
+            and feature != target_domain
         )
     )
 
@@ -292,11 +273,7 @@ def train_positive_support_model_from_pam(
     for feature in initial_features:
         count = feature_counts[feature]
 
-        p = (
-                    count + alpha
-            ) / (
-                    n_train + 2.0 * alpha
-            )
+        p = (count + alpha) / (n_train + 2.0 * alpha)
 
         p = min(max(p, 1e-12), 1.0 - 1e-12)
 
@@ -313,108 +290,64 @@ def train_positive_support_model_from_pam(
         reverse=True,
     )
 
-    if (
-            max_model_features is not None
-            and max_model_features > 0
-    ):
-
+    if max_model_features is not None and max_model_features > 0:
         features = ranked_features[:max_model_features]
 
     else:
         features = ranked_features
 
-    feature_probs = {
-        f: feature_probs[f]
-        for f in features
-    }
+    feature_probs = {f: feature_probs[f] for f in features}
 
-    feature_strengths = {
-        f: feature_strengths[f]
-        for f in features
-    }
+    feature_strengths = {f: feature_strengths[f] for f in features}
 
     total_strength = sum(feature_strengths.values())
 
     if total_strength > 0:
-
         feature_weights = {
             feature: strength / total_strength
-            for feature, strength
-            in feature_strengths.items()
+            for feature, strength in feature_strengths.items()
         }
 
     else:
-
-        feature_weights = {
-            feature: 0.0
-            for feature in features
-        }
+        feature_weights = {feature: 0.0 for feature in features}
 
     return {
-        "model_type":
-            "positive_only_bernoulli_support",
-
-        "score_definition":
-            "weighted_feature_sum",
-
-        "target_domain":
-            target_domain,
-
-        "alpha":
-            alpha,
-
-        "min_feature_genomes":
-            min_feature_genomes,
-
-        "max_model_features":
-            max_model_features,
-
-        "n_train_genomes":
-            n_train,
-
-        "n_initial_features":
-            len(initial_features),
-
-        "n_features":
-            len(features),
-
-        "features":
-            features,
-
+        "model_type": "positive_only_bernoulli_support",
+        "score_definition": "weighted_feature_sum",
+        "target_domain": target_domain,
+        "alpha": alpha,
+        "min_feature_genomes": min_feature_genomes,
+        "max_model_features": max_model_features,
+        "n_train_genomes": n_train,
+        "n_initial_features": len(initial_features),
+        "n_features": len(features),
+        "features": features,
         "feature_counts": {
-            feature: int(feature_counts[feature])
-            for feature in features
+            feature: int(feature_counts[feature]) for feature in features
         },
-
-        "feature_probs":
-            feature_probs,
-
-        "feature_strengths":
-            feature_strengths,
-
-        "feature_weights":
-            feature_weights,
+        "feature_probs": feature_probs,
+        "feature_strengths": feature_strengths,
+        "feature_weights": feature_weights,
     }
 
 
 def score_genome(
-        dommap: Dict[str, List[str]],
-        model: Dict[str, Any],
+    dommap: Dict[str, List[str]],
+    model: Dict[str, Any],
 ) -> float:
     return float(
         sum(
             weight
-            for feature, weight
-            in model["feature_weights"].items()
+            for feature, weight in model["feature_weights"].items()
             if dommap.get(feature)
         )
     )
 
 
 def score_pam(
-        pam: Dict[str, Dict[str, List[str]]],
-        genome_ids: List[str],
-        model: Dict[str, Any],
+    pam: Dict[str, Dict[str, List[str]]],
+    genome_ids: List[str],
+    model: Dict[str, Any],
 ) -> Dict[str, float]:
     return {
         genome_id: score_genome(
@@ -426,49 +359,24 @@ def score_pam(
 
 
 def confusion_at_threshold(
-        positive_scores: List[float],
-        decoy_scores: List[float],
-        threshold: float,
+    positive_scores: List[float],
+    decoy_scores: List[float],
+    threshold: float,
 ) -> Dict[str, float]:
-    tp = sum(
-        1
-        for s in positive_scores
-        if s >= threshold
-    )
+    tp = sum(1 for s in positive_scores if s >= threshold)
 
-    fn = sum(
-        1
-        for s in positive_scores
-        if s < threshold
-    )
+    fn = sum(1 for s in positive_scores if s < threshold)
 
-    fp = sum(
-        1
-        for s in decoy_scores
-        if s >= threshold
-    )
+    fp = sum(1 for s in decoy_scores if s >= threshold)
 
-    tn = sum(
-        1
-        for s in decoy_scores
-        if s < threshold
-    )
+    tn = sum(1 for s in decoy_scores if s < threshold)
 
-    precision = (
-        tp / (tp + fp)
-        if (tp + fp) > 0
-        else 0.0
-    )
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
 
-    recall = (
-        tp / (tp + fn)
-        if (tp + fn) > 0
-        else 0.0
-    )
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
 
     f1 = (
-        2 * precision * recall
-        / (precision + recall)
+        2 * precision * recall / (precision + recall)
         if (precision + recall) > 0
         else 0.0
     )
@@ -486,8 +394,8 @@ def confusion_at_threshold(
 
 
 def find_best_f1_threshold(
-        calibration_scores: List[float],
-        decoy_scores: List[float],
+    calibration_scores: List[float],
+    decoy_scores: List[float],
 ) -> Dict[str, float]:
     candidate_thresholds = sorted(
         set(calibration_scores + decoy_scores),
@@ -509,7 +417,6 @@ def find_best_f1_threshold(
     best = None
 
     for threshold in candidate_thresholds:
-
         cm = confusion_at_threshold(
             positive_scores=calibration_scores,
             decoy_scores=decoy_scores,
@@ -521,16 +428,13 @@ def find_best_f1_threshold(
             continue
 
         if (
-                cm["F1"] > best["F1"]
-                or (
-                cm["F1"] == best["F1"]
-                and cm["FP"] < best["FP"]
-        )
-                or (
+            cm["F1"] > best["F1"]
+            or (cm["F1"] == best["F1"] and cm["FP"] < best["FP"])
+            or (
                 cm["F1"] == best["F1"]
                 and cm["FP"] == best["FP"]
                 and cm["threshold"] > best["threshold"]
-        )
+            )
         ):
             best = cm
 
@@ -538,8 +442,8 @@ def find_best_f1_threshold(
 
 
 def append_jsonl(
-        path: str,
-        record: Dict[str, Any],
+    path: str,
+    record: Dict[str, Any],
 ) -> None:
     with open(path, "a") as handle:
         handle.write(json.dumps(record) + "\n")
@@ -552,33 +456,35 @@ def write_evaluation_header(path: str) -> None:
             delimiter="\t",
         )
 
-        writer.writerow([
-            "target_domain",
-            "status",
-            "total_positive_genomes",
-            "n_train",
-            "n_calibration_positive",
-            "n_calibration_decoy",
-            "n_test_positive",
-            "n_test_decoy",
-            "n_initial_features",
-            "n_features",
-            "max_model_features",
-            "threshold",
-            "calibration_precision",
-            "calibration_recall",
-            "calibration_F1",
-            "test_precision",
-            "test_recall",
-            "test_F1",
-            "runtime_seconds",
-            "error",
-        ])
+        writer.writerow(
+            [
+                "target_domain",
+                "status",
+                "total_positive_genomes",
+                "n_train",
+                "n_calibration_positive",
+                "n_calibration_decoy",
+                "n_test_positive",
+                "n_test_decoy",
+                "n_initial_features",
+                "n_features",
+                "max_model_features",
+                "threshold",
+                "calibration_precision",
+                "calibration_recall",
+                "calibration_F1",
+                "test_precision",
+                "test_recall",
+                "test_F1",
+                "runtime_seconds",
+                "error",
+            ]
+        )
 
 
 def append_evaluation_row(
-        path: str,
-        row: Dict[str, Any],
+    path: str,
+    row: Dict[str, Any],
 ) -> None:
     with open(path, "a", newline="") as handle:
         writer = csv.writer(
@@ -586,28 +492,30 @@ def append_evaluation_row(
             delimiter="\t",
         )
 
-        writer.writerow([
-            row.get("target_domain", ""),
-            row.get("status", ""),
-            row.get("total_positive_genomes", ""),
-            row.get("n_train", ""),
-            row.get("n_calibration_positive", ""),
-            row.get("n_calibration_decoy", ""),
-            row.get("n_test_positive", ""),
-            row.get("n_test_decoy", ""),
-            row.get("n_initial_features", ""),
-            row.get("n_features", ""),
-            row.get("max_model_features", ""),
-            row.get("threshold", ""),
-            row.get("calibration_precision", ""),
-            row.get("calibration_recall", ""),
-            row.get("calibration_F1", ""),
-            row.get("test_precision", ""),
-            row.get("test_recall", ""),
-            row.get("test_F1", ""),
-            row.get("runtime_seconds", ""),
-            row.get("error", ""),
-        ])
+        writer.writerow(
+            [
+                row.get("target_domain", ""),
+                row.get("status", ""),
+                row.get("total_positive_genomes", ""),
+                row.get("n_train", ""),
+                row.get("n_calibration_positive", ""),
+                row.get("n_calibration_decoy", ""),
+                row.get("n_test_positive", ""),
+                row.get("n_test_decoy", ""),
+                row.get("n_initial_features", ""),
+                row.get("n_features", ""),
+                row.get("max_model_features", ""),
+                row.get("threshold", ""),
+                row.get("calibration_precision", ""),
+                row.get("calibration_recall", ""),
+                row.get("calibration_F1", ""),
+                row.get("test_precision", ""),
+                row.get("test_recall", ""),
+                row.get("test_F1", ""),
+                row.get("runtime_seconds", ""),
+                row.get("error", ""),
+            ]
+        )
 
 
 def main():
@@ -689,51 +597,34 @@ def main():
     if args.max_model_features <= 0:
         args.max_model_features = None
 
-    args.models_jsonl = resolve_next_to_script(
-        args.models_jsonl
-    )
+    args.models_jsonl = resolve_next_to_script(args.models_jsonl)
 
-    args.evaluation_report = resolve_next_to_script(
-        args.evaluation_report
-    )
+    args.evaluation_report = resolve_next_to_script(args.evaluation_report)
 
     for path in [
         args.models_jsonl,
         args.evaluation_report,
     ]:
-
         if os.path.exists(path):
-
             if args.overwrite:
                 os.remove(path)
 
             else:
-                raise FileExistsError(
-                    f"Output exists: {path}"
-                )
+                raise FileExistsError(f"Output exists: {path}")
 
-    write_evaluation_header(
-        args.evaluation_report
-    )
+    write_evaluation_header(args.evaluation_report)
 
     domains = read_domain_list(args.domains)
 
-    excluded_features = read_excluded_features(
-        args.excluded_features
-    )
+    excluded_features = read_excluded_features(args.excluded_features)
 
     print("[INFO] Fetching all genome IDs")
 
-    all_genomes = fetch_all_genomes(
-        args.database
-    )
+    all_genomes = fetch_all_genomes(args.database)
 
     all_genome_set = set(all_genomes)
 
-    print(
-        f"[INFO] Total genomes in DB: "
-        f"{len(all_genomes):,}"
-    )
+    print(f"[INFO] Total genomes in DB: {len(all_genomes):,}")
 
     trained = 0
     skipped = 0
@@ -741,16 +632,11 @@ def main():
     start_all = time.time()
 
     for i, domain in enumerate(domains, 1):
-
         start = time.time()
 
-        print(
-            f"\n[DOMAIN {i}/{len(domains)}] "
-            f"{domain}"
-        )
+        print(f"\n[DOMAIN {i}/{len(domains)}] {domain}")
 
         try:
-
             positives = fetch_positive_genomes_for_domain(
                 args.database,
                 domain,
@@ -758,11 +644,7 @@ def main():
 
             total_pos = len(positives)
 
-            print(
-                f"    [INFO] "
-                f"Total positive genomes: "
-                f"{total_pos:,}"
-            )
+            print(f"    [INFO] Total positive genomes: {total_pos:,}")
 
             if total_pos < args.min_positives:
                 skipped += 1
@@ -771,29 +653,22 @@ def main():
                     args.models_jsonl,
                     {
                         "target_domain": domain,
-                        "status":
-                            "skipped_too_few_positives",
+                        "status": "skipped_too_few_positives",
                     },
                 )
 
                 continue
 
-            train_ids, calibration_ids, test_ids = (
-                split_positive_genomes(
-                    positives,
-                    seed=args.random_seed + i,
-                )
+            train_ids, calibration_ids, test_ids = split_positive_genomes(
+                positives,
+                seed=args.random_seed + i,
             )
 
             positive_set = set(positives)
 
-            decoy_candidates = sorted(
-                all_genome_set - positive_set
-            )
+            decoy_candidates = sorted(all_genome_set - positive_set)
 
-            rng = random.Random(
-                args.random_seed + i
-            )
+            rng = random.Random(args.random_seed + i)
 
             calibration_decoy_ids = sorted(
                 rng.sample(
@@ -803,8 +678,7 @@ def main():
             )
 
             remaining_decoys = sorted(
-                set(decoy_candidates)
-                - set(calibration_decoy_ids)
+                set(decoy_candidates) - set(calibration_decoy_ids)
             )
 
             test_decoy_ids = sorted(
@@ -847,21 +721,13 @@ def main():
                 train_ids,
             )
 
-            model = (
-                train_positive_support_model_from_pam(
-                    pam=train_pam,
-                    target_domain=domain,
-                    alpha=args.alpha,
-                    min_feature_genomes=(
-                        args.min_feature_genomes
-                    ),
-                    max_model_features=(
-                        args.max_model_features
-                    ),
-                    excluded_features=(
-                        excluded_features
-                    ),
-                )
+            model = train_positive_support_model_from_pam(
+                pam=train_pam,
+                target_domain=domain,
+                alpha=args.alpha,
+                min_feature_genomes=(args.min_feature_genomes),
+                max_model_features=(args.max_model_features),
+                excluded_features=(excluded_features),
             )
 
             calibration_scores = list(
@@ -896,16 +762,12 @@ def main():
                 ).values()
             )
 
-            calibration_result = (
-                find_best_f1_threshold(
-                    calibration_scores,
-                    calibration_decoy_scores,
-                )
+            calibration_result = find_best_f1_threshold(
+                calibration_scores,
+                calibration_decoy_scores,
             )
 
-            threshold = (
-                calibration_result["threshold"]
-            )
+            threshold = calibration_result["threshold"]
 
             test_result = confusion_at_threshold(
                 positive_scores=test_scores,
@@ -914,14 +776,9 @@ def main():
             )
 
             model["classification"] = {
-                "threshold":
-                    threshold,
-
-                "calibration":
-                    calibration_result,
-
-                "test":
-                    test_result,
+                "threshold": threshold,
+                "calibration": calibration_result,
+                "test": test_result,
             }
 
             append_jsonl(
@@ -929,78 +786,40 @@ def main():
                 model,
             )
 
-            runtime = (
-                    time.time() - start
-            )
+            runtime = time.time() - start
 
             append_evaluation_row(
                 args.evaluation_report,
                 {
                     "target_domain": domain,
                     "status": "trained",
-                    "total_positive_genomes":
-                        total_pos,
-                    "n_train":
-                        len(train_ids),
-                    "n_calibration_positive":
-                        len(calibration_ids),
-                    "n_calibration_decoy":
-                        len(calibration_decoy_ids),
-                    "n_test_positive":
-                        len(test_ids),
-                    "n_test_decoy":
-                        len(test_decoy_ids),
-                    "n_initial_features":
-                        model["n_initial_features"],
-                    "n_features":
-                        model["n_features"],
-                    "max_model_features":
-                        model["max_model_features"],
-                    "threshold":
-                        threshold,
-                    "calibration_precision":
-                        calibration_result[
-                            "precision"
-                        ],
-                    "calibration_recall":
-                        calibration_result[
-                            "recall"
-                        ],
-                    "calibration_F1":
-                        calibration_result[
-                            "F1"
-                        ],
-                    "test_precision":
-                        test_result[
-                            "precision"
-                        ],
-                    "test_recall":
-                        test_result[
-                            "recall"
-                        ],
-                    "test_F1":
-                        test_result[
-                            "F1"
-                        ],
-                    "runtime_seconds":
-                        round(runtime, 3),
+                    "total_positive_genomes": total_pos,
+                    "n_train": len(train_ids),
+                    "n_calibration_positive": len(calibration_ids),
+                    "n_calibration_decoy": len(calibration_decoy_ids),
+                    "n_test_positive": len(test_ids),
+                    "n_test_decoy": len(test_decoy_ids),
+                    "n_initial_features": model["n_initial_features"],
+                    "n_features": model["n_features"],
+                    "max_model_features": model["max_model_features"],
+                    "threshold": threshold,
+                    "calibration_precision": calibration_result["precision"],
+                    "calibration_recall": calibration_result["recall"],
+                    "calibration_F1": calibration_result["F1"],
+                    "test_precision": test_result["precision"],
+                    "test_recall": test_result["recall"],
+                    "test_F1": test_result["F1"],
+                    "runtime_seconds": round(runtime, 3),
                 },
             )
 
             trained += 1
 
-            print(
-                f"    [CALIBRATION] "
-                f"F1={calibration_result['F1']:.3f}"
-            )
+            print(f"    [CALIBRATION] F1={calibration_result['F1']:.3f}")
 
-            print(
-                f"    [TEST] "
-                f"F1={test_result['F1']:.3f}"
-            )
+            print(f"    [TEST] F1={test_result['F1']:.3f}")
 
         except Exception as exc:
-
             skipped += 1
 
             append_jsonl(
@@ -1012,38 +831,19 @@ def main():
                 },
             )
 
-            print(
-                f"    [ERROR] "
-                f"{domain}: {exc}"
-            )
+            print(f"    [ERROR] {domain}: {exc}")
 
-        print(
-            f"    [PROGRESS] "
-            f"trained={trained:,}, "
-            f"skipped={skipped:,}"
-        )
+        print(f"    [PROGRESS] trained={trained:,}, skipped={skipped:,}")
 
     print("\n========== SUMMARY ==========")
 
-    print(
-        f"Domains processed: "
-        f"{len(domains):,}"
-    )
+    print(f"Domains processed: {len(domains):,}")
 
-    print(
-        f"Models trained: "
-        f"{trained:,}"
-    )
+    print(f"Models trained: {trained:,}")
 
-    print(
-        f"Models skipped: "
-        f"{skipped:,}"
-    )
+    print(f"Models skipped: {skipped:,}")
 
-    print(
-        f"Runtime: "
-        f"{time.time() - start_all:.1f}s"
-    )
+    print(f"Runtime: {time.time() - start_all:.1f}s")
 
     print("=============================")
 

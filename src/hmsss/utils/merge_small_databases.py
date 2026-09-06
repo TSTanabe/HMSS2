@@ -226,7 +226,8 @@ def merge_one_db(src_path: Path, out_con: sqlite3.Connection) -> None:
 
         # Lineage
         for r in src_con.execute(
-                'SELECT lineageID, root, kingdom, phylum, class, "order", family, genus, species, raw_lineage FROM Lineage'):
+            'SELECT lineageID, root, kingdom, phylum, class, "order", family, genus, species, raw_lineage FROM Lineage'
+        ):
             out_con.execute(
                 """
                 INSERT INTO Lineage
@@ -247,7 +248,9 @@ def merge_one_db(src_path: Path, out_con: sqlite3.Connection) -> None:
             )
 
         # Keywords: ohne ID, mit Deduplikation
-        for r in src_con.execute("SELECT clusterID, keyword, completeness, collinearity FROM Keywords"):
+        for r in src_con.execute(
+            "SELECT clusterID, keyword, completeness, collinearity FROM Keywords"
+        ):
             out_con.execute(
                 """
                 INSERT INTO Keywords (clusterID, keyword, completeness, collinearity)
@@ -260,12 +263,19 @@ def merge_one_db(src_path: Path, out_con: sqlite3.Connection) -> None:
                       AND IFNULL(collinearity, '') = IFNULL(?, '')
                 )
                 """,
-                (*tuple(r), r["clusterID"], r["keyword"], r["completeness"], r["collinearity"]),
+                (
+                    *tuple(r),
+                    r["clusterID"],
+                    r["keyword"],
+                    r["completeness"],
+                    r["collinearity"],
+                ),
             )
 
         # Domains: ohne ID, mit Deduplikation
         for r in src_con.execute(
-                "SELECT proteinID, domain, score, blast_score_ratio, identity, domStart, domEnd FROM Domains"):
+            "SELECT proteinID, domain, score, blast_score_ratio, identity, domStart, domEnd FROM Domains"
+        ):
             out_con.execute(
                 """
                 INSERT INTO Domains
@@ -283,16 +293,26 @@ def merge_one_db(src_path: Path, out_con: sqlite3.Connection) -> None:
                 )
                 """,
                 (
-                    r["proteinID"], r["domain"], r["score"], r["blast_score_ratio"],
-                    r["identity"], r["domStart"], r["domEnd"],
-                    r["proteinID"], r["domain"], r["score"], r["blast_score_ratio"],
-                    r["identity"], r["domStart"], r["domEnd"],
+                    r["proteinID"],
+                    r["domain"],
+                    r["score"],
+                    r["blast_score_ratio"],
+                    r["identity"],
+                    r["domStart"],
+                    r["domEnd"],
+                    r["proteinID"],
+                    r["domain"],
+                    r["score"],
+                    r["blast_score_ratio"],
+                    r["identity"],
+                    r["domStart"],
+                    r["domEnd"],
                 ),
             )
 
         # Placement
         for r in src_con.execute(
-                "SELECT domain_type, readID, metagenomeID, proteinID, lineageID, dom_start, dom_end, coverage, sequence, alignment FROM Placement"
+            "SELECT domain_type, readID, metagenomeID, proteinID, lineageID, dom_start, dom_end, coverage, sequence, alignment FROM Placement"
         ):
             out_con.execute(
                 """
@@ -324,9 +344,12 @@ def find_databases(root: Path):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Merge all recursive database.db SQLite files into one output database.")
+        description="Merge all recursive database.db SQLite files into one output database."
+    )
     parser.add_argument("input_dir", help="Root directory to search recursively")
-    parser.add_argument("-o", "--output", default="merged_database.db", help="Output SQLite database")
+    parser.add_argument(
+        "-o", "--output", default="merged_database.db", help="Output SQLite database"
+    )
     args = parser.parse_args()
 
     input_dir = Path(args.input_dir).resolve()

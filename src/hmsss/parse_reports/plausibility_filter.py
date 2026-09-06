@@ -6,7 +6,7 @@ from typing import Any, Dict, Iterable
 
 
 def load_plausibility_models(
-        model_jsonl_path: str | Path,
+    model_jsonl_path: str | Path,
 ) -> dict[str, dict[str, Any]]:
     """
     Load positive-only plausibility models from a JSONL file.
@@ -68,7 +68,7 @@ def get_model_threshold(model: dict[str, Any]) -> float | None:
 
 
 def collect_present_domains_from_protein_dict(
-        protein_dict: dict[str, Any],
+    protein_dict: dict[str, Any],
 ) -> set[str]:
     """
     Collect all domains present in the current protein_dict.
@@ -91,8 +91,8 @@ def collect_present_domains_from_protein_dict(
 
 
 def score_present_domains_against_model(
-        present_domains: set[str],
-        model: dict[str, Any],
+    present_domains: set[str],
+    model: dict[str, Any],
 ) -> float:
     """
     Score a set of present domains against one positive-only support model.
@@ -130,9 +130,9 @@ def iter_protein_domain_names(protein: Any) -> Iterable[str]:
 
 
 def add_plausibility_comment_to_matching_domains(
-        protein: Any,
-        target_domain: str,
-        comment: str = "Pp",
+    protein: Any,
+    target_domain: str,
+    comment: str = "Pp",
 ) -> None:
     """
     Add plausibility comment to all domains of this protein matching target_domain.
@@ -149,10 +149,10 @@ def add_plausibility_comment_to_matching_domains(
 
 
 def apply_plausibility_thresholds_to_protein_dict(
-        protein_dict: dict[str, Any],
-        plausibility_models: dict[str, dict[str, Any]],
-        *,
-        comment: str = "Pt",
+    protein_dict: dict[str, Any],
+    plausibility_models: dict[str, dict[str, Any]],
+    *,
+    comment: str = "Pt",
 ) -> dict[str, Any]:
     """
     Rescue only the best-scoring non-valid candidate per target domain.
@@ -244,7 +244,9 @@ def apply_plausibility_thresholds_to_protein_dict(
                 threshold,
             )
 
-        is_plausible, plausibility_score, threshold = domain_decision_cache[target_domain]
+        is_plausible, plausibility_score, threshold = domain_decision_cache[
+            target_domain
+        ]
 
         if not is_plausible:
             continue

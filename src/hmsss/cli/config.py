@@ -460,9 +460,7 @@ class Config:
     cooccurrence_file = prop(
         "cli_synteny.cooccurrence_file"
     )  # :contentReference[oaicite:24]{index=24}
-    plausibility_models = prop(
-        "cli_synteny.plausibility_models"
-    )
+    plausibility_models = prop("cli_synteny.plausibility_models")
     exclusion_singletons = prop(
         "cli_synteny.exclusion_singletons"
     )  # :contentReference[oaicite:25]{index=25}
@@ -593,7 +591,9 @@ class Config:
         if self.hmm_packages:
             for p in self.hmm_packages:
                 if "_" in p:
-                    raise ValueError("hmm_packages must be version prefixes only (e.g. 'v8', not 'v8_Sulfur')")
+                    raise ValueError(
+                        "hmm_packages must be version prefixes only (e.g. 'v8', not 'v8_Sulfur')"
+                    )
 
         if self.cli_params.threshold_type not in (0, 1, 2, 3, 4):
             raise ValueError(
@@ -605,15 +605,17 @@ class Config:
         if self.cli_ops.keywords_connector not in ("AND", "OR"):
             raise ValueError("keywords_connector must be 'AND' or 'OR'")
         if (
-                self.cli_synteny.min_completeness < 0.0
-                or self.cli_synteny.min_completeness > 1.0
+            self.cli_synteny.min_completeness < 0.0
+            or self.cli_synteny.min_completeness > 1.0
         ):
             raise ValueError("min_completeness must be within [0.0, 1.0]")
         if self.cli_csb.jaccard < 0.0 or self.cli_csb.jaccard > 1.0:
             raise ValueError("jaccard must be within [0.0, 1.0]")
         if self.cli_input.cores < 1:
             raise ValueError("cores must be >= 1")
-        if (self.cli_readmap.gpkg_sets or self.cli_readmap.gpkg_packs) and not self.cli_readmap.use_read_mapping:
+        if (
+            self.cli_readmap.gpkg_sets or self.cli_readmap.gpkg_packs
+        ) and not self.cli_readmap.use_read_mapping:
             self.stage = 50
             self.cli_readmap.use_read_mapping = True
 

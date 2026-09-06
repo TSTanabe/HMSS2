@@ -9,10 +9,7 @@ from pathlib import Path
 
 import pandas as pd
 
-TAX_COLS = [
-    "Superkingdom", "Phylum", "Class",
-    "Ordnung", "Family", "Genus", "Species"
-]
+TAX_COLS = ["Superkingdom", "Phylum", "Class", "Ordnung", "Family", "Genus", "Species"]
 
 
 def connect_readonly(database: str) -> sqlite3.Connection:
@@ -67,10 +64,7 @@ def fetch_genome_ids(database: str) -> list[str]:
 
 
 def chunk_list(values: list[str], chunk_size: int) -> list[list[str]]:
-    return [
-        values[i:i + chunk_size]
-        for i in range(0, len(values), chunk_size)
-    ]
+    return [values[i : i + chunk_size] for i in range(0, len(values), chunk_size)]
 
 
 def fetch_chunk_and_write(args) -> str:
@@ -174,13 +168,13 @@ def concatenate_chunk_files(chunk_files: list[str], output: str) -> None:
 
 
 def build_pam_parallel_chunked(
-        database: str,
-        output: str,
-        threads: int,
-        chunk_size: int,
-        include_taxonomy: bool,
-        keep_tmp: bool,
-        tmpdir: str | None,
+    database: str,
+    output: str,
+    threads: int,
+    chunk_size: int,
+    include_taxonomy: bool,
+    keep_tmp: bool,
+    tmpdir: str | None,
 ) -> None:
     domains = fetch_all_domains(database)
     genome_ids = fetch_genome_ids(database)
@@ -220,8 +214,8 @@ def build_pam_parallel_chunked(
     try:
         with Pool(processes=threads) as pool:
             for i, chunk_file in enumerate(
-                    pool.imap_unordered(fetch_chunk_and_write, worker_args),
-                    1,
+                pool.imap_unordered(fetch_chunk_and_write, worker_args),
+                1,
             ):
                 chunk_files.append(chunk_file)
 

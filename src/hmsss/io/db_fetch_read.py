@@ -25,9 +25,9 @@ def _clean_values(values: Optional[Iterable[str]]) -> list[str]:
 
 
 def _prepare_required_domains_temp(
-        cur: sqlite3.Cursor,
-        required_domains: Optional[Iterable[str]],
-        table_name: str = "tmp_req_domains",
+    cur: sqlite3.Cursor,
+    required_domains: Optional[Iterable[str]],
+    table_name: str = "tmp_req_domains",
 ) -> int:
     """
     Create and fill a TEMP table with requested domain/GPKG names.
@@ -40,8 +40,7 @@ def _prepare_required_domains_temp(
     doms = _clean_values(required_domains)
 
     cur.execute(
-        f"CREATE TEMP TABLE IF NOT EXISTS {table_name} "
-        f"(domain_type TEXT PRIMARY KEY);"
+        f"CREATE TEMP TABLE IF NOT EXISTS {table_name} (domain_type TEXT PRIMARY KEY);"
     )
     cur.execute(f"DELETE FROM {table_name};")
 
@@ -56,9 +55,9 @@ def _prepare_required_domains_temp(
 
 
 def _prepare_required_metagenomes_temp(
-        cur: sqlite3.Cursor,
-        metagenome_ids: Optional[Iterable[str]],
-        table_name: str = "tmp_req_metagenomes",
+    cur: sqlite3.Cursor,
+    metagenome_ids: Optional[Iterable[str]],
+    table_name: str = "tmp_req_metagenomes",
 ) -> int:
     """
     Create and fill a TEMP table with requested metagenome IDs.
@@ -71,8 +70,7 @@ def _prepare_required_metagenomes_temp(
     mids = _clean_values(metagenome_ids)
 
     cur.execute(
-        f"CREATE TEMP TABLE IF NOT EXISTS {table_name} "
-        f"(metagenomeID TEXT PRIMARY KEY);"
+        f"CREATE TEMP TABLE IF NOT EXISTS {table_name} (metagenomeID TEXT PRIMARY KEY);"
     )
     cur.execute(f"DELETE FROM {table_name};")
 
@@ -87,8 +85,8 @@ def _prepare_required_metagenomes_temp(
 
 
 def _fetch_metagenome_metadata(
-        cur: sqlite3.Cursor,
-        metagenome_ids: Optional[Iterable[str]] = None,
+    cur: sqlite3.Cursor,
+    metagenome_ids: Optional[Iterable[str]] = None,
 ) -> Dict[str, Dict[str, Any]]:
     """
     Fetch metagenome metadata.
@@ -151,8 +149,8 @@ def _fetch_metagenome_metadata(
 
 
 def _fetch_lineage_metadata(
-        cur: sqlite3.Cursor,
-        lineage_ids: Optional[Iterable[str]] = None,
+    cur: sqlite3.Cursor,
+    lineage_ids: Optional[Iterable[str]] = None,
 ) -> Dict[str, Dict[str, Any]]:
     """
     Fetch lineage metadata for the supplied lineageIDs.
@@ -213,9 +211,9 @@ def _fetch_lineage_metadata(
 
 
 def generate_fetch_query(
-        *,
-        use_domain_filter: bool,
-        use_metagenome_filter: bool,
+    *,
+    use_domain_filter: bool,
+    use_metagenome_filter: bool,
 ) -> str:
     """
     Build the SQL query for fetching reads from Placement joined to Metagenomes
@@ -278,8 +276,8 @@ def generate_fetch_query(
 
 
 def build_reads_from_query(
-        cur: sqlite3.Cursor,
-        sql: str,
+    cur: sqlite3.Cursor,
+    sql: str,
 ) -> Tuple[
     Dict[Tuple[str, str, str], Read],
     Dict[str, Dict[str, Any]],
@@ -354,8 +352,8 @@ def build_reads_from_query(
 
 
 def fetch_gpkg_lengths(
-        database: str,
-        domain_types: Optional[Iterable[str]] = None,
+    database: str,
+    domain_types: Optional[Iterable[str]] = None,
 ) -> Dict[str, int]:
     """
     Fetch gpkg / protein lengths from the GpkgLengths table.
@@ -427,9 +425,9 @@ def fetch_gpkg_lengths(
 
 
 def fetch_bulk_read_data(
-        database: str,
-        domain_types: Optional[Iterable[str]] = None,
-        metagenome_ids: Optional[Iterable[str]] = None,
+    database: str,
+    domain_types: Optional[Iterable[str]] = None,
+    metagenome_ids: Optional[Iterable[str]] = None,
 ) -> Tuple[
     Dict[Tuple[str, str, str], Read],
     Dict[str, Dict[str, Any]],

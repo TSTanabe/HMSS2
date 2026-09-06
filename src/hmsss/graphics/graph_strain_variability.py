@@ -22,11 +22,11 @@ def stable_color_for_label(label: str, palette: list):
 
 
 def plot_taxonomy_stacked_bars(
-        input_tsv: str,
-        outdir: str = "taxonomy_barplots",
-        top_n: int = 20,
-        min_category_fraction: float = 0.01,
-        other_threshold_n_categories: int = 10,
+    input_tsv: str,
+    outdir: str = "taxonomy_barplots",
+    top_n: int = 20,
+    min_category_fraction: float = 0.01,
+    other_threshold_n_categories: int = 10,
 ) -> List[str]:
     """
     Create stacked horizontal barplots per taxonomic level.
@@ -77,10 +77,7 @@ def plot_taxonomy_stacked_bars(
     written: List[str] = []
 
     # Globales Farbmapping: gleiche Kategorie = gleiche Farbe in allen Plots
-    all_category_cols = [
-        c for c in df.columns
-        if c not in fixed_cols
-    ]
+    all_category_cols = [c for c in df.columns if c not in fixed_cols]
 
     all_category_cols = sorted(all_category_cols, key=lambda s: s.casefold())
 
@@ -89,16 +86,11 @@ def plot_taxonomy_stacked_bars(
 
     # explizit Grautöne entfernen
     filtered_palette = [
-        c for c in palette
-        if not (
-                abs(c[0] - c[1]) < 0.08 and
-                abs(c[1] - c[2]) < 0.08
-        )
+        c for c in palette if not (abs(c[0] - c[1]) < 0.08 and abs(c[1] - c[2]) < 0.08)
     ]
 
     color_map = {
-        col: stable_color_for_label(col, filtered_palette)
-        for col in all_category_cols
+        col: stable_color_for_label(col, filtered_palette) for col in all_category_cols
     }
 
     # Sonderkategorien fest setzen
@@ -112,9 +104,11 @@ def plot_taxonomy_stacked_bars(
 
         category_cols = [c for c in sub.columns if c not in fixed_cols]
 
-        sub["genome_count_total_database"] = pd.to_numeric(
-            sub["genome_count_total_database"], errors="coerce"
-        ).fillna(0).astype(int)
+        sub["genome_count_total_database"] = (
+            pd.to_numeric(sub["genome_count_total_database"], errors="coerce")
+            .fillna(0)
+            .astype(int)
+        )
 
         for col in category_cols:
             sub[col] = pd.to_numeric(sub[col], errors="coerce").fillna(0).astype(int)
@@ -126,10 +120,14 @@ def plot_taxonomy_stacked_bars(
             sub["assigned_total"] = 0
 
         # Top-N nach Zahl der zugeordneten Genome
-        sub = sub.sort_values(
-            by=["assigned_total", "taxon_name"],
-            ascending=[False, True],
-        ).head(top_n).copy()
+        sub = (
+            sub.sort_values(
+                by=["assigned_total", "taxon_name"],
+                ascending=[False, True],
+            )
+            .head(top_n)
+            .copy()
+        )
 
         # Unassigned berechnen
         assigned_sum = sub[category_cols].sum(axis=1) if category_cols else 0
@@ -142,10 +140,7 @@ def plot_taxonomy_stacked_bars(
 
         use_other = len(category_cols) > other_threshold_n_categories
 
-        category_totals = {
-            col: int(sub[col].sum())
-            for col in category_cols
-        }
+        category_totals = {col: int(sub[col].sum()) for col in category_cols}
 
         total_assigned_counts = sum(category_totals.values())
 

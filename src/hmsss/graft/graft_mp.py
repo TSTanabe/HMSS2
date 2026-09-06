@@ -25,6 +25,7 @@ logger = get_logger(__name__)
 
 def _worker_init_thread_limits():
     import os
+
     os.environ["OPENBLAS_NUM_THREADS"] = "1"
     os.environ["OMP_NUM_THREADS"] = "1"
     os.environ["MKL_NUM_THREADS"] = "1"
@@ -40,7 +41,7 @@ def _set_worker_mem_limit_gb(limit_gb: float) -> None:
     if limit_gb <= 0:
         return
 
-    bytes_limit = int(limit_gb * 1024 ** 3)
+    bytes_limit = int(limit_gb * 1024**3)
 
     # Hard+soft limit
     resource.setrlimit(resource.RLIMIT_AS, (bytes_limit, bytes_limit))
@@ -77,12 +78,12 @@ def _run_graft_task(task):
         # print(sequence_fasta)
         # print(alignment_fasta)
         if (
-                not taxonomy_csv
-                or not sequence_fasta
-                or not alignment_fasta
-                or not os.path.isfile(alignment_fasta)
-                or not os.path.isfile(taxonomy_csv)
-                # or not os.path.isfile(sequence_fasta) does not work if fw & rv are provided
+            not taxonomy_csv
+            or not sequence_fasta
+            or not alignment_fasta
+            or not os.path.isfile(alignment_fasta)
+            or not os.path.isfile(taxonomy_csv)
+            # or not os.path.isfile(sequence_fasta) does not work if fw & rv are provided
         ):
             raise FileNotFoundError(
                 f"Missing or empty input file(s): "
@@ -241,15 +242,15 @@ def _task_mem_est_gb(task, default_gb: float = 4.0) -> float:
 
 
 def _start_bestfit_tasks(
-        *,
-        ex: object,
-        pending: list,
-        future_to_tokens: dict,
-        available_tokens_gb: float,
-        total_tokens_gb: float,
-        max_workers: int,
-        k_scan: int = 100,
-        handle_result_fn: Callable[[dict], None],
+    *,
+    ex: object,
+    pending: list,
+    future_to_tokens: dict,
+    available_tokens_gb: float,
+    total_tokens_gb: float,
+    max_workers: int,
+    k_scan: int = 100,
+    handle_result_fn: Callable[[dict], None],
 ) -> tuple[float, bool]:
     """
     Start tasks using Best-Fit from Top-K pending tasks.
@@ -323,17 +324,17 @@ from typing import Callable
 
 
 def _start_bestfit_tasks_debug(
-        *,
-        ex: object,
-        pending: list,
-        future_to_tokens: dict,
-        available_tokens_gb: float,
-        total_tokens_gb: float,
-        max_workers: int,
-        k_scan: int = 100,
-        handle_result_fn: Callable[[dict], None],
-        debug_scan: int = 12,  # how many candidates to print per tick
-        debug_level: str = "INFO",  # "INFO" or "DEBUG"
+    *,
+    ex: object,
+    pending: list,
+    future_to_tokens: dict,
+    available_tokens_gb: float,
+    total_tokens_gb: float,
+    max_workers: int,
+    k_scan: int = 100,
+    handle_result_fn: Callable[[dict], None],
+    debug_scan: int = 12,  # how many candidates to print per tick
+    debug_level: str = "INFO",  # "INFO" or "DEBUG"
 ) -> tuple[float, bool]:
     """
     Debug-instrumented variant of _start_bestfit_tasks().
@@ -489,7 +490,7 @@ def _start_bestfit_tasks_debug(
 
 
 def graft_mp_tokenized_executor(
-        task_list: list, batch_size: int, config: "Config"
+    task_list: list, batch_size: int, config: "Config"
 ) -> None:
     read_batch: dict[str, "Read"] = {}
     batch_counter: int = 0
@@ -531,7 +532,11 @@ def graft_mp_tokenized_executor(
             read_batch.clear()
             batch_counter = 0
 
-    with ProcessPoolExecutor(max_workers=max_workers, mp_context=ctx, initializer=_worker_init_thread_limits()) as ex:
+    with ProcessPoolExecutor(
+        max_workers=max_workers,
+        mp_context=ctx,
+        initializer=_worker_init_thread_limits(),
+    ) as ex:
         while pending or future_to_tokens:
             # 1) Refill: start as many as possible
             available_tokens_gb, _ = _start_bestfit_tasks_debug(

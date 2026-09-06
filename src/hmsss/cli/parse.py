@@ -5,22 +5,23 @@ import argparse
 import os
 import sys
 from pathlib import Path
-from typing import List, Sequence, Any
+from typing import Any, List, Sequence
 
+from hmsss.cli import paths as paths
 from hmsss.cli.config import (
-    Config,
-    PathsCfg,
-    CliInput,
-    CliSearchParams,
-    CliResources,
-    CliSynteny,
-    CliInfo,
     CliCsb,
     CliFlow,
+    CliInfo,
+    CliInput,
+    CliLimiter,
     CliOperators,
-    CliReadMapping, CliLimiter,
+    CliReadMapping,
+    CliResources,
+    CliSearchParams,
+    CliSynteny,
+    Config,
+    PathsCfg,
 )
-from hmsss.cli import paths as paths
 
 """
 Argument parsing and configuration assembly for HMSS2/HMSSS.
@@ -254,7 +255,6 @@ class FetchOutputHelpAction(argparse.Action):
 
 
 class ReadMappingHelpAction(argparse.Action):
-
     def __call__(self, parser, namespace, values, option_string=None):
         self.print_read_mapping_help()
         parser.exit(0)
@@ -646,17 +646,18 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     paths_cfg = _paths_cfg_from_paths_module()
     data_dir = Path(paths_cfg.data)
 
-    AVAILABLE_HMM_PACKS = sorted({
-        p.name.split("_")[0]
-        for p in data_dir.iterdir()
-        if p.is_dir() and "_" in p.name
-    })
+    AVAILABLE_HMM_PACKS = sorted(
+        {
+            p.name.split("_")[0]
+            for p in data_dir.iterdir()
+            if p.is_dir() and "_" in p.name
+        }
+    )
 
     AVAILABLE_HMM_SETS = _discover_hmm_sets_from_data_dir(paths_cfg.data)
 
     DEFAULT_HMM_SETS = [
-        x for x in ["DHPS", "DMS", "Dsr", "SQ", "Aryl"]
-        if x in AVAILABLE_HMM_SETS
+        x for x in ["DHPS", "DMS", "Dsr", "SQ", "Aryl"] if x in AVAILABLE_HMM_SETS
     ]
 
     if not DEFAULT_HMM_SETS:
@@ -774,8 +775,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         default=1.0,
         metavar="<float>",
         help=(
-            "Multiplicative factor applied to score thresholds "
-            "(>= 0.0, default: 1.0)"
+            "Multiplicative factor applied to score thresholds (>= 0.0, default: 1.0)"
             if show_all
             else argparse.SUPPRESS
         ),
@@ -1462,7 +1462,7 @@ def build_config_from_namespace(ns) -> Config:
     cli_input = CliInput(
         fasta_file_directory=_s(ns, "fasta_file_directory"),
         score_threshold_file=_s(ns, "score_threshold_file")
-                             or os.path.join(paths_cfg.data, "Thresholds"),
+        or os.path.join(paths_cfg.data, "Thresholds"),
         library=_s(ns, "library") or paths_cfg.hmms,
         result_files_directory=_s(ns, "result_files_directory") or paths_cfg.results,
         cores=int(getattr(ns, "cores", 4)),
@@ -1496,13 +1496,13 @@ def build_config_from_namespace(ns) -> Config:
 
     cli_synteny = CliSynteny(
         patterns_file=_s(ns, "patterns_file")
-                      or os.path.join(paths_cfg.data, "Patterns"),
+        or os.path.join(paths_cfg.data, "Patterns"),
         cooccurrence_file=_s(ns, "cooccurrence_file")
-                          or os.path.join(paths_cfg.data, "Cooccurrence"),
+        or os.path.join(paths_cfg.data, "Cooccurrence"),
         plausibility_models=_s(ns, "plausibility_models")
-                            or os.path.join(paths_cfg.data, "Plausibility_models.jsonl"),
+        or os.path.join(paths_cfg.data, "Plausibility_models.jsonl"),
         exclusion_singletons=_s(ns, "exclusion_singletons")
-                             or os.path.join(paths_cfg.data, "Exclusion_singletons"),
+        or os.path.join(paths_cfg.data, "Exclusion_singletons"),
         min_completeness=float(getattr(ns, "min_completeness", 0.5)),
         glob_chunks=int(getattr(ns, "glob_chunks", 5000)),
     )

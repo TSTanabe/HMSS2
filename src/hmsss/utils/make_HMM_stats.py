@@ -61,7 +61,11 @@ def load_thresholds(threshold_file: str):
             tru = _maybe_float(parts[2])
             noi = _maybe_float(parts[3])
 
-            for cutoff_type, cutoff in (("optimized", opt), ("trusted", tru), ("noise", noi)):
+            for cutoff_type, cutoff in (
+                ("optimized", opt),
+                ("trusted", tru),
+                ("noise", noi),
+            ):
                 if cutoff is None:
                     continue
                 prev = thresholds[cutoff_type].get(protein_type)
@@ -75,7 +79,13 @@ def load_thresholds(threshold_file: str):
 # Core computation
 # ---------------------------------------------------------------------
 # --- Worker: läuft in separatem Prozess ---
-def _confmat_worker(db_path: str, total_proteins: int, protein_type: str, cutoff_type: str, cutoff: float):
+def _confmat_worker(
+    db_path: str,
+    total_proteins: int,
+    protein_type: str,
+    cutoff_type: str,
+    cutoff: float,
+):
     # read-only Verbindung (URI) + query_only Schutz
     conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row
@@ -115,12 +125,12 @@ def _confmat_worker(db_path: str, total_proteins: int, protein_type: str, cutoff
 
 
 def compute_confusion_matrices_parallel(
-        db_path,
-        thresholds,
-        total_proteins,
-        *,
-        max_workers: int = 8,
-        chunksize: int = 50,
+    db_path,
+    thresholds,
+    total_proteins,
+    *,
+    max_workers: int = 8,
+    chunksize: int = 50,
 ):
     """
     Parallelisierte Variante.
@@ -135,7 +145,9 @@ def compute_confusion_matrices_parallel(
         print(f"[INFO] processing cutoff type: {cutoff_type} ({len(items)} HMMs)")
         for i, (protein_type, cutoff) in enumerate(items, start=1):
             # Nur Main-Process printet
-            print(f"[INFO]  {cutoff_type}: HMM {i}/{len(items)} → {protein_type} (cutoff={cutoff})")
+            print(
+                f"[INFO]  {cutoff_type}: HMM {i}/{len(items)} → {protein_type} (cutoff={cutoff})"
+            )
             tasks.append((protein_type, cutoff_type, float(cutoff)))
 
     # Prozesse starten
@@ -143,9 +155,16 @@ def compute_confusion_matrices_parallel(
         # Optional: batching reduziert Overhead bei vielen tausend Jobs
         # Wir submitten in Blöcken, um nicht zehntausende Futures auf einmal zu halten.
         for start in range(0, len(tasks), chunksize):
-            block = tasks[start: start + chunksize]
+            block = tasks[start : start + chunksize]
             futures = [
-                ex.submit(_confmat_worker, db_path, total_proteins, protein_type, cutoff_type, cutoff)
+                ex.submit(
+                    _confmat_worker,
+                    db_path,
+                    total_proteins,
+                    protein_type,
+                    cutoff_type,
+                    cutoff,
+                )
                 for (protein_type, cutoff_type, cutoff) in block
             ]
             for fut in as_completed(futures):
@@ -230,10 +249,10 @@ def f1_score(tp, fp, fn, tn=None):
 
 
 def mcc(tp, fp, fn, tn):
-    a = (tp + fp)
-    b = (tp + fn)
-    c = (tn + fp)
-    d = (tn + fn)
+    a = tp + fp
+    b = tp + fn
+    c = tn + fp
+    d = tn + fn
     den = a * b * c * d
     if den == 0:
         return None
@@ -247,6 +266,7 @@ def fmt(x):
 #
 #
 #
+
 
 def plot_f1_boxplots(tsv_path: str, out_prefix: str, alpha: float = 0.05):
     """
@@ -383,7 +403,9 @@ def plot_f1_boxplots(tsv_path: str, out_prefix: str, alpha: float = 0.05):
             if (r["g1"] == g1 and r["g2"] == g2) or (r["g1"] == g2 and r["g2"] == g1):
                 better = r["better"]
                 worse = g2 if better == g1 else g1
-                return f"{g1} vs {g2}: {better}>{worse} {r['stars']} (p={r['p_adj']:.2g})"
+                return (
+                    f"{g1} vs {g2}: {better}>{worse} {r['stars']} (p={r['p_adj']:.2g})"
+                )
         return f"{g1} vs {g2}: NA"
 
     pair_lines = [
@@ -392,12 +414,15 @@ def plot_f1_boxplots(tsv_path: str, out_prefix: str, alpha: float = 0.05):
         _pair_line("optimized", "noise"),
     ]
 
-    n_tr, n_op, n_no = groups["trusted"].size, groups["optimized"].size, groups["noise"].size
+    n_tr, n_op, n_no = (
+        groups["trusted"].size,
+        groups["optimized"].size,
+        groups["noise"].size,
+    )
 
     stats_text = (
-            f"Kruskal–Wallis: H={H:.3g}, p={p_kw:.2g}\n"
-            f"n(trusted,opt,noise)=({n_tr},{n_op},{n_no})\n"
-            + "\n".join(pair_lines)
+        f"Kruskal–Wallis: H={H:.3g}, p={p_kw:.2g}\n"
+        f"n(trusted,opt,noise)=({n_tr},{n_op},{n_no})\n" + "\n".join(pair_lines)
     )
 
     # ---- plot ----
@@ -423,10 +448,13 @@ def plot_f1_boxplots(tsv_path: str, out_prefix: str, alpha: float = 0.05):
 
     # place stats bottom-left inside axes
     ax.text(
-        0.02, 0.02, stats_text,
+        0.02,
+        0.02,
+        stats_text,
         transform=ax.transAxes,
-        va="bottom", ha="left",
-        fontsize=9
+        va="bottom",
+        ha="left",
+        fontsize=9,
     )
 
     plt.tight_layout()
@@ -457,10 +485,7 @@ def dunn_test(groups: dict, method: str = "holm"):
     N = len(values)
 
     # Mean rank per group
-    mean_ranks = {
-        k: ranks[labels == k].mean()
-        for k in names
-    }
+    mean_ranks = {k: ranks[labels == k].mean() for k in names}
     ns = {k: len(groups[k]) for k in names}
 
     results = []
@@ -470,10 +495,7 @@ def dunn_test(groups: dict, method: str = "holm"):
             g1, g2 = names[i], names[j]
 
             num = mean_ranks[g1] - mean_ranks[g2]
-            den = np.sqrt(
-                (N * (N + 1) / 12.0)
-                * (1.0 / ns[g1] + 1.0 / ns[g2])
-            )
+            den = np.sqrt((N * (N + 1) / 12.0) * (1.0 / ns[g1] + 1.0 / ns[g2]))
 
             z = num / den
             p = 2 * (1 - norm.cdf(abs(z)))  # two-sided
@@ -508,7 +530,9 @@ def dunn_test(groups: dict, method: str = "holm"):
 # CLI
 # ---------------------------------------------------------------------
 def main():
-    ap = argparse.ArgumentParser(description="Compute confusion matrices from SQLite DB")
+    ap = argparse.ArgumentParser(
+        description="Compute confusion matrices from SQLite DB"
+    )
     ap.add_argument("--db", required=True, help="SQLite database file")
     ap.add_argument("--thresholds", required=True, help="Thresholds file")
     ap.add_argument("--out", required=True, help="Output TSV file")
@@ -521,12 +545,12 @@ def main():
     ap.add_argument(
         "--plot",
         action="store_true",
-        help="After writing TSV, create boxplots from metrics."
+        help="After writing TSV, create boxplots from metrics.",
     )
     ap.add_argument(
         "--plot-prefix",
         default=None,
-        help="Output prefix for plots (default: same as --out without extension)."
+        help="Output prefix for plots (default: same as --out without extension).",
     )
 
     args = ap.parse_args()
@@ -534,26 +558,30 @@ def main():
     thresholds = load_thresholds(args.thresholds)
 
     with open(args.out, "w") as out:
-        for row in compute_confusion_matrices_parallel(args.db, thresholds, args.total_proteins):
+        for row in compute_confusion_matrices_parallel(
+            args.db, thresholds, args.total_proteins
+        ):
             (protein_type, cutoff_type, cutoff, TP, FP, FN, TN, assigned_hits) = row
 
             ba = balanced_accuracy(TP, FP, FN, TN)
             f1 = f1_score(TP, FP, FN)
             mm = mcc(TP, FP, FN, TN)
 
-            line = "\t".join([
-                protein_type,
-                cutoff_type,
-                str(cutoff),
-                str(TP),
-                str(FP),
-                str(FN),
-                str(TN),
-                str(assigned_hits),
-                fmt(ba),
-                fmt(f1),
-                fmt(mm),
-            ])
+            line = "\t".join(
+                [
+                    protein_type,
+                    cutoff_type,
+                    str(cutoff),
+                    str(TP),
+                    str(FP),
+                    str(FN),
+                    str(TN),
+                    str(assigned_hits),
+                    fmt(ba),
+                    fmt(f1),
+                    fmt(mm),
+                ]
+            )
 
             out.write(line + "\n")
             if getattr(args, "verbose", 0) >= 1:

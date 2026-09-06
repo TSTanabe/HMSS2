@@ -16,8 +16,8 @@ logger = get_logger(__name__)
 
 
 def collect_gpkg_from_selected_metabolism_packages(
-        src_dir: str,
-        allowed_words: list[str],
+    src_dir: str,
+    allowed_words: list[str],
 ) -> dict[str, str]:
     """
     Return a FLAT dictionary mapping:
@@ -72,8 +72,8 @@ def collect_gpkg_from_selected_metabolism_packages(
 
 
 def collect_gpkg_by_filename_tokens(
-        src_dir: str,
-        allowed_words: list[str],
+    src_dir: str,
+    allowed_words: list[str],
 ) -> dict[str, str]:
     """
     Return a FLAT dictionary mapping:
@@ -102,9 +102,7 @@ def collect_gpkg_by_filename_tokens(
     if not base.is_dir():
         raise ValueError(f"Not a directory: {src_dir}")
 
-    allowed_tokens: set[str] = set().union(
-        *(_tokenize(w) for w in allowed_words)
-    )
+    allowed_tokens: set[str] = set().union(*(_tokenize(w) for w in allowed_words))
 
     gpkg_map: dict[str, str] = {}
 
@@ -130,9 +128,7 @@ def prepare_gpkg_packages(config: Config) -> None | dict[str, str]:
             if isinstance(config.gpkg_sets, list)
             else config.gpkg_sets.split()
         )
-        return collect_gpkg_from_selected_metabolism_packages(
-            str(GPKG_DIR), allowed
-        )
+        return collect_gpkg_from_selected_metabolism_packages(str(GPKG_DIR), allowed)
     else:
         return {}
 
@@ -145,19 +141,17 @@ def prepare_gpkg_packs(config: Config) -> None | dict[str, str]:
             if isinstance(config.gpkg_packs, list)
             else config.gpkg_packs.split()
         )
-        return collect_gpkg_by_filename_tokens(
-            str(GPKG_DIR), allowed
-        )
+        return collect_gpkg_by_filename_tokens(str(GPKG_DIR), allowed)
     else:
         return {}
 
 
 def _ensure_dmnd(
-        *,
-        faa_path: str,
-        dmnd_path: str,
-        name: str,
-        threads: int = 4,
+    *,
+    faa_path: str,
+    dmnd_path: str,
+    name: str,
+    threads: int = 4,
 ) -> None:
     """
     Ensure a DIAMOND database exists for the given FASTA.
@@ -193,9 +187,9 @@ def _ensure_dmnd(
 
 
 def initialize_gpkg_packages(
-        package_dict: Dict[str, str],
-        *,
-        threads: int = 4,
+    package_dict: Dict[str, str],
+    *,
+    threads: int = 4,
 ) -> None:
     """
     Ensure that each gpkg contains refseq and decoy DIAMOND databases.

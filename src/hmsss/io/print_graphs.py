@@ -12,14 +12,14 @@ logger = get_logger(__name__)
 
 
 def print_hit_graphs(
-        directory: str,
-        protein_dict: Dict[str, Any],
-        cluster_dict: Dict[str, Any],
-        taxon_dict: Dict[str, Dict[str, str]],
-        metabolic_dict: Dict[str, Any],
-        context_dict: Dict[str, Any] | None,
-        fetch_proteins: List[str],
-        levels: List[str],
+    directory: str,
+    protein_dict: Dict[str, Any],
+    cluster_dict: Dict[str, Any],
+    taxon_dict: Dict[str, Dict[str, str]],
+    metabolic_dict: Dict[str, Any],
+    context_dict: Dict[str, Any] | None,
+    fetch_proteins: List[str],
+    levels: List[str],
 ) -> None:
     """
     Main output routine: creates hit tables, taxonomy summaries, and protein FASTA files.
@@ -49,8 +49,12 @@ def print_hit_graphs(
     cluster_overview_report = os.path.join(
         directory, "summary_genecluster_overview_table.jpg"
     )
-    path_strain_variability_tsv = os.path.join(directory, "summary_strain_variability_by_taxonomy.txt")
-    path_strain_variability_plot = os.path.join(directory, "summary_strain_variability_by_taxonomy")
+    path_strain_variability_tsv = os.path.join(
+        directory, "summary_strain_variability_by_taxonomy.txt"
+    )
+    path_strain_variability_plot = os.path.join(
+        directory, "summary_strain_variability_by_taxonomy"
+    )
 
     # Plots the network for presence absence
     graph_occurence_network.plot_taxonomy_cooccurrence_network(

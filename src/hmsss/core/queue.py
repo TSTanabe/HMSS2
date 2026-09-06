@@ -248,7 +248,9 @@ def remove_genomes_already_in_db_from_queue(config) -> int:
     if not os.path.isfile(config.database_directory):
         return 0
 
-    existing: Set[str] = database.fetch_genome_ids_with_proteins(config.database_directory)
+    existing: Set[str] = database.fetch_genome_ids_with_proteins(
+        config.database_directory
+    )
 
     queued = list(getattr(config, "queued_genomes", []))
     if not queued:
@@ -339,11 +341,11 @@ def unpackgz(path: str) -> str:
 
 
 def concatenate_selected_hmms(
-        src_dir: str,
-        allowed_words: List[str],
-        prefix: str,
-        suffix: str,
-        output_library: str,
+    src_dir: str,
+    allowed_words: List[str],
+    prefix: str,
+    suffix: str,
+    output_library: str,
 ) -> None:
     """Concatenate HMM files filtered by directory name.
 
@@ -378,10 +380,10 @@ def concatenate_selected_hmms(
 
 
 def concatenate_files_shell(
-        search_directory: str,
-        allowed_prefix: str,
-        allowed_suffix: str,
-        output_file_path: str,
+    search_directory: str,
+    allowed_prefix: str,
+    allowed_suffix: str,
+    output_file_path: str,
 ) -> None:
     """Concatenate files matching prefix and suffix into a single output file.
 
@@ -403,9 +405,9 @@ def concatenate_files_shell(
     if matched_files:
         os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
         cat_command = (
-                "cat "
-                + " ".join(f'"{f}"' for f in matched_files)
-                + f' > "{output_file_path}"'
+            "cat "
+            + " ".join(f'"{f}"' for f in matched_files)
+            + f' > "{output_file_path}"'
         )
         # logger.debug(f"Running: {cat_command}")
         os.system(cat_command)
@@ -417,9 +419,9 @@ def concatenate_files_shell(
 
 
 def concatenate_hmms_from_selected_metabolism_packages(
-        src_dir: str,
-        allowed_words: list[str],
-        output_library: str,
+    src_dir: str,
+    allowed_words: list[str],
+    output_library: str,
 ) -> None:
     """
     Concatenate .hmm Dateien NUR aus den Paketen direkt unter `src_dir`,

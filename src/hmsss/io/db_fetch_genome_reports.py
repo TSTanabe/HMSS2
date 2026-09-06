@@ -38,16 +38,18 @@ def _has_column(cur: sqlite3.Cursor, table_name: str, column_name: str) -> bool:
         cur.execute(f"PRAGMA table_info({table_name});")
         return any(row[1] == column_name for row in cur.fetchall())
     except sqlite3.Error as exc:
-        logger.warning("Could not inspect column %s.%s: %s", table_name, column_name, exc)
+        logger.warning(
+            "Could not inspect column %s.%s: %s", table_name, column_name, exc
+        )
         return False
 
 
 def _count_total_reports(
-        cur: sqlite3.Cursor,
-        *,
-        write_empty: bool,
-        use_non_valid_hits: bool,
-        valid_hit_column_available: bool,
+    cur: sqlite3.Cursor,
+    *,
+    write_empty: bool,
+    use_non_valid_hits: bool,
+    valid_hit_column_available: bool,
 ) -> int:
     """Return the number of genome report files expected to be written."""
     if write_empty:
@@ -70,12 +72,12 @@ def _count_total_reports(
 
 
 def _log_report_progress(
-        *,
-        written_reports: int,
-        total_reports: int,
-        n_rows: int,
-        force: bool = False,
-        log_every: int = 10000,
+    *,
+    written_reports: int,
+    total_reports: int,
+    n_rows: int,
+    force: bool = False,
+    log_every: int = 10000,
 ) -> None:
     """Log report-writing progress including percentage."""
     if total_reports <= 0:
@@ -194,22 +196,31 @@ def _load_pathway_rows(pathway_file: str | Path | None) -> List[Dict[str, str]]:
         handle.seek(0)
         dialect = csv.Sniffer().sniff(sample, delimiters="\t,")
         reader = csv.DictReader(handle, dialect=dialect)
-        required = [PATHWAY_INPUT_COL, PATHWAY_OUTPUT_COL, PATHWAY_ENZYME_COL, PATHWAY_PATHWAY_COL]
+        required = [
+            PATHWAY_INPUT_COL,
+            PATHWAY_OUTPUT_COL,
+            PATHWAY_ENZYME_COL,
+            PATHWAY_PATHWAY_COL,
+        ]
         missing = [col for col in required if col not in (reader.fieldnames or [])]
         if missing:
-            raise ValueError(f"Pathway file {path} is missing required columns: {missing}. Found: {reader.fieldnames}")
+            raise ValueError(
+                f"Pathway file {path} is missing required columns: {missing}. Found: {reader.fieldnames}"
+            )
         rows: List[Dict[str, str]] = []
         for row in reader:
             enzymes = _split_enzyme_field(row.get(PATHWAY_ENZYME_COL, ""))
             if not enzymes:
                 continue
-            rows.append({
-                PATHWAY_INPUT_COL: row.get(PATHWAY_INPUT_COL, "") or "",
-                PATHWAY_OUTPUT_COL: row.get(PATHWAY_OUTPUT_COL, "") or "",
-                PATHWAY_ENZYME_COL: ";".join(sorted(enzymes)),
-                PATHWAY_PATHWAY_COL: row.get(PATHWAY_PATHWAY_COL, "") or "",
-                "_enzyme_set": enzymes,
-            })
+            rows.append(
+                {
+                    PATHWAY_INPUT_COL: row.get(PATHWAY_INPUT_COL, "") or "",
+                    PATHWAY_OUTPUT_COL: row.get(PATHWAY_OUTPUT_COL, "") or "",
+                    PATHWAY_ENZYME_COL: ";".join(sorted(enzymes)),
+                    PATHWAY_PATHWAY_COL: row.get(PATHWAY_PATHWAY_COL, "") or "",
+                    "_enzyme_set": enzymes,
+                }
+            )
     return rows
 
 
@@ -240,7 +251,9 @@ def _write_pathway_report_header(writer: TextIO) -> None:
     writer.write("genomeID\tspecies\tinput\toutput\tenzymes\n")
 
 
-def _write_genome_pathways(*, writer, genome_id, species, protein_dict, pathway_rows) -> int:
+def _write_genome_pathways(
+    *, writer, genome_id, species, protein_dict, pathway_rows
+) -> int:
     if not pathway_rows or not protein_dict:
         return 0
 
@@ -256,27 +269,32 @@ def _write_genome_pathways(*, writer, genome_id, species, protein_dict, pathway_
 
     n_written = 0
     for pathway in calls:
-        writer.write("\t".join([
-            genome_id,
-            species or "",
-            pathway[PATHWAY_INPUT_COL],
-            pathway[PATHWAY_OUTPUT_COL],
-            pathway[PATHWAY_ENZYME_COL],
-        ]) + "\n")
+        writer.write(
+            "\t".join(
+                [
+                    genome_id,
+                    species or "",
+                    pathway[PATHWAY_INPUT_COL],
+                    pathway[PATHWAY_OUTPUT_COL],
+                    pathway[PATHWAY_ENZYME_COL],
+                ]
+            )
+            + "\n"
+        )
         n_written += 1
 
     return n_written
 
 
 def _write_one_report(
-        *,
-        out_dir: Path,
-        genome_id: str,
-        protein_dict: Dict[str, parse_reports.Protein],
-        taxon_rec: Optional[Dict[str, str]],
-        pathway_rows: Optional[List[Dict[str, str]]] = None,
-        pathway_writer: Optional[TextIO] = None,
-        write_individual_report: bool = True,
+    *,
+    out_dir: Path,
+    genome_id: str,
+    protein_dict: Dict[str, parse_reports.Protein],
+    taxon_rec: Optional[Dict[str, str]],
+    pathway_rows: Optional[List[Dict[str, str]]] = None,
+    pathway_writer: Optional[TextIO] = None,
+    write_individual_report: bool = True,
 ) -> int:
     """
     Finalize one genome-sized protein dict and write one genome TSV report.
@@ -323,10 +341,10 @@ def _write_one_report(
 
 
 def _stream_hit_rows(
-        cur: sqlite3.Cursor,
-        *,
-        use_non_valid_hits: bool,
-        valid_hit_column_available: bool,
+    cur: sqlite3.Cursor,
+    *,
+    use_non_valid_hits: bool,
+    valid_hit_column_available: bool,
 ) -> Iterable[sqlite3.Row]:
     """
     Stream all protein-domain rows ordered by genome.
@@ -381,14 +399,14 @@ def _stream_hit_rows(
 
 
 def _write_empty_reports_for_missing_genomes(
-        cur: sqlite3.Cursor,
-        *,
-        out_dir: Path,
-        written_genome_ids: set[str],
-        total_reports: int,
-        n_rows: int,
-        log_every: int = 10000,
-        write_individual_reports: bool = True,
+    cur: sqlite3.Cursor,
+    *,
+    out_dir: Path,
+    written_genome_ids: set[str],
+    total_reports: int,
+    n_rows: int,
+    log_every: int = 10000,
+    write_individual_reports: bool = True,
 ) -> int:
     """
     Write empty report files for genomes that had no streamed hit rows.
@@ -456,7 +474,9 @@ def write_individual_genome_reports(config) -> None:
         Progress is logged as written/total reports plus percentage.
     """
     out_dir = Path(config.fasta_initial_hit_directory)
-    write_individual_reports = not bool(getattr(config, "disable_individual_reports", False))
+    write_individual_reports = not bool(
+        getattr(config, "disable_individual_reports", False)
+    )
 
     if write_individual_reports:
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -527,9 +547,9 @@ def write_individual_genome_reports(config) -> None:
             # print(expected_msg, flush=True)
 
             for row in _stream_hit_rows(
-                    cur,
-                    use_non_valid_hits=use_non_valid,
-                    valid_hit_column_available=valid_col,
+                cur,
+                use_non_valid_hits=use_non_valid,
+                valid_hit_column_available=valid_col,
             ):
                 n_rows += 1
                 gid = row["genomeID"]
@@ -612,7 +632,7 @@ def write_individual_genome_reports(config) -> None:
         if pathway_handle is not None:
             pathway_handle.close()
 
-    if 'n_empty' not in locals():
+    if "n_empty" not in locals():
         n_empty = 0
 
     if write_individual_reports:
@@ -632,6 +652,8 @@ def write_individual_genome_reports(config) -> None:
     # print(final_msg, flush=True)
 
     if pathway_rows:
-        pathway_msg = f"Finished genome pathway report: {n_pathway_rows} pathway rows written"
+        pathway_msg = (
+            f"Finished genome pathway report: {n_pathway_rows} pathway rows written"
+        )
         logger.info(pathway_msg)
         # print(pathway_msg, flush=True)
