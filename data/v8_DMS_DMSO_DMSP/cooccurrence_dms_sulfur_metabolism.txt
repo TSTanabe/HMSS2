@@ -6,8 +6,8 @@ DmdA DmdB DmdC DmdD DmoA
 DmsA DmsB DmsC DmsD
 MsuC MsuD MsuE
 DorC DorA DorD
-SnfG MsmA MsmB MsmC MsmD
-SnfG MsuD MsuE
+SfnG MsmA MsmB MsmC MsmD
+SfnG MsuD MsuE
 DmoA
 MddA
 MddH

@@ -13,7 +13,7 @@ AcuI AcuK AcuN DddC DddY
 AcuI AcuK AcuN DddC DmdB
 AcuI AcuK AcuN DddY
 AcuI AcuK AcuN DmdB
-AcuI AcuK AcuN DmdB SnfG
+AcuI AcuK AcuN DmdB SfnG
 AcuI AcuK AcuN DmdC
 AcuI AcuK AcuN DmoA
 AcuI DddY
@@ -39,37 +39,37 @@ DddA DddC DddT MsuC
 DddA DddC DddW
 DddA DddC DmdA DmdB DmdC
 DddA DddC DmdB DmoA
-DddA DddC DmdB SnfG
+DddA DddC DmdB SfnG
 DddA DddC DmdC
 DddA DddC DmdC DmdD
 DddA DddC DmdD
 DddA DddC DmoA
 DddA DddC DmoA MsuC
 DddA DddC DmoA MsuC MsuD
-DddA DddC DmoA MsuC MsuD SnfG
+DddA DddC DmoA MsuC MsuD SfnG
 DddA DddC DmsA
 DddA DddC DmsA DmsB
 DddA DddC DsoF
 DddA DddC MddH
 DddA DddC MsuC
-DddA DddC MsuC MsuD SnfG
+DddA DddC MsuC MsuD SfnG
 DddA DddC MsuD
-DddA DddC SnfG
+DddA DddC SfnG
 DddA DddD DddT
 DddA DddD DddT DmdA
 DddA DddD DddT DmdA DmdB DmdD
 DddA DddD DddT DmdC DmdD
-DddA DddP SnfG
+DddA DddP SfnG
 DddA DddT DmdA DmdB
 DddA DmdA DmdB DmdD
 DddA DmoA MsuC
 DddA DmoA MsuD
-DddA DmoA SnfG
+DddA DmoA SfnG
 DddA DmsA DmsB
-DddA MsuC SnfG
+DddA MsuC SfnG
 DddC DddD DddT
 DddC DddD DmdB
-DddC DddD SnfG
+DddC DddD SfnG
 DddC DddL DddP
 DddC DddL DddP DddT
 DddC DddP DddT
@@ -106,7 +106,7 @@ DddC DmdB MddH
 DddC DmdB MsmD
 DddC DmdB MsuC
 DddC DmdB MsuD
-DddC DmdB SnfG
+DddC DmdB SfnG
 DddC DmdC DmdD
 DddC DmdC DmsA
 DddC DmdC DsoD DsoF
@@ -116,11 +116,11 @@ DddC DmoA DsoF
 DddC DmoA DsoF MsuC MsuD
 DddC DmoA MsuC
 DddC DmoA MsuC MsuD
-DddC DmoA MsuC SnfG
+DddC DmoA MsuC SfnG
 DddC DmoA MsuD
 DddC DmoA MsuE
-DddC DmoA MsuE SnfG
-DddC DmoA SnfG
+DddC DmoA MsuE SfnG
+DddC DmoA SfnG
 DddC DmsA DmsB
 DddC DmsB DsoB DsoD DsoF
 DddC DsoA DsoB DsoC DsoD DsoE DsoF
@@ -138,13 +138,13 @@ DddC DsoD DsoF
 DddC DsoD MsmD
 DddC DsoE DsoF
 DddC MsuC MsuD
-DddC MsuC MsuD MsuE SnfG
-DddC MsuC MsuD SnfG
+DddC MsuC MsuD MsuE SfnG
+DddC MsuC MsuD SfnG
 DddC MsuC MsuE
-DddC MsuC MsuE SnfG
-DddC MsuC SnfG
-DddC MsuD SnfG
-DddC MsuE SnfG
+DddC MsuC MsuE SfnG
+DddC MsuC SfnG
+DddC MsuD SfnG
+DddC MsuE SfnG
 DddP DmdA DmdB
 DddP DmsA DmsB
 DddT DddW DmoA
@@ -158,7 +158,7 @@ DddT DmoA MsuC
 DddT DmsA DmsB
 DddT DmsA DmsB DmsC DmsD
 DddT DmsA DmsB DmsD
-DddT MsuC MsuD SnfG
+DddT MsuC MsuD SfnG
 DdhA DdhB DdhC DdhD
 DdhA DdhB DdhC
 DdhA DdhB
@@ -173,9 +173,9 @@ DmdA DmdC DmdD
 DmdA MsmA MsmB MsmD MsmE MsmF MsmG MsmH
 DmdA MsmE MsmF MsmG MsmH
 DmdA MsuC MsuD
-DmdA MsuC MsuD MsuE SnfG
-DmdA MsuC MsuE SnfG
-DmdA MsuC SnfG
+DmdA MsuC MsuD MsuE SfnG
+DmdA MsuC MsuE SfnG
+DmdA MsuC SfnG
 DmdB DmdC DmdD
 DmdB DmdC DmoA
 DmdB DmdC DmsA
@@ -187,9 +187,9 @@ DmdB DmoA MddH
 DmdB DmoA MddH MsuC
 DmdB DmoA MsuC
 DmdB DmoA MsuC MsuD
-DmdB DmoA MsuC SnfG
+DmdB DmoA MsuC SfnG
 DmdB DmoA MsuE
-DmdB DmoA SnfG
+DmdB DmoA SfnG
 DmdB DmsA DmsB
 DmdB DmsA DsoF
 DmdB DmsB MddH
@@ -200,17 +200,17 @@ DmdB DsoB DsoC DsoD DsoF
 DmdB DsoB DsoD DsoF
 DmdB DsoD DsoF
 DmdB MsuC MsuD
-DmdB MsuC MsuD SnfG
+DmdB MsuC MsuD SfnG
 DmdB MsuC MsuE
-DmdB MsuC MsuE SnfG
-DmdB MsuC SnfG
-DmdB MsuD SnfG
-DmdB MsuE SnfG
+DmdB MsuC MsuE SfnG
+DmdB MsuC SfnG
+DmdB MsuD SfnG
+DmdB MsuE SfnG
 DmdC DmoA MsuC
 DmdC DsoB DsoC DsoD DsoF
 DmdC DsoB DsoD DsoF
 DmdC DsoD MsmD
-DmdC MsuC MsuD SnfG
+DmdC MsuC MsuD SfnG
 DmoA DmsA DmsB
 DmoA DmsA DsoF
 DmoA DmsA MsuC
@@ -219,17 +219,17 @@ DmoA DmsB MsuE
 DmoA DsoA DsoB DsoC DsoD DsoE DsoF MsuC
 DmoA MddA MsuC
 DmoA MsmA MsmB MsmE MsmF MsmG MsmH MsuC
-DmoA MsmE MsmF MsmG MsmH MsuC MsuD SnfG
+DmoA MsmE MsmF MsmG MsmH MsuC MsuD SfnG
 DmoA MsuC MsuD
 DmoA MsuC MsuD MsuE
-DmoA MsuC MsuD MsuE SnfG
-DmoA MsuC MsuD SnfG
+DmoA MsuC MsuD MsuE SfnG
+DmoA MsuC MsuD SfnG
 DmoA MsuC MsuE
-DmoA MsuC MsuE SnfG
-DmoA MsuC SnfG
+DmoA MsuC MsuE SfnG
+DmoA MsuC SfnG
 DmoA MsuD MsuE
-DmoA MsuD SnfG
-DmoA MsuE SnfG
+DmoA MsuD SfnG
+DmoA MsuE SfnG
 DmsA DmsB DmsC
 DmsA DmsB DmsC DmsD
 DmsA DmsB DmsD
@@ -241,20 +241,20 @@ DmsA DmsB MsmE MsmF MsmG MsmH
 DmsA DmsB MsuD
 DmsA DmsC DmsD
 DmsA MsmA MsmB MsmD MsmE
-DmsA MsuE SnfG
+DmsA MsuE SfnG
 DmsB DmsC DmsD
 DmsB MsmA MsmB MsmC MsmD MsmF MsmG MsmH
 DmsB MsmA MsmB MsmC MsmE MsmF MsmG MsmH
 DmsB MsmA MsmB MsmD MsmE MsmF MsmG MsmH
 DmsB MsmA MsmD MsmE MsmF MsmG MsmH
-DmsB MsuC MsuD SnfG
+DmsB MsuC MsuD SfnG
 DorC DorD DorA DorR DorS
 DsoA DsoB DsoC DsoD
 DsoA DsoB DsoC DsoD DsoE DsoF
 DsoB DsoD DsoE DsoF
 DsoD DsoF MddH
 MddA MsuC MsuD
-MddA MsuC MsuE SnfG
+MddA MsuC MsuE SfnG
 MddH MsmA MsmB MsmD MsmE MsmF MsmG MsmH
 MsmA MsmB MsmC MsmD
 MsmA MsmB MsmC MsmD MsmE
@@ -265,18 +265,18 @@ MsmA MsmB MsmD MsmE
 MsmA MsmB MsmD MsmE MsmF MsmG MsmH
 MsmA MsmB MsmD MsmG MsmH
 MsmA MsmB MsmE MsmF MsmG MsmH
-MsmA MsmB MsuC MsuE SnfG
+MsmA MsmB MsuC MsuE SfnG
 MsmB MsmC MsmD MsmE MsmF MsmG MsmH
 MsmC MsmD MsmE MsmF MsmG MsmH
 MsuC MsuD MsuE
-MsuC MsuD MsuE SnfG
-MsuC MsuD SnfG
-MsuC MsuE SnfG
-MsuD MsuE SnfG
-DmoA MsuC MsuD MsuE SnfG
-DmoA MsuC MsuD MsuE SnfG
+MsuC MsuD MsuE SfnG
+MsuC MsuD SfnG
+MsuC MsuE SfnG
+MsuD MsuE SfnG
+DmoA MsuC MsuD MsuE SfnG
+DmoA MsuC MsuD MsuE SfnG
 DddC DmoA MsuC MsuD MsuE
-DddA DddC DmoA MsuC MsuD MsuE SnfG
+DddA DddC DmoA MsuC MsuD MsuE SfnG
 DddA DddC DddP DmoA MsmG
 DmsA DmsB DmsC DmsD
 AcuN MsmA MsmB MsmC MsmD MsmE MsmF MsmG MsmH
@@ -286,14 +286,14 @@ AcuN DmdC DmoA
 AcuN DddA DddC DmdC
 AcuK AcuN MsuC
 AcuK AcuN MsuD
-AcuK AcuN SnfG
+AcuK AcuN SfnG
 AcuK AcuN DmdC
 AcuK AcuN DmdC DmsA
 AcuK AcuN DmdD
 AcuK AcuN DmoA
 AcuK AcuN DmoA MsuC
 AcuK AcuN DmoA MsuC MsuD
-AcuK AcuN DmoA SnfG
+AcuK AcuN DmoA SfnG
 AcuK AcuN DmsA
 AcuK AcuN DmdB DmdC DmdD
 AcuK AcuN DmdB DmsA DmsB
@@ -332,18 +332,18 @@ AcuK AcuN DddA DmdC DmsA
 AcuK AcuN DddA DmoA
 AcuK AcuN DddC
 AcuK DmoA MsuC
-AcuK DmoA MsuC SnfG
+AcuK DmoA MsuC SfnG
 AcuK DmoA MsuD
-AcuK DmoA SnfG
+AcuK DmoA SfnG
 AcuK DmsA DmsB
 AcuK DmsA DmsB DmsC DmsD
 AcuK DsoB DsoD
 AcuK DsoB DsoD DsoF
 AcuK MsmA MsmB MsmC MsmD MsmE MsmF MsmG MsmH
-AcuK MsuC MsuD MsuE SnfG
-AcuK MsuC MsuD SnfG
-AcuK MsuC MsuE SnfG
-AcuK MsuC SnfG
+AcuK MsuC MsuD MsuE SfnG
+AcuK MsuC MsuD SfnG
+AcuK MsuC MsuE SfnG
+AcuK MsuC SfnG
 AcuK DddC DmdA
 AcuK DddA DddC
 AcuK DddA DddC DddD DmdB
@@ -361,7 +361,7 @@ AcuK DddA DmdA
 AcuK DddA DmdC
 AcuK DddA DmdC DmdD
 AcuK DddA DmoA
-AcuK DddA DmoA SnfG
+AcuK DddA DmoA SfnG
 AcuK DddA DsoF
 AcuK DddA MddA
 AcuK DddA MsuD
@@ -401,7 +401,7 @@ AcuI DmdA DmdB DmsB
 AcuI DmdA DmdD
 AcuI DmdB DmdC
 AcuI DmdB DmdD
-AcuI DmdB SnfG
+AcuI DmdB SfnG
 AcuI DmdB TorA
 AcuI DmsA DmsB
 AcuI DsoB DsoD
@@ -421,8 +421,8 @@ AcuI AcuK DmdB DmoA
 AcuI AcuK DmdB MddH
 AcuI AcuK DmdC
 AcuI AcuK DmdD
-AcuI AcuK DmoA SnfG
-AcuI AcuK SnfG
+AcuI AcuK DmoA SfnG
+AcuI AcuK SfnG
 AcuI AcuN BisC
 AcuI AcuN DddA
 AcuI AcuN DddA DddC

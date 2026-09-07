@@ -50,4 +50,4 @@ grp3_MsmH	278.4	-inf	183.9
 grp3_MsuC	408.8	-inf	277.8
 grp3_MsuD	399.1	596.9	326.0
 grp3_MsuE	226.0	-inf	198.6
-grp3_SnfG	397.2	604.4	315.2
+grp3_SfnG	397.2	604.4	315.2
