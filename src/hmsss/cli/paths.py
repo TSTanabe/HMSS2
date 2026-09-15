@@ -25,6 +25,7 @@ __all__ = [
     "REFSEQ_DIR",
     "RESULTS_DIR",
     "PACKAGE_DIR",
+    "SRC_FILE_RESOURCE_METADATA",
     "SRC_FILE_HMM_LIBRARY",
     "SRC_FILE_COOCCURRENCE",
     "SRC_FILE_THRESHOLDS",
@@ -99,6 +100,7 @@ def _make_paths(root: Path) -> Dict[str, Path]:
         "RESULTS_DIR": root / "results",
         "PACKAGE_DIR": root / "src" / "hmsss",
         # Standard resources
+        "SRC_FILE_RESOURCE_METADATA": data / "Resource_module_metadata",
         "SRC_FILE_HMM_LIBRARY": data / "HMMlib",
         "SRC_FILE_COOCCURRENCE": data / "Cooccurrence",
         "SRC_FILE_THRESHOLDS": data / "Thresholds",
@@ -125,6 +127,7 @@ REFSEQ_DIR: Path = _paths["REFSEQ_DIR"]
 RESULTS_DIR: Path = _paths["RESULTS_DIR"]
 PACKAGE_DIR: Path = _paths["PACKAGE_DIR"]
 
+SRC_FILE_RESOURCE_METADATA: Path = _paths["SRC_FILE_RESOURCE_METADATA"]
 SRC_FILE_HMM_LIBRARY: Path = _paths["SRC_FILE_HMM_LIBRARY"]
 SRC_FILE_COOCCURRENCE: Path = _paths["SRC_FILE_COOCCURRENCE"]
 SRC_FILE_THRESHOLDS: Path = _paths["SRC_FILE_THRESHOLDS"]
@@ -155,6 +158,7 @@ def refresh_paths(base: str | Path | None = None) -> None:
         REFSEQ_DIR, \
         RESULTS_DIR, \
         PACKAGE_DIR, \
+        SRC_FILE_RESOURCE_METADATA, \
         SRC_FILE_HMM_LIBRARY, \
         SRC_FILE_COOCCURRENCE, \
         SRC_FILE_THRESHOLDS, \
@@ -176,6 +180,7 @@ def refresh_paths(base: str | Path | None = None) -> None:
     RESULTS_DIR = _paths["RESULTS_DIR"]
     PACKAGE_DIR = _paths["PACKAGE_DIR"]
 
+    SRC_FILE_RESOURCE_METADATA = _paths["SRC_FILE_RESOURCE_METADATA"]
     SRC_FILE_HMM_LIBRARY = _paths["SRC_FILE_HMM_LIBRARY"]
     SRC_FILE_COOCCURRENCE = _paths["SRC_FILE_COOCCURRENCE"]
     SRC_FILE_THRESHOLDS = _paths["SRC_FILE_THRESHOLDS"]

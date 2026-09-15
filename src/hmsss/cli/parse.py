@@ -646,23 +646,6 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     paths_cfg = _paths_cfg_from_paths_module()
     data_dir = Path(paths_cfg.data)
 
-    AVAILABLE_HMM_PACKS = sorted(
-        {
-            p.name.split("_")[0]
-            for p in data_dir.iterdir()
-            if p.is_dir() and "_" in p.name
-        }
-    )
-
-    AVAILABLE_HMM_SETS = _discover_hmm_sets_from_data_dir(paths_cfg.data)
-
-    DEFAULT_HMM_SETS = [
-        x for x in ["DHPS", "DMS", "Dsr", "SQ", "Aryl"] if x in AVAILABLE_HMM_SETS
-    ]
-
-    if not DEFAULT_HMM_SETS:
-        DEFAULT_HMM_SETS = AVAILABLE_HMM_SETS
-
     # ---- Argument groups ----
     parser = argparse.ArgumentParser(
         description="HMSS2: Sulfur metabolism annotation",
@@ -726,28 +709,31 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help="Name new project" if show_all else argparse.SUPPRESS,
     )
     parameters.add_argument(
-        "--hmm-sets",
-        nargs="+",
-        dest="HMM_sets",
-        type=str,
-        default=DEFAULT_HMM_SETS,  # sorted(["DHPS", "DMS", "Dsr", "SQ", "Aryl"]),
-        choices=AVAILABLE_HMM_SETS,  # sorted(["DHPS", "DMS", "Dsr", "SQ", "Aryl", "Sulfobacin"]),
-        metavar="",
-        help="Limit to HMM sets (whitespace separated)"
-        if show_all
-        else argparse.SUPPRESS,
+        "--add-module",
+        dest="add_modules",
+        action="append",
+        default=[],
+        metavar="<MODULE@PACKAGE>",
+        help=(
+            "Add an additional HMM module/package variant, e.g. "
+            "--add-module redDsr@DiSuCy"
+            if show_all
+            else argparse.SUPPRESS
+        ),
     )
+
     parameters.add_argument(
-        "--hmm-packages",
-        nargs="+",
-        dest="HMM_packages",
-        type=str,
-        default=sorted(["v8"]),
-        choices=AVAILABLE_HMM_PACKS,  # sorted(["v7", "v8", "chen", "disco", "hmss2"]),
-        metavar="",
-        help="Limit to specific HMM packages (whitespace separated)"
-        if show_all
-        else argparse.SUPPRESS,
+        "--replace-module",
+        dest="replace_modules",
+        action="append",
+        default=[],
+        metavar="<MODULE@PACKAGE>",
+        help=(
+            "Replace the selected/default variant of a module, e.g. "
+            "--replace-module redDsr@DiSuCy"
+            if show_all
+            else argparse.SUPPRESS
+        ),
     )
     parameters.add_argument(
         "--cut-type",
@@ -1481,8 +1467,10 @@ def build_config_from_namespace(ns) -> Config:
     )
 
     cli_resources = CliResources(
-        HMM_sets=list(getattr(ns, "HMM_sets", [])),
-        HMM_packages=list(getattr(ns, "HMM_packages", [])),
+        resource_metadata=_s(ns, "resource_metadata")
+        or str(paths.SRC_FILE_RESOURCE_METADATA),
+        add_modules=list(getattr(ns, "add_modules", [])),
+        replace_modules=list(getattr(ns, "replace_modules", [])),
         disable_individual_reports=bool(
             getattr(ns, "disable_individual_reports", False)
         ),

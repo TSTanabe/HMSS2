@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Any
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Set
 
 """
 Typed configuration model (dataclasses) for HMSS2/HMSSS.
@@ -110,6 +110,10 @@ class CliResources:
         bool_cross_check: Enable reference cross-check via Diamond.
         optimized_cutoff_cross_check: Use optimized cutoff instead of Diamond.
     """
+
+    resource_metadata: Optional[str] = None
+    add_modules: List[str] = field(default_factory=list)
+    replace_modules: List[str] = field(default_factory=list)
 
     HMM_sets: List[str] = field(default_factory=list)
     HMM_packages: List[str] = field(default_factory=list)
@@ -409,6 +413,9 @@ class Config:
     )  # :contentReference[oaicite:13]{index=13}
 
     # Ressourcen / Operators / Limiter
+    resource_metadata = prop("cli_resources.resource_metadata")
+    add_modules = prop("cli_resources.add_modules")
+    replace_modules = prop("cli_resources.replace_modules")
     hmm_sets = prop("cli_resources.HMM_sets")  # :contentReference[oaicite:14]{index=14}
     hmm_packages = prop("cli_resources.HMM_packages")
     clean_reports = prop("cli_resources.clean_reports")
@@ -588,12 +595,6 @@ class Config:
             ValueError: On invalid parameter ranges (e.g., `jaccard` not in [0,1]).
             FileNotFoundError: If one of the canonical project directories is missing.
         """
-        if self.hmm_packages:
-            for p in self.hmm_packages:
-                if "_" in p:
-                    raise ValueError(
-                        "hmm_packages must be version prefixes only (e.g. 'v8', not 'v8_Sulfur')"
-                    )
 
         if self.cli_params.threshold_type not in (0, 1, 2, 3, 4):
             raise ValueError(

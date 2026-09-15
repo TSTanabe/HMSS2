@@ -5,9 +5,10 @@ import re
 import shutil
 from pathlib import Path
 
-from hmsss.core.logging import get_logger, print_header
 from hmsss.cli.paths import DATA_DIR, GPKG_DIR
+from hmsss.core import library_generation
 from hmsss.core import queue as queue
+from hmsss.core.logging import get_logger, print_header
 
 log = get_logger(__name__)
 
@@ -164,25 +165,7 @@ def ressource_preparation(config) -> None:
     cross_dir = _ensure_dir(Path(config.result_files_directory) / "cross_check")
     config.paths.refseq = _ensure_dir(config.paths.refseq)
 
-    # ---- HMM-Sets (optional eingeschränkt) ----
-    if config.hmm_sets:
-        log.info(f"For the library collecting HMMs with token {config.hmm_sets}")
-        packages = (
-            config.hmm_packages
-            if isinstance(config.hmm_packages, list)
-            else config.hmm_packages.split()
-        )
-
-        allowed = (
-            config.hmm_sets
-            if isinstance(config.hmm_sets, list)
-            else config.hmm_sets.split()
-        )
-
-        # baut aus DATA_ROOT/<grp>/*.hmm eine Library
-        concatenate_hmms_from_selected_metabolism_packages(
-            str(DATA_DIR), allowed, config.library, packages
-        )
+    library_generation.build_library(config)
 
     # ---- Library, Cutoffs, Cooccurrence, Patterns, Metabolism ggf. zusammenführen ----
     if not os.path.isfile(config.library):

@@ -1,157 +1,155 @@
-package	set	module	default	hmms	set_order	module_order
-v8	Inorganic sulfur metabolism	Sulfide oxidation	true	FccA,FccB	10	10
-HMSS2	Inorganic sulfur metabolism	Sulfide oxidation	false	FccA,FccB	10	10
-DiSuCy	Inorganic sulfur metabolism	Sulfide oxidation	false	FccA,FccB	10	10
-v8	Inorganic sulfur metabolism	Sulfide oxidation	true	SQRI,SQRII,SQRIII,SQRIV,SQRV,SQRVI	10	10
-HMSS2	Inorganic sulfur metabolism	Sulfide oxidation	false	SQRI,SQRII,SQRIII,SQRIV,SQRV,SQRVI	10	10
-DiSuCy	Inorganic sulfur metabolism	Sulfide oxidation	false	SQRI,SQRII,SQRIII,SQRIV,SQRV,SQRVI	10	10
-DiSuCy	Context / auxiliary HMMs	Unclassified/context	true	Npsr,Nsr	10	10
-v8	Inorganic sulfur metabolism	Sulfide detoxification: sulfane sulfur oxidation	true	SDOI,SDOII	10	20
-HMSS2	Inorganic sulfur metabolism	Sulfide detoxification: sulfane sulfur oxidation	false	SDOI,SDOII	10	20
-DiSuCy	Inorganic sulfur metabolism	Sulfide detoxification: sulfane sulfur oxidation	false	SDOI,SDOII,SDOIII	10	20
-v8	Inorganic sulfur metabolism	Elemental sulfur oxidation	true	SOR	10	30
-HMSS2	Inorganic sulfur metabolism	Elemental sulfur oxidation	false	SOR	10	30
-DiSuCy	Inorganic sulfur metabolism	Elemental sulfur oxidation	false	SOR	10	30
-v8	Inorganic sulfur metabolism	Oxidative Dsr system	true	DsrE,DsrE2,DsrE3A,DsrE3B,DsrE3C,DsrE4,DsrE5,DsrF,DsrH,DsrL,DsrR,DsrS,oxDsrA,oxDsrB,oxDsrC,oxDsrJ,oxDsrK,oxDsrM,oxDsrN,oxDsrO,oxDsrP	10	40
-HMSS2	Inorganic sulfur metabolism	Oxidative Dsr system	false	DsrE,DsrE2,DsrE3A,DsrE3B,DsrE3C,DsrE4,DsrE5,DsrF,DsrH,DsrL,DsrR,DsrS,oxDsrA,oxDsrB,oxDsrC,oxDsrJ,oxDsrK,oxDsrM,oxDsrN,oxDsrO,oxDsrP	10	40
-DiSuCy	Inorganic sulfur metabolism	Oxidative Dsr system	false	DsrE,DsrF,DsrH,DsrL,oxDsrA,oxDsrB,oxDsrJ,oxDsrK,oxDsrM,oxDsrO,oxDsrP	10	40
-DiSCo	Inorganic sulfur metabolism	Oxidative Dsr system	false	DsrE,DsrF,DsrH,DsrL,oxDsrA,oxDsrB,oxDsrC,oxDsrJ,oxDsrK,oxDsrM,oxDsrO,oxDsrP	10	40
-v8	Inorganic sulfur metabolism	sHdr system	true	EMO,sEtfA,sEtfB,sHdrA,sHdrB1,sHdrB2,sHdrB3,sHdrC1,sHdrC2,sHdrH,sHdrI,sHdrR,sHdrJ,sHdrT,LbpA1,LbpA2	10	41
-HMSS2	Inorganic sulfur metabolism	sHdr system	false	EMO,sEtfA,sEtfB,sHdrA,sHdrB1,sHdrB2,sHdrB3,sHdrC1,sHdrC2,sHdrH,sHdrI,sHdrR,sHdrJ,sHdrT,LbpA1,LbpA2	10	41
-DiSuCy	Inorganic sulfur metabolism	sHdr system	false	sHdrA,sHdrB1,sHdrB2,sHdrB3,sHdrC1,sHdrC2	10	41
-v8	Inorganic sulfur metabolism	Thiosulfate oxidation in periplasm	true	SoxA,SoxB,SoxC,SoxD,SoxE,SoxF,SoxG,SoxH,SoxS,SoxT1,SoxT2,SoxV,SoxW,SoxX,SoxY,SoxZ,SoxO,SoxL,SoxR	10	50
-HMSS2	Inorganic sulfur metabolism	Thiosulfate oxidation in periplasm	false	SoxA,SoxB,SoxC,SoxD,SoxE,SoxF,SoxG,SoxH,SoxS,SoxT1,SoxT2,SoxV,SoxW,SoxX,SoxY,SoxZ,SoxO	10	50
-DiSuCy	Inorganic sulfur metabolism	Thiosulfate oxidation in periplasm	false	SoxA,SoxB,SoxC,SoxD,SoxX,SoxY,SoxZ	10	50
-v8	Inorganic sulfur metabolism	Thiosulfate/tetrathionate conversion	true	DoxA,DoxD,TsdA,TsdB	10	60
-HMSS2	Inorganic sulfur metabolism	Thiosulfate/tetrathionate conversion	false	DoxA,DoxD,TsdA,TsdB	10	60
-DiSuCy	Inorganic sulfur metabolism	Thiosulfate/tetrathionate conversion	false	DoxA,DoxD,TsdA	10	60
-v8	Inorganic sulfur metabolism	Tetrathionate oxidation	true	Tth	10	70
-HMSS2	Inorganic sulfur metabolism	Tetrathionate oxidation	false	Tth	10	70
-DiSuCy	Inorganic sulfur metabolism	Tetrathionate oxidation	false	Tth	10	70
-v8	Inorganic sulfur metabolism	Sulfite oxidation in periplasm	true	SorA,SorB	10	80
-HMSS2	Inorganic sulfur metabolism	Sulfite oxidation in periplasm	false	SorA,SorB	10	80
-DiSuCy	Inorganic sulfur metabolism	Sulfite oxidation in periplasm	false	SorA	10	80
-v8	Inorganic sulfur metabolism	Sulfite oxidation in cytoplasm	true	AprM,oxAprAI,oxAprAII,oxAprBI,oxAprBII,oxSat	10	90
-HMSS2	Inorganic sulfur metabolism	Sulfite oxidation in cytoplasm	false	AprM,oxAprAI,oxAprAII,oxAprBI,oxAprBII,oxSat	10	90
-DiSuCy	Inorganic sulfur metabolism	Sulfite oxidation in cytoplasm	false	AprM,SoeA	10	90
-DiSCo	Inorganic sulfur metabolism	Sulfite oxidation in cytoplasm	false	AprM,oxSat	10	90
-v8	Inorganic sulfur metabolism	Sulfite oxidation in cytoplasm	true	SoeA,SoeB,SoeC	10	90
-HMSS2	Inorganic sulfur metabolism	Sulfite oxidation in cytoplasm	false	SoeA,SoeB,SoeC	10	90
-v8	Inorganic sulfur metabolism	Reductive Dsr system	true	DsrT,redDsrA,redDsrB,redDsrC,redDsrD,redDsrE,redDsrF,redDsrH,redDsrJ,redDsrK,redDsrM,redDsrN,redDsrO,redDsrP	10	100
-HMSS2	Inorganic sulfur metabolism	Reductive Dsr system	false	DsrD,DsrT,redDsrA,redDsrB,redDsrC,redDsrJ,redDsrK,redDsrM,redDsrN,redDsrO,redDsrP	10	100
-DiSuCy	Inorganic sulfur metabolism	Reductive Dsr system	false	redDsrA,redDsrB,redDsrC,redDsrJ,redDsrK,redDsrM,redDsrO,redDsrP	10	100
-DiSCo	Inorganic sulfur metabolism	Reductive Dsr system	false	DsrT,redDsrA,redDsrB,redDsrC,redDsrD,redDsrJ,redDsrK,redDsrM,redDsrO,redDsrP	10	100
-v8	Inorganic sulfur metabolism	Reductive Apr/Qmo system	true	qHdrB,qHdrC,QmoA,QmoB,QmoC,redAprA,redAprB	10	101
-HMSS2	Inorganic sulfur metabolism	Reductive Apr/Qmo system	false	qHdrB,qHdrC,QmoA,QmoB,QmoC,redAprA,redAprB	10	101
-DiSuCy	Inorganic sulfur metabolism	Reductive Apr/Qmo system	false	QmoA,QmoB,QmoC	10	101
-DiSCo	Inorganic sulfur metabolism	Reductive Apr/Qmo system	false	QmoA,QmoB,QmoC,redAprA,redAprB	10	101
-v8	Inorganic sulfur metabolism	Reductive Sat system	true	redSat	10	102
-HMSS2	Inorganic sulfur metabolism	Reductive Sat system	false	redSat	10	102
-DiSCo	Inorganic sulfur metabolism	Reductive Sat system	false	redSat	10	102
-v8	Inorganic sulfur metabolism	Qmo/qHdr electron transfer system	true	qHdrB,qHdrC,QmoA,QmoB,QmoC	10	101
-HMSS2	Inorganic sulfur metabolism	Qmo/qHdr electron transfer system	false	qHdrB,qHdrC,QmoA,QmoB,QmoC	10	101
-v8	Inorganic sulfur metabolism	Assimilatory reduction of APS	true	assAprA,assAprB	10	110
-HMSS2	Inorganic sulfur metabolism	Assimilatory reduction of APS	false	assAprA,assAprB	10	110
-DiSCo	Inorganic sulfur metabolism	Assimilatory reduction of APS	false	assAprA,assAprB	10	110
-v8	Inorganic sulfur metabolism	Asr sulfite reductase	true	AsrA,AsrB,AsrC	10	120
-HMSS2	Inorganic sulfur metabolism	Asr sulfite reductase	false	AsrA,AsrB,AsrC	10	120
-DiSuCy	Inorganic sulfur metabolism	Asr sulfite reductase	false	AsrA,AsrB,AsrC	10	120
-v8	Inorganic sulfur metabolism	Mcc sulfite reductase	true	MccA,MccB,MccC,MccD,MccR,MccS	10	121
-HMSS2	Inorganic sulfur metabolism	Mcc sulfite reductase	false	MccA,MccB,MccC,MccD	10	121
-DiSuCy	Inorganic sulfur metabolism	Mcc sulfite reductase	false	MccA	10	121
-v8	Inorganic sulfur metabolism	Ttr tetrathionate reductase	true	TtrA,TtrB,TtrC,TtrR,TtrS	10	130
-HMSS2	Inorganic sulfur metabolism	Ttr tetrathionate reductase	false	TtrA,TtrB,TtrC,TtrR,TtrS	10	130
-DiSuCy	Inorganic sulfur metabolism	Ttr tetrathionate reductase	false	TtrA	10	130
-v8	Inorganic sulfur metabolism	Otr tetrathionate reductase	true	Otr	10	131
-DiSuCy	Inorganic sulfur metabolism	Otr tetrathionate reductase	false	Otr	10	131
-v8	Inorganic sulfur metabolism	Phs/Psr sulfur-thiosulfate reductase	true	PhsA,PhsB,PhsC	10	140
-HMSS2	Inorganic sulfur metabolism	Phs/Psr sulfur-thiosulfate reductase	false	PhsA,PhsB,PhsC	10	140
-DiSuCy	Inorganic sulfur metabolism	Phs/Psr sulfur-thiosulfate reductase	false	PhsA	10	140
-v8	Inorganic sulfur metabolism	Shy sulfhydrogenase	true	ShyA,ShyB,ShyC,ShyD	10	141
-DiSuCy	Inorganic sulfur metabolism	Shy sulfhydrogenase	false	ShyA,ShyB,ShyC,ShyD	10	141
-v8	Inorganic sulfur metabolism	Sud sulfide dehydrogenase	true	SudA,SudB	10	142
-DiSuCy	Inorganic sulfur metabolism	Sud sulfide dehydrogenase	false	SudA	10	142
-v8	Inorganic sulfur metabolism	Thiocyanate	true	SncA,SncB,SncC	10	150
-v8	Inorganic sulfur metabolism	Thiocyanate	true	TcdH,TcdS,TcdT	10	150
-v8	Inorganic sulfur metabolism	Growth on CS2	true	CosH,Cs2H	10	160
-HMSS2	Inorganic sulfur metabolism	Growth on CS2	false	Cs2H	10	160
-DiSuCy	Inorganic sulfur metabolism	Reductive APS reductase	false	AprA,AprB	10	170
-HMSS2	Inorganic sulfur metabolism	Assimilatory sulfate reduction (Cys pathway)	false	CysA,CysC,CysD,CysH,CysI,CysJ,CysM,CysN,CysU,CysW	10	180
-DiSCo	Inorganic sulfur metabolism	Assimilatory sulfate activation	false	assSat	10	190
-v8	Inorganic sulfur metabolism	Hdr-like sulfur redox system	true	dHdrA,dHdrB,dHdrC	10	200
-HMSS2	Inorganic sulfur metabolism	Sulfur dioxygenase variants	false	SDOIII	10	230
-DiSCo	Inorganic sulfur metabolism	Oxidative APS reductase variants	false	oxAprA,oxAprB	10	240
-DiSCo	Inorganic sulfur metabolism	Oxidative Dsr variants	false	oxDsrL	10	250
-HMSS2	Inorganic sulfur metabolism	Thiosulfate dehydrogenase variants	false	TsdBA	10	260
-DiSuCy	Inorganic sulfur metabolism	Sulfite oxidation-associated proteins	false	sorT	10	270
-v8	Methylated sulfur compounds	DMSP degradation	true	AcuI,AcuK,AcuN,DddA,DddC,DddD,DddL,DddP,DddQ,DddT,DddW,DddX,DddY,	20	10
-HMSS2	Methylated sulfur compounds	DMSP degradation	false	AcuI,AcuK,AcuN,DddA,DddD,DddL,DddP,DddT,DddY	20	10
-DiSuCy	Methylated sulfur compounds	DMSP degradation	false	DddD,DddL,DddP,DddQ,DddW,DddX,DddY	20	10
-v8	Methylated sulfur compounds	DMSP demethylase	true	DmdA,DmdB,DmdC,DmdD	20	20
-HMSS2	Methylated sulfur compounds	DMSP demethylase	false	DmdA,DmdB,DmdC,DmdD	20	20
-v8	Methylated sulfur compounds	DMS	true	DmoA,DmsA,DmsB,DmsC,DmsD,DorA,DorC,DorD,DorR,DorS,MddA,MddH	20	30
-HMSS2	Methylated sulfur compounds	DMS	false	DmoA,DmsA,DmsB,DmsC,DmsD,DorA,DorC,DorR,DorS,MddA	20	30
-DiSuCy	Methylated sulfur compounds	DMS	false	DmoA,DmsA,MddA	20	30
-v8	Methylated sulfur compounds	Assimilatory DMS monooxygenase	true	DsoA,DsoB,DsoC,DsoD,DsoE,DsoF	20	40
-HMSS2	Methylated sulfur compounds	Assimilatory DMS monooxygenase	false	DsoA,DsoB,DsoC,DsoD,DsoE,DsoF	20	40
-DiSuCy	Methylated sulfur compounds	Assimilatory DMS monooxygenase	false	DsoB	20	40
-v8	Methylated sulfur compounds	Assimilatory DMSO2 monooxygenase	true	SfnG	20	50
-HMSS2	Methylated sulfur compounds	Assimilatory DMSO2 monooxygenase	false	SfnG	20	50
-DiSuCy	Methylated sulfur compounds	Assimilatory DMSO2 monooxygenase	false	SfnG	20	50
-v8	Methylated sulfur compounds	Assimilatory methanesulfonate monooxygenase	true	MsuC,MsuD,MsuE	20	60
-HMSS2	Methylated sulfur compounds	Assimilatory methanesulfonate monooxygenase	false	MsuC,MsuD,MsuE	20	60
-v8	Methylated sulfur compounds	Dissimilatory methanesulfonate monooxygenase	true	MsmA,MsmB,MsmC,MsmD,MsmE,MsmF,MsmG,MsmH	20	70
-HMSS2	Methylated sulfur compounds	Dissimilatory methanesulfonate monooxygenase	false	MsmA,MsmB,MsmE,MsmF,MsmG,MsmH	20	70
-DiSuCy	Methylated sulfur compounds	Dissimilatory methanesulfonate monooxygenase	false	MsmA	20	70
-v8	Methylated sulfur compounds	Methylthioalkanereductase	true	MarB,MarD,MarH,MarK,NflD,NflK	20	80
-v8	Methylated sulfur compounds	Ddh system	true	DdhA,DdhB,DdhC,DdhD	20	90
-HMSS2	Methylated sulfur compounds	Ddh system	false	DdhA,DdhB	20	90
-DiSuCy	Methylated sulfur compounds	Ddh system	false	DdhA	20	90
-v8	Methylated sulfur compounds	Mtox methanethiol oxidation	true	Mtox	20	91
-HMSS2	Methylated sulfur compounds	Mtox methanethiol oxidation	false	Mtox	20	91
-DiSuCy	Methylated sulfur compounds	Mtox methanethiol oxidation	false	MtoX	20	91
-DiSuCy	Methylated sulfur compounds	Methylated sulfur compounds (additional)	false	Alma1,DMSOR,DsyB,MmtN,MtsA,Tmm	20	92
-v8	Taurine, isethionate & C2/C3 sulfonates	Isethionate & Taurine	true	AdhE,AlaDH,BmcsA,BmcsB,BmcsC,IseJ,IseK,IseL,IseM,IseR,IsfD,IsfE,SarD,TauA,TauB,TauC,TauD,TauE,TauK,TauL,TauM,TauR,TauX,TauY,TauZ,Toa,Tpa,Xsc	30	10
-HMSS2	Taurine, isethionate & C2/C3 sulfonates	Isethionate & Taurine	false	IseJ,IseK,IseL,IseM,IseR,IseU,IsfD,IsfE,IslA,IslB,TauA,TauB,TauC,TauD,TauE,TauK,TauL,TauM,TauR,TauX,TauY,TauZ,Toa,Tpa,Xsc	30	10
-v8	Taurine, isethionate & C2/C3 sulfonates	DHPS, Sulfolactate, Sulfoacetate	true	ComC,ComD,ComE,CuyA,CuyZ,DhpA,HpfD,HpfE,HpfG,HpfH,HpfX,HpfY,HpfZ,HpsG,HpsH,HpsK,HpsL,HpsM,HpsN,HpsO,HpsP,HpsU,Pta,SauS,SauT,SauU,SlcC,SlcD,SlcF,SlcG,SlcH,SuyA,SuyB	30	20
-HMSS2	Taurine, isethionate & C2/C3 sulfonates	DHPS, Sulfolactate, Sulfoacetate	false	ComC,ComD,ComE,CuyA,CuyZ,HpsK,HpsL,HpsM,HpsN,HpsO,HpsP,HpsU,Pta,SauS,SauT,SauU,SlcC,SlcD,SlcF,SlcH,SuyA,SuyB	30	20
-DiSuCy	Taurine, isethionate & C2/C3 sulfonates	Taurine/isethionate utilization (additional)	false	TauF	30	30
-v8	Sulfo-sugars & sulfolipids	Sulfoquinovose synthesis	true	SqdA,SqdB,SqdC,SqdD,SqdX	40	10
-HMSS2	Sulfo-sugars & sulfolipids	Sulfoquinovose synthesis	false	SqdA,SqdB,SqdC,SqdD	40	10
-v8	Sulfo-sugars & sulfolipids	Sulfoquinovose degradation Sulfo-EMP	true	SqiA,SqiK,SqvB,YihO,YihP,YihQ,YihR,YihS,YihT,YihU,YihV	40	20
-HMSS2	Sulfo-sugars & sulfolipids	Sulfoquinovose degradation Sulfo-EMP	false	YihO,YihP,YihQ,YihR,YihS,YihT,YihU,YihV	40	20
-DiSuCy	Sulfo-sugars & sulfolipids	Sulfoquinovose degradation Sulfo-EMP	false	SqiA,YihO,YihP,YihQ,YihS,YihT,YihU,YihV	40	20
-v8	Sulfo-sugars & sulfolipids	Sulfoquinovose degradation Sulfo-ED	true	Sgald,Sgdh,Sgl,Sladh,Sqdh	40	30
-HMSS2	Sulfo-sugars & sulfolipids	Sulfoquinovose degradation Sulfo-ED	false	Sgald,Sgdh,Sgl,Sladh,Sqdh	40	30
-DiSuCy	Sulfo-sugars & sulfolipids	Sulfoquinovose degradation Sulfo-ED	false	Sgald,Sgdh,Sgl,Sladh,Sqdh	40	30
-v8	Sulfo-sugars & sulfolipids	Sulfoquinovose degradation Sulfo-monooxygenase	true	SmoA,SmoB,SmoC,SmoD,SmoE,SmoF,SmoG,SmoH,SqgA,SqoD,SqoK,SqoL,SqoM	40	40
-HMSS2	Sulfo-sugars & sulfolipids	Sulfoquinovose degradation Sulfo-monooxygenase	false	SmoA,SmoB,SmoC,SmoD,SmoE,SmoF,SmoG,SmoH,SmoI	40	40
-DiSuCy	Sulfo-sugars & sulfolipids	Sulfoquinovose degradation Sulfo-monooxygenase	false	SmoB,SmoC,SmoD,SmoE,SmoF,SmoG,SmoH	40	40
-v8	Sulfo-sugars & sulfolipids	Sulfoquinovose degradation transaldolase	true	SftA,SftD,SftE,SftE2,SftF,SftI,SftT,SftR,SftX	40	50
-HMSS2	Sulfo-sugars & sulfolipids	Sulfoquinovose degradation transaldolase	false	SftA,SftD,SftG,SftI,SftT	40	50
-DiSuCy	Sulfo-sugars & sulfolipids	Sulfoquinovose degradation transaldolase	false	SftA,SftD,SftE,SftE2,SftI,SftR,SftT,SquD,SquF,SqvE	40	50
-v8	Sulfo-sugars & sulfolipids	Sulfoquinovose degradation transketolase	true	SqwD,SqwE,SqwF,SqwG,SqwH,SqwI,SqwK,SqwL	40	60
-DiSuCy	Sulfo-sugars & sulfolipids	Sulfoquinovose degradation transketolase	false	SqwE,SqwF,SqwG,SqwH,SqwI	40	60
-v8	Sulfo-sugars & sulfolipids	Sulfofucose degradation	true	SfcD,SfcE,SfcF,SfcG,SfcH,SfcI,SfcJ,SfcK	40	70
-v8	Sulfonates & arylsulfates	Alkanesulfonate	true	SsuA,SsuB,SsuC,SsuD,SsuE	50	10
-HMSS2	Sulfonates & arylsulfates	Alkanesulfonate	false	SsuA,SsuB,SsuC,SsuD,SsuE	50	10
-DiSuCy	Sulfonates & arylsulfates	Alkanesulfonate	false	SsuD	50	10
-v8	Sulfonates & arylsulfates	Arylsulfatases	true	AtsA,AtsB	50	20
-v8	Sulfonates & arylsulfates	Arylsulfatases	true	DszA,DszB,DszC,DszD	50	20
-v8	Sulfur-transfer & electron-transfer systems	2-thiouridine synthesis	true	TusA,TusB,TusC,TusD,TusE	60	10
-HMSS2	Sulfur-transfer & electron-transfer systems	2-thiouridine synthesis	false	TusA,TusADsrE,TusB,TusC,TusD,TusE	60	10
-v8	Sulfur-transfer & electron-transfer systems	Rhodanese sulfur transfer	true	CstRhd,Rhd442,RhdI	60	20
-HMSS2	Sulfur-transfer & electron-transfer systems	Rhodanese sulfur transfer	false	Rhd442	60	20
-v8	Sulfur-transfer & electron-transfer systems	LbpA biosynthesis	true	LipS1,LipS2,LipT,sLplAB	60	30
-HMSS2	Sulfur-transfer & electron-transfer systems	LbpA biosynthesis	false	LipS1,LipS2,LipT	60	30
-HMSS2	Sulfur-transfer & electron-transfer systems	Glycine cleavage system	false	DHDL,GcvH	60	40
-v8	Sulfur-transfer & electron-transfer systems	Electron transport	true	HmcA,HmcB,HmcC,HmcD,HmcE,HmcF,QrcA,QrcB,QrcC,QrcD,TmcA,TmcB,TmcC,TmcD	60	50
-HMSS2	Sulfur-transfer & electron-transfer systems	Electron transport	false	HmcA,HmcB,HmcC,HmcD,HmcE,HmcF,QrcA,QrcB,QrcC,QrcD,TmcA,TmcB,TmcC,TmcD	60	50
-v8	Sulfur-transfer & electron-transfer systems	NADH dehydrogenase/ heterodisulfide reductase	true	FlxA,FlxB,FlxC,FlxD	60	60
-HMSS2	Sulfur-transfer & electron-transfer systems	NADH dehydrogenase/ heterodisulfide reductase	false	FlxA,FlxB,FlxC,FlxD	60	60
-HMSS2	Sulfur-transfer & electron-transfer systems	Other electron-transfer proteins	false	FlxCD	60	70
-HMSS2	Context / auxiliary HMMs	Methanogenesis context	false	HdrF,McrA,McrB,McrC,McrD,McrG,mHdrA,mHdrB,mHdrC,mHdrD,mHdrE,MvhA,MvhD,MvhG	90	10
-v8	Context / auxiliary HMMs	Cell envelope/secretion context	true	ACP,bCerS,CapA,CerR,ChiA,GldA,GldB,GldC,GldD,GldE,GldF,GldG,GldH,GldI,GldJ,GldK,GldL,GldM,GldN,GldO,SecE,SecG,SecY,SprA,SprB,SprC,SprD,SprE,SprF,Spt,SulA,SulS	90	20
-v8	Context / auxiliary HMMs	Unclassified/context	true	AadD,Ant9,CcrA,CcrB,CstA,CstB,CstR,ErmA,MecA,MecI,MecR1,Pre,SA0034,SA0035,SA0036,TnpA,TnpB,TnpC,XylR	90	30
-HMSS2	Context / auxiliary HMMs	Unclassified/context	false	sLplAB,YeeE	90	30
-DiSuCy	Context / auxiliary HMMs	Unclassified/context	false	ETHE1,Npsr,Nsr	90	30
+package	set	module	module_name	default	hmms	set_order	module_order
+basis	Inorganic sulfur metabolism	Fcc	Sulfide oxidation	true	FccA,FccB	10	10
+HMSS2	Inorganic sulfur metabolism	Fcc	Sulfide oxidation	false	FccA,FccB	10	10
+DiSuCy	Inorganic sulfur metabolism	Fcc	Sulfide oxidation	false	FccA,FccB	10	10
+basis	Inorganic sulfur metabolism	SQR	Sulfide oxidation	true	SQRI,SQRII,SQRIII,SQRIV,SQRV,SQRVI	10	10
+HMSS2	Inorganic sulfur metabolism	SQR	Sulfide oxidation	false	SQRI,SQRII,SQRIII,SQRIV,SQRV,SQRVI	10	10
+DiSuCy	Inorganic sulfur metabolism	SQR	Sulfide oxidation	false	SQRI,SQRII,SQRIII,SQRIV,SQRV,SQRVI	10	10
+DiSuCy	Inorganic sulfur metabolism	Nsr	Unclassified/context	true	Npsr,Nsr	10	10
+basis	Inorganic sulfur metabolism	SDO	Sulfide detoxification: sulfane sulfur oxidation	true	SDOI,SDOII	10	20
+HMSS2	Inorganic sulfur metabolism	SDO	Sulfide detoxification: sulfane sulfur oxidation	false	SDOI,SDOII,SDOIII	10	20
+DiSuCy	Inorganic sulfur metabolism	SDO	Sulfide detoxification: sulfane sulfur oxidation	false	ETHE1,SDOI,SDOII,SDOIII	10	20
+basis	Inorganic sulfur metabolism	SOR	Elemental sulfur oxidation	true	SOR	10	30
+HMSS2	Inorganic sulfur metabolism	SOR	Elemental sulfur oxidation	false	SOR	10	30
+DiSuCy	Inorganic sulfur metabolism	SOR	Elemental sulfur oxidation	false	SOR	10	30
+basis	Inorganic sulfur metabolism	oxDsr	Oxidative Dsr system	true	DsrE,DsrE2,DsrE3A,DsrE3B,DsrE3C,DsrE4,DsrE5,DsrF,DsrH,DsrL,DsrR,DsrS,oxDsrA,oxDsrB,oxDsrC,oxDsrJ,oxDsrK,oxDsrM,oxDsrN,oxDsrO,oxDsrP	10	40
+HMSS2	Inorganic sulfur metabolism	oxDsr	Oxidative Dsr system	false	DsrE,DsrE2,DsrE3A,DsrE3B,DsrE3C,DsrE4,DsrE5,DsrF,DsrH,DsrL,DsrR,DsrS,oxDsrA,oxDsrB,oxDsrC,oxDsrJ,oxDsrK,oxDsrM,oxDsrN,oxDsrO,oxDsrP	10	40
+DiSuCy	Inorganic sulfur metabolism	oxDsr	Oxidative Dsr system	false	DsrE,DsrF,DsrH,DsrL,oxDsrA,oxDsrB,oxDsrJ,oxDsrK,oxDsrM,oxDsrO,oxDsrP	10	40
+DiSCo	Inorganic sulfur metabolism	oxDsr	Oxidative Dsr system	false	DsrE,DsrF,DsrH,DsrL,oxDsrA,oxDsrB,oxDsrC,oxDsrJ,oxDsrK,oxDsrM,oxDsrO,oxDsrP	10	40
+basis	Inorganic sulfur metabolism	sHdr	sHdr system	true	EMO,sEtfA,sEtfB,sHdrA,sHdrB1,sHdrB2,sHdrB3,sHdrC1,sHdrC2,sHdrH,sHdrI,sHdrR,sHdrJ,sHdrT,LbpA1,LbpA2	10	41
+HMSS2	Inorganic sulfur metabolism	sHdr	sHdr system	false	EMO,sEtfA,sEtfB,sHdrA,sHdrB1,sHdrB2,sHdrB3,sHdrC1,sHdrC2,sHdrH,sHdrI,sHdrR,sHdrJ,sHdrT,LbpA1,LbpA2	10	41
+DiSuCy	Inorganic sulfur metabolism	sHdr	sHdr system	false	sHdrA,sHdrB1,sHdrB2,sHdrB3,sHdrC1,sHdrC2	10	41
+basis	Inorganic sulfur metabolism	Sox	Thiosulfate oxidation in periplasm	true	SoxA,SoxB,SoxC,SoxD,SoxE,SoxF,SoxG,SoxH,SoxS,SoxT1,SoxT2,SoxV,SoxW,SoxX,SoxY,SoxZ,SoxL,SoxR	10	50
+HMSS2	Inorganic sulfur metabolism	SoxO	Thiosulfate oxidation in periplasm	true	SoxO	10	50
+HMSS2	Inorganic sulfur metabolism	Sox	Thiosulfate oxidation in periplasm	false	SoxA,SoxB,SoxC,SoxD,SoxE,SoxF,SoxG,SoxH,SoxS,SoxT1,SoxT2,SoxV,SoxW,SoxX,SoxY,SoxZ,SoxO	10	50
+DiSuCy	Inorganic sulfur metabolism	Sox	Thiosulfate oxidation in periplasm	false	SoxA,SoxB,SoxC,SoxD,SoxX,SoxY,SoxZ	10	50
+basis	Inorganic sulfur metabolism	TsdDox	Thiosulfate/tetrathionate conversion	true	DoxA,DoxD,TsdA,TsdB	10	60
+HMSS2	Inorganic sulfur metabolism	TsdDox	Thiosulfate/tetrathionate conversion	false	DoxA,DoxD,TsdA,TsdB	10	60
+DiSuCy	Inorganic sulfur metabolism	TsdDox	Thiosulfate/tetrathionate conversion	false	DoxA,DoxD,TsdA	10	60
+basis	Inorganic sulfur metabolism	Tth	Tetrathionate oxidation	true	Tth	10	70
+HMSS2	Inorganic sulfur metabolism	Tth	Tetrathionate oxidation	false	Tth	10	70
+DiSuCy	Inorganic sulfur metabolism	Tth	Tetrathionate oxidation	false	Tth	10	70
+basis	Inorganic sulfur metabolism	Sor	Sulfite oxidation in periplasm	true	SorA,SorB	10	80
+HMSS2	Inorganic sulfur metabolism	Sor	Sulfite oxidation in periplasm	false	SorA,SorB	10	80
+DiSuCy	Inorganic sulfur metabolism	Sor	Sulfite oxidation in periplasm	false	SorA	10	80
+basis	Inorganic sulfur metabolism	oxApr	Sulfite oxidation in cytoplasm	true	AprM,oxAprAI,oxAprAII,oxAprBI,oxAprBII,oxSat	10	90
+HMSS2	Inorganic sulfur metabolism	oxApr	Sulfite oxidation in cytoplasm	false	AprM,oxAprAI,oxAprAII,oxAprBI,oxAprBII,oxSat	10	90
+DiSuCy	Inorganic sulfur metabolism	Soe	Sulfite oxidation in cytoplasm	false	AprM,SoeA	10	90
+DiSCo	Inorganic sulfur metabolism	oxSat	Sulfite oxidation in cytoplasm	false	oxSat	10	90
+basis	Inorganic sulfur metabolism	Soe	Sulfite oxidation in cytoplasm	true	SoeA,SoeB,SoeC	10	90
+HMSS2	Inorganic sulfur metabolism	Soe	Sulfite oxidation in cytoplasm	false	SoeA,SoeB,SoeC	10	90
+basis	Inorganic sulfur metabolism	redDsr	Reductive Dsr system	true	DsrT,redDsrA,redDsrB,redDsrC,redDsrD,redDsrE,redDsrF,redDsrH,redDsrJ,redDsrK,redDsrM,redDsrN,redDsrO,redDsrP	10	100
+HMSS2	Inorganic sulfur metabolism	redDsr	Reductive Dsr system	false	DsrD,DsrT,redDsrA,redDsrB,redDsrC,redDsrJ,redDsrK,redDsrM,redDsrN,redDsrO,redDsrP	10	100
+DiSuCy	Inorganic sulfur metabolism	redDsr	Reductive Dsr system	false	redDsrA,redDsrB,redDsrC,redDsrJ,redDsrK,redDsrM,redDsrO,redDsrP	10	100
+DiSCo	Inorganic sulfur metabolism	redDsr	Reductive Dsr system	false	DsrT,redDsrA,redDsrB,redDsrC,redDsrD,redDsrJ,redDsrK,redDsrM,redDsrO,redDsrP	10	100
+basis	Inorganic sulfur metabolism	redAprQmo	Reductive Apr/Qmo system	true	qHdrB,qHdrC,QmoA,QmoB,QmoC,redAprA,redAprB	10	101
+HMSS2	Inorganic sulfur metabolism	redAprQmo	Reductive Apr/Qmo system	false	qHdrB,qHdrC,QmoA,QmoB,QmoC,redAprA,redAprB	10	101
+DiSuCy	Inorganic sulfur metabolism	redAprQmo	Reductive Apr/Qmo system	false	QmoA,QmoB,QmoC	10	101
+DiSCo	Inorganic sulfur metabolism	redAprQmo	Reductive Apr/Qmo system	false	QmoA,QmoB,QmoC,redAprA,redAprB	10	101
+basis	Inorganic sulfur metabolism	redSat	Reductive Sat system	true	redSat	10	102
+HMSS2	Inorganic sulfur metabolism	redSat	Reductive Sat system	false	redSat	10	102
+DiSCo	Inorganic sulfur metabolism	redSat	Reductive Sat system	false	redSat	10	102
+basis	Inorganic sulfur metabolism	Qmo	Qmo/qHdr electron transfer system	true	qHdrB,qHdrC,QmoA,QmoB,QmoC	10	101
+HMSS2	Inorganic sulfur metabolism	Qmo	Qmo/qHdr electron transfer system	false	qHdrB,qHdrC,QmoA,QmoB,QmoC	10	101
+basis	Inorganic sulfur metabolism	assApr	Assimilatory reduction of APS	true	assAprA,assAprB	10	110
+HMSS2	Inorganic sulfur metabolism	assApr	Assimilatory reduction of APS	false	assAprA,assAprB	10	110
+DiSCo	Inorganic sulfur metabolism	assApr	Assimilatory reduction of APS	false	assAprA,assAprB	10	110
+basis	Inorganic sulfur metabolism	Asr	Asr sulfite reductase	true	AsrA,AsrB,AsrC	10	120
+HMSS2	Inorganic sulfur metabolism	Asr	Asr sulfite reductase	false	AsrA,AsrB,AsrC	10	120
+DiSuCy	Inorganic sulfur metabolism	Asr	Asr sulfite reductase	false	AsrA,AsrB,AsrC	10	120
+basis	Inorganic sulfur metabolism	Mcc	Mcc sulfite reductase	true	MccA,MccB,MccC,MccD,MccR,MccS	10	121
+HMSS2	Inorganic sulfur metabolism	Mcc	Mcc sulfite reductase	false	MccA,MccB,MccC,MccD	10	121
+DiSuCy	Inorganic sulfur metabolism	Mcc	Mcc sulfite reductase	false	MccA	10	121
+basis	Inorganic sulfur metabolism	Ttr	Ttr tetrathionate reductase	true	TtrA,TtrB,TtrC,TtrR,TtrS	10	130
+HMSS2	Inorganic sulfur metabolism	Ttr	Ttr tetrathionate reductase	false	TtrA,TtrB,TtrC,TtrR,TtrS	10	130
+DiSuCy	Inorganic sulfur metabolism	Ttr	Ttr tetrathionate reductase	false	TtrA	10	130
+basis	Inorganic sulfur metabolism	Otr	Otr tetrathionate reductase	true	Otr	10	131
+DiSuCy	Inorganic sulfur metabolism	Otr	Otr tetrathionate reductase	false	Otr	10	131
+basis	Inorganic sulfur metabolism	Phs	Phs/Psr sulfur-thiosulfate reductase	true	PhsA,PhsB,PhsC	10	140
+HMSS2	Inorganic sulfur metabolism	Phs	Phs/Psr sulfur-thiosulfate reductase	false	PhsA,PhsB,PhsC	10	140
+DiSuCy	Inorganic sulfur metabolism	Phs	Phs/Psr sulfur-thiosulfate reductase	false	PhsA	10	140
+basis	Inorganic sulfur metabolism	Shy	Shy sulfhydrogenase	true	ShyA,ShyB,ShyC,ShyD	10	141
+DiSuCy	Inorganic sulfur metabolism	Shy	Shy sulfhydrogenase	false	ShyA,ShyB,ShyC,ShyD	10	141
+basis	Inorganic sulfur metabolism	Sud	Sud sulfide dehydrogenase	true	SudA,SudB	10	142
+DiSuCy	Inorganic sulfur metabolism	Sud	Sud sulfide dehydrogenase	false	SudA	10	142
+basis	Inorganic sulfur metabolism	Snc	Thiocyanate	true	SncA,SncB,SncC	10	150
+basis	Inorganic sulfur metabolism	Tcd	Thiocyanate	true	TcdH,TcdS,TcdT	10	150
+basis	Inorganic sulfur metabolism	CS2	Growth on CS2	true	CosH,Cs2H	10	160
+HMSS2	Inorganic sulfur metabolism	CS2	Growth on CS2	false	Cs2H	10	160
+DiSuCy	Inorganic sulfur metabolism	Apr	Reductive APS reductase	false	AprA,AprB	10	170
+HMSS2	Inorganic sulfur metabolism	Cys	Assimilatory sulfate reduction (Cys pathway)	false	CysA,CysC,CysD,CysH,CysI,CysJ,CysM,CysN,CysU,CysW	10	180
+DiSCo	Inorganic sulfur metabolism	assSat	Assimilatory sulfate activation	false	assSat	10	190
+basis	Inorganic sulfur metabolism	dHdr	Hdr-like sulfur redox system	true	dHdrA,dHdrB,dHdrC	10	200
+DiSCo	Inorganic sulfur metabolism	oxApr	Oxidative APS reductase variants	false	oxAprA,oxAprB,AprM	10	240
+basis	Methylated sulfur compounds	DMSPdeg	DMSP degradation	true	AcuI,AcuK,AcuN,DddA,DddC,DddD,DddL,DddP,DddQ,DddT,DddW,DddX,DddY,	20	10
+HMSS2	Methylated sulfur compounds	DMSPdeg	DMSP degradation	false	AcuI,AcuK,AcuN,DddA,DddD,DddL,DddP,DddT,DddY	20	10
+DiSuCy	Methylated sulfur compounds	DMSPdeg	DMSP degradation	false	DddD,DddL,DddP,DddQ,DddW,DddX,DddY	20	10
+basis	Methylated sulfur compounds	Dmd	DMSP demethylase	true	DmdA,DmdB,DmdC,DmdD	20	20
+HMSS2	Methylated sulfur compounds	Dmd	DMSP demethylase	false	DmdA,DmdB,DmdC,DmdD	20	20
+basis	Methylated sulfur compounds	DMS	DMS	true	DmoA,DmsA,DmsB,DmsC,DmsD,DorA,DorC,DorD,DorR,DorS,MddA,MddH	20	30
+HMSS2	Methylated sulfur compounds	DMS	DMS	false	DmoA,DmsA,DmsB,DmsC,DmsD,DorA,DorC,DorR,DorS,MddA	20	30
+DiSuCy	Methylated sulfur compounds	DMS	DMS	false	DmoA,DmsA,MddA	20	30
+basis	Methylated sulfur compounds	Dso	Assimilatory DMS monooxygenase	true	DsoA,DsoB,DsoC,DsoD,DsoE,DsoF	20	40
+HMSS2	Methylated sulfur compounds	Dso	Assimilatory DMS monooxygenase	false	DsoA,DsoB,DsoC,DsoD,DsoE,DsoF	20	40
+DiSuCy	Methylated sulfur compounds	Dso	Assimilatory DMS monooxygenase	false	DsoB	20	40
+basis	Methylated sulfur compounds	SfnG	Assimilatory DMSO2 monooxygenase	true	SfnG	20	50
+HMSS2	Methylated sulfur compounds	SfnG	Assimilatory DMSO2 monooxygenase	false	SfnG	20	50
+DiSuCy	Methylated sulfur compounds	SfnG	Assimilatory DMSO2 monooxygenase	false	SfnG	20	50
+basis	Methylated sulfur compounds	Msu	Assimilatory methanesulfonate monooxygenase	true	MsuC,MsuD,MsuE	20	60
+HMSS2	Methylated sulfur compounds	Msu	Assimilatory methanesulfonate monooxygenase	false	MsuC,MsuD,MsuE	20	60
+basis	Methylated sulfur compounds	Msm	Dissimilatory methanesulfonate monooxygenase	true	MsmA,MsmB,MsmC,MsmD,MsmE,MsmF,MsmG,MsmH	20	70
+HMSS2	Methylated sulfur compounds	Msm	Dissimilatory methanesulfonate monooxygenase	false	MsmA,MsmB,MsmE,MsmF,MsmG,MsmH	20	70
+DiSuCy	Methylated sulfur compounds	Msm	Dissimilatory methanesulfonate monooxygenase	false	MsmA	20	70
+basis	Methylated sulfur compounds	Mar	Methylthioalkanereductase	true	MarB,MarD,MarH,MarK,NflD,NflK	20	80
+basis	Methylated sulfur compounds	Ddh	Ddh system	true	DdhA,DdhB,DdhC,DdhD	20	90
+HMSS2	Methylated sulfur compounds	Ddh	Ddh system	false	DdhA,DdhB	20	90
+DiSuCy	Methylated sulfur compounds	Ddh	Ddh system	false	DdhA	20	90
+basis	Methylated sulfur compounds	Mtox	Mtox methanethiol oxidation	true	Mtox	20	91
+HMSS2	Methylated sulfur compounds	Mtox	Mtox methanethiol oxidation	false	Mtox	20	91
+DiSuCy	Methylated sulfur compounds	Mtox	Mtox methanethiol oxidation	false	MtoX	20	91
+DiSuCy	Methylated sulfur compounds	MeS	Methylated sulfur compounds (additional)	false	Alma1,DMSOR,DsyB,MmtN,MtsA,Tmm	20	92
+basis	Taurine, isethionate & C2/C3 sulfonates	TauIse	Isethionate & Taurine	true	AdhE,AlaDH,BmcsA,BmcsB,BmcsC,IseJ,IseK,IseL,IseM,IseR,IsfD,IsfE,SarD,TauA,TauB,TauC,TauD,TauE,TauK,TauL,TauM,TauR,TauX,TauY,TauZ,Toa,Tpa,Xsc	30	10
+HMSS2	Taurine, isethionate & C2/C3 sulfonates	TauIse	Isethionate & Taurine	false	IseJ,IseK,IseL,IseM,IseR,IseU,IsfD,IsfE,IslA,IslB,TauA,TauB,TauC,TauD,TauE,TauK,TauL,TauM,TauR,TauX,TauY,TauZ,Toa,Tpa,Xsc	30	10
+basis	Taurine, isethionate & C2/C3 sulfonates	DHPS	DHPS, Sulfolactate, Sulfoacetate	true	ComC,ComD,ComE,CuyA,CuyZ,DhpA,HpfD,HpfE,HpfG,HpfH,HpfX,HpfY,HpfZ,HpsG,HpsH,HpsK,HpsL,HpsM,HpsN,HpsO,HpsP,HpsU,Pta,SauS,SauT,SauU,SlcC,SlcD,SlcF,SlcG,SlcH,SuyA,SuyB	30	20
+HMSS2	Taurine, isethionate & C2/C3 sulfonates	DHPS	DHPS, Sulfolactate, Sulfoacetate	false	ComC,ComD,ComE,CuyA,CuyZ,HpsK,HpsL,HpsM,HpsN,HpsO,HpsP,HpsU,Pta,SauS,SauT,SauU,SlcC,SlcD,SlcF,SlcH,SuyA,SuyB	30	20
+DiSuCy	Taurine, isethionate & C2/C3 sulfonates	TauF	Taurine/isethionate utilization (additional)	false	TauF	30	30
+basis	Sulfo-sugars & sulfolipids	Sqd	Sulfoquinovose synthesis	true	SqdA,SqdB,SqdC,SqdD,SqdX	40	10
+HMSS2	Sulfo-sugars & sulfolipids	Sqd	Sulfoquinovose synthesis	false	SqdA,SqdB,SqdC,SqdD	40	10
+basis	Sulfo-sugars & sulfolipids	SulfoEMP	Sulfoquinovose degradation Sulfo-EMP	true	SqiA,SqiK,SqvB,YihO,YihP,YihQ,YihR,YihS,YihT,YihU,YihV	40	20
+HMSS2	Sulfo-sugars & sulfolipids	SulfoEMP	Sulfoquinovose degradation Sulfo-EMP	false	YihO,YihP,YihQ,YihR,YihS,YihT,YihU,YihV	40	20
+DiSuCy	Sulfo-sugars & sulfolipids	SulfoEMP	Sulfoquinovose degradation Sulfo-EMP	false	SqiA,YihO,YihP,YihQ,YihS,YihT,YihU,YihV	40	20
+basis	Sulfo-sugars & sulfolipids	SulfoED	Sulfoquinovose degradation Sulfo-ED	true	Sgald,Sgdh,Sgl,Sladh,Sqdh	40	30
+HMSS2	Sulfo-sugars & sulfolipids	SulfoED	Sulfoquinovose degradation Sulfo-ED	false	Sgald,Sgdh,Sgl,Sladh,Sqdh	40	30
+DiSuCy	Sulfo-sugars & sulfolipids	SulfoED	Sulfoquinovose degradation Sulfo-ED	false	Sgald,Sgdh,Sgl,Sladh,Sqdh	40	30
+basis	Sulfo-sugars & sulfolipids	Asmo	Sulfoquinovose degradation Sulfo-monooxygenase	true	SmoA,SmoB,SmoC,SmoD,SmoE,SmoF,SmoG,SmoH,SqgA,SqoD,SqoK,SqoL,SqoM	40	40
+HMSS2	Sulfo-sugars & sulfolipids	Asmo	Sulfoquinovose degradation Sulfo-monooxygenase	false	SmoA,SmoB,SmoC,SmoD,SmoE,SmoF,SmoG,SmoH,SmoI	40	40
+DiSuCy	Sulfo-sugars & sulfolipids	Asmo	Sulfoquinovose degradation Sulfo-monooxygenase	false	SmoB,SmoC,SmoD,SmoE,SmoF,SmoG,SmoH	40	40
+basis	Sulfo-sugars & sulfolipids	SulfoSft	Sulfoquinovose degradation transaldolase	true	SftA,SftD,SftE,SftE2,SftF,SftI,SftT,SftR,SftX	40	50
+HMSS2	Sulfo-sugars & sulfolipids	SulfoSft	Sulfoquinovose degradation transaldolase	false	SftA,SftD,SftG,SftI,SftT	40	50
+DiSuCy	Sulfo-sugars & sulfolipids	SulfoSft	Sulfoquinovose degradation transaldolase	false	SftA,SftD,SftE,SftE2,SftI,SftR,SftT,SquD,SquF,SqvE	40	50
+basis	Sulfo-sugars & sulfolipids	SulfoTk	Sulfoquinovose degradation transketolase	true	SqwD,SqwE,SqwF,SqwG,SqwH,SqwI,SqwK,SqwL	40	60
+DiSuCy	Sulfo-sugars & sulfolipids	SulfoTk	Sulfoquinovose degradation transketolase	false	SqwE,SqwF,SqwG,SqwH,SqwI	40	60
+basis	Sulfo-sugars & sulfolipids	Sfc	Sulfofucose degradation	true	SfcD,SfcE,SfcF,SfcG,SfcH,SfcI,SfcJ,SfcK	40	70
+basis	Sulfonates & arylsulfates	Ssu	Alkanesulfonate	true	SsuA,SsuB,SsuC,SsuD,SsuE	50	10
+HMSS2	Sulfonates & arylsulfates	Ssu	Alkanesulfonate	false	SsuA,SsuB,SsuC,SsuD,SsuE	50	10
+DiSuCy	Sulfonates & arylsulfates	Ssu	Alkanesulfonate	false	SsuD	50	10
+basis	Sulfonates & arylsulfates	Ats	Arylsulfatases	true	AtsA,AtsB	50	20
+basis	Sulfonates & arylsulfates	Dsz	Arylsulfatases	true	DszA,DszB,DszC,DszD	50	20
+basis	Sulfur-transfer & electron-transfer systems	Tus	2-thiouridine synthesis	true	TusA,TusB,TusC,TusD,TusE	60	10
+HMSS2	Sulfur-transfer & electron-transfer systems	Tus	2-thiouridine synthesis	false	TusA,TusB,TusC,TusD,TusE	60	10
+basis	Sulfur-transfer & electron-transfer systems	Rhd	Rhodanese sulfur transfer	true	CstRhd,Rhd442,RhdI	60	20
+HMSS2	Sulfur-transfer & electron-transfer systems	Rhd	Rhodanese sulfur transfer	false	Rhd442	60	20
+basis	Sulfur-transfer & electron-transfer systems	Lbp	LbpA biosynthesis	true	LipS1,LipS2,LipT,sLplAB	60	30
+HMSS2	Sulfur-transfer & electron-transfer systems	Lbp	LbpA biosynthesis	false	LipS1,LipS2,LipT	60	30
+HMSS2	Sulfur-transfer & electron-transfer systems	Gcv	Glycine cleavage system	false	DHDL,GcvH	60	40
+basis	Sulfur-transfer & electron-transfer systems	HmcQrcTmc	Electron transport	true	HmcA,HmcB,HmcC,HmcD,HmcE,HmcF,QrcA,QrcB,QrcC,QrcD,TmcA,TmcB,TmcC,TmcD	60	50
+HMSS2	Sulfur-transfer & electron-transfer systems	HmcQrcTmc	Electron transport	false	HmcA,HmcB,HmcC,HmcD,HmcE,HmcF,QrcA,QrcB,QrcC,QrcD,TmcA,TmcB,TmcC,TmcD	60	50
+basis	Sulfur-transfer & electron-transfer systems	Flx	NADH dehydrogenase/ heterodisulfide reductase	true	FlxA,FlxB,FlxC,FlxD	60	60
+HMSS2	Sulfur-transfer & electron-transfer systems	Flx	NADH dehydrogenase/ heterodisulfide reductase	false	FlxA,FlxB,FlxC,FlxD	60	60
+HMSS2	Context / auxiliary HMMs	MethanoCtx	Methanogenesis context	false	HdrF,McrA,McrB,McrC,McrD,McrG,mHdrA,mHdrB,mHdrC,mHdrD,mHdrE,MvhA,MvhD,MvhG	90	10
+basis	Context / auxiliary HMMs	EnvelopeCtx	Cell envelope/secretion context	false	ACP,bCerS,CapA,CerR,ChiA,GldA,GldB,GldC,GldD,GldE,GldF,GldG,GldH,GldI,GldJ,GldK,GldL,GldM,GldN,GldO,SecE,SecG,SecY,SprA,SprB,SprC,SprD,SprE,SprF,Spt,SulA,SulS	90	20
+basis	Context / auxiliary HMMs	Context	Unclassified/context	false	AadD,Ant9,CcrA,CcrB,CstA,CstB,CstR,ErmA,MecA,MecI,MecR1,Pre,SA0034,SA0035,SA0036,TnpA,TnpB,TnpC,XylR	90	30
+HMSS2	Context / auxiliary HMMs	Context	Unclassified/context	false	sLplAB,YeeE	90	30
+basis	Cysteine metabolism	Cys_transport	Sulfate transport	false	CysE,CysK,CysM,CysH,CysI,CysJ,assSat,CysN,CysD,CysC,CysA,CysU,CysW	90	1
+basis	Cysteine metabolism	Cys_transsulfuration	Cysteine transsulfuration and degradation	false	bCBS,bCSE,MalY,MetA,MetB,MetC,MetE,MetH,MetK,MetQ,OAHS	90	5
+basis	Sulfobacin metabolism	Sulfobacin	Sulfobacin and sulfonolipid metabolism	true	Spt,CerR,bCerS,CapA,CapC,SulA,alfi1990,alfi1991,fjoh2422,fjoh2423,fjoh2424,fjoh2425,fjoh2426,fjoh2427	92	1
