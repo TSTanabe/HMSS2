@@ -1,0 +1,37 @@
+alfi1991	SulS	CapA
+alfi1991	bCerS	CerR	Spt
+alfi1991	alfi1990	SulS
+alfi1990	CapC	SulS
+CapA	alfi1991	alfi1990
+SulS	SulA	CapA
+CapA	SulA	SulS	fjoh2422
+SulS	SulA	CapC	CapA
+CapA	SulA	SulS	fjoh2423
+CapA	SulA	SulS	fjoh2424
+fjoh2423	fjoh2422	SulS	SulA	CapA
+CapA	SulA	SulS	fjoh2422	fjoh2424
+SulA	CapC	CapA	CapC	SulS
+fjoh2424-fjoh2425	fjoh2422	SulS	SulA	CapA
+fjoh2425	fjoh2422	SulS	SulA	CapA
+CapA	SulA	SulS	fjoh2424	fjoh2425
+CapA	CapC	SulA	SulS	fjoh2422
+CapA	SulA	SulS	fjoh2422	fjoh2424	fjoh2425
+CapA	SulA	SulS	fjoh2422	fjoh2423	fjoh2424
+fjoh2426	fjoh2425	fjoh2424	SulS	SulA	CapA
+CapA	SulA	SulS	fjoh2423	fjoh2424
+CapA	SulA	SulS	fjoh2423	fjoh2424	fjoh2425
+CapA	SulA	SulS	fjoh2422	fjoh2424	fjoh2425	fjoh2426
+CapA	SulA	SulS	fjoh2422	fjoh2423	fjoh2424	fjoh2425
+fjoh2425	fjoh2424	fjoh2422	SulS	SulA	CapA	CapA
+fjoh2422	SulS	SulA	CapA	CapA
+CapA	CapC	SulA	SulS	fjoh2422	fjoh2424	fjoh2425
+fjoh2426	fjoh2425	fjoh2423	fjoh2422	SulS	SulA	CapA
+fjoh2425	fjoh2423	fjoh2422	SulS	SulA	CapA
+CapA	SulA	SulS	fjoh2423	fjoh2424	fjoh2425	fjoh2426
+CapA	SulA	SulS	fjoh2422	fjoh2423	fjoh2424	fjoh2425	fjoh2426
+CapC	fjoh2426	fjoh2425	fjoh2424	fjoh2422	SulS	SulA	CapA
+CapA	CapC	SulA	SulS	fjoh2422	fjoh2424	fjoh2425	fjoh2426
+CapC	fjoh2425	fjoh2424	fjoh2423	fjoh2422	SulS	SulA	CapA
+CapA	CapA	SulA	SulS	fjoh2422	fjoh2423	fjoh2424	fjoh2425	fjoh2426
+CapA	CapC	SulA	SulS	fjoh2422	fjoh2423	fjoh2424	fjoh2425	fjoh2426
+CapA	SulA	SulS	fjoh2422	fjoh2423	fjoh2424	fjoh2425	fjoh2426	CapC

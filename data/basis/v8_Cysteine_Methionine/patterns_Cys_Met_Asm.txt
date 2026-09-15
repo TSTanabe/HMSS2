@@ -1,0 +1,4695 @@
+CysN	CysD	CysC	CysH
+CysD	CysN	CysH	CysI
+CysA	CysU	CysU	MetB
+CysN-CysC	CysJ	CysI	CysH
+CysN	CysD	CysH	OAHS
+CysI	CysH	CysD	CysN
+bCSE	CysU	CysU	CysA
+bCSE	CysN	CysD	CysH
+CysU	CysW	CysA	CysK
+CysW	CysU	CysA	CysA
+CysA	CysA	CysW	CysU
+bCSE	MetK	CysA	CysA
+CysH	CysD	CysN	CysA
+CysM	bCSE	CysK	MetH
+assSat	CysM	CysM	CysK
+CysH	assSat	CysC	CysM
+CysE	CysA	CysW	CysU
+CysD	CysN	CysH	CysK
+OAHS	CysU	CysW	CysA
+CysA	CysU	CysW	CysA
+CysJ	CysN	CysD	CysH
+CysN	CysD	CysH	bCSE
+CysA	CysW	CysU	CysH
+MetH	MetB	CysU	CysA
+assSat	CysH	CysI	CysJ
+CysD	CysN	CysI	CysH
+CysN	CysD	CysA	CysA
+CysA	MetK	MetH	OAHS
+MetK	CysK	bCSE	MalY
+CysU	CysA	CysA	CysW
+CysJ	CysI	CysH	CysK
+assSat	CysC	CysH	CysI
+CysU	CysW	CysA	CysU
+CysA	CysN-CysC	CysA	CysC
+CysD	CysH	CysI	bCSE
+CysA	CysW	CysA	CysU
+CysA	CysH	CysD	CysN
+MetB	CysH	CysD	CysN
+CysH	CysD	CysN-CysC	CysA
+CysI	CysN	CysD	CysH
+CysI	CysJ	CysA	CysU
+CysN	CysD	CysC	MetH
+CysK	MetB	bCBS	OAHS
+OAHS	CysA	MetQ	CysA
+MetQ	CysA	MetQ	OAHS
+CysN-CysC	CysD	CysI	CysH
+MetC	CysU	CysU	CysA
+CysM	CysA	CysW	CysU
+CysE	CysK	CysA	CysA
+CysA	CysW	CysU	MalY
+CysH	CysI	CysC	assSat
+CysK	CysH	CysD	CysN
+CysH	CysA	CysW	CysU
+CysA	CysU	CysD	CysN
+CysH	CysK	CysE	OAHS
+CysM	assSat	CysH	CysM
+CysK	CysI	CysH	CysD
+assSat	CysH	CysC	CysI
+CysI	assSat	CysH	CysC
+CysH-CysD	CysN-CysC	CysU	CysW
+CysN-CysC	CysD	CysH	CysI
+CysH	CysI	CysD	CysN
+OAHS	CysK	bCSE	MalY
+OAHS	MetA	OAHS	CysA
+CysC	CysH	CysU	CysA
+CysI	CysJ	CysN	CysD
+CysD	CysN	CysH	CysC
+CysA	CysK	CysD	CysN-CysC
+CysH	CysK	CysE	CysI
+bCSE	bCBS	CysK	OAHS
+CysI	CysN-CysC	CysD	CysH
+CysJ	CysI	CysH	CysM
+CysM	CysU	CysA	CysU
+CysK	CysM	CysM	CysC
+CysA	CysJ	CysI	CysH
+CysU	CysA	CysN-CysC	CysD
+bCSE	CysK	CysD	CysC
+CysA	CysA	CysK	bCSE
+CysA	CysW-CysU	CysU	CysA
+CysJ	CysI	CysH	CysC
+CysK	MetB	bCBS	MetB
+CysU	CysW	CysA	MetK
+MetB	CysA	CysU	CysW
+CysW	CysA	CysU	CysA
+CysA	CysU	CysN-CysC	CysD
+MetB	CysH	CysI	CysJ
+CysN-CysC	CysD	CysC	CysH
+CysI	CysH	bCBS	CysU
+bCSE	MalY	CysU	CysA
+CysA	CysW	CysU	CysK
+CysD	CysN	CysC	CysC
+CysM	CysN	CysD	CysH
+MalY	CysU	CysU	CysA
+CysW	CysA	CysU	CysU
+CysH	CysI	CysJ	CysD
+CysW	CysU	CysC-assSat	CysH
+CysN	CysK	CysJ	CysI
+CysI	CysD	CysN	CysH
+CysD	CysN	CysH	CysA
+CysK	CysK	CysJ	CysI
+bCSE	CysU	CysW	CysA
+CysC	CysD	CysN-CysC	CysA
+CysH	CysN	CysD	CysA
+CysN-CysC	CysD	CysH	CysA
+MetB	bCBS	CysA	CysA
+CysA	CysW	CysU	MetK
+CysN	CysD	CysC	bCSE
+CysK	MetB	CysH	CysI
+CysA	CysD	CysH	CysN
+CysM	CysN-CysC	CysD	CysH
+CysA	CysW	CysU	CysE
+CysM	CysK	bCSE	MetC
+CysH	CysD	CysN	OAHS
+CysW	CysU	CysA	bCSE
+CysH	CysD	CysN	CysC
+CysK	CysI	OAHS	CysH
+CysA	CysW	CysU	CysN
+CysH	CysI	CysA	CysK
+MetA	OAHS	CysU	CysA
+MetB	CysA	CysU	CysU
+MetH	CysK	CysH	bCSE
+CysM	CysC	CysD	CysN
+MetK	CysA	MetB	CysK
+CysK	CysE	bCSE	CysA
+CysW	CysA	CysA	CysN
+CysH	assSat	CysK	CysK
+CysK	assSat	CysH	CysI
+CysA	CysU	CysN	CysD
+OAHS	bCSE	MetC	CysK
+CysU	CysU	CysA	OAHS
+CysM	CysN	CysD	CysC
+CysH	CysK	OAHS	CysK
+OAHS	CysK	CysH	CysK
+CysA	CysU	CysU	CysK
+CysC	CysN	CysD	CysC
+CysA	CysU	CysU	CysW
+CysA	CysW	CysA	MalY
+CysK	CysM	CysD	CysN-CysC
+CysU	CysW	CysA	CysC
+CysC	CysH	assSat	CysK
+CysK	CysH	CysD	CysN-CysC
+OAHS	CysA	CysW	CysU
+CysK	CysN	CysD	CysH
+CysN	CysD	CysC	MetK
+MetB	CysK	CysU	CysA
+CysK	CysA	CysU	CysW
+CysA	CysU	CysW	CysU
+CysN	CysD	CysC	CysA
+CysH	CysH	CysI	CysK
+CysD	CysN	CysC	CysH
+CysM	CysM	CysU	CysA
+bCBS	CysK	CysA	CysA
+CysH	assSat-CysC	CysA	CysA
+CysC	CysU	CysW	CysA
+CysA	CysN-CysC	CysC	CysD
+CysA	CysA	MetH	bCBS
+CysA	CysU	MetC	CysW
+CysU	CysU	CysA	MalY
+MetC	CysN-CysC	CysD	CysH
+MetK	bCSE	CysD	CysN
+MetH	CysA	MetB	CysA
+CysC	CysC	CysD	CysN
+assSat	CysI	CysJ	CysH
+bCBS	CysA	MetC	CysU
+CysK	assSat	CysC	CysH
+CysM	CysI	CysH	assSat-CysC
+CysC	CysH	CysD	CysN
+CysC	CysD	CysN	CysA
+MetB	CysH	CysK	bCSE
+CysK	CysH	CysM	bCSE
+CysN	CysD	CysH	MetK
+CysJ	CysH	CysD	CysN-CysC
+MetK	OAHS	bCSE	MetH
+OAHS	CysN-CysC	CysD	CysH
+CysU	CysA	CysU	assSat
+CysE	MetA	CysK	OAHS
+MetE	MalY	bCSE	CysK
+CysN-CysC	CysD	CysC	CysA
+CysE	CysK	CysA	MetQ
+CysC	CysN	CysD	CysA
+OAHS	CysN	CysD	CysC
+MetB	CysU	CysW	CysA
+CysA	CysK	MalY	bCSE
+bCSE	MalY	CysK	CysK
+CysJ	CysI	CysN	CysD
+CysA	CysN	CysA	MetK
+MetB	bCSE	CysK	OAHS
+CysW	CysA	MalY	bCSE
+OAHS	CysA	CysW	CysA
+MetQ	CysA	bCBS	bCSE
+CysW	CysU	CysH	CysD
+CysI	CysD	CysN-CysC	CysH
+MalY	OAHS	OAHS	CysK
+CysU	CysW	CysA	CysD
+CysN	CysD	CysA	CysW
+MetQ	CysU	CysW	CysA
+bCSE	OAHS	OAHS	CysK
+CysA	CysA	OAHS	MetA
+CysU	CysW	CysA	MalY
+CysA	bCSE	MalY	CysK
+bCBS	bCSE	CysK	MalY
+MetA	bCSE	MalY	MetH
+OAHS	bCSE	CysA	MetQ
+MetB	MalY	CysK	bCSE
+CysK	bCSE	CysN	CysD
+CysK	bCSE	bCBS	MetQ
+MalY	CysA	MetQ	CysA
+CysM	CysU	CysA	CysA
+CysK	OAHS	CysH	MetB
+CysI	CysC	assSat	CysH
+CysK	OAHS	CysJ	CysI
+MetK	CysN	CysD	CysC
+MetA	OAHS	CysK	MetA
+CysA	CysA	CysI	CysJ
+CysE	MetA	OAHS	CysK
+CysN	CysD	CysN	CysC
+CysU	CysW	CysA	CysJ
+CysU	CysA	CysA	CysK
+CysW	CysU	bCSE	CysK
+CysA	CysA	MalY	CysK
+CysU	CysA	CysA	CysN
+CysN-CysC	CysD	bCBS	CysA
+CysW	CysA	CysW	CysU
+CysA	CysA	CysJ	CysI
+CysA	CysK	bCSE	MetC
+CysK	MetC	bCSE	CysK
+CysK	MetB	OAHS	CysA
+bCSE	MetC	CysH	CysD
+CysH	CysI	CysD	CysA
+CysD	CysC	CysH	CysI
+CysK	CysA	MetQ	MalY
+MetC	CysD	CysN	CysC
+CysU	CysA	CysD	CysN
+CysN-CysC	CysD	CysK	bCSE
+CysU	CysW	CysA	CysN
+CysD	CysH	CysI	CysJ
+CysA	CysN-CysC	CysD	CysA
+CysW	CysU	MetB	MetB
+CysI	CysC	CysH	CysD
+CysU	CysA	CysD	CysN-CysC
+CysU	CysA	CysU	CysW
+OAHS	MetA	CysA	CysA
+CysA	MetQ	CysN	CysA
+CysN-CysC	CysD	CysH	CysC
+CysU	bCSE	bCBS	OAHS
+CysA	bCSE	MalY	CysA
+CysK	OAHS	bCSE	bCSE
+CysK	OAHS	CysK	bCSE
+CysM	bCSE	CysM	MetH
+CysA	MetK	CysU	CysA
+OAHS	bCSE	CysH	CysD
+OAHS	bCBS	bCSE	CysK
+bCBS	CysA	CysA	CysU
+CysK	MalY	bCSE	CysK
+CysK	CysE	CysA	CysA
+CysA	CysW	CysC	assSat
+CysU	CysA	CysA	CysM
+OAHS	CysK	CysJ	CysI
+CysN-CysC	CysD	CysH	bCSE
+MetK	MetB	bCSE	MetH
+CysA	MetQ	CysK	CysA
+MetK	CysA	CysU	CysU
+CysM	CysK	CysH	CysC
+CysM	CysD	CysN-CysC	CysH
+CysH	CysJ	CysI	CysD
+CysA	CysC	CysH	CysK
+CysN-CysC	CysD	CysH	CysM
+CysI	CysH	assSat	CysC
+CysH	CysJ	CysI	bCSE
+CysW	CysA	CysN-CysC	CysD
+CysU	CysA	MetA	MetH
+CysD	CysN	CysK	OAHS
+MalY	MetQ	CysA	CysA
+MetK	CysA	CysW	CysA
+CysA	CysW	CysA	MetQ
+MetH	CysU	CysW	CysA
+MetE	MetA	OAHS	bCSE
+CysA	CysD	CysN-CysC	bCSE
+CysA	CysW	MetQ	CysA
+MetA	OAHS	bCSE	MetC
+CysU	CysW	CysA	assSat
+MetK	CysA	CysA	CysU
+MetQ	CysA	CysU	CysA
+CysD	CysN	CysA	CysU
+CysJ	CysI	CysH	CysA
+CysA	CysW	CysU	CysN-CysC
+CysA	MetQ	bCSE	bCBS
+CysU	CysW	CysA	MetQ
+CysA	MetK	CysA	CysK
+CysW	CysU	CysN	CysD
+CysA	MetQ	bCSE	MalY
+bCSE	CysK	CysA	MetQ
+CysA	OAHS	bCBS	bCSE
+CysM	CysU	CysW	CysA
+MalY	OAHS	bCSE	CysK
+CysK	bCSE	MalY	CysA
+CysN	CysD	CysC	CysI
+CysK	OAHS	CysE	MetA
+CysA	CysA	CysU	bCSE
+CysH	CysD	CysN-CysC	CysJ
+CysD	CysN	CysC	CysA
+CysK	OAHS	bCSE	MalY
+bCSE	CysA	CysU	bCSE
+CysA	CysM	CysE	CysK
+CysA	CysU	CysU	MetK
+bCSE	CysM	CysA	CysU
+CysA	MetB	CysK	CysM
+CysN-CysC	CysD	CysA	CysA
+CysA	CysW	CysA	CysC
+CysK	CysK	bCSE	MetC
+OAHS	CysK	bCSE	MetC
+CysD	CysN-CysC	CysA	CysA
+CysK	MetB	OAHS	bCSE
+CysW	CysK	MetB	OAHS
+CysE	CysK	CysJ	CysA
+CysA	OAHS	MetB	CysA
+OAHS	CysH	CysC	CysK
+OAHS	CysK	bCBS	MetB
+CysW-CysU	CysA	CysU	CysA
+CysK	CysM	CysD	CysN
+CysH	CysW	CysU	CysM
+bCSE	bCBS	OAHS	CysK
+OAHS	bCBS	bCSE	CysH
+CysK	CysH	CysI	assSat
+CysH	bCSE	OAHS	MetK
+OAHS	CysK	CysU	CysA
+CysW	CysW	CysA	CysU
+CysW	CysA	CysA	CysU-CysW
+CysD	CysN	CysM	CysE
+CysK	CysA	MetQ	MetQ
+CysU	CysW	CysH	CysI
+CysW-CysA	CysA	CysW	CysU
+CysK	OAHS	CysU	CysA
+CysD	CysN	assSat	CysC
+CysA	CysU	CysU	MetA
+CysD	CysN	OAHS	CysE
+CysM	bCSE	CysW	CysU
+CysA	CysA	bCSE	CysK
+bCBS	bCSE	MetK	CysK
+CysH	CysN	CysD	CysW
+CysH	CysC	CysK	CysM
+CysA	bCSE	bCSE	MetC
+MetA	OAHS	MetH	CysA
+CysK	OAHS	MetQ	CysA
+CysD	CysC	CysN	CysA
+MetH	CysK	bCSE	MetK
+CysK	CysK	CysA	MetQ
+CysK	bCBS	bCSE	MalY
+MalY	bCSE	CysK	CysA
+bCSE	MalY	MetQ	CysA
+CysD	CysC	CysA	CysU
+CysA	assSat-CysC	CysH	CysI
+CysA	MetA	OAHS	MetH
+CysK	OAHS	MetC	bCSE
+bCSE	OAHS	CysK	bCSE
+CysD	CysN	CysH	CysU
+MetQ	CysA	MalY	bCSE
+MetH	CysE	CysK	OAHS
+bCSE	MetC	CysA	CysA
+CysH	assSat	CysC	OAHS
+OAHS	bCSE	MalY	CysK
+CysA	MetK	CysA	CysM
+CysK	CysD	CysN	OAHS
+CysA	CysA	MetQ	CysK
+CysA	MetQ	CysA	CysU
+CysK	CysE	CysD	CysH
+CysA	CysK	bCSE	bCBS
+CysK	MetC	bCSE	CysA
+CysD	CysN	CysA	CysA
+CysK	OAHS	CysE	CysK
+MetQ	CysA	CysA	CysK
+CysA	MetQ	CysU	CysA
+MetQ	MetB	bCSE	CysK
+MetQ	CysA	bCSE	CysA
+CysA	CysW	CysN-CysC	CysD
+CysM	CysA	CysU	CysA
+CysA	CysA	CysK	MalY
+CysU	CysU	CysA	CysN
+CysE	CysK	CysH	CysI
+CysM	CysC	CysH	CysK
+bCSE	CysK	CysH	CysK
+CysA	MetH	CysH	bCSE
+MetC	CysU	CysA	CysA
+bCSE	CysA	CysU	CysU
+CysA	CysW	CysI	CysH
+CysC	CysN-CysC	CysD	CysA
+MetC	CysU	CysA	CysW
+MetK	OAHS	MetH	CysA
+CysH	CysN	CysD	CysC
+CysK	CysJ	CysI	CysH
+CysU	CysA	bCBS	bCSE
+bCBS	MetC	CysU	bCBS
+CysN	CysH-CysD	CysK	OAHS
+MetH	CysN	CysD	CysH
+CysN	CysH-CysD	CysJ	CysI
+MetB	MetK	CysA	CysA
+CysU	CysW	CysA	MetH
+CysA	CysW	MalY	CysA
+bCSE	bCBS	bCSE	MalY
+CysA	CysA	bCSE	MalY
+MetC	bCSE	CysK	CysH
+CysK	CysM	CysW	CysA
+CysW	CysU	CysA	CysM
+CysM	CysH	CysI	assSat
+CysN	MetQ	CysA	CysA
+CysA	CysU	MetC	bCBS
+CysU	CysK	CysH	CysI
+CysK	CysE	CysA	OAHS
+CysU	CysU	CysA	CysH
+CysK	MetH	CysA	CysA
+CysA	CysW	MetB	CysK
+OAHS	CysK	CysE	MetK
+OAHS	OAHS	CysK	bCSE
+CysW	CysU	CysD	CysN-CysH
+CysM	CysH	CysN	CysD
+CysA	bCBS	OAHS	CysK
+CysA	CysW-CysU	CysA	CysU
+CysK	CysU	CysA	CysA
+CysU	CysU	CysW	CysA
+CysU	CysW	CysK	CysA
+CysW	CysH	CysN	CysD
+bCSE	MetQ	CysA	CysA
+OAHS	CysC	CysD	CysC
+OAHS	CysU	CysU	CysA
+assSat	CysH	CysA	CysU
+CysM	CysK	CysK	CysA
+CysW	CysU	CysC	CysD
+OAHS	CysK	CysI	CysH
+CysA	CysA	MetB	bCBS
+CysK	CysA	MetQ	MetB
+bCSE	bCSE	CysK	OAHS
+CysH	CysM	CysD	CysN
+CysA	CysU	CysA	MetK
+CysA	OAHS	CysU	CysW
+CysA	CysK	bCBS	bCSE
+MetE	CysU	CysW	CysA
+CysC	assSat	CysI	CysH
+OAHS	CysK	CysU	bCSE
+CysM	CysA	CysU	CysU
+CysU	CysA	MetB	MetB
+CysU	OAHS	CysK	CysE
+CysH	bCBS	CysU	CysA
+CysM	CysK	assSat	CysH
+CysU	CysU	CysA	bCBS
+bCBS	CysU	CysW	CysA
+CysI	CysU	CysU	CysA
+CysN	CysD	CysK	CysH
+CysD	CysN-CysC	CysH	CysI
+CysA	CysK	CysA	CysU-CysW
+CysD	CysN-CysC	CysJ	CysI
+OAHS	CysK	CysA	CysU
+CysN	MetK	OAHS	MetA
+bCBS	CysK	bCSE	MetC
+CysA	MetQ	CysK	CysK
+CysA	CysU	bCBS	bCSE
+CysM	CysH	CysD	CysN
+CysM	CysA	CysA	CysW
+assSat	CysK	CysM	CysM
+assSat	CysH	CysA	CysA
+CysC	CysH	CysM	CysK
+bCBS	MetB	CysK	OAHS
+MalY	bCSE	CysA	CysK
+CysK	OAHS	MalY	bCSE
+CysK	bCSE	MalY	OAHS
+CysK	OAHS	CysA	MetQ
+MetQ	CysA	bCSE	MalY
+CysA	CysK	CysU	CysW
+MetB	CysC	CysN	CysD
+CysH	CysD	CysN-CysC	CysK
+CysU	CysW	CysA	MetB
+CysM	CysD	CysN	CysC
+CysA	MetH	bCSE	MetK
+CysW	CysU	CysA	MetA
+CysI	CysK	bCBS	MetB
+CysU	CysW	CysA	CysI
+CysW	CysW	CysA	CysK
+OAHS	MetA	MetH	MetK
+CysN	CysA	CysU	CysW
+CysA	MalY	MetQ	MetQ
+bCSE	MetC	CysK	CysE
+CysA	CysN	CysA	CysU
+CysC	CysU	CysU	CysA
+bCSE	bCBS	MetQ	CysA
+CysW	CysU	MetQ	CysA
+bCBS	MetC	MetC	CysU
+MetB	CysE	CysK	OAHS
+CysA	CysU	bCSE	CysA
+bCBS	MalY	CysA	CysA
+CysA	CysW	CysK	CysE
+CysC	CysC	CysD	CysN-CysC
+MetA	OAHS	CysK	CysA
+CysN-CysC	CysD	MetK	MetH
+MetK	MetH	CysA	MalY
+CysD	CysH	bCSE	CysK
+MetB	CysK	CysE	OAHS
+CysE	CysK	OAHS	bCSE
+MetB	bCBS	CysE	MetB
+CysM	bCSE	MetB	bCSE
+bCBS	assSat	CysC	CysH
+CysJ	MetE	MetC	bCSE
+CysH	bCSE	CysK	CysA
+CysA	bCSE	CysA	CysU
+CysW	CysW	CysA	MalY
+CysA	CysU	CysA	bCSE
+MetQ	CysU	CysU	CysA
+CysN	CysD	CysC	OAHS
+CysH	MetH	CysD	CysN-CysC
+CysU	CysA	bCBS	MetB
+CysH	CysA	CysU	CysW
+bCSE	CysK	CysN	CysD
+OAHS	bCSE	CysE	CysK
+bCBS	bCSE	MetE	MetB
+MalY	bCSE	CysK	CysK
+MetQ	CysA	CysK	bCBS
+OAHS	CysK	CysA	CysA
+MetQ	CysA	bCSE	MetC
+MetA	bCSE	bCBS	bCSE
+OAHS	bCSE	bCBS	bCSE
+CysA	CysA	CysK	MetH
+CysA	CysE	CysK	OAHS
+MetQ	bCSE	bCBS	CysA
+assSat	CysM	CysC	CysH
+CysA	CysU	MetB	CysA
+CysE	CysH	CysN	CysD
+MetQ	CysA	bCSE	CysK
+CysA	bCSE	bCBS	MetB
+bCBS	MetQ	MetQ	CysA
+CysA	CysA	bCSE	CysM
+assSat	CysC	CysH	CysM
+CysA	CysW	CysH	assSat
+CysW	CysU	CysW	CysA
+CysH	CysA	CysW	CysK
+CysA	bCBS	bCSE	MetK
+CysA	CysU	CysW	CysK
+CysH	assSat	CysA	CysK
+OAHS	CysD	CysN	CysK
+CysH	CysC-assSat	CysK	CysM
+bCSE	CysE	CysM	CysK
+CysC	assSat	CysK	CysM
+OAHS	MetA	bCSE	bCBS
+CysK	OAHS	bCSE	MetC
+assSat-CysC	CysH	bCSE	CysK
+CysC	CysD	CysN	CysN
+CysM	bCBS	CysK	MetB
+bCSE	bCBS	CysM	CysH
+CysA	CysW	CysU	MetC
+OAHS	CysK	MalY	bCSE
+OAHS	bCSE	bCBS	CysA
+bCSE	MalY	OAHS	CysA
+OAHS	bCSE	CysK	CysM
+OAHS	bCBS	bCSE	MetE
+OAHS	CysK	CysA	MalY
+CysD	CysN-CysC	CysU	CysW
+CysK	CysA	CysK	bCSE
+CysK	OAHS	CysA	CysA
+MalY	bCSE	CysK	bCBS
+OAHS	CysH	assSat	CysC
+CysA	CysM	CysW	CysU
+CysN	CysU	CysU	CysA
+CysJ	CysI	CysA	CysU
+bCSE	CysN	CysD	CysC
+MetC	CysE	CysM	CysN
+CysA	CysU	CysU	bCBS
+CysK	CysI	CysN	CysD
+CysA	MetB	CysK	MetH
+CysJ	OAHS	MetA	OAHS
+CysA	CysA	CysK	CysM
+CysK	CysK	OAHS	MetA
+CysH	CysI	CysA	CysA
+CysA	CysA	CysW	MetK
+MetB	CysD	CysN	CysC
+CysD	CysN-CysC	assSat	CysC
+CysW	CysA	CysK	MetB
+CysH	CysI	CysK	CysC
+MetE	CysA	CysU	CysU
+CysK	CysH	assSat	CysI
+CysU	CysW	CysA	MetC
+MetB	MetB	MetQ	CysM
+CysA	bCSE	MetQ	CysA
+bCSE	bCBS	OAHS	MetA
+MetQ	CysA	CysA	OAHS
+CysA	bCBS	bCSE	CysK
+CysD	CysN-CysC	CysU-CysW	CysA
+CysA	CysA	MetK	CysN
+MetQ	CysA	MetQ	MalY
+CysA	CysA	MetQ	OAHS
+bCSE	CysK	CysA	MalY
+OAHS	MetA	CysA	CysU
+CysK	OAHS	CysE	MetH
+OAHS	MetB	bCSE	bCBS
+CysW	CysA	CysA	MetQ
+bCSE	bCSE	bCBS	MetB
+CysA	OAHS	CysK	MetH
+OAHS	MetA	bCBS	bCSE
+CysA	MalY	MetQ	CysA
+MetE	CysA	OAHS	CysA
+CysM	CysK	OAHS	MetQ
+CysD	CysA	CysU	CysW
+CysD	CysN	CysH	OAHS
+CysA	CysK	OAHS	MalY
+MalY	MetK	bCSE	bCBS
+CysA	MalY	bCSE	CysN
+CysH	CysN	CysD	CysU
+CysU	CysW-CysU	CysA	CysA
+MetQ	CysA	MalY	CysK
+CysE	CysK	CysU	CysA
+OAHS	MetA	CysW-CysU	CysA
+MetB	CysC	CysN-CysC	CysD
+CysA	assSat	CysH	CysI
+CysN	CysD	CysC	CysU
+CysK	bCSE	OAHS	CysK
+CysK	bCSE	CysK	MalY
+MetB	MetQ	CysA	MalY
+MetQ	CysA	OAHS	bCSE
+MalY	bCSE	CysM	CysK
+bCSE	CysA	CysA	OAHS
+bCBS	bCSE	CysK	OAHS
+CysA	MetQ	CysA	CysM
+CysI	CysU	CysW	CysA
+CysM	MetH	MetA	OAHS
+CysA	MetH	CysM	OAHS
+CysA	CysI	CysJ	CysE
+CysC	CysD	CysN	MetH
+CysI	CysH	CysN	CysA
+CysD	CysN	CysC	MetK
+CysU	CysA	CysA	CysU-CysW
+OAHS	bCSE	MetH	CysA
+CysW	CysA	CysD	CysN-CysC
+MetC	CysU	CysA	CysK
+CysU	CysA	CysM	CysA
+CysW	CysA	CysW-CysU	CysA
+CysN-CysC	CysD	OAHS	MetA
+MetQ	CysA	OAHS	MetA
+CysK	CysA	MetQ	CysA
+assSat	CysH	CysI	MetC
+CysJ	CysH	CysI	CysK
+MetQ	CysA	bCSE	bCBS
+CysA	CysI	CysH	assSat
+CysU	CysU	MetQ	CysA
+CysA	CysU	CysA	MalY
+CysK	bCSE	MetH	CysN
+bCBS	CysN	CysD	CysH
+OAHS	CysJ	CysI	CysH
+CysJ	CysI	CysD	CysN
+CysA	CysU-CysW	CysA	CysU
+bCSE	CysA	CysW	CysU
+CysW-CysU	CysA	CysA	CysU
+bCSE	CysK	bCBS	bCSE
+CysI	CysM	assSat	CysH
+CysN-CysC	CysD	CysH	bCBS
+MetK	OAHS	OAHS	CysA
+OAHS	OAHS	CysA	CysA
+CysA	bCBS	CysA	CysU
+bCBS	bCSE	CysN-CysC	CysD
+CysI	assSat	CysH	CysJ
+CysA	CysU	CysU	assSat
+CysN	MalY	CysA	CysA
+CysH	CysK	CysJ	CysI
+CysA	CysK	CysA	CysU
+MetB	CysA	CysU	CysA
+CysC	CysN-CysC	CysD	CysC
+MetC	bCSE	CysM	CysK
+MetC	bCSE	bCBS	bCBS
+CysU	CysU	CysA	CysK
+CysK	OAHS	CysA	CysU
+CysA	CysK	MetA	OAHS
+CysA	MetB	bCBS	bCSE
+OAHS	CysK	bCSE	MetE
+bCSE	MalY	MetE	OAHS
+CysA	bCSE	CysN	CysD
+CysK	CysA	OAHS	bCSE
+MalY	MetQ	CysA	bCSE
+CysA	CysU	MetC	CysK
+CysA	CysA	CysK	MetB
+CysK	bCSE	MetB	CysH
+CysI	CysE	CysK	CysA
+CysA	MetQ	MetQ	MalY
+CysA	CysU	MetC	CysA
+CysH	MetH	CysD	CysN
+MetA	OAHS	CysK	CysN
+CysK	MetB	CysE	MetC
+MetE	CysA	CysA	CysU
+CysA	CysH	CysC	assSat
+CysW	CysA	MalY	CysA
+CysA	CysA	MalY	MetE
+assSat-CysC	CysU	CysU	CysA
+CysM	MetB	CysA	CysU
+CysA	CysC	CysC	assSat
+CysK	OAHS	MetC	MetC
+CysM	MetB	CysU	CysA
+CysI	CysD	CysN	CysA
+CysA	CysA	CysH	CysI
+OAHS	MetA	CysU	CysA
+MetQ	CysA	CysA	CysU
+bCSE	OAHS	CysK	bCBS
+CysA	CysC	CysN-CysC	CysD
+CysI	CysD	CysH	CysN-CysC
+CysH	CysD-CysN	CysW	CysA
+CysA	OAHS	MetQ	CysA
+CysA	MetA	bCSE	bCBS
+MetQ	CysA	CysK	CysA
+MetB	CysM	OAHS	CysK
+CysU	CysW	CysH	CysN
+CysK	CysA	MetQ	OAHS
+OAHS	CysK	MalY	CysA
+CysA	CysA	CysM	CysK
+CysA	CysU	MetC	CysM
+CysA	CysW	CysN	CysD
+CysM	CysK	CysH	CysK
+CysU	CysM	CysK	MetH
+CysM	CysM	CysH	CysK
+MetH	CysK	CysK	CysU
+bCSE	CysM	CysA	CysA
+CysE	CysA	CysU	CysU
+CysH	CysD	CysN	CysE
+CysI	CysH	CysA	CysW
+MetB	CysI	CysH	CysD
+CysW	CysA	bCSE	MalY
+CysM	CysC-assSat	CysH	bCSE
+CysK	MetQ	CysA	bCSE
+CysA	MetQ	MalY	CysK
+bCBS	CysA	CysW	CysU
+CysK	CysA	MetC	bCSE
+bCBS	CysA	MetQ	OAHS
+MalY	CysK	CysA	MetQ
+CysN	CysD	CysH	CysU
+bCSE	MetC	CysA	MetQ
+CysM	MetC	bCSE	OAHS
+CysU	CysA	CysW	MetC
+CysA	OAHS	bCSE	MalY
+CysK	MetA	MetC	bCSE
+MetQ	CysU	CysA	OAHS
+MetC	CysU	CysA	CysU
+CysA	CysK	MetB	CysA
+MetQ	OAHS	CysU	CysA
+OAHS	bCSE	CysK	MetA
+bCSE	bCSE	CysA	MetQ
+CysN-CysC	CysD	CysM	CysA
+CysN	CysD	CysH	CysJ
+CysK	bCSE	OAHS	MetA
+MalY	bCSE	OAHS	OAHS
+OAHS	MetA	CysA	MetQ
+MetQ	CysN	CysD	CysH
+OAHS	MetA	bCSE	CysA
+CysK	OAHS	bCSE	CysM
+CysA	CysA	CysK	assSat
+CysA	CysH	assSat	CysI
+CysU	CysW	CysE	CysK
+bCSE	MalY	bCBS	CysK
+CysA	CysA	CysH	CysD
+CysC	assSat	CysH	CysN
+CysA	MetB	OAHS	MetE
+CysH	CysD	CysN	MetK
+CysK	OAHS	MetA	CysA
+CysK	CysU	CysA	OAHS
+CysU	CysA	MetQ	OAHS
+CysA	OAHS	CysK	bCBS
+CysH	CysN	CysD	CysK
+CysK	MetB	CysM	MetH
+CysW	bCSE	CysU	CysU
+OAHS	CysK	MetQ	CysA
+OAHS	CysA	bCSE	MalY
+MetQ	bCBS	bCSE	OAHS
+CysA	CysU	MetQ	CysK
+MetQ	bCBS	bCSE	CysA
+MetQ	OAHS	CysA	MetQ
+MetQ	CysA	CysA	CysN
+bCSE	CysA	MetQ	CysA
+CysH	CysN	CysJ	CysI
+CysA	CysU	CysA	bCBS
+CysW	CysU	CysD	CysN-CysC
+CysA	CysU	CysA	CysH
+OAHS	CysK	CysU	CysW
+bCSE	MetC	CysK	OAHS
+CysU	CysN	CysD	CysH
+MetK	CysN-CysC	CysD	CysH
+bCBS	CysK	CysA	CysW
+CysI	CysH	assSat	OAHS
+CysD	CysH	CysI	CysU
+MetB	CysM	CysA	CysA
+bCSE	CysJ	CysI	CysH
+assSat	CysI	CysC	CysH
+CysH	CysI	CysC	CysD
+bCSE	CysK	MetQ	MetQ
+CysU	CysA	CysN	MalY
+MetC	MetQ	CysA	OAHS
+CysA	bCSE	CysH	CysI
+MetB	bCBS	CysA	CysW
+CysC	CysH	assSat	CysJ
+CysK	CysE	CysU	CysA
+OAHS	MetA	CysA	CysW
+CysI	CysN	CysH	CysK
+CysK	OAHS	MetA	MetH
+CysC	CysD	CysN-CysC	CysE
+CysI	CysK	MetB	bCSE
+MetQ	OAHS	CysA	CysW
+CysK	MalY	CysM	CysE
+CysA	CysU	CysK	CysK
+CysA	CysA	MetB	OAHS
+CysD	CysH	CysK	OAHS
+CysU	OAHS	CysU	CysA
+CysW	OAHS	CysA	CysN
+MetB	CysA	CysA	CysU
+CysK	MetB	CysA	CysA
+CysJ	CysH	CysI	bCBS
+MetK	MetE	CysA	CysA
+MetC	CysJ	CysH	CysI
+CysA	MetQ	CysK	bCSE
+bCSE	CysW	CysU	CysA
+MalY	CysW	CysU	CysA
+CysW	CysA	CysA	CysK
+CysK	OAHS	CysA	OAHS
+CysH	assSat-CysC	CysI	OAHS
+bCBS	CysU	MetC	CysK
+assSat	CysC	bCBS	CysH
+CysA	CysW	bCBS	CysA
+MetC	CysH	CysA	MetQ
+CysH	CysM	CysU	CysA
+CysN-CysC	assSat	CysC	CysD
+CysA	OAHS	CysK	MetA
+MetQ	CysA	CysU-CysW	CysA
+bCSE	CysA	CysA	CysU
+CysA	bCBS	bCSE	CysE
+CysA	CysK	MalY	CysA
+CysI	CysJ	CysM	bCSE
+CysN	CysD	CysH	bCBS
+CysI	CysH	CysU	CysA
+CysU	CysW	bCSE	MetC
+CysK	bCSE	MetA	CysK
+MalY	MetC	CysA	CysA
+CysA	CysW	MetC	CysA
+MetB	CysJ	CysH	CysI
+MetQ	CysA	CysC	assSat
+CysA	assSat	CysC	CysC
+CysA	CysU	CysK	CysH
+MalY	CysM	CysU	CysA
+MetH	bCSE	bCSE	OAHS
+MetQ	CysA	MetQ	CysK
+CysK	CysH	MetH	bCSE
+MetB	CysA	CysW	CysA
+CysU	CysA	CysU	OAHS
+CysA	MetQ	OAHS	MetA
+CysU-CysW	CysA	CysA	MetQ
+MalY	bCBS	CysA	CysA
+MetB	bCSE	bCBS	CysA
+bCSE	CysA	CysA	MetQ
+CysK	CysH	assSat	CysM
+CysN-CysC	CysD	CysW	CysU
+CysK	OAHS	CysH	CysD
+CysD	CysN	CysA	CysJ
+CysU	MetC	CysA	CysK
+CysU	CysK	MetB	CysK
+CysD	CysH	CysJ	CysI
+CysA	MetE	MetH	CysA
+CysH	CysD	CysN-CysJ	CysI
+OAHS	CysA	CysU	CysH
+MetA	MetB	bCSE	CysK
+CysA	CysK	MetC	CysU
+CysK	CysA	MetQ	CysK
+CysK	MetC	CysA	CysU
+CysA	CysE	CysA	CysU
+bCBS	MetQ	CysA	bCSE
+CysA	MetQ	bCSE	OAHS
+MetC	bCSE	CysA	CysK
+bCSE	MetC	CysK	CysM
+bCSE	MetQ	MetQ	CysA
+OAHS	MetC	CysA	MetQ
+bCSE	bCBS	OAHS	OAHS
+bCSE	bCSE	bCBS	CysK
+CysM	MetQ	CysA	MalY
+bCSE	MetC	CysK	CysA
+bCSE	CysA	MetQ	MetQ
+CysE	CysK	CysC	CysA
+CysE	CysK	MetQ	OAHS
+CysI	assSat	CysC	CysH
+CysN-CysC	CysD	CysJ	CysI
+CysN	assSat	CysH	CysC
+CysN-CysC	CysD	CysW	CysA
+CysM	bCBS	MetB	CysA
+CysC	CysH	CysI	assSat
+MetA	OAHS	CysA	CysU
+CysK	CysA	CysU	MetQ
+CysU	MetA	bCSE	MetC
+CysN-CysC	CysD	CysM	CysH
+bCSE	CysH	CysI	CysM
+CysA	CysA	MetH	CysM
+OAHS	MetA	bCSE	MalY
+CysH	CysI	CysC-assSat	CysA
+CysA	CysU	CysD	CysN-CysC
+CysA	CysU	CysW	CysN
+MetC	CysM	CysA	CysA
+CysK	CysU	CysA	bCBS
+MetQ	MetQ	CysA	OAHS
+CysH	assSat	CysI	CysM
+MetQ	CysA	MetH	CysA
+CysI	OAHS	CysK	CysH
+CysU	CysE	CysK	CysI
+CysI	CysJ	CysU	CysW
+CysA	CysU	CysW	CysI
+bCSE	CysK	CysI	CysH
+bCBS	bCSE	CysA	CysU
+CysN	CysU	CysA	CysA
+CysC	assSat	CysH	CysA
+CysU	CysA	CysU	MetB
+CysA	CysU	CysI	CysK
+MetH	MetK	CysC	assSat
+CysA	CysU	CysJ	CysI
+CysM	CysW	CysU	CysA
+CysI	CysJ	CysH	CysA
+CysI	CysJ	CysD	CysN-CysH
+CysA	CysU	CysM	CysA
+CysA	CysU	bCSE	CysK
+CysA	CysI	CysH	CysJ
+assSat	CysA	CysC	CysA
+CysA	CysW	CysU	assSat
+CysW	CysU	CysA	CysW
+CysH	CysI	CysJ	CysC
+CysW	CysA	CysK	bCSE
+CysM	CysA	CysW	CysA
+MetQ	CysU	CysA	CysU
+bCBS	CysI	CysU	CysA
+CysH	CysD	CysN	CysN-CysC
+CysA	CysU	CysU	CysJ
+CysN	CysD	CysH	CysH
+CysU	CysA	CysK	MetB
+CysA	MetQ	OAHS	MetQ
+CysA	CysU	MetB	bCBS
+CysM	MetB	CysA	CysA
+MetC	bCSE	CysA	CysW
+CysM	CysH	assSat	CysC
+CysK	CysA	CysA	bCBS
+CysC	CysH	CysI	CysA
+CysA	CysA	CysK	MetA
+MetB	CysJ	CysI	CysH
+bCSE	CysK	CysN-CysC	CysD
+CysA	CysM	MetB	bCBS
+OAHS	CysE	CysA	MetQ
+MetB	bCSE	CysM	CysK
+bCSE	MetA	OAHS	MetE
+MetB	CysK	MetQ	CysA
+CysU	CysA	CysE	CysK
+CysA	CysW	MetH	CysA
+CysA	CysW	CysU	CysN-CysH
+CysM	CysU	CysA	CysK
+CysK	bCSE	CysM	MetH
+OAHS	MetA	CysD	CysN
+MetK	CysK	MetH	CysA
+CysH	CysC	CysI	CysA
+CysK	CysC	CysH	MetB
+CysN	CysD	CysC	CysN
+MetC	CysH	CysD	CysN
+MetH	CysU	CysA	CysA
+MalY	CysD	CysN	CysC
+MetC	CysK	CysA	CysW
+CysK	CysK	MetC	bCSE
+CysM	MetB	bCBS	MetH
+CysU	CysA	CysU	CysK
+MetH	bCBS	bCSE	CysM
+MetH	CysM	bCSE	bCBS
+CysI	assSat	CysH	bCBS
+CysN	CysN	CysD	CysH
+CysJ	CysA	CysU	CysA
+CysM	MetB	CysM	MetH
+CysM	CysU	MetC	CysK
+bCBS	bCSE	bCBS	MetH
+MetH	CysK	bCSE	CysK
+MalY	bCBS	MetB	CysM
+CysK	CysN	CysC	CysD
+MetH	CysE	CysA	CysA
+CysU	CysA	MetH	MetA
+CysA	CysU	CysK	CysW
+CysN	CysJ	CysI	bCSE
+CysD	CysN	CysK	CysJ
+CysU-CysW	CysA	CysU	CysA
+MalY	CysK	CysE	OAHS
+MetB	CysK	CysD	CysN-CysC
+CysK	bCSE	OAHS	MetK
+MetH	CysA	CysA	CysU
+CysA	CysA	CysU	MetB
+CysM	CysK	CysM	CysA
+CysU	CysA	CysA	CysH
+bCSE	bCBS	CysK	MetC
+MetB	CysM	CysI	CysH
+CysH	CysI	assSat	CysA
+CysI	CysD	CysN-CysC	CysC
+CysA	MetH	CysU	CysA
+MetQ	CysA	MetC	CysA
+CysH	CysI	CysA	CysU
+CysH	CysJ	CysD	CysN-CysC
+CysM	CysC	CysN-CysC	CysD
+CysK	CysE	CysK	bCSE
+CysN	CysK	bCSE	MetC
+CysW	CysA	CysH	CysD
+OAHS	CysK	CysK	CysH
+OAHS	bCBS	bCSE	bCSE
+CysA	MetB	CysI	CysJ
+bCBS	MetB	CysU	CysU
+assSat	CysH	MetC	bCSE
+CysD	CysN-CysC	CysI	CysH
+MalY	CysA	CysU	CysW
+CysH	CysK	MetC	bCSE
+CysC	CysA	CysU	CysA
+CysK	CysA	bCSE	CysM
+CysU	CysA	bCBS	CysM
+MetH	bCSE	CysA	MetQ
+bCSE	bCBS	MetE	CysA
+bCSE	MalY	CysA	OAHS
+CysU	CysA	MetQ	CysM
+CysK	CysK	OAHS	MetH
+CysA	CysA	bCBS	bCSE
+MetA	OAHS	CysK	MetQ
+MalY	CysA	OAHS	CysK
+CysK	OAHS	MetA	OAHS
+CysU	CysU	CysA	MetH
+CysU-CysW	CysA	CysW	CysA
+bCSE	CysU	CysA	MetE
+MetH	CysA	CysU	CysW
+MetH	CysA	CysW	CysW
+bCSE	MalY	MalY	CysK
+MetH	CysK	OAHS	OAHS
+OAHS	MetA	MalY	bCSE
+CysN-CysC	CysD	CysK	CysE
+OAHS	CysK	MetB	CysK
+bCSE	bCSE	MalY	CysM
+CysA	CysA	MalY	bCSE
+MalY	bCSE	MetQ	bCSE
+CysA	MetH	CysK	OAHS
+bCBS	CysE	CysA	CysA
+CysA	CysE	CysK	bCSE
+CysA	CysE	CysM	bCSE
+CysA	CysA	CysE	OAHS
+CysA	CysA	CysE	CysM
+CysE	bCBS	CysA	CysA
+bCBS	CysE	CysA	OAHS
+MetK	OAHS	CysA	OAHS
+MetE	OAHS	OAHS	MetK
+CysE	OAHS	bCSE	bCBS
+CysA	bCSE	CysA	MalY
+bCBS	bCSE	MetK	bCBS
+CysN	CysH	CysU	CysA
+bCBS	bCSE	CysU	CysA
+CysE	OAHS	CysK	MetH
+CysA	MetA	OAHS	CysA
+CysN	CysD	CysJ	CysI
+CysH	CysD	CysN-CysC	CysU
+MetA	CysA	CysW	CysU
+CysA	CysA	CysW	CysN
+CysI	CysM	CysI	MetK
+CysD	CysN	CysI	MetK
+CysE	OAHS	CysK-bCSE	CysA
+CysU	CysA	CysH	CysD
+CysN	CysD	OAHS	CysE
+bCSE	MetH	CysA	MalY
+OAHS	CysM	CysE	CysK
+CysW	CysU	CysN	CysH-CysD
+CysA	MetQ	CysA	MetB
+CysA	CysU	bCBS	CysA
+CysA	MetQ	CysK	MalY
+CysN	OAHS	MetA	MetH
+OAHS	CysA	CysW	CysH
+CysU-CysW	CysA	CysD	CysN
+MetH	bCSE	MalY	MetA
+MetA	OAHS	CysK	CysU
+MetK	bCSE	MetH	CysH
+CysD	CysN-CysC	CysH	CysE
+MetA	OAHS	CysD	CysN
+CysH	CysN-CysC	CysU	CysA
+CysA	CysU	CysW	CysW
+CysA	CysA	OAHS	MetK
+MetH	CysC	CysD	CysN-CysC
+CysA	CysI	CysH	CysK
+MetH	CysK	MetB	CysK
+CysK	MetB	CysM	OAHS
+CysN	CysD	CysK	bCSE
+OAHS	CysD	CysH	CysK
+CysE	CysU	CysU	CysA
+MetC	CysK	CysD	CysN
+CysA	MetQ	CysA	CysW-CysU
+CysA	CysU	CysW	CysU-CysA
+MalY	MetC	CysE	CysA
+CysA	CysW	CysA	CysK
+CysA	MetC	MetC	bCBS
+CysA	CysU	CysA	OAHS
+CysK	OAHS	CysW	CysA
+CysA	MetQ	CysE	OAHS
+CysD	CysH	CysW	CysU
+CysA	CysK	OAHS	CysA
+MetK	CysK	OAHS	CysA
+OAHS	CysK	CysA	CysW
+CysA	MetE	MetA	bCSE
+CysU-CysW	CysA	CysN-CysC	CysD
+bCBS	MetC	CysA	CysA
+CysA	OAHS	CysK	MetE
+CysI	CysD	CysN	CysU
+CysU	CysA	MetC	bCBS
+CysI	CysJ	CysA	CysW
+bCSE	OAHS	CysH	MetH
+CysA	CysU	CysA	MetA
+OAHS	CysK	CysA	MetQ
+bCBS	OAHS	CysA	CysA
+MetQ	MalY	bCSE	CysK
+CysA	CysN	CysD	OAHS
+MetK	CysA	MetQ	OAHS
+MetB	MetA	OAHS	MetC
+CysU	CysA	CysK	bCSE
+CysK	CysC	CysD	CysN
+CysW	CysW	CysA	bCBS
+CysA	bCSE	bCSE	OAHS
+OAHS	CysA	CysA	MalY
+CysN	CysD	CysH	MetH
+MetE	bCSE	MalY	CysN
+CysA	CysA	CysM	MetQ
+MalY	MalY	CysA	MetQ
+CysN	CysD	CysW	CysU
+CysA	MetK	CysW	CysA
+CysI	CysH	CysK	CysM
+MetH	MetA	CysA	CysA
+assSat-CysC	CysN-CysC	CysD	CysE
+CysA	CysN-CysC	CysD	CysM
+CysH	CysN-CysC	CysD	CysC
+OAHS	MetA	MetH	CysK
+CysU	MalY	CysA	CysA
+CysC	CysN	CysD	OAHS
+CysU	CysA	MetE	CysU
+CysK	OAHS	CysU-CysW	CysA
+OAHS	bCSE	CysH	MetH
+CysC	CysA	CysC	assSat
+CysD	CysN	OAHS	CysK
+CysK	CysH	assSat	CysA
+CysJ	CysI	CysH	CysN
+MetC	bCSE	MetA	CysK
+CysW	CysA	CysE	CysK
+MetB	CysN-CysC	CysD	CysA
+MetA	bCSE	MetC	OAHS
+MalY	CysA	MetQ	CysU
+CysH	CysN	CysD	OAHS
+MetQ	CysA	CysK	CysU
+CysE	CysK	CysK	bCSE
+MetQ	CysA	MetC	MetH
+CysU	CysA	CysJ	CysA
+CysA	MetQ	MetC	OAHS
+CysA	MetC	CysM	MetC
+CysA	CysU	CysW	bCBS
+CysJ	CysI	bCSE	OAHS
+CysM	MetB	MetB	bCBS
+CysD	CysN	CysC	CysN
+MetH	OAHS	CysA	MetQ
+MetQ	CysA	CysK	MetB
+OAHS	MetA	bCSE	bCSE
+MetE	CysN	CysC	CysD
+CysU-CysW	CysA	CysW-CysU	CysA
+CysM	bCSE	CysA	MetQ
+CysU	CysW	CysA	CysH-CysD
+CysU	CysA	CysA	assSat
+CysU	MetQ	CysA	MetE
+CysK	MetC	CysA	CysA
+MetQ	MetQ	CysA	CysU
+CysH	CysI	CysJ	CysM
+CysA	MetQ	bCSE	MetC
+CysA	CysU	MetQ	MetQ
+MetH	CysW	CysU	CysA
+CysA	CysW	CysW	MetH
+CysH	assSat	CysC	CysA
+CysM	CysA	CysW	CysK
+CysA	CysJ	CysI	CysA
+MetQ	CysJ	CysI	CysH
+bCBS	bCSE	CysU	MetQ
+CysW	CysA	MetQ	CysA
+MetA	OAHS	bCSE	bCBS
+CysM	CysU	CysU	CysA
+bCSE	OAHS	MetQ	CysA
+CysN	CysC	CysU	CysW
+CysW	CysU	CysK	MetB
+CysA	CysW	CysA	bCSE
+CysC	CysH	CysJ	CysA
+CysW-CysU	CysA	CysA	CysW
+MetQ	MetQ	CysA	CysM
+CysI	CysH	CysC	CysN
+bCSE	MetC	MetH	MetE
+OAHS	MetK	MetQ	CysA
+CysA	bCSE	OAHS	CysA
+CysW	CysA	CysM	CysA
+OAHS	CysA	CysW	CysW
+CysH	CysH	assSat	CysC
+bCSE	MetC	CysA	CysU
+CysA	bCBS	CysA	CysW
+CysA	CysW	bCBS	MetB
+CysW	CysU	bCBS	MetB
+MetE	MetC	bCSE	MetA
+CysA	CysW	CysU	MetA
+CysU	CysU	CysA	MetC
+CysH	assSat	CysJ	CysI
+CysU	CysU	CysA	MetA
+MetQ	CysA	OAHS	MalY
+CysM	CysA	MetB	bCBS
+MetE	CysE	bCSE	bCBS
+MetQ	OAHS	MetA	MetE
+MetQ	bCSE	MetA	MetE
+MetE	CysA	CysW	CysU
+CysC	assSat	CysW	CysA
+CysA	CysA	MetQ	CysE
+assSat	CysW	CysA	CysU
+MetQ	MetQ	CysA	MalY
+bCSE	MetC	MetH	CysA
+CysA	MetC	CysK	CysA
+MetC	bCSE	bCBS	bCSE
+MetE	bCSE	CysA	MetQ
+CysU	MetE	CysA	CysA
+CysC	CysD	CysN-CysC	MalY
+MetH	CysU	CysU	CysA
+CysM	CysU	MetC	bCSE
+CysA	MalY	MetC	CysA
+CysK	OAHS	CysD	CysN
+CysJ	CysI	CysH	CysE
+MetK	bCBS	bCSE	OAHS
+CysA	CysA	bCSE	MetH
+MetK	OAHS	CysA	MetQ
+CysK	MetH	bCSE	MetK
+CysJ	MetE	MetC	MetC
+CysW	CysA	MetC	bCSE
+OAHS	OAHS	CysK	MetB
+CysK	CysN	CysD	CysC
+CysI	OAHS	CysC	assSat
+CysE	CysA	MetQ	MetQ
+CysA	CysA	bCSE	MetC
+CysA	CysA	CysW	OAHS
+MetK	OAHS	MetC	MetH
+CysM	CysA	CysW	CysE
+CysA	CysH	CysA	CysW
+CysK	CysM	CysE	CysI
+CysN	CysW	CysW	CysA
+CysH	CysD	CysN	MetB
+CysA	OAHS	CysA	MetQ
+OAHS	MetC	CysI	CysJ
+CysA	MetB	MetQ	CysA
+CysA	bCBS	MetA	OAHS
+CysA	OAHS	MetA	MalY
+CysH	CysD	CysN-CysC	CysW
+CysN-CysC	CysD	CysH	MetQ
+CysA	MetQ	bCBS	MetB
+CysA	bCSE	bCBS	bCSE
+CysH	CysA	CysW	CysW
+CysJ	CysU	CysA	MalY
+CysA	CysU	CysK	bCSE
+OAHS	MetC	bCSE	CysK
+CysW	CysU	CysA	MetQ
+CysW	CysW	CysA	MetQ
+MalY	OAHS	CysA	MetH
+MetE	CysI	CysH	CysC-assSat
+CysK	CysE	MetQ	CysA
+MetQ	CysE	OAHS	CysK
+CysA	MetQ	CysA	CysE
+CysA	MetQ	MetB	bCBS
+bCBS	bCSE	CysA	CysA
+CysK	bCSE	CysA	CysU
+CysD	CysN-CysC	MetA	OAHS
+CysK	CysE	CysI	CysH
+MetQ	MetC	bCSE	MetA
+CysW	CysA	MetQ	OAHS
+MetE	MetK	CysU	CysA
+OAHS	OAHS	bCBS	MetB
+CysA	CysK	CysA	CysW
+CysA	CysU	CysA	CysE
+CysA	OAHS	bCBS	MetB
+CysA	bCSE	CysK	MetC
+MetE	CysH	assSat	CysC
+CysA	CysA	OAHS	CysM
+MetE	MetK	CysN-CysC	CysD
+OAHS	CysK	bCSE	CysK
+bCSE	CysC	CysN	CysD
+CysA	MetQ	MetQ	OAHS
+MetH	bCBS	bCSE	MetK
+CysH	assSat	CysC	CysK
+MetH	MetC	bCSE	CysA
+assSat	CysA	CysU	MetC
+OAHS	bCSE	CysN	CysD
+CysA	MalY	CysK	CysM
+CysU	CysA	MetA	CysA
+CysA	CysA	CysU	bCBS
+CysM	CysA	CysA	MetC
+CysA	MetQ	MetQ	MetK
+MetE	MetQ	CysU	CysA
+MetB	bCBS	MetB	CysA
+CysA	CysA	MetK	CysM
+MalY	CysE	CysK	CysK
+CysA	bCSE	MetC	MetE
+CysA	CysA	CysK	CysN
+CysD	CysN-CysC	CysW	CysU
+CysH	assSat	CysA	CysA
+CysM	MalY	MetB	bCBS
+CysA	CysA	CysE	MetQ
+CysW	CysA	CysI	CysH
+CysJ	CysI	assSat	CysC
+CysK	CysD	CysN-CysC	CysJ
+CysM	MetB	CysW	CysA
+MetQ	MetQ	OAHS	CysA
+CysU	CysA	CysW	CysK
+CysM	MetB	CysA	bCBS
+CysE	CysA	CysU	CysK
+CysA	MetH	MetA	OAHS
+CysM	MetB	MalY	bCBS
+MetA	bCSE	MetC	CysA
+CysK	CysA	MetQ	CysC
+CysA	CysK	bCSE	OAHS
+CysA	MetQ	MetB	MalY
+CysA	bCSE	MalY	CysM
+bCBS	bCSE	OAHS	CysA
+OAHS	MetK	bCBS	bCSE
+MetQ	MetB	MetQ	MalY
+OAHS	OAHS	CysM	MetB
+CysU	CysU	bCSE	CysA
+MetB	bCBS	OAHS	CysU
+MetK	OAHS	bCSE	bCBS
+MalY	MetH	CysU	CysA
+CysA	MetC	CysA	CysW
+MetB	CysM	MetC	CysA
+MetE	MetA	bCSE	MetC
+MetK	MetQ	CysA	bCSE
+CysA	MetQ	MetA	OAHS
+CysA	CysE	CysN	CysD
+bCBS	CysD	CysN	MalY
+MetH	OAHS	OAHS	MalY
+MetE	MetC	OAHS	MetA
+CysC	assSat	OAHS	CysI
+CysA	CysK	CysH	CysC
+CysD	CysC	CysN	CysE
+MetA	CysK	CysA	MetQ
+CysJ	CysI	CysH	assSat-CysC
+CysA	MetB	CysM	MetB
+CysA	CysA	MalY	OAHS
+MetH	MetK	CysA	CysW
+CysA	CysK	bCSE	MetQ
+MetB	CysA	bCSE	CysA
+CysW-CysU	CysA	CysW	CysA
+CysA	CysW	CysW	CysU
+bCBS	MetK	CysA	CysA
+CysN	CysD	CysI	CysA
+OAHS	CysA	bCBS	MetB
+OAHS	bCBS	bCSE	CysA
+CysH	CysC	bCSE	MetC
+CysA	bCBS	MetB	bCBS
+CysI	CysJ	CysD	CysH
+MetK	bCSE	MetB	OAHS
+CysA	CysA	CysM	CysC
+CysD	CysU	CysW	CysA
+CysI	CysH	CysC	CysA
+CysA	MetE	OAHS	MetB
+MetA	CysW	CysU	CysA
+CysK	bCSE	MetC	MetH
+CysA	CysA	MetQ	MetC
+OAHS	bCBS	MetQ	CysA
+OAHS	MetH	bCSE	MetK
+CysE	bCSE	CysK	CysA
+OAHS	CysE	CysM	MetB
+CysA	MetH	CysA	CysM
+CysA	CysA	CysM	CysU
+MalY	CysK	CysE	MalY
+CysJ	CysI	CysA	CysW
+CysJ	CysU	CysW	CysA
+CysU	CysA	MetC	CysA
+CysA	CysA	MalY	CysW
+CysU	CysA	CysM	CysI
+MetK	OAHS	CysH	MetH
+MalY	bCSE	bCSE	CysA
+CysA	CysI	CysH	CysN
+CysW	CysU	CysA	OAHS
+OAHS	OAHS	MetB	CysA
+CysA	CysA	assSat	OAHS
+CysU	MetQ	CysA	MetQ
+CysA	CysU	bCSE	MalY
+MetB	bCBS	CysA	CysC
+CysA	MalY	MalY	CysK
+MalY	CysA	CysA	MetE
+CysK	MetH	bCSE	OAHS
+CysA	MetQ	CysM	CysE
+MetC	bCSE	OAHS	MetQ
+CysA	CysK	bCBS	CysA
+CysA	CysA	assSat	CysC
+CysA	MalY	CysU	CysA
+CysM	CysJ	CysA	CysW
+CysA	MetK	MetQ	CysA
+CysC	CysA	CysD	CysN-CysC
+CysH	CysU	CysU	CysA
+bCBS	MetA	MalY	bCSE
+CysN	CysD	CysN-CysC	CysN
+CysA	CysM	MetE	MalY
+MetK	CysK	MetQ	CysA
+MetH	CysC	assSat	CysH
+CysU	CysU	bCBS	MetB
+CysN	CysC	CysD	CysH
+CysN-CysC	CysD	CysH	CysE
+bCSE	MetC	CysA	CysN
+CysM	MetB	bCBS	CysA
+CysA	CysU	CysK	CysA
+CysK	CysE	MalY	CysA
+MetA	OAHS	MetC	bCSE
+CysK	OAHS	CysM	CysA
+MetQ	CysA	MetQ	MetB
+CysA	CysU	MalY	MalY
+CysW	CysW	CysK	OAHS
+MetQ	CysA	bCBS	MetB
+CysK	MetQ	OAHS	CysA
+MetH	bCSE	CysK	MetK
+CysI	CysH	CysA	CysU
+OAHS	bCSE	bCSE	MetK
+assSat	CysJ	CysI	CysH
+MetE	CysU	CysA	CysU
+CysA	CysA	CysU	CysJ
+CysK	OAHS	CysI	CysH
+OAHS	CysK	CysE	bCSE
+CysU	CysM	CysM	CysA
+bCSE	bCBS	CysH	CysK
+CysH	CysD	CysN	MetC
+bCSE	CysE	bCBS	CysH
+CysN-CysC	CysD	CysH	MetC
+CysK	CysD	CysN-CysC	CysK
+OAHS	CysA	MetQ	CysE
+MalY	CysH	assSat-CysC	CysI
+CysC	CysD	CysN	CysU
+bCBS	MetH	bCSE	MetK
+CysA	CysW	CysW	MalY
+bCSE	CysM	MetQ	MalY
+OAHS	OAHS	CysK	CysA
+CysI	CysJ	CysK	CysD
+MalY	MetH	CysK	CysK
+OAHS	MetH	CysA	CysA
+CysU	CysA	CysM	MetB
+MetH	CysM	CysH	bCSE
+OAHS	MetA	MetQ	MetQ
+MetA	MalY	bCSE	MetQ
+CysA	CysU	CysA	MetC
+CysW	MalY	OAHS	CysA
+OAHS	MetQ	MetB	CysK
+CysE	CysN	CysU	CysA
+MetH	MalY	bCSE	CysA
+OAHS	MetC	bCSE	CysA
+CysI	CysH	CysN	CysC
+MetH	OAHS	CysH	MetK
+CysC	CysD	CysC	CysN-CysC
+MetB	CysK	CysW	CysA
+CysK	CysM	CysU	CysA
+CysM	CysN	CysD	CysI
+MalY	CysK	CysH	CysJ
+CysW	CysU	assSat	CysH
+bCSE	CysD	CysN	CysC
+MetK	bCSE	bCBS	MetQ
+OAHS	CysA	bCBS	bCSE
+OAHS	CysA	MetQ	CysK
+CysA	CysK	CysK	MalY
+CysA	bCSE	OAHS	CysK
+MetB	CysM	OAHS	CysA
+MetC	bCBS	CysA	CysU
+MetQ	CysK	MetQ	OAHS
+CysA	bCSE	MalY	MetQ
+MalY	CysD	CysN-CysC	CysA
+CysK	MalY	bCBS	CysK
+CysU	CysU	CysE	bCBS
+bCSE	MalY	CysK	bCSE
+CysE	CysK	OAHS	MetH
+MalY	bCSE	OAHS	MetA
+CysE	CysK	MetE	bCBS
+CysJ	CysH	CysK	MetB
+CysD	CysN	CysW	CysU
+OAHS	bCBS	bCSE	CysE
+MetC	MalY	MetA	OAHS
+CysW	CysU	CysA	assSat
+MetQ	CysA	OAHS	bCBS
+CysK	assSat	CysH	CysM
+CysM	bCBS	CysK	CysH
+OAHS	CysK	OAHS	MetA
+CysH	CysM	CysM	CysI
+OAHS	CysK	CysH	CysI
+CysK	bCBS	CysE	bCSE
+CysI	CysH	assSat	MetC
+bCSE	MetH	CysH	CysA
+MetH	MetB	OAHS	MetK
+CysK	CysN	CysD	CysI
+bCSE	CysK	CysK	OAHS
+CysA	CysI	CysH	CysD
+MetC	MetC	CysA	CysK
+CysH	CysD	CysU	CysW
+MetB	CysN-CysC	CysD	CysH
+OAHS	MetA	CysD	CysN-CysC
+bCSE	CysN-CysC	CysD	CysH
+bCBS	bCSE	CysW	CysA
+MetB	CysM	CysW	CysA
+CysA	MetH	CysK	bCSE
+CysM	MetC	CysW	CysA
+bCSE	CysK	bCSE	MalY
+MalY	MetB	OAHS	MetE
+CysD	CysH	OAHS	MetK
+CysA	CysA	MetE	MetQ
+MetH	CysD	CysH	bCSE
+bCSE	CysA	MalY	CysK
+MetE	CysA	CysU	CysA
+CysJ	CysJ	CysI	CysH
+CysD	CysH	CysI	CysC
+CysU	CysK	CysE	bCSE
+CysI	CysH	CysD	CysC
+CysU	CysA	CysK	MetC
+MetA	MalY	bCSE	CysK
+MetQ	CysA	CysU	MetK
+OAHS	bCBS	bCSE	OAHS
+MetQ	CysU	CysA	bCBS
+MetQ	CysA	bCSE	MetA
+CysA	bCSE	MalY	MetE
+OAHS	MetK	CysA	MetQ
+CysN	CysD	bCSE	OAHS
+MetK	CysH	MetH	CysA
+MetQ	CysM	CysA	MetB
+MetH	CysK	MalY	OAHS
+CysA	MetQ	MetB	CysM
+MalY	CysN	CysD	CysH
+CysA	CysW	CysW-CysU	CysA
+CysM	MalY	CysA	CysA
+CysA	CysK	CysA	bCBS
+MetQ	bCSE	OAHS	MalY
+CysA	MetB	bCBS	bCBS
+CysM	bCSE	MetB	MetA
+CysA	OAHS	CysK	MalY
+CysA	CysW	CysK	CysA
+CysA	bCSE	OAHS	MetK
+OAHS	MetA	MetB	CysM
+CysA	CysU	CysA	CysK
+MetH	CysK	CysA	MetQ
+CysU	CysA	CysC	assSat
+CysC	CysH	CysI	CysK
+CysK	bCSE	CysK	CysA
+CysU	CysW	CysA	CysU-CysA
+assSat-CysC	CysC	CysD	CysN
+CysE	OAHS	MetE	bCSE
+MetK	bCSE	bCBS	OAHS
+CysU	CysA	MalY	CysA
+CysM	CysD	CysN	CysA
+MetA	OAHS	OAHS	CysA
+OAHS	CysU	CysA	CysA
+OAHS	bCSE	CysM	MetH
+CysK	MalY	OAHS	OAHS
+CysA	CysA	CysU	MetK
+CysA	CysK	MetH	CysA
+CysA	CysU	CysK	CysM
+OAHS	CysH	CysE	CysK
+bCBS	MetC	MetC	CysW
+MetB	CysK	CysK	CysA
+CysK	bCSE	CysM	CysK
+MalY	CysA	MetQ	CysK
+CysI	CysM	bCSE	bCSE
+CysK	CysH	CysJ	CysI
+CysI	CysC	CysH	CysK
+CysA	CysU	MetQ	OAHS
+CysW	CysA	OAHS	MetA
+CysA	MetH	OAHS	CysK
+CysA	CysU-CysW	CysN	CysD
+CysW	CysA	CysK	CysM
+MetQ	CysA	MetB	bCBS
+CysA	MetB	CysA	CysW
+CysK	CysE	CysM	CysI
+MetA	bCSE	CysK	OAHS
+CysE	OAHS	MetB	CysK
+MetB	bCBS	OAHS	CysK
+OAHS	CysE	CysK	OAHS
+CysA	MalY	MetC	OAHS
+CysK	CysE	bCSE	MalY
+OAHS	CysA	CysK	MalY
+CysA	bCBS	bCSE	MetE
+CysN-CysC	CysD	MalY	bCSE
+CysA	MetQ	bCSE	CysK
+CysI	CysJ	CysH	MetE
+CysW	CysA	CysU	MetB
+CysI	CysA	CysU	CysW
+OAHS	MetB	CysM	CysA
+CysK	CysM	MetB	CysA
+CysA	MetB	MetB	CysM
+CysA	CysW	CysU	assSat-CysC
+CysA	CysA	bCSE	CysI
+MetQ	bCSE	bCBS	OAHS
+CysK	CysH	CysI	CysC-assSat
+CysH	CysN	CysD	bCBS
+CysC-assSat	CysH	CysI	CysM
+CysU	CysA	CysM	CysK
+CysW	CysU	CysA	CysE
+CysJ	CysI	bCSE	bCBS
+OAHS	CysK	CysE	CysU
+MalY	CysA	CysW-CysU	CysA
+CysI	CysJ	CysK	CysE
+CysN	CysD	CysW	CysA
+CysM	CysH	CysC	CysI
+CysK	CysA	CysK	MetB
+CysE	CysK	CysA	OAHS
+CysA	CysW	bCBS	CysH
+MetQ	CysA	MetQ	CysE
+CysK	MetB	CysA	MetQ
+OAHS	bCSE	bCBS	CysK
+CysC	assSat	CysU	CysA
+CysW	CysA	CysA	MetE
+CysE	CysK	CysA	CysW
+MetC	bCBS	CysN-CysC	CysD
+CysC	CysA	CysU	CysU
+CysD	CysH	CysK	CysE
+CysA	bCSE	bCBS	CysA
+CysE	CysJ	CysI	CysK
+CysH	CysJ	CysI	CysK
+MetB	CysA	CysU	MalY
+CysK	MetB	CysU	CysW
+CysE	CysK	MetB	CysK
+CysE	CysK	CysW-CysA	CysU
+CysH	CysK	CysA	CysW
+CysK	MalY	OAHS	MetE
+MetK	CysK	CysA	CysA
+OAHS	bCSE	MalY	CysE
+MalY	MetA	bCSE	MetH
+CysA	MalY	CysA	OAHS
+OAHS	CysK	OAHS	MetH
+CysA	MetQ	MetQ	CysK
+CysH	CysI	CysC	CysN
+CysW	CysU	CysH	assSat-CysC
+CysA	CysU	OAHS	CysA
+MetK	bCSE	bCSE	CysH
+CysU	CysA	CysK	CysH
+MetB	CysM	CysA	MetQ
+MetA	OAHS	CysU-CysW	CysA
+CysC	CysD	CysN	assSat-CysC
+CysE	CysK	OAHS	MetB
+CysK	CysK	CysU	CysW
+OAHS	CysK	CysH	CysA
+bCSE	CysM	CysA	CysW
+bCBS	CysH	CysI	assSat
+CysA	CysU	CysI	CysJ
+CysM	CysI	CysJ	CysK
+MetH	CysA	MetQ	CysK
+CysK	MalY	CysA	OAHS
+CysH	CysI	assSat-CysC	CysC
+CysI	CysH	assSat	CysM
+CysA	CysA	CysU-CysW	CysM
+CysU	MetH	CysA	CysU
+CysK	OAHS	bCSE	bCBS
+CysN-CysC	CysD	CysH	OAHS
+CysC	CysA	CysU	CysW
+CysK	OAHS	CysE	bCSE
+OAHS	CysK	CysH	OAHS
+bCSE	CysW	CysW	CysA
+CysC	CysD	CysC	CysH
+CysW	CysA	CysU	bCSE
+CysA	CysU	bCSE	CysW
+CysC	CysA	CysN	CysD
+MalY	CysN	CysD	CysC
+CysA	CysD	CysN-CysC	CysH
+CysK	MalY	CysM	CysA
+CysA	CysU	CysW	CysE
+CysU	CysW	CysK	CysW
+CysM	CysI	CysH	assSat
+CysA	bCBS	CysH	CysA
+MetB	OAHS	MalY	CysA
+CysK	CysM	CysH	assSat
+bCSE	bCBS	CysN-CysC	CysD
+CysU	CysA	CysA	CysI
+MetH	CysH	CysD	CysN-CysC
+CysE	CysW	CysA	CysA
+CysC-assSat	CysI	CysH	MetB
+MetB	CysK	CysA	bCBS
+CysM	CysA	bCBS	bCSE
+CysW	CysA	CysH	assSat-CysC
+MetC	CysA	MetQ	MetQ
+MetB	CysH	CysI	CysE
+MetH	MalY	bCSE	CysK
+bCSE	bCBS	CysK	CysK
+CysK	bCSE	OAHS	MetQ
+MetC	CysE	CysK	OAHS
+MalY	MetB	OAHS	CysA
+OAHS	MetC	CysK	bCSE
+CysD	CysN	CysC	CysW
+CysU	CysA	CysK	CysU
+OAHS	CysE	CysK	bCSE
+CysA	CysU	CysH	assSat
+CysI	CysJ	CysC	assSat
+MetC	bCSE	CysH	CysD
+CysA	CysE	MetQ	CysA
+MalY	OAHS	MetQ	CysA
+CysK	CysE	OAHS	MetA
+CysM	bCSE	MetB	bCBS
+CysM	OAHS	MetQ	CysA
+bCSE	OAHS	bCBS	CysK
+OAHS	CysK	CysK	CysA
+bCSE	CysE	CysA	CysW
+CysC	assSat	CysA	CysN
+CysM	MetB	CysA	MetQ
+OAHS	MetB	CysM	OAHS
+CysJ	CysI	CysK	CysE
+MetA	MalY	bCSE	CysA
+CysE	CysK	CysA	CysU
+OAHS	CysK	CysM	bCSE
+CysI	CysJ	CysK	MetK
+CysN-CysC	CysD	CysC	CysN
+CysK	CysE	CysN	CysD
+MetA	MetH	OAHS	CysA
+CysK	MalY	bCSE	MetQ
+assSat	CysC	CysH	CysJ
+MalY	OAHS	bCSE	CysA
+MetQ	CysA	CysE	bCBS
+CysD	CysN-CysH	CysU	CysW
+bCSE	MalY	MetH	CysK
+OAHS	MetH	bCBS	OAHS
+MalY	bCSE	MetA	MalY
+OAHS	MetH	CysA	CysW
+MetA	OAHS	bCBS	CysA
+CysW	CysN	CysD	CysH
+CysM	MalY	CysU	CysA
+MetA	CysK	OAHS	CysE
+bCSE	bCSE	CysA	OAHS
+CysA	MetK	CysJ	CysI
+CysK	CysD	CysN	CysC
+CysD	CysN	CysH	CysJ
+MetH	CysD	CysN-CysC	CysA
+CysA	CysA	MetQ	MetB
+CysW	CysU	OAHS	bCSE
+OAHS	CysK	CysD	CysN
+CysK	CysK	CysM	MetQ
+bCSE	MetQ	CysA	CysK
+MetQ	MetA	bCSE	MalY
+CysE	CysK	CysM	CysI
+MetQ	bCSE	CysK	OAHS
+CysW	CysA	CysK	CysK
+CysC	CysN-CysC	CysD	CysD
+MetK	MetC	MetB	OAHS
+MetB	CysK	CysH	CysI
+CysJ	CysH	CysI	CysD
+CysD	CysH	CysK	CysA
+CysI	CysH	CysD	CysN	CysK
+MetQ	CysA	CysA	CysW	CysU
+CysN-CysC	CysD	CysJ	CysI	CysH
+CysD	CysN-CysC	CysJ	CysI	CysH
+CysN	CysD	CysH	CysI	CysA
+CysD	CysN-CysC	CysA	CysW	CysU
+CysN-CysC	CysA	CysW	CysU
+CysH	assSat	CysC	CysJ
+CysH	assSat	CysC	CysJ	CysI
+CysA	MetQ	CysU	CysA	OAHS
+CysH	CysD	CysN	CysI	CysJ
+CysH	CysD	CysN	CysJ	CysI
+OAHS	CysI	CysH	CysD
+OAHS	CysI	CysH	CysD	CysN
+CysW	bCSE	CysA	CysU	CysU
+CysU	CysW	CysA	CysC	CysH
+CysW	CysA	CysC	CysH
+assSat	CysI	CysC	CysH	CysM
+CysU	CysA	CysW	CysA	CysW
+CysA	CysW	CysA	CysW
+CysN	CysD	CysK	CysC	OAHS
+CysM	CysH	CysD	CysN	CysC
+CysA	CysU	CysU	bCSE	bCSE
+CysU	CysU	bCSE	bCSE
+CysM	CysI	CysN-CysC	CysD	CysH
+CysU	CysW	CysA	CysD	CysN
+CysW	CysH	CysU	CysW
+CysW	CysH	CysU	CysW	CysA
+CysH	CysI	CysC	CysD	CysN
+CysU	CysW	CysA	CysH	CysI
+CysU	CysW	CysA	CysA	CysU
+CysH	CysD	CysN	CysA	CysA
+CysU	CysA	CysH	CysD	CysN-CysC
+CysN-CysC	CysD	CysN	CysD	CysH
+CysD	CysN	CysD	CysH
+CysK	CysA	CysW	CysU	OAHS
+CysK	MetB	OAHS	CysN	CysD
+OAHS	CysK	CysH	CysD	CysI
+CysK	CysH	CysD	CysI
+OAHS	CysH	CysD	CysN	bCSE
+CysN-CysC	CysD	CysH	CysI	CysJ
+CysK	CysM	CysA	CysW
+CysK	CysM	CysA	CysW	CysU
+CysA	CysU	CysH	CysC	assSat
+CysU	CysH	CysC	assSat
+CysW	CysA	CysH	CysD	CysN
+CysA	CysU	CysW	CysA	CysU-CysW
+bCSE	CysH	CysD	CysN	CysM
+CysC	CysH	CysI	assSat	CysI
+CysH	CysI	assSat	CysI
+CysK	assSat	CysM	CysM	bCBS
+CysA	CysW	CysA	CysW	CysU
+CysH	CysI	CysD	CysN-CysC	CysJ
+OAHS	CysK	MetB	MetC	MetC
+CysA	CysW	CysU	CysK	CysE
+CysW	CysU	CysK	CysE
+CysU	CysW	CysA	CysK	MetB
+MetK	CysA	MetH	MetA	OAHS
+MetC	CysU	CysU	CysA	CysN
+CysK	OAHS	CysN-CysC	CysD	CysH
+CysN-CysC	CysD	CysA	CysW	CysU
+CysK	CysI	CysH	CysD	CysN
+CysN	CysD	CysH	CysA	CysU
+bCSE	CysE	CysM	CysH	CysK
+CysH	CysD	CysN	CysA	CysW
+CysD	CysN	CysA	CysW
+CysI	CysH	CysC	CysD	CysN
+CysM	bCSE	CysN-CysC	CysD	CysH
+MetQ	CysA	CysK	MetB	MetQ
+CysA	CysK	MetB	MetQ
+CysU	CysW	CysA	CysH	OAHS
+CysW	CysA	CysH	OAHS
+CysN	CysD	CysH	bCSE	OAHS
+CysN	CysD	CysH	OAHS	CysK
+CysI	CysH	assSat	CysK	CysM
+CysW	CysA	CysU	CysW	CysA
+bCSE	CysH	CysD	CysN	MetH
+MalY	MetQ	CysA	bCBS	bCSE
+CysC	assSat	CysU	CysA	CysA
+assSat	CysU	CysA	CysA
+OAHS	CysI	CysH	CysD	CysN-CysC
+OAHS	CysA	MetQ	MetB
+OAHS	CysA	MetQ	MetB	CysM
+CysD	CysH	CysA	CysW	CysU
+CysN-CysC	CysD	CysC	CysA	CysW
+CysD	CysC	CysA	CysW
+CysK	bCSE	bCBS	MetQ	CysA
+CysU	CysA	CysW	CysW	CysA
+CysK	CysU	CysW	CysA	CysI
+CysU	CysU	CysA	bCSE	CysH
+CysU	CysW	CysA	CysU	CysW
+CysW	CysU	CysA	CysU	CysA
+CysU	CysA	CysU	CysA
+CysI	CysN	CysD	CysH	CysK
+CysU	CysW	CysA	CysK	OAHS
+CysK	CysA	CysW	CysU	CysK
+CysK	bCSE	bCBS	CysA	OAHS
+MalY	bCSE	CysA	CysA	MetQ
+bCSE	MalY	CysK	CysA	CysA
+MetK	CysA	CysW	CysU	CysK
+CysD	CysN	OAHS	bCSE
+CysD	CysN	OAHS	bCSE	CysK
+CysD	CysN	CysJ	CysI	CysH
+CysN	CysJ	CysI	CysH
+CysA	CysW	CysU	assSat	CysC
+CysW	CysU	assSat	CysC
+MetB	CysI	CysJ	CysK
+MetB	CysI	CysJ	CysK	MetC
+CysI	OAHS	CysN	CysD	CysH
+CysH	MetB	bCSE	CysK	CysM
+CysW	CysU	CysH	CysD	CysN
+CysA	OAHS	MetA	CysA	CysW
+OAHS	MetA	CysA	CysW	CysU
+CysK	CysH	CysD	CysN	OAHS
+MetB	CysI	CysH	CysD	CysN-CysC
+MetK	CysN	CysD	CysH	CysI
+CysK	CysE	CysU	CysW
+CysK	CysE	CysU	CysW	CysA
+CysH	CysD	CysN	MetB	CysK
+CysD	CysN	MetB	CysK
+CysU	CysW	CysA	CysJ	CysI
+CysA	CysW	CysU	CysK	bCSE
+CysW	CysU	CysN	CysD	CysH
+CysC	CysN	CysD	CysH	CysI
+CysD	CysN-CysC	CysU	CysW	CysA
+CysH-CysD	CysN-CysC	CysU	CysW	CysA
+CysI	CysN	CysD	CysH	CysA
+CysC	CysH	assSat	CysJ	CysI
+CysM	CysN	CysD	CysH	CysI
+CysN	CysD	CysH	CysI	CysJ
+MetA	CysK	OAHS	bCSE
+MetA	CysK	OAHS	bCSE	MetC
+CysE	CysK	CysA	CysW	CysU
+CysH	CysD	CysN	bCSE	CysK
+CysA	bCSE	MetB	OAHS	CysK
+bCSE	MetB	OAHS	CysK
+CysK	bCSE	bCBS	CysA	MetQ
+CysA	CysU	CysU	CysW	CysA
+CysA	CysA	OAHS	bCBS	MetB
+MalY	CysN	CysD	CysH	CysI
+CysA	CysU	CysA	CysW	CysU
+CysA	MetQ	CysA	CysN-CysC	CysD
+CysA	CysU	CysW	CysA	OAHS
+CysH	bCSE	OAHS	MetK	CysK
+CysC	assSat	CysI	CysJ	CysH
+bCBS	bCSE	MetQ	CysA	OAHS
+bCSE	MetQ	CysA	OAHS
+CysK	CysM	CysI	CysH
+CysK	CysM	CysI	CysH	assSat
+CysA	CysU	CysM	CysM	CysA
+bCSE	bCBS	MetQ	CysA	OAHS
+bCBS	MetQ	CysA	OAHS
+CysA	CysA	CysU	CysD
+CysA	CysA	CysU	CysD	CysN-CysC
+CysK	CysW	CysD	CysN
+CysK	CysW	CysD	CysN	OAHS
+CysW	CysD	CysN	OAHS
+CysH	CysN	CysD	CysA	CysW
+CysN-CysC	CysD	CysI	CysJ
+CysN-CysC	CysD	CysI	CysJ	CysH
+CysA	CysW	CysU	OAHS	CysA
+MalY	CysA	CysW	CysU	CysA
+CysH	CysK	bCSE	bCBS	OAHS
+CysA	MetH	CysH	bCSE	OAHS
+CysA	CysW	CysU	CysD	CysN-CysH
+CysA	CysW	CysU	CysA	MetQ
+bCBS	OAHS	bCSE	MetH
+bCBS	OAHS	bCSE	MetH	CysA
+OAHS	CysK	CysH	CysD	CysN
+CysA	CysU	MetC	MetC
+CysA	CysU	MetC	MetC	bCBS
+CysK	MetB	CysA	CysU
+CysK	MetB	CysA	CysU	CysU
+CysE	CysK	CysH	CysI	CysJ
+CysJ	CysH	CysD	CysN	CysC
+CysA	CysH	assSat	CysC	CysI
+bCSE	bCBS	CysA	MetQ	CysA
+bCBS	CysA	MetQ	CysA
+CysU	CysA	CysU	CysW	CysA
+CysW	CysU	CysA	CysD	CysC
+CysU	CysA	CysD	CysC
+CysA	MetQ	bCSE	bCBS	CysK
+CysU	CysA	CysD	CysN	CysH
+CysN	CysD	CysA	CysU	CysW
+bCSE	CysA	CysK	MalY
+bCSE	CysA	CysK	MalY	bCSE
+OAHS	CysK	CysD	CysN	CysH
+CysA	CysU	CysH	CysN	CysD
+CysA	CysU	CysM	CysK	MetH
+CysN-CysC	CysD	CysA	CysU	CysW
+CysH	CysD	CysN	CysJ	bCSE
+CysD	CysN	CysJ	bCSE
+CysH	CysD	CysN	MetC	MetH
+OAHS	bCSE	bCBS	CysA	MetQ
+CysE	CysK	CysA	CysU	CysA
+CysN	CysD	CysH	bCSE	MetK
+CysD	CysH	bCSE	MetK
+bCSE	bCBS	bCSE	CysK
+bCSE	bCBS	bCSE	CysK	OAHS
+CysH	CysN	CysD	CysA	OAHS
+CysN	CysD	CysA	OAHS
+CysA	bCSE	bCBS	CysA	MetQ
+bCBS	bCSE	MetK	CysK	MalY
+CysA	CysN	CysD	CysW
+CysA	CysN	CysD	CysW	CysU
+bCSE	bCBS	CysK	OAHS	CysK
+bCBS	CysK	OAHS	CysK
+CysU	CysW	CysA	CysH	CysN
+CysW	CysA	CysH	CysN
+CysE	CysN	CysD	CysH	CysI
+CysA	CysA	CysD	CysN-CysC	assSat-CysC
+MetQ	CysA	MalY	bCSE	CysC
+CysW	CysU	CysA	CysA	CysU
+MetK	OAHS	bCSE	MetH	CysH
+OAHS	bCSE	MetH	CysH
+CysU	MetC	bCBS	CysA
+CysU	MetC	bCBS	CysA	CysA
+CysA	CysU	assSat	CysC	CysA
+CysU	assSat	CysC	CysA
+CysK	CysI	CysN	CysD	CysH
+MetK	MetH	CysH	CysD
+MetK	MetH	CysH	CysD	CysN-CysC
+CysJ	CysH	CysI	CysD	CysN
+MetH	CysN	CysD	CysH	MetK
+CysA	MetQ	CysK	OAHS	MetA
+CysI	CysH	CysK	CysD
+CysI	CysH	CysK	CysD	CysN-CysC
+assSat	CysC	CysA	CysW
+assSat	CysC	CysA	CysW	CysU
+OAHS	CysI	CysJ	CysK
+OAHS	CysI	CysJ	CysK	MetK
+bCSE	bCBS	MetQ	CysK
+bCSE	bCBS	MetQ	CysK	OAHS
+CysI	assSat	CysH	CysW
+CysI	assSat	CysH	CysW	CysA
+CysA	CysW	CysU	bCSE	CysK
+CysK	MetB	OAHS	CysK
+CysK	MetB	OAHS	CysK	CysE
+CysA	CysW	CysU	CysH	bCBS
+CysH-CysD	CysN	CysU	CysW	CysA
+CysK	bCSE	CysK	OAHS	MetA
+bCSE	CysK	OAHS	MetA
+CysK	OAHS	CysK	CysE
+CysK	OAHS	CysK	CysE	OAHS
+CysW	CysA	CysU	CysA	CysU
+CysW	CysU	CysH	CysD	CysN-CysC
+CysU	CysH	CysD	CysN-CysC
+CysU	CysA	CysA	CysW	CysW
+CysA	CysA	CysW	CysW
+MetA	CysH	assSat	CysC	CysI
+CysJ	CysI	CysH	CysK	MetB
+CysN	CysD	CysI	CysJ	CysH
+CysJ	CysI	CysH	assSat	CysK
+CysK	CysA	CysA	MetC	MalY
+CysU	CysW	CysA	CysC	CysU
+CysA	OAHS	MetA	CysA	CysU
+CysA	CysU	CysN	CysD	CysH
+CysA	CysA	CysW	CysU	CysU
+CysH	CysC	assSat	CysA
+CysH	CysC	assSat	CysA	CysU
+CysC	assSat	CysA	CysU
+CysI	CysD	CysN	CysC
+CysI	CysD	CysN	CysC	CysA
+CysI	CysJ	CysH	CysD	CysN
+CysA	CysA	CysU	CysU
+CysA	CysA	CysU	CysU	CysI
+CysI	CysM	CysH	CysA	CysW
+CysM	CysH	CysA	CysW
+CysI	CysJ	CysH	CysC
+CysI	CysJ	CysH	CysC	assSat
+bCSE	MetC	CysI	CysH	assSat
+CysJ	CysI	CysH	assSat	CysC
+CysA	CysN	CysD	CysH	CysI
+CysN	CysD	CysH	CysC	CysI
+CysH	CysC	assSat	CysK	CysK
+CysC	assSat	CysK	CysK
+bCSE	CysK	CysA	MetQ	CysA
+CysA	CysK	MalY	bCSE	OAHS
+MetQ	CysA	MetQ	CysK	MetB
+CysA	CysW	CysN-CysC	CysD	CysU
+CysW	CysN-CysC	CysD	CysU
+MalY	bCSE	CysA	CysK	CysK
+bCSE	CysA	CysK	CysK
+bCSE	MalY	CysK	MetQ
+bCSE	MalY	CysK	MetQ	CysA
+bCSE	MalY	CysA	MetQ	CysM
+MetH	CysK	CysK	CysU	CysA
+CysU	CysU	CysA	CysD
+CysU	CysU	CysA	CysD	CysN-CysC
+OAHS	MetA	CysA	CysU	MetH
+CysU	CysA	CysC	CysD	CysN-CysC
+bCSE	CysI	CysH	CysD	CysN
+CysK	CysE	CysH	CysD
+CysK	CysE	CysH	CysD	CysN-CysC
+CysK	OAHS	bCSE	MetC	CysK
+CysH	CysD	CysN	CysK	bCSE
+CysK	CysE	CysA	CysW	CysU
+CysJ	CysN	CysD	CysH	CysA
+CysU	CysA	CysN	CysD	CysH
+CysH	assSat	CysC	bCSE
+CysH	assSat	CysC	bCSE	bCSE
+CysW	CysW	CysU	CysA	CysA
+CysN-CysC	CysD	CysU	CysW	CysA
+CysH	CysI	CysJ	CysD	CysN
+CysU	CysW	CysA	assSat	CysH
+CysW	CysA	assSat	CysH
+CysK	MalY	bCSE	CysK	bCBS
+CysA	CysW	CysU	CysC-assSat	CysH
+bCSE	CysA	MetQ	OAHS
+bCSE	CysA	MetQ	OAHS	MetB
+CysA	MetQ	OAHS	MetB
+CysK	OAHS	CysA	CysW
+CysK	OAHS	CysA	CysW	CysU
+CysD	CysN	CysJ	CysI	bCSE
+CysI	CysJ	CysK	CysN	CysD
+assSat	CysH	CysI	CysU	CysA
+CysH	CysI	CysU	CysA
+CysM	assSat	CysI	CysH	assSat
+CysK	CysM	assSat	CysH	CysC
+CysA	CysW	CysU	OAHS	CysK
+CysW	CysU	OAHS	CysK
+CysW	CysA	CysA	CysU	CysU
+CysW	CysA	MetB	CysK	CysM
+CysU	CysW	CysA	CysK	CysM
+CysK	MetB	MetQ	CysA
+CysK	MetB	MetQ	CysA	OAHS
+CysA	CysW	CysU	CysN	CysD
+MalY	CysH	CysD	CysN
+MalY	CysH	CysD	CysN	CysK
+CysA	bCBS	bCSE	MetQ	OAHS
+bCBS	bCSE	MetQ	OAHS
+CysA	MetQ	bCSE	bCBS	MetQ
+MetQ	bCSE	bCBS	MetQ
+OAHS	CysK	MetQ	CysA	CysA
+CysK	OAHS	MalY	bCSE	CysA
+OAHS	MalY	bCSE	CysA
+CysA	MetQ	bCSE	MalY	CysA
+MetQ	bCSE	MalY	CysA
+CysI	CysH	CysD	CysN-CysC	CysK
+bCSE	CysK	CysH	CysI
+bCSE	CysK	CysH	CysI	CysJ
+CysC	CysH	CysI	CysD
+CysC	CysH	CysI	CysD	CysN
+CysA	CysW	CysU	CysK	OAHS
+CysM	assSat	CysH	CysI	CysJ
+MetQ	CysA	bCBS	MetB	CysA
+CysA	bCBS	MetB	CysA
+MetK	OAHS	bCSE	MetH	CysA
+CysN-CysC	CysD	CysH	CysA	CysW
+CysC	CysN-CysC	CysD	CysH
+CysC	CysN-CysC	CysD	CysH	CysI
+CysW	CysA	CysA	CysU	CysW
+CysH	CysC	CysD	CysN	CysA
+CysU	CysU	CysA	CysD	CysN
+CysA	CysK	MetC	bCSE	CysK
+OAHS	MetA	CysK	MalY	MetB
+CysC	assSat	CysA	CysW
+CysC	assSat	CysA	CysW	CysU
+CysA	CysN-CysC	CysD	CysH	CysI
+CysK	bCSE	MetQ	CysA	CysK
+CysK	bCSE	MalY	OAHS	CysK
+MetQ	CysA	CysA	OAHS	CysK
+CysM	CysK	bCSE	OAHS	MalY
+MalY	CysA	MetQ	CysK	CysK
+MalY	bCSE	CysK	CysA	CysK
+CysK	CysA	CysD	CysN
+CysK	CysA	CysD	CysN	CysH
+CysA	MalY	MetQ	CysA	CysK
+CysK	OAHS	CysH	CysN
+CysK	OAHS	CysH	CysN	CysD
+CysA	CysD	CysH	bCSE	CysK
+bCSE	CysH	CysN	CysD
+bCSE	CysH	CysN	CysD	CysA
+CysW	CysA	CysA	CysW	CysU
+CysH	bCSE	OAHS	MetK	bCSE
+CysA	CysN	CysD	CysH	CysC
+CysA	MetQ	CysA	bCSE	MalY
+OAHS	CysA	bCSE	bCBS
+OAHS	CysA	bCSE	bCBS	OAHS
+CysW	CysD	CysN	CysH	OAHS
+CysK	OAHS	bCSE	MalY	CysK
+CysH	CysN	CysD	OAHS	CysA
+CysN	CysD	OAHS	CysA
+CysI	CysH	CysC	CysN	CysA
+CysH	CysC	CysN	CysA
+CysA	CysW	CysU	CysA	CysW	CysU	CysK
+CysI	CysC	CysH	assSat	CysA
+CysC	CysH	assSat	CysA
+CysJ	CysI	CysH	CysA	CysA
+CysA	CysU	CysW	CysD
+CysA	CysU	CysW	CysD	CysN-CysC
+CysA	CysW	CysU	CysD	CysN
+CysW	CysU	CysD	CysN
+OAHS	MetA	MalY	bCSE	CysA
+CysA	CysH	CysC	CysD
+CysA	CysH	CysC	CysD	CysN
+MetH	CysH	bCSE	OAHS	MetK
+CysN-CysC	CysD	CysH	OAHS	CysK
+MetB	CysK	CysA	bCBS	OAHS
+CysK	CysA	bCBS	OAHS
+CysA	CysA	CysN	CysD	CysC
+CysI	CysA	CysH	CysD
+CysI	CysA	CysH	CysD	CysN
+CysK	CysH	CysI	CysJ	CysD
+CysI	CysH	CysU	CysW
+CysI	CysH	CysU	CysW	CysA
+MetQ	CysA	MetA	OAHS	MetQ
+CysA	MetA	OAHS	MetQ
+CysH	OAHS	CysI	CysM	CysK
+CysI	OAHS	CysN-CysC	CysD	CysH
+MetB	MetB	bCBS	CysA	CysA
+CysA	CysU	bCBS	CysH	CysI
+MetC	CysH	CysD	CysN	CysM
+bCSE	CysK	CysH	CysD
+bCSE	CysK	CysH	CysD	CysN-CysC
+bCSE	MetH	CysH	CysD
+bCSE	MetH	CysH	CysD	CysN
+CysA	CysM	CysA	CysU	CysU
+CysU	CysA	CysU	CysA	MetH
+CysA	CysU	CysA	MetH
+OAHS	CysK	CysM	CysW	CysA
+OAHS	bCSE	MetE	MalY	bCSE
+CysW	CysE	CysK	CysA
+CysW	CysE	CysK	CysA	CysA
+CysI	CysA	CysN	CysD	CysH
+bCSE	MalY	bCSE	CysA	MetQ
+CysK	CysH	CysN	CysD	CysA
+bCSE	MalY	OAHS	CysA	MetQ
+assSat	CysC	CysH	CysI	CysM
+CysC	CysH	CysI	CysM
+CysC	CysD	CysN	CysH	CysI
+CysU	CysW	CysH	CysN	CysD
+CysH	CysC	assSat	CysK	CysM
+CysM	CysM	bCSE	bCSE	MetC
+CysH	CysD	CysN	CysK	CysA
+CysD	CysN	CysK	CysA
+OAHS	CysD	CysN	CysH	CysC
+CysN-CysM	CysI	CysA	CysW	CysU
+CysN	CysD	CysH	CysA	CysA
+CysM	CysC-assSat	CysH	CysI	bCSE
+OAHS	MetA	MetQ	MetB	CysK
+CysI	assSat	CysH	MetC
+CysI	assSat	CysH	MetC	bCSE
+CysA	CysW	CysU	CysH	assSat
+CysW	CysU	CysH	assSat
+CysK	CysA	CysH	CysN	CysD
+MetQ	MalY	MetQ	CysA
+MetQ	MalY	MetQ	CysA	CysA
+CysN-CysC	CysK	CysH	CysJ
+CysN-CysC	CysK	CysH	CysI	CysJ
+CysH	assSat	CysK	CysK	CysA
+bCSE	CysI	CysN	CysD
+bCSE	CysI	CysN	CysD	CysH
+MetA	MetQ	CysA	OAHS
+MetA	MetQ	CysA	OAHS	MetQ
+CysA	MetQ	CysA	MalY	bCSE
+OAHS	CysA	CysW	CysU	MetQ
+CysI	CysH	CysA	CysD	CysN
+CysH	CysA	CysD	CysN
+CysW	CysW	CysA	CysU	CysA
+CysW	CysU	CysK	CysA	CysW
+CysU	CysK	CysA	CysW
+CysK	CysA	CysN	CysD
+CysK	CysA	CysN	CysD	CysH
+CysW	CysU	OAHS	bCBS	bCSE
+CysU	OAHS	bCBS	bCSE
+CysA	CysH	CysU	CysW
+CysA	CysH	CysU	CysW	CysA
+CysJ	CysK	CysN	CysD	CysH
+MetH	CysA	CysK	CysA	MetQ
+CysK	MetC	bCSE	OAHS	MetA
+CysA	MetQ	CysK	bCSE	CysK
+MetQ	CysK	bCSE	CysK
+OAHS	bCBS	bCSE	MetQ	CysA
+CysA	MetQ	bCSE	MetA
+CysA	MetQ	bCSE	MetA	OAHS
+MetQ	bCSE	MetA	OAHS
+CysH	CysD	CysN-CysC	CysU	CysW
+MalY	bCSE	CysA	MetQ	CysK
+bCSE	bCBS	MalY	CysA	MetQ
+bCBS	MalY	CysA	MetQ
+MetB	CysI	CysU	CysW	CysA
+bCBS	bCSE	CysA	MetQ	bCSE
+bCSE	CysA	MetQ	bCSE
+CysK	bCSE	MetC	OAHS	OAHS
+bCSE	MetC	OAHS	OAHS
+CysK	CysK	MalY	bCSE	OAHS
+OAHS	CysA	CysA	MetQ	CysK
+CysK	CysH	assSat	CysA	CysW
+OAHS	CysA	CysK	MalY	bCSE
+MetQ	CysA	MetH	MetC	bCSE
+CysH	CysH	CysI	CysA	CysA
+CysW	CysU	CysA	assSat-CysC
+CysW	CysU	CysA	assSat-CysC	CysC
+CysN	CysD	CysJ	CysI	CysK
+CysD	CysJ	CysI	CysK
+CysN	CysD	CysH	OAHS	MetK
+MetC	bCSE	CysK	CysA	CysA
+CysD	CysN	CysK	bCSE	MetC
+OAHS	CysK	bCSE	MetC	MetA
+CysK	bCSE	MetC	MetA
+CysU	CysA	CysD	CysN-CysC	CysC
+CysM	CysK	MetC	bCSE	CysK
+MalY	MetH	bCSE	OAHS	MetK
+bCSE	bCBS	CysK	MetQ	CysA
+bCBS	CysK	MetQ	CysA
+MetQ	CysA	bCSE	MalY	CysA
+MalY	CysA	MetQ	bCSE
+MalY	CysA	MetQ	bCSE	bCBS
+MalY	bCSE	CysK	bCSE	CysA
+bCSE	CysK	bCSE	CysA
+CysC	CysH	assSat	CysA	CysA
+CysA	CysU	CysN	CysD	CysC
+CysI	assSat	CysH	CysC	CysA
+assSat	CysH	CysC	CysA
+CysK	CysH	CysU	CysW	CysA
+CysA	OAHS	CysH	CysD
+CysA	OAHS	CysH	CysD	CysN
+CysI	CysH	CysD	CysN	OAHS
+CysN	CysH	CysD	CysA	CysU
+CysH	CysD	CysA	CysU
+CysI	CysH	CysK	CysU	CysA
+CysK	CysJ	CysI	CysH	CysM
+CysM	MetC	CysU	CysU	CysA
+CysU	CysU	CysA	CysW	CysA
+CysH	CysI	CysN	CysD	CysA
+CysI	CysN	CysD	CysA
+CysA	CysN	CysD	CysI	CysH
+CysA	CysW	CysU	MetB	CysK
+CysJ	CysN	CysD	CysH	CysM
+OAHS	CysK	bCBS	bCSE	OAHS
+CysC	CysI	CysH	CysD	CysN
+CysH	CysD	CysN	bCSE	MetC
+CysD	CysN	bCSE	MetC
+CysA	CysI	CysN	CysD
+CysA	CysI	CysN	CysD	CysH
+CysI	CysN	CysD	CysH	OAHS
+CysI	CysH	CysN	CysD	CysM
+CysH	CysN	CysD	CysM
+CysM	CysK	CysN	CysD	CysH
+CysK	CysN	CysD	CysH	CysA
+CysU	CysW	CysA	CysK	CysK
+CysW	CysA	CysA	CysU	bCSE
+bCSE	CysK	CysA	bCBS
+bCSE	CysK	CysA	bCBS	OAHS
+CysK	OAHS	CysN	CysD	CysH
+CysI	CysH	bCSE	OAHS	MetK
+CysD	CysW	CysU	CysA	CysH
+CysJ	CysI	CysH	MetB	CysK
+CysA	CysW	CysU	OAHS	bCSE
+CysK	CysE	CysH	CysI
+CysK	CysE	CysH	CysI	CysJ
+CysI	CysJ	CysH	CysN
+CysI	CysJ	CysH	CysN	CysD
+CysH	CysD	CysK	MetB
+CysH	CysD	CysK	MetB	CysN-CysC
+CysK	CysH	CysD	CysN-CysC	CysI
+CysH	bCBS	CysU	CysW	CysA
+CysH	CysI	CysC	CysN	CysD
+CysI	CysC	CysN	CysD
+CysJ	CysI	CysK	CysH
+CysJ	CysI	CysK	CysH	CysD
+MetB	bCBS	CysK	MetQ	CysA
+bCSE	bCBS	OAHS	CysA	CysU
+bCBS	OAHS	CysA	CysU
+assSat	CysC	CysC	CysU	CysA
+CysC	CysC	CysU	CysA
+CysK	CysE	CysN	CysD	CysH
+MetQ	CysA	CysK	MetB	OAHS
+CysK	bCSE	bCBS	MetB	OAHS
+CysH	CysH	CysI	assSat	CysC
+MetQ	bCSE	MalY	CysK	CysM
+bCSE	MalY	CysK	CysM
+CysU	CysN	CysD	CysH	CysI
+CysA	CysU	CysW	CysA	CysK
+CysA	MetA	OAHS	CysU
+CysA	MetA	OAHS	CysU	CysA
+CysK	CysE	CysC	CysA	assSat
+bCSE	CysK	CysW	CysU
+bCSE	CysK	CysW	CysU	CysA
+CysK	CysK	OAHS	CysM	MetB
+CysA	MetQ	CysU	CysW	CysA
+CysN-CysC	CysD	CysN-CysC	CysD	CysE
+MetQ	CysA	bCSE	MetC	CysK
+bCBS	CysI	CysJ	CysC
+bCBS	CysI	CysJ	CysC	assSat
+CysU	CysA	MetB	CysK	CysM
+CysW	CysU	CysA	CysA	MetQ
+CysA	CysU	CysE	CysA
+CysA	CysU	CysE	CysA	CysM
+MetQ	MetQ	bCBS	bCSE
+MetQ	MetQ	bCBS	bCSE	bCSE
+MetQ	bCBS	bCSE	bCSE
+CysU	CysW	CysA	CysD	CysN-OAHS
+CysH	CysN	CysD	CysU	CysA
+bCSE	CysK	MetQ	MetQ	CysA
+CysM	CysK	MalY	bCSE	CysK
+OAHS	CysU	CysW	MetB
+OAHS	CysU	CysW	MetB	CysA
+CysU	CysW	MetB	CysA
+MetQ	CysA	OAHS	CysA	CysK
+CysA	OAHS	CysA	CysK
+MetQ	MetC	bCSE	MetE	MetQ
+MalY	CysK	bCSE	MetQ	CysA
+CysK	bCSE	MetB	MetA	OAHS
+CysH	CysD	CysN	CysJ	CysK
+OAHS	CysH	CysD	CysN	CysJ
+CysK	CysN	CysD	CysH	MetB
+CysA	CysU	CysW	CysW	CysA
+CysN-CysC	CysD	CysH	CysD	CysN
+CysD	CysH	CysD	CysN
+CysD	CysI	CysH	CysA
+CysD	CysI	CysH	CysA	CysA
+CysM	bCBS	CysA	CysU	CysU
+MetA	MetQ	CysA	OAHS	CysK
+CysK	MetA	OAHS	CysA
+CysK	MetA	OAHS	CysA	MetQ
+MetQ	CysA	CysK	MetA	OAHS
+CysK	CysA	CysC	assSat	bCSE
+CysA	CysC	assSat	bCSE
+MetC	bCSE	CysH	CysD	CysN
+CysE	CysU	CysW	CysA	OAHS
+CysW	CysU	CysA	CysK	CysE
+CysA	CysU	CysU	MetA	bCSE
+CysD	CysC	CysA	CysU	CysN
+CysA	CysU	CysW	CysA	CysU
+MalY	bCSE	CysK	bCBS	CysM
+CysA	CysU	CysU	OAHS	MetB
+CysU	CysU	OAHS	MetB
+CysW	CysU	CysA	CysE	CysK
+CysA	CysW	CysU	CysC	CysH
+CysW	CysU	CysC	CysH
+CysH	CysC	assSat	CysU
+CysH	CysC	assSat	CysU	CysA
+MetK	bCSE	CysH	CysK
+MetK	bCSE	CysH	CysK	MetH
+bCBS	bCSE	MetQ	CysA	CysA
+CysA	CysW	CysU	CysD	CysC
+CysW	CysU	CysD	CysC
+CysH	assSat	CysC	CysU
+CysH	assSat	CysC	CysU	CysA
+assSat	CysC	CysU	CysA
+CysC	CysN	CysD	CysH	CysA
+CysN	CysC	CysD	CysU
+CysN	CysC	CysD	CysU	CysW
+CysD	CysN	CysH	CysC	CysA
+bCBS	bCSE	MetA	CysU	CysM
+CysW	CysU	CysA	MalY	CysA
+CysE	bCSE	MetC	OAHS
+CysE	bCSE	MetC	OAHS	CysK
+CysA	bCSE	bCBS	CysA	CysU
+CysC	CysI	CysH	CysD	CysN-CysC
+CysA	CysK	CysK	OAHS	MetB
+CysK	CysK	OAHS	MetB
+CysU	CysW	CysA	CysI	CysJ
+CysI	CysH	CysJ	CysA
+CysI	CysH	CysJ	CysA	CysA
+CysH	CysJ	CysA	CysA
+CysW	CysU	CysA	CysI	CysH
+CysN	CysD	CysK	CysH	CysI
+assSat	CysC	CysU	CysW
+assSat	CysC	CysU	CysW	CysA
+CysI	CysJ	CysH	assSat
+CysI	CysJ	CysH	assSat	CysC
+CysJ	CysH	assSat	CysC
+CysU	CysH	CysI	CysA
+CysU	CysH	CysI	CysA	CysA
+CysK	CysA	MetQ	MalY	bCSE
+CysC	assSat	CysH	CysI	MetC
+CysA	CysU	bCSE	CysU
+CysA	CysW	CysU	CysI	CysH
+CysW	CysU	CysI	CysH
+CysA	CysU	CysU	CysA	CysU-CysW
+CysU	CysW	CysA	CysK	CysA
+CysW	CysU	assSat	CysC	CysH
+CysA	CysW	CysU	CysH	CysN
+CysW	CysU	CysH	CysN
+CysA	CysU	MetC	CysU
+CysA	assSat	CysC	CysI
+CysA	assSat	CysC	CysI	CysH
+CysU	CysW	CysA	CysN	CysD
+CysU	CysW	CysH	CysD	CysN
+CysW	CysH	CysD	CysN
+CysM	CysW	CysU	CysA	CysA
+bCBS	CysA	MetQ	CysA	MetQ
+CysA	MetQ	CysA	MetQ
+CysA	bCSE	CysM	CysA
+CysA	bCSE	CysM	CysA	CysU
+CysA	bCSE	MalY	CysK	CysA
+CysH	CysC	CysD	CysN	MalY
+CysN-CysC	CysD	CysH	CysI	bCSE
+CysA	CysA	CysU	CysU	CysW
+CysJ	CysI	CysU	CysW
+CysJ	CysI	CysU	CysW	CysA
+CysA	CysW	CysU	CysI	bCSE
+MetB	CysI	CysJ	CysN	CysD
+CysA	CysK	bCSE	CysU	CysA
+CysK	CysN	CysD	CysC	CysH
+CysI	CysH	CysC	MetC	OAHS
+OAHS	CysK	bCSE	CysN	CysD
+MetC	bCSE	CysK	CysA	CysK
+CysC	CysU	CysA	CysD	CysN
+CysA	CysU	CysU	CysA	MalY
+MetB	bCBS	CysA	MetQ	bCSE
+bCBS	CysA	MetQ	bCSE
+CysH	CysI	CysD	CysN	MetH
+CysA	CysW	CysU	MetB	MetB
+CysC	CysN-CysC	CysD	CysA	CysH
+CysN-CysC	CysD	CysA	CysH
+CysI	CysJ	CysN-CysC	CysD	CysH
+MalY	CysK	CysH	CysI	CysJ
+CysA	CysU	CysW	CysA	CysI
+OAHS	MetA	CysA	CysU	CysW
+CysD	CysN	CysC	CysH	CysI
+MetB	CysA	CysA	CysU	CysU
+CysH	CysD	CysN	CysK	MetA
+CysI	CysH	OAHS	MetA	CysK
+CysC	CysN	CysD	CysA	CysU
+CysN	CysD	CysI	CysJ	CysC
+CysK	assSat	CysC	CysI
+CysK	assSat	CysC	CysI	CysH
+CysN	CysD	CysN	CysC	CysA
+CysD	CysN	MetB	CysK	CysH
+CysJ	CysH	CysI	CysA	CysA
+CysI	CysN	CysA	CysW	CysU
+bCSE	MetC	CysU	CysW	CysA
+CysH	CysI	CysD	CysN	OAHS
+CysI	CysD	CysN	OAHS
+MetH	CysA	CysA	CysU	CysU
+CysA	CysU	MetQ	CysA	OAHS
+CysU	MetQ	CysA	OAHS
+CysA	CysU	CysW	CysA	MetQ
+CysW-CysU	CysA	CysA	CysU	CysU
+CysI	CysH	CysK	CysE	CysA
+CysH	CysK	CysE	CysA
+CysH	CysA	OAHS	CysU
+CysH	CysA	OAHS	CysU	CysW
+MetC	bCSE	CysA	CysW	CysU
+assSat	CysH	CysI	CysI	CysM
+CysW	CysA	CysW	CysU	CysA
+CysH	bCSE	bCBS	CysK	OAHS
+CysU	CysA	CysC	CysD	CysN
+CysH	CysI	CysJ	CysA	CysA
+MetB	CysN	CysD	CysH	CysK
+CysC	CysA	CysM	CysM	CysK
+CysA	CysM	CysM	CysK
+bCSE	CysK	CysA	CysW	CysU
+CysA	CysW	CysU	assSat	CysH
+CysA	MetQ	OAHS	MetA	CysK
+MetQ	OAHS	MetA	CysK
+CysC	CysD	CysJ	CysI	CysH
+MetQ	MetQ	CysA	bCBS
+MetQ	MetQ	CysA	bCBS	bCSE
+CysK	bCSE	CysK	OAHS	bCSE
+bCSE	MalY	CysK	bCBS
+bCSE	MalY	CysK	bCBS	CysA
+MalY	CysK	bCBS	CysA
+bCBS	bCSE	CysK	CysA	CysU
+CysA	CysU	bCSE	CysA	CysU
+CysU	bCSE	CysA	CysU
+MalY	bCSE	MetQ	CysA	CysA
+CysD	CysA	CysW	CysU	CysK
+OAHS	MetA	MalY	bCSE	MetQ
+CysW	CysA	CysD	CysN	OAHS
+CysA	CysD	CysN	OAHS
+CysU	CysA	MetQ	CysA	CysE
+CysA	MetQ	bCBS	bCSE	MetH
+CysC	CysD	CysN	MetH	MetK
+OAHS	CysA	CysE	bCBS	bCSE
+bCSE	CysK	CysE	CysA	OAHS
+CysU	CysA	CysE	CysK	bCSE
+MetQ	CysA	bCSE	bCSE	bCBS
+CysA	bCSE	bCSE	bCBS
+CysK	CysK	MalY	bCSE	CysA
+CysA	CysW	CysU	MetE	MetB
+MetQ	CysA	bCBS	bCSE	MetE
+CysA	CysU	MetQ	bCSE
+CysA	CysU	MetQ	bCSE	bCBS
+CysU	MetQ	bCSE	bCBS
+bCSE	bCBS	MetA	OAHS	CysA
+CysA	bCBS	bCSE	MetK	CysK
+CysA	MalY	bCSE	CysK	OAHS
+CysN-CysC	CysD	CysA-CysC	CysW	CysU
+CysN-CysC	CysD	CysK	CysA	MetC
+MetK	OAHS	MetA	CysA	CysW
+CysA	CysW	CysU	CysJ	CysI
+CysN	CysD	CysH	bCSE	CysK
+OAHS	CysK	bCSE	MalY	OAHS
+MetQ	CysA	MetQ	CysK	CysA
+bCSE	CysK	CysA	MetQ	OAHS
+CysJ	CysI	CysD	CysN	CysK
+CysI	CysH	CysD	CysN-CysC	bCBS
+CysH	CysD	CysN-CysC	bCBS
+CysA	CysA	MetQ	CysK	MalY
+CysC	CysD	CysN	MetK	CysA
+OAHS	MetA	MetH	CysK	CysA
+CysA	MetC	bCSE	OAHS	MetA
+CysA	CysK	CysD	CysN
+CysA	CysK	CysD	CysN	OAHS
+CysA	MetQ	bCBS	bCSE	CysA
+OAHS	CysK	CysA	MetQ	CysA
+CysK	MalY	bCSE	CysA	CysA
+MetK	OAHS	bCSE	CysH	CysD
+bCBS	bCSE	MetA	CysA	CysW
+CysC	assSat	CysH	bCSE
+CysC	assSat	CysH	bCSE	MetC
+assSat	CysH	bCSE	MetC
+CysN	CysA	CysW	CysU	MetK
+CysE	CysN	CysD	CysH	CysC
+OAHS	MetQ	CysA	bCBS	bCSE
+CysD	CysN-CysC	CysA	CysU	CysW
+CysN-CysC	CysA	CysU	CysW
+CysA	bCBS	bCSE	OAHS	MetQ
+bCBS	bCSE	OAHS	MetQ
+MetQ	CysA	MetQ	bCSE
+MetQ	CysA	MetQ	bCSE	CysK
+OAHS	CysK	bCSE	bCBS	OAHS
+OAHS	CysA	bCSE	MalY	CysK
+CysA	MetQ	bCSE	MalY	CysK
+CysU	CysW	CysA	CysH	assSat-CysC
+CysM	CysK	OAHS	MetQ	CysA
+MetH	CysH	MetC	OAHS	MetK
+CysH	MetC	OAHS	MetK
+CysH	CysD	CysN	CysE	CysM
+CysU	CysW	CysA	OAHS	CysE
+CysK	CysA	CysW	CysU	CysE
+CysI	CysN-CysC	CysD	CysH	CysE
+CysU	CysA	CysN	CysD	CysC
+OAHS	CysH	CysD	CysN	MetH
+bCBS	OAHS	bCSE	CysH	MetH
+CysA	bCSE	CysU	CysU	CysA
+MalY	bCSE	CysU	CysU	CysA
+MalY	bCSE	MetQ	CysA	CysK
+OAHS	CysA	CysW	CysU	CysK
+bCBS	bCSE	bCSE	MetQ	CysA
+bCSE	bCSE	MetQ	CysA	MetQ
+MetQ	CysA	OAHS	bCBS	bCSE
+CysA	CysW	CysU	CysW	CysU
+CysW	CysU	CysW	CysU
+CysW	CysA	CysD	CysN	CysK
+CysA	CysD	CysN	CysK
+MetH	CysK	CysM	CysW	CysA
+bCSE	MetC	MetH	CysA	CysA
+CysA	CysK	OAHS	bCSE
+CysA	CysK	OAHS	bCSE	MalY
+CysD	CysN	CysH	CysU	CysU
+CysN	CysH	CysU	CysU
+CysA	CysU	CysH	CysD
+CysA	CysU	CysH	CysD	CysN
+OAHS	CysA	CysN	CysD
+OAHS	CysA	CysN	CysD	CysC
+OAHS	CysK	CysN	CysD	CysH
+CysW	CysU	CysW	CysU	CysA
+CysA	MetQ	OAHS	bCBS
+CysA	MetQ	OAHS	bCBS	bCSE
+MetQ	OAHS	bCBS	bCSE
+MetQ	CysU	CysA	bCSE	bCBS
+CysK	bCSE	OAHS	MetB
+CysK	bCSE	OAHS	MetB	MalY
+CysA	CysD	CysN	CysU
+CysA	CysD	CysN	CysU	CysW
+CysA	MetQ	MetQ	MetA
+CysA	MetQ	MetQ	MetA	OAHS
+bCBS	MetB	CysU	CysA	CysA
+MetQ	bCSE	CysA	bCBS
+MetQ	bCSE	CysA	bCBS	bCSE
+bCSE	CysA	bCBS	bCSE
+CysU	CysA	OAHS	CysK	CysE
+bCBS	OAHS	bCSE	CysA
+bCBS	OAHS	bCSE	CysA	MetQ
+bCSE	MetE	CysI	CysH	CysC-assSat
+CysN	CysD	CysH	OAHS	OAHS
+CysD	CysH	OAHS	OAHS
+CysH	CysD	CysI	CysN	CysJ
+MetA	OAHS	CysA	MetQ	MetQ
+CysW	CysU	CysA	MetC	CysA
+MetQ	CysA	MetC	CysA	CysE
+MetH	assSat	CysH	CysC
+MetH	assSat	CysH	CysC	CysI
+CysC	CysD	CysN	CysW	CysA
+MetQ	CysA	CysK	bCSE	bCSE
+CysA	CysK	bCSE	bCSE
+CysA	CysU	bCSE	CysW	CysA
+CysU	bCSE	CysW	CysA
+OAHS	CysI	assSat	CysH	CysC
+CysI	CysN	CysD	CysH	CysJ
+MetQ	MetQ	CysA	bCSE	CysK
+bCSE	CysU	CysA	CysW	CysA
+CysW	CysU	CysA	CysU	OAHS
+CysA	MetB	CysA	CysU
+CysA	MetB	CysA	CysU	CysW
+CysA	OAHS	CysA	MalY
+CysA	OAHS	CysA	MalY	bCSE
+CysK	OAHS	MetQ	CysU	CysA
+CysM	CysU	CysW	CysA	CysA
+assSat	CysC	CysK	bCSE	MetC
+CysN-CysC	CysD	CysW	CysA	CysA
+CysD	CysW	CysA	CysA
+CysA	CysM	CysA	CysW	CysU
+CysI	assSat	CysH	bCSE
+CysI	assSat	CysH	bCSE	MetC
+CysH	CysU	CysW	CysA	MetH
+assSat	CysC	OAHS	CysI	CysK
+CysA	CysW	CysU	CysN-CysC	CysH
+CysW	CysU	CysN-CysC	CysH
+bCSE	CysK	MetE	CysA	CysU
+CysK	MetE	CysA	CysU
+CysA	bCBS	bCSE	MetQ	CysA
+CysA	CysK	MalY	bCSE	CysK
+CysJ	CysN	CysD	CysH	CysU
+CysE	MetB	CysU	CysW	CysA
+CysJ	CysJ	CysI	CysH	CysK
+MetK	CysA	MetQ	CysA	CysW
+CysA	MetQ	CysA	OAHS	bCSE
+CysA	MetQ	MetQ	CysA	bCSE
+CysW	CysI	CysH	CysD
+CysW	CysI	CysH	CysD	CysN
+CysW	MetQ	CysA	CysU	CysU
+MetQ	CysA	CysU	CysU
+MetE	CysA	CysU	CysW	bCSE
+MetE	MetC	bCSE	OAHS	MetA
+CysH	CysD	CysN-CysC	CysK	bCSE
+bCSE	OAHS	MetA	MetE	CysA
+bCBS	CysN-CysC	CysD	CysH	CysA
+OAHS	CysA	CysE	bCSE
+OAHS	CysA	CysE	bCSE	bCBS
+CysA	CysU	MetA	CysK	bCSE
+CysU	MetA	CysK	bCSE
+CysA	CysJ	MetE	MetC	MetC
+CysC-assSat	CysH	CysI	CysA	CysU
+CysW-CysU	CysA	CysA	CysW	CysU
+CysN	CysE	CysK	CysJ
+CysN	CysE	CysK	CysJ	CysI
+CysC	CysD	CysH	CysI	CysJ
+CysN	CysD	CysC	OAHS	CysI
+CysD	CysC	OAHS	CysI
+MetK	CysH	CysD	CysN	CysM
+CysA	CysU	CysU	CysK	CysA
+CysU	CysU	CysK	CysA
+OAHS	bCBS	bCSE	CysK	MetA
+bCBS	bCSE	CysK	MetA
+CysA	MetQ	CysA	CysW	CysU
+MetQ	MetQ	CysA	CysA	MetK
+MetQ	MetQ	CysA	MetK	CysK
+CysA	MetQ	CysU	CysA	MetQ
+MetQ	CysU	CysA	MetQ
+OAHS	CysK	CysM	bCSE	MalY
+MetQ	bCSE	MalY	CysA	MetQ
+CysW	CysW	CysK	MetB	OAHS
+CysH	assSat	CysC	CysI	CysJ
+CysK	CysH	assSat	CysC
+CysK	CysH	assSat	CysC	bCSE
+CysA	CysW	CysU	CysM	CysH
+CysW	CysU	CysM	CysH
+CysN	CysD	CysC	CysM	CysH
+CysI	CysH	CysD	CysN	CysJ
+MalY	MetB	MetQ	CysA	MetQ
+CysA	CysU	CysK	CysM	CysA
+CysU	CysK	CysM	CysA
+bCSE	CysU	CysU	CysA	CysA
+CysA	CysU	CysU	MetQ	CysA
+CysU	CysW	CysA	CysD	CysI
+CysW	CysA	CysD	CysI
+CysA	CysU	CysU	CysA	CysW
+MetH	CysU	CysW	CysA	CysA
+MetQ	CysA	bCSE	OAHS	MetE
+bCBS	bCSE	CysU	CysW
+bCBS	bCSE	CysU	CysW	CysA
+CysA	CysN	CysD	CysH	CysA
+MetB	CysA	CysA	CysW
+MetB	CysA	CysA	CysW	CysU
+CysA	MetQ	MetB	CysM	OAHS
+CysA	CysW	CysU	MetH	MetA
+CysA	CysK	CysA	CysU	CysU
+CysU	CysU	bCSE	CysA	CysA
+CysU	bCSE	CysA	CysA
+OAHS	MalY	CysA	CysU	CysA
+CysK	OAHS	CysA	MetQ	MetQ
+CysA	CysU	bCSE	CysA	CysU-CysW
+bCSE	bCSE	CysK	MetQ
+bCSE	bCSE	CysK	MetQ	CysA
+MetE	CysU	CysW	CysA	CysA
+CysE	CysA	MetQ	MetQ	CysA
+OAHS	CysH	assSat	CysC	CysI
+OAHS	CysA	MetQ	MetQ	CysA
+CysU	CysW	CysA	CysK	MalY
+CysA	CysA	CysU	CysU	CysK
+CysD	CysN-CysC	CysK	CysH	CysJ
+OAHS	MetA	bCSE	bCBS	MalY
+CysH	CysD	CysN	CysA	MetQ
+CysA	MetQ	CysC	CysN	CysD
+MetK	CysK	OAHS	bCSE	MetH
+CysK	OAHS	bCSE	MetH
+MetQ	CysA	MetQ	MetB	OAHS
+CysA	MetQ	MetB	OAHS
+MetB	OAHS	OAHS	CysE	CysK
+CysH	CysU	CysW	CysA	CysA
+CysA	CysM	bCSE	CysW	CysA
+CysA	CysU	CysA	CysU	bCSE
+CysU	CysA	CysU	bCSE
+CysA	MetQ	CysA	MetQ	CysM
+MetQ	CysA	MetQ	CysM
+MalY	CysI	CysH	CysD	CysN
+CysA	MetQ	bCSE	OAHS	CysA
+MetQ	bCSE	OAHS	CysA
+MetB	CysK	MetE	CysA	CysU
+CysJ	CysI	CysD	CysN	CysH
+CysH	assSat	CysC	CysA	CysA
+assSat	CysC	CysA	CysA
+MetQ	MetQ	CysA	CysA
+MetQ	CysA	CysA	MetK
+MetQ	CysA	CysA	CysU	CysU
+CysA	CysW	CysU	CysH	CysD
+CysK	CysU	CysW	CysA	CysE
+OAHS	CysK	bCSE	MetQ	CysA
+CysW	CysW	CysA	bCBS	MetC
+CysK	CysI	CysC	assSat
+CysK	CysI	CysC	assSat	CysH
+OAHS	MetQ	MetC	bCSE
+OAHS	MetQ	MetC	bCSE	MetA
+bCBS	bCSE	CysC	assSat	CysH
+CysK	CysA	CysA	CysU	CysU
+CysK	CysJ	CysI	CysH	MetB
+MetC	bCSE	CysA	MetQ	CysA
+CysI	CysN	CysD	CysH	CysH
+CysA	CysE	CysU	CysW	CysA
+CysU	CysA	MetQ	CysU	CysA	MetQ
+CysH	bCSE	OAHS	MetK	CysM
+CysA	CysA	MetQ	OAHS	CysK
+bCSE	MetC	CysK	bCSE
+bCSE	MetC	CysK	bCSE	bCBS
+bCBS	CysN	CysD	CysH	CysI
+CysK	CysC	CysD	CysN	MetK
+bCSE	CysU	CysA	CysA	CysU
+MetA	MetQ	MetQ	CysA	CysA
+CysK	MetB	MetE	MetQ	CysA
+CysA	MetQ	CysA	CysW	CysW
+MetQ	CysA	MetQ	CysA	CysU
+OAHS	MetH	bCBS	CysK	MetA
+CysA	CysW	CysA	CysU	CysW
+CysK	CysK	bCSE	bCBS
+CysK	CysK	bCSE	bCBS	CysA
+CysA	MetH	CysH	bCSE	MetK
+MetH	CysH	bCSE	MetK
+bCSE	MetQ	MetQ	CysA	OAHS
+bCSE	OAHS	CysA	MetQ	MalY
+OAHS	CysA	MetQ	MalY
+CysI	CysK	CysN	CysD
+CysI	CysK	CysN	CysD	CysH
+CysU	CysW	CysA	bCSE	MalY
+bCSE	MalY	OAHS	CysA	CysA
+CysJ	CysI	MetB	CysU	CysA
+CysN-CysC	CysD	CysU	CysA	CysU
+CysD	CysU	CysA	CysU
+CysN	CysH-CysD	CysU	CysW	CysA
+CysH-CysD	CysU	CysW	CysA
+MetB	CysK	CysA	CysU	CysU
+CysN	CysA	CysA	CysU	CysW
+CysA	MetQ	MetQ	OAHS	CysA
+CysA	MetC	bCSE	CysA
+CysA	MetC	bCSE	CysA	MetQ
+CysW-CysU	CysA	CysU	CysW	CysA
+CysA	CysU	MetQ	CysA	MetQ
+CysA	CysW	MetE	MetC	MetC
+bCSE	CysK	OAHS	OAHS	CysE
+OAHS	CysK	CysJ	CysI	CysK
+CysK	CysJ	CysI	CysK
+bCSE	CysA	CysU	bCSE	CysA
+CysA	CysU	CysU	MetH	MetA
+OAHS	bCSE	MetH	CysH	CysK
+CysH	CysI	assSat	CysC	CysA
+CysI	assSat	CysC	CysA
+MetC	MetH	bCSE	CysH	CysC
+MetH	bCSE	CysH	CysC
+CysA	CysN	CysC-CysD	CysH	CysI
+CysK	MalY	MalY	CysA	OAHS
+CysH	CysD	CysN-CysC	CysA	CysA
+CysA	CysA	CysN	CysM	MetA
+CysA	MetQ	CysE	CysA	MetQ
+MetQ	CysE	CysA	MetQ
+CysK	CysA	CysA	CysU	CysW
+CysN	CysD	CysH	MetK	OAHS
+CysA	CysA	CysC	CysD
+CysA	CysA	CysC	CysD	CysN
+bCSE	MalY	CysK	CysA	MetQ
+MetK	OAHS	bCSE	CysD
+MetK	OAHS	bCSE	CysD	CysN
+bCBS	bCSE	CysA	CysW
+bCBS	bCSE	CysA	CysW	CysU
+CysN	CysD	CysC	OAHS	CysK
+CysD	CysC	OAHS	CysK
+CysN	CysJ	CysI	CysU
+CysN	CysJ	CysI	CysU	CysW
+CysJ	CysI	CysH	CysK	CysA
+CysI	CysH	CysK	CysA
+CysW	CysA	MetH	CysU
+CysW	CysA	MetH	CysU	CysA
+CysH	CysI	CysK	CysE	CysA
+CysN-CysC	CysD	CysA	CysA	CysW
+CysD	CysA	CysA	CysW
+CysU	CysW	CysA	CysU	MetK
+CysA	MetQ	CysK	MalY	CysA
+MetQ	CysK	MalY	CysA
+MetQ	CysA	CysK	MetC	bCSE
+CysA	CysW	CysU	CysU	CysW
+CysI	CysJ	MetC	bCSE
+CysI	CysJ	MetC	bCSE	CysH
+CysJ	MetC	bCSE	CysH
+CysN-CysC	CysD	MetQ	CysA	CysK
+CysD	MetQ	CysA	CysK
+MetQ	CysA	MalY	bCSE	CysA
+CysI	CysJ	CysH	CysN-CysC	CysD
+CysJ	CysH	CysN-CysC	CysD
+CysU	CysW	CysA	CysA	CysE
+CysW	CysA	CysA	CysE
+CysA	CysU	CysW	CysW	CysU
+CysA	CysA	bCSE	bCBS	OAHS
+CysK	OAHS	CysD	CysN	CysH
+CysU	CysA	OAHS	MetQ	CysA
+MetQ	MetQ	CysA	CysA	MetB
+CysA	CysU	CysU	MetC	CysA
+CysU	CysU	MetC	CysA
+CysE	CysH	CysD	CysN
+CysE	CysH	CysD	CysN	OAHS
+OAHS	MetC	bCSE	CysA	CysK
+CysW	CysA	CysM	OAHS	CysK
+CysK	bCSE	OAHS	CysK	MetB
+OAHS	CysI	CysN	CysD
+OAHS	CysI	CysN	CysD	CysH
+CysK	bCSE	MetA	OAHS
+CysK	bCSE	MetA	OAHS	CysK
+bCSE	MetA	OAHS	CysK
+CysC	assSat	CysH	CysI	OAHS
+MetC	bCSE	MetA	CysA	MetQ
+bCSE	MetA	CysA	MetQ
+CysH	CysD	CysN	CysC	CysE
+CysH	CysU	CysW	CysA	CysI
+bCSE	MetQ	CysA	MalY	CysK
+bCSE	CysH	CysD	CysN	CysI
+CysW	CysA	CysU	MetC	CysA
+CysK	CysH	CysI	CysD
+CysK	CysH	CysI	CysD	CysN
+MetQ	MetQ	CysA	CysW	CysU
+CysD	CysN-CysC	CysC	CysA	CysA
+CysD	CysH	MetC	OAHS	MetK
+OAHS	bCSE	bCSE	CysK	CysA
+CysN	CysD	CysC	CysK	CysH
+OAHS	MetA	CysA	MalY	bCSE
+OAHS	MetQ	MalY	CysK	MetQ
+MetQ	MalY	CysK	MetQ
+CysA	CysW	CysU	CysA	bCSE
+CysN	CysD	CysA	CysU	CysK
+CysD	CysA	CysU	CysK
+CysM	CysD	CysN	CysJ
+CysM	CysD	CysN	CysJ	CysI
+CysN-CysC	CysD	CysI	CysH	CysK
+bCSE	MalY	CysK	bCBS	CysK
+MetQ	CysA	bCSE	bCSE	OAHS
+CysU	CysA	CysW	CysU	CysW
+CysJ	CysD	CysH	CysW
+CysJ	CysD	CysH	CysW	CysA
+CysD	CysH	CysW	CysA
+CysH	CysD	CysN	CysW	CysA
+CysI	CysH	assSat	CysK	CysK
+bCSE	MetQ	CysA	CysA	CysK
+CysA	CysN-OAHS	CysD	CysA	OAHS
+bCSE	MetK	bCSE	bCBS	CysA
+bCBS	bCBS	CysK	bCSE	MalY
+CysA	bCBS	MetC	CysU	CysA
+CysU	CysW	CysA	OAHS	MalY
+CysM	MetA	CysA	CysW	CysU
+CysW	CysA	CysD	CysN-CysC	CysC
+MetK	bCSE	bCBS	OAHS	CysK
+CysC	CysD	CysN	bCSE	CysM
+CysD	CysN	bCSE	CysM
+OAHS	CysK	CysN-CysC	CysD	CysH
+CysU	CysN-CysC	CysD	CysH	CysK
+CysK	CysH	bCBS	CysE	bCSE
+MetK	CysU	CysA	CysU	CysW
+CysN	CysD	CysH	CysC	bCBS
+CysH	CysD	CysA	CysU	CysW
+CysU	CysA	CysK	CysJ	CysI
+CysJ	CysN	CysD	CysH	MetK
+CysI	CysH	CysD	CysC	CysK
+CysN	CysI	CysH	CysD	CysN
+CysH	CysN	CysD	CysI	CysA
+bCSE	MetQ	CysA	CysK	OAHS
+CysH	CysU	CysU	CysA	MetH
+CysU	CysW	CysA	CysI	CysH
+MalY	CysK	CysA	MetQ	OAHS
+MalY	CysN	CysA	CysA	CysU
+CysC	CysD	CysN	CysM	OAHS
+CysN	CysD	CysC	CysA	CysJ
+MetH	CysU	CysW	CysA	CysH
+CysA	MetQ	MalY	bCSE	CysA
+CysK	bCSE	bCBS	MetA	OAHS
+CysA	MetQ	OAHS	MetA	MetH
+CysU	CysU	CysH	CysD
+CysU	CysU	CysH	CysD	CysN
+CysH	CysN	CysD	CysU	CysW
+CysK	OAHS	MalY	CysA
+CysK	OAHS	MalY	CysA	MetQ
+OAHS	MalY	CysA	MetQ
+MalY	bCSE	CysA	CysK	bCBS
+CysN	CysD	CysC	MetH	bCSE
+CysK	bCSE	OAHS	MalY	CysA
+bCSE	OAHS	MalY	CysA
+bCSE	MalY	OAHS	CysK	CysK
+CysH	CysK	CysU	CysW
+CysH	CysK	CysU	CysW	CysA
+OAHS	CysA	MetQ	CysA	CysK
+MetE	bCSE	bCBS	OAHS	OAHS
+MalY	CysH	CysN	CysD	CysA
+CysA	CysA	CysU	MetA	OAHS
+bCSE	MetC	CysK	CysK	OAHS
+MetC	CysK	CysK	OAHS
+CysA	MetQ	CysA	MetQ	CysK
+CysU	CysW	CysA	CysK	MetA
+CysA	MetQ	CysA	MetA
+CysA	MetQ	CysA	MetA	OAHS
+CysN-CysC	CysD	CysU-CysW	CysA	CysA
+CysH	CysD	CysN-CysC	CysK	MetB
+CysA	CysM	CysU	CysW
+CysA	CysM	CysU	CysW	CysA
+CysA	OAHS	MetQ	MetQ	bCSE
+OAHS	MetQ	MetQ	bCSE
+MetB	CysJ	CysI	CysH	CysK
+CysU	CysH	bCSE	OAHS	CysK
+CysH	bCSE	OAHS	CysK
+bCBS	bCSE	CysA	MetQ	MetB
+bCSE	CysA	MetQ	MetB
+OAHS	CysA	CysK	bCSE
+OAHS	CysA	CysK	bCSE	bCSE
+CysA	assSat	CysU	CysU	CysA
+MetA	CysA	CysU	CysA	CysU
+MetH	CysC	assSat	CysH	CysI
+MetQ	CysK	MalY	bCSE	OAHS
+CysC	CysH	CysA	CysW	CysU
+CysK	OAHS	bCBS	bCSE	OAHS
+bCBS	CysE	CysA	CysU	CysU
+CysA	bCSE	CysE	bCBS	CysA
+MetH	OAHS	bCBS	bCSE	CysA
+OAHS	CysC	assSat	CysH	CysI
+MetH	CysK	bCBS	CysA	OAHS
+CysK	bCBS	CysA	OAHS
+MetA	CysN	CysD	CysC	CysA
+CysU	CysW	CysA	CysE	OAHS
+bCBS	bCSE	CysK	MetA	OAHS
+bCSE	CysK	MetA	OAHS
+MalY	CysM	CysU	CysW	CysA
+CysA	CysU	CysU	CysA	MetB
+CysH	CysN	CysU	CysW
+CysH	CysN	CysU	CysW	CysA
+CysA	CysA	CysU	CysW-CysA	CysK
+bCBS	bCSE	CysA	OAHS	MetQ
+bCSE	CysA	OAHS	MetQ
+CysK	OAHS	CysA	MetQ	CysK
+MetH	bCSE	OAHS	CysH	MetK
+MetA	OAHS	CysK	MetB	bCBS
+OAHS	bCSE	MetB	OAHS	CysK
+CysA	CysW	CysU	CysH	CysM
+CysH	CysI	CysI	CysA	CysA
+CysI	CysI	CysA	CysA
+CysI	CysU	CysW	CysA	CysK
+CysK	CysA	CysA	bCSE
+CysK	CysA	CysA	bCSE	MalY
+CysK	OAHS	bCSE	MalY	CysA
+OAHS	bCSE	MalY	CysA
+MalY	bCSE	CysK	CysA	CysA
+CysK	bCSE	OAHS	bCSE
+CysK	bCSE	OAHS	bCSE	MalY
+bCSE	OAHS	bCSE	MalY
+MalY	CysK	CysA	MetQ	CysA
+CysI	CysH	CysC	assSat	CysK
+CysK	bCSE	CysK	bCSE
+CysK	bCSE	CysK	bCSE	MalY
+MetK	CysA	MetQ	CysK	OAHS
+CysW	CysU	MalY	CysK	CysE
+CysH	assSat-CysC	CysA	CysU
+CysH	assSat-CysC	CysA	CysU	CysW
+CysU	CysW	CysA	bCBS	CysH
+CysD	CysN-CysH	CysU	CysW	CysA
+CysI	CysH	assSat-CysC	CysA	CysU
+CysW	CysA	CysC-assSat	CysI	CysH
+assSat	CysC	CysA	CysI	CysH
+CysC	CysA	CysI	CysH
+CysK	CysE	CysN	CysD	CysC
+CysE	CysN	CysD	CysC
+CysA	MetQ	bCSE	MetQ
+CysW	CysU	OAHS	MetQ
+CysW	CysU	OAHS	MetQ	CysA
+CysU	OAHS	MetQ	CysA
+bCBS	CysA	MetC	CysU	CysA
+CysJ	CysI	CysH	CysC	CysD
+CysU	CysK	CysA	CysW	CysU
+MetH	CysK	MalY	MetC	OAHS
+CysK	assSat-CysC	CysA	CysU	CysW
+CysA	CysM	CysU	CysU
+CysA	CysM	CysU	CysU	CysA
+bCSE	bCBS	CysA	MetQ	CysM
+assSat	CysU	CysA	CysU	CysA
+CysC	CysD	CysN-CysC	CysU
+CysC	CysD	CysN-CysC	CysU	CysA
+MetH	CysM	bCSE	OAHS	MetK
+bCSE	assSat	CysC	CysA	CysA
+CysA	CysU	CysU	CysA	CysM
+CysM	CysH	CysC	CysD	CysN
+CysU	CysW	CysA	CysH-CysD	CysN-CysC
+CysK	CysH	CysC	CysD
+CysK	CysH	CysC	CysD	CysN
+OAHS	CysI	CysU	CysW	CysA
+CysH	CysI	CysJ	CysW
+CysH	CysI	CysJ	CysW	CysU
+CysI	CysJ	CysW	CysU
+CysU	CysH	CysC	assSat	CysI
+CysH	CysK	CysA	CysW	CysU
+CysI	CysM	CysN-CysC	CysD	CysH
+CysD	CysA	CysW	CysU	CysH
+CysE	bCSE	CysK	CysA	MetQ
+CysU	CysW	CysA	CysK	bCBS
+CysA	OAHS	bCSE	OAHS
+CysA	OAHS	bCSE	OAHS	CysK
+OAHS	bCSE	OAHS	CysK
+CysH	CysC	CysM	CysI
+CysH	CysC	CysM	CysI	CysI
+OAHS	CysA	CysK	CysW	CysU
+OAHS	MetC	bCSE	CysK	CysA
+CysN	CysD	CysC	CysA	CysW
+MetB	CysA	MalY	OAHS	CysK
+CysD	CysN	CysC	CysU	CysA
+CysN	CysC	CysU	CysA
+CysK	CysE	CysH	CysD	CysN
+CysI	CysH	CysC	CysD	CysC
+CysD	CysN-CysC	CysH	CysI	CysJ
+CysN-CysC	CysH	CysI	CysJ
+CysU	CysW	CysA	MetB	bCSE
+CysA	CysU	CysW	MetQ	CysA
+CysU	CysW	MetQ	CysA
+OAHS	bCBS	bCSE	OAHS	CysK
+OAHS	CysE	CysK	CysH	OAHS
+CysK	OAHS	bCBS	MetB	CysA
+OAHS	CysN	CysD	CysH	OAHS
+CysK	OAHS	bCSE	MetC	MetA
+OAHS	bCSE	MetC	MetA
+CysA	MetC	CysW	CysU
+CysA	MetC	CysW	CysU	CysA
+bCSE	MalY	MetC	CysA	CysK
+OAHS	CysK	bCSE	CysU	CysA
+CysA	CysH	CysA	CysU
+CysA	CysH	CysA	CysU	bCSE
+CysH	CysA	CysU	bCSE
+CysC	CysU	CysA	CysA
+CysC	CysU	CysA	CysA	CysW-CysU
+CysA	CysA	MetQ	OAHS	MalY
+OAHS	CysH	CysN	CysD	CysU
+MetH	CysK	MalY	bCSE	OAHS
+CysU	CysA	MetQ	CysA	bCSE
+CysC	CysN	CysD	CysC	CysH
+CysD	CysN-CysC	CysH	CysM	CysK
+CysA	CysA	CysD	CysN	CysH
+OAHS	CysA	CysH	CysD	CysN
+CysD	CysN	CysH	CysK	MetB
+OAHS	CysM	bCSE	MalY
+OAHS	CysM	bCSE	MalY	CysK
+MetC	bCSE	CysK	CysA	CysW
+CysU	CysW	CysA	CysH	assSat
+assSat	CysC	CysM	CysM	CysK
+OAHS	CysA	CysW	CysU	MalY
+CysH	CysI	CysJ	CysK	MetB
+CysK	CysE	bCSE	MetC
+CysK	CysE	bCSE	MetC	OAHS
+bCBS	bCSE	MetK	CysK	bCSE
+MalY	CysK	CysA	MetQ	bCSE
+bCSE	CysK	CysA	MalY	CysA
+CysK	CysA	MalY	CysA
+CysA	MetQ	OAHS	CysK	MetB
+CysK	CysI	CysH	CysD	CysN-CysC
+CysC	assSat	CysC	CysU	CysA	CysA
+CysA	CysU	CysU	CysA	CysK
+MetB	CysK	CysU	CysW	CysA
+CysH	CysD	CysN	CysM	bCSE
+OAHS	CysK	bCSE	bCBS	MalY
+CysA	CysH	CysD	CysN	OAHS
+bCSE	MalY	MetA	CysA	CysU
+MetB	CysI	CysJ	CysA
+MetB	CysI	CysJ	CysA	CysA
+CysA	MetQ	CysA	CysU	CysW
+CysK	CysA	MetQ	CysU	CysA
+CysK	CysK	CysD	CysN	OAHS
+CysU	CysW	CysA	CysA	bCSE
+CysW	CysA	CysA	bCSE
+MetA	OAHS	CysA	MalY	CysA
+OAHS	CysU	CysW	CysA	CysH
+CysK	CysE	bCSE	CysW	CysU
+bCSE	MalY	CysU	CysU	CysA
+CysA	CysW	CysU	bCSE	MetC
+MetQ	CysA	CysK	bCSE	bCBS
+CysA	CysA	CysU	CysW	CysU
+CysD	CysH	MetC	bCSE	MetK
+CysJ	CysI	CysH	CysK	CysJ
+CysI	CysH	CysK	CysJ
+CysA	CysW	CysU	CysK	CysK
+MetC	MetB	CysH	CysD	CysN
+CysA	MetB	MetB	CysW	CysU
+MetB	MetB	CysW	CysU
+CysI	CysC	CysH	CysD	CysN	CysE
+CysA	MetB	MetB	CysW	CysU	CysK
+MetB	MetB	CysW	CysU	CysK
+MetB	CysW	CysU	CysK
+CysK	CysU	CysW	MetB	bCSE	CysA
+CysU	CysW	MetB	bCSE
+CysU	CysW	MetB	bCSE	CysA
+CysI	CysN	CysD	CysH	CysK	OAHS
+CysH	CysD	CysN	OAHS	CysI	CysK
+CysW	CysU	CysA	CysC	CysH	CysI
+CysU	CysA	CysC	CysH
+CysU	CysW	CysK	MetB
+CysU	CysW	CysK	MetB	bCSE	CysA
+CysK	MetB	bCSE	CysA
+CysK	CysK	assSat	CysC	CysH	CysI
+CysU	CysW	CysA	CysD	CysN	CysC
+CysK	CysE	CysI	CysH	CysN	CysD
+CysW	CysU	CysA	assSat	CysH	CysI
+CysU	CysA	assSat	CysH
+CysU	CysA	assSat	CysH	CysI
+CysN	CysD	CysH	CysA	CysW	CysU
+CysD	CysN-CysC	CysE	CysK	bCSE
+CysD	CysN-CysC	CysE	CysK	bCSE	CysM
+CysK	CysE	MetB	CysN	CysD	CysH
+CysH	CysD	CysN	CysJ	CysI	bCSE
+MetH	MetB	CysI	CysH	CysD	CysN
+MetB	CysI	CysH	CysD	CysN
+CysA	CysW	CysU	CysH	CysD	CysN
+CysD	CysN	CysU	CysW	CysA	CysH
+CysI	CysJ	CysN	CysD	CysH	OAHS
+CysK	assSat	CysA	CysU	CysH	CysC
+CysU	CysW	CysA	CysN-CysC	CysD	CysH
+CysK	CysN	CysD	CysI	CysJ	CysH
+CysM	CysA	MetQ	CysN	CysD	CysH
+CysA	MetQ	CysN	CysD
+CysN	CysD	CysC	MetH	CysM	CysE
+OAHS	CysK	CysI	CysN	CysD	CysH
+CysI	CysJ	CysK	CysN	CysD	CysH
+CysN	CysD	CysH	CysI	CysJ	MetB
+CysN-CysC	CysD	CysH	CysU	CysW	CysA
+CysN	CysD	CysA	CysW	CysU	CysK
+CysA	CysA	CysW	CysU	MalY	bCSE
+CysA	CysW	CysU	MalY	bCSE
+MetQ	CysA	OAHS	bCBS	bCSE	CysK
+CysA	OAHS	bCBS	bCSE	CysK
+OAHS	CysU	CysW	CysA	CysD
+OAHS	CysU	CysW	CysA	CysD	CysN
+CysA	MetQ	CysA	CysK	CysK
+CysA	MetQ	CysA	CysK	CysK	OAHS
+MetQ	CysA	CysK	CysK	OAHS
+CysA	CysW	CysU	CysN	CysD	CysH
+MetQ	CysA	CysU	CysU	CysA
+MetQ	CysA	CysU	CysU	CysA	CysK
+bCSE	MalY	CysA	MetQ	CysK
+bCSE	MalY	CysA	MetQ	CysK	MetH
+MetH	bCSE	CysI	CysH	CysD	CysN
+CysH	CysD	CysN	CysI	MetB
+CysH	CysD	CysN	CysI	MetB	CysA
+CysW	CysA	CysH	CysD	CysN	CysI
+CysU	CysW	CysA	CysH	CysD	CysN-CysC
+CysU	CysW	CysA	CysD	CysN	CysA
+CysW	CysA	CysD	CysN	CysA
+CysA	CysD	CysN	CysA
+CysH	CysJ	CysI	CysD	CysN	MetH
+CysU	CysW	CysA	CysN	CysD	CysH
+MalY	CysA	bCSE	bCBS
+MalY	CysA	bCSE	bCBS	bCSE	CysK
+CysA	bCSE	bCBS	bCSE	CysK
+bCBS	CysI	CysJ	assSat	CysH
+bCBS	CysI	CysJ	assSat	CysH	CysC
+OAHS	CysN	CysD	CysA	CysW	CysU
+CysN	CysD	CysH	CysK	CysI	CysJ
+CysD	CysN	CysH	CysC	CysM	CysK
+CysN	CysH	CysC	CysM
+CysA	CysW	CysU	CysA	CysW	CysU
+CysN-CysC	CysC	CysD	CysA
+CysN-CysC	CysC	CysD	CysA	CysW	CysU
+CysC	CysD	CysA	CysW	CysU
+CysH	CysD	CysN	CysE	CysJ
+CysH	CysD	CysN	CysE	CysJ	CysI
+CysD	CysN	CysE	CysJ
+CysD	CysN	CysE	CysJ	CysI
+CysN	CysE	CysJ	CysI
+CysU	CysW	CysA	CysA	CysH
+CysU	CysW	CysA	CysA	CysH	CysI
+CysW	CysA	CysA	CysH
+CysW	CysA	CysA	CysH	CysI
+CysA	CysW	CysU	CysN-CysC	CysD	CysH
+CysN	CysD	CysH	bCSE	OAHS	MetK
+CysJ	CysI	CysH	CysD	CysN	CysC
+CysU	CysW	CysA	CysA	CysU	bCSE
+CysA	OAHS	CysA	MetQ	bCSE	bCBS
+CysI	CysH	CysC	CysD	CysN	CysA
+CysK	OAHS	MetB	CysN	CysD	CysH
+CysM	CysK	assSat	CysC	CysH	CysI
+bCSE	CysH	CysD	CysN	CysK
+bCSE	CysH	CysD	CysN	CysK	CysJ
+bCSE	CysK	CysH	CysD	CysN-CysC	OAHS
+CysU	CysW	CysA	CysD	CysN	bCSE
+CysW	CysA	CysD	CysN	bCSE
+CysA	CysD	CysN	bCSE
+assSat-CysC	CysH	CysI	CysA	CysW	CysU
+CysU	CysA	CysN	CysD	CysC	CysH
+bCBS	CysK	bCSE	MalY	OAHS	CysK
+CysA	MetQ	bCBS	bCSE	CysK	CysA
+CysH	CysN	CysD	CysU	CysA	OAHS
+CysN	CysD	CysU	CysA	OAHS
+CysD	CysU	CysA	OAHS
+bCBS	bCSE	MetQ	CysU	MalY	bCSE
+CysD	CysN	CysH	CysW	CysU	CysA
+CysN	CysH	CysW	CysU	CysA
+CysH	CysW	CysU	CysA
+bCSE	MalY	CysK	MetQ	CysA	CysA
+bCSE	MalY	CysK	CysA	MetQ	CysA
+OAHS	bCSE	MalY	CysK	CysA	MetQ
+CysH	CysN	CysD	OAHS	CysA	CysU
+CysN	CysD	OAHS	CysA	CysU
+CysD	OAHS	CysA	CysU
+CysK	bCSE	MetQ	CysA	CysK	MalY
+CysA	CysJ	CysI	CysH	CysK
+CysA	CysJ	CysI	CysH	CysK	MetB
+CysN-CysC	CysD	CysJ	CysI	CysH	CysA
+CysW	CysA	OAHS	bCSE
+CysW	CysA	OAHS	bCSE	bCBS
+CysW	CysA	OAHS	bCSE	bCBS	OAHS
+CysA	OAHS	bCSE	bCBS	OAHS
+CysN	CysD	CysI	CysJ	CysH	CysK
+CysM	CysI	CysJ	CysN
+CysM	CysI	CysJ	CysN	CysD	CysH
+MetQ	CysA	CysA	CysK	MalY	bCSE
+CysA	CysW	CysU	MetQ	CysA	OAHS
+CysW	CysU	MetQ	CysA	OAHS
+CysA	CysW	CysU	CysM	CysM
+CysA	CysW	CysU	CysM	CysM	CysA
+CysW	CysU	CysM	CysM
+assSat	CysC	CysU	CysA	CysA
+CysU	CysA	CysU	MetC	MetC
+CysU	CysA	CysU	MetC	MetC	bCBS
+CysN	CysD	CysH	CysI	CysA	CysA
+CysD	CysH	CysI	CysA	CysA
+CysH	CysD	CysN-CysC	CysK	bCSE	MetC
+MetC	bCSE	CysK	CysN	CysD	CysH
+CysC	CysN	CysD	CysJ
+CysC	CysN	CysD	CysJ	CysI	CysH
+CysN-CysC	CysD	CysW	CysU	CysA	CysH
+CysU	CysW	CysA	CysK	MetQ	CysA
+CysI	CysJ	CysN	CysD	CysH	CysA
+CysI	assSat	CysH	CysC	CysU
+CysI	assSat	CysH	CysC	CysU	CysA
+assSat	CysH	CysC	CysU
+assSat	CysH	CysC	CysU	CysA
+CysH	CysC	CysU	CysA
+CysN-CysC	CysD	CysC	CysH	CysI	CysK
+MetB	CysK	CysH	CysI	CysJ	MetA
+CysA	MetH	bCSE	OAHS	CysK	MetK
+MetB	MetB	CysI	CysJ	MetQ	CysA
+CysN	CysD	CysA	CysW	CysU	CysC
+CysK	CysA	CysW	CysU	CysK	MetK
+CysK	bCSE	bCSE	MetQ	CysA	MetQ
+MetA	CysA	CysW	CysH	assSat
+MetA	CysA	CysW	CysH	assSat	CysI
+CysN-CysC	CysD	CysJ	CysI	CysH	CysK
+CysJ	CysN-CysC	CysD	CysJ	CysI	CysH
+CysJ	CysI	CysH	CysA	CysW	CysU
+CysH	assSat-CysC	CysI	CysA	CysW	CysU
+assSat-CysC	CysI	CysA	CysW	CysU
+bCBS	CysU	CysW	CysA	CysK	MalY
+CysH	CysC	assSat	CysU	CysW	CysA
+CysA	CysN-CysC	CysD	CysA	CysW
+CysA	CysN-CysC	CysD	CysA	CysW	CysU
+CysA	CysU	CysK	CysA	bCSE	MalY
+CysU	CysK	CysA	bCSE
+MetH	MalY	bCSE	CysA	MetQ	CysK
+CysK	MetB	CysN	CysD	CysH	CysA
+MetB	CysN	CysD	CysH	CysA
+MetA	OAHS	CysK	CysU	CysW	CysA
+CysD	CysN-CysC	CysC	CysU	CysW	CysA
+CysN-CysC	CysC	CysU	CysW	CysA
+CysI	CysC	assSat	CysH	bCSE
+CysI	CysC	assSat	CysH	bCSE	MetC
+CysU	CysW	CysA	CysH	CysC	assSat
+CysK	CysE	CysN	CysD	CysH	CysI
+CysA	CysW	CysU	OAHS	CysK	bCSE
+CysK	CysH	CysD	CysN	bCSE
+CysK	CysH	CysD	CysN	bCSE	MalY
+CysJ	CysH	CysI	CysD	CysN	CysU
+CysH	CysI	CysD	CysN	CysU
+CysA	CysK	CysN	CysD	CysH	CysI
+CysA	CysW	CysU	CysH	assSat	CysC
+CysW	CysU	CysH	assSat	CysC
+CysU	CysH	assSat	CysC
+CysA	CysK	MalY	bCSE	MetQ
+CysA	CysK	MalY	bCSE	MetQ	CysA
+CysA	MetB	MetB	CysK
+CysA	MetB	MetB	CysK	CysW	CysU
+MetQ	CysA	bCSE	CysK	MetQ
+MetQ	CysA	bCSE	CysK	MetQ	CysA
+CysA	bCSE	CysK	MetQ
+CysA	bCSE	CysK	MetQ	CysA
+CysN	CysD	CysI	CysH	CysK	CysE
+CysM	CysC-assSat	CysA	CysW	CysU	CysH
+CysE	CysK	CysN	CysD	CysH
+CysE	CysK	CysN	CysD	CysH	CysI
+CysH	CysC	CysD	CysN	CysA	CysA
+CysN	CysD	CysH	CysI	MetB	MetB
+CysD	CysH	CysI	MetB	MetB
+CysU	CysW	CysA	CysD	CysN	MetK
+CysH	CysD	CysN	bCSE	CysK	MetA
+CysA	CysA	CysN	CysD	CysH	CysI
+CysH	CysD	CysN	CysI	OAHS	bCSE
+CysD	CysN	CysI	OAHS	bCSE
+CysI	CysH	CysD	CysN	CysC	CysA
+CysN	CysD	CysC	OAHS	CysK	CysI
+CysD	CysC	OAHS	CysK	CysI
+CysK	OAHS	CysI	CysH	CysD
+CysK	OAHS	CysI	CysH	CysD	CysN
+CysE	OAHS	CysN	CysD	CysH
+CysE	OAHS	CysN	CysD	CysH	CysI
+MetB	CysK	OAHS	CysA
+MetB	CysK	OAHS	CysA	CysW	CysU
+CysA	CysD	CysN	CysH	CysW
+CysA	CysD	CysN	CysH	CysW	CysU
+CysW	CysU	CysA	CysA	CysW	CysU
+MetK	CysA	CysW	CysU	CysN	CysD
+CysA	CysU	CysU	CysH	CysN
+CysA	CysU	CysU	CysH	CysN	CysD
+CysM	CysU	CysW	CysA	CysD	CysN
+CysU	CysU	CysH	CysN	CysD	CysA
+CysU	CysH	CysN	CysD	CysA
+CysK	OAHS	MetQ	CysA	bCBS	bCSE
+CysW	CysU	CysA	CysD	CysN	CysH
+OAHS	bCSE	bCBS	CysA	MetQ	MalY
+OAHS	MetE	MetQ	bCSE	bCBS	CysA
+CysK	OAHS	CysK	MetQ	CysA	CysA
+OAHS	CysK	bCSE	MalY	bCBS	CysK
+CysN	CysD	OAHS	CysA	CysW	CysU
+CysD	OAHS	CysA	CysW	CysU
+CysA	MetQ	CysA	OAHS	bCSE	CysK
+MetQ	CysA	OAHS	bCSE	CysK
+CysA	OAHS	bCSE	CysK
+CysN	CysD	CysC	CysA	CysU	CysU
+CysD	CysC	CysA	CysU	CysU
+CysH	CysD	CysN-CysC	OAHS	CysI	CysK
+CysI	CysJ	CysN	CysD	CysH	CysM
+CysD	CysH	CysK	CysE	CysI	CysJ
+CysK	CysE	CysI	CysJ
+CysK	CysI	CysN	CysD	CysH	MetB
+CysI	CysN	CysD	CysH	MetB
+CysJ	CysI	CysN	CysD	CysH	CysK
+bCSE	CysU	CysW	CysA	CysD	CysN
+CysA	CysW	CysW	assSat	CysC	CysH
+CysW	CysW	assSat	CysC	CysH
+CysW	assSat	CysC	CysH
+bCSE	bCSE	CysK	CysH
+bCSE	bCSE	CysK	CysH	CysD	CysN
+bCSE	CysK	CysH	CysD	CysN
+CysK	CysI	CysH	CysD	CysN-CysC	bCSE
+CysI	CysN	CysD	CysH	bCSE	CysA
+CysU	CysA	assSat	CysH	CysC
+CysU	CysA	assSat	CysH	CysC	CysI
+CysU	CysW	CysA	CysD	CysN	CysK
+bCSE	CysK	OAHS	CysA
+bCSE	CysK	OAHS	CysA	CysW	CysU
+CysU	CysU	CysA	CysH	CysD
+CysU	CysU	CysA	CysH	CysD	CysN
+CysA	MetQ	bCSE	bCBS	OAHS	CysU
+MetQ	bCSE	bCBS	OAHS	CysU
+bCSE	MetQ	CysA	MalY	bCSE
+bCSE	MetQ	CysA	MalY	bCSE	bCBS
+bCSE	bCBS	CysA	MalY	bCSE
+bCSE	bCBS	bCSE	CysK	MetQ	CysA
+CysD	CysH	CysA	CysW	CysU	MetH
+CysA	OAHS	bCBS	bCSE	MetQ
+CysA	OAHS	bCBS	bCSE	MetQ	CysA
+MetQ	CysA	OAHS	CysK	bCSE	MalY
+CysD	CysH	CysA	CysW	CysU	CysA
+MetQ	CysA	MetQ	CysA	bCBS	bCSE
+CysK	OAHS	MetB	CysA
+CysK	OAHS	MetB	CysA	MetQ	MetA
+OAHS	MetB	CysA	MetQ
+MetQ	CysA	bCSE	MetC	CysK	MalY
+CysK	bCSE	bCSE	CysK	MetQ	CysA
+MetQ	CysA	CysI	CysH
+MetQ	CysA	CysI	CysH	CysD	CysN
+CysA	CysA	MetQ	MalY	bCSE
+CysA	CysA	MetQ	MalY	bCSE	CysK
+MalY	CysU	CysW	CysA	CysD	CysN
+CysI	CysH	CysJ	CysA	CysW	CysU
+CysH	CysJ	CysA	CysW	CysU
+CysI	CysC	CysA	CysU
+CysI	CysC	CysA	CysU	assSat	CysH
+CysA	CysU	assSat	CysH
+CysA	CysD	CysN	CysW
+CysA	CysD	CysN	CysW	CysA
+CysA	CysD	CysN	CysW	CysA	OAHS
+CysD	CysN	CysW	CysA	OAHS
+CysK	CysN	CysD	CysH	CysA	CysU
+CysN	CysC	CysD	CysU	CysW	CysA
+CysN	CysD	CysH	CysI	MetB	bCSE
+CysW	CysU	CysK	CysA	CysW	CysU
+CysK	MetC	bCSE	OAHS	CysA	MetQ
+MetC	bCSE	OAHS	CysA
+MetK	bCSE	CysH	CysD	CysN	MetH
+MetC	bCSE	CysK	CysI	assSat	CysH
+CysK	CysI	assSat	CysH
+CysU	CysW	CysA	CysA	bCSE	MetC
+CysA	CysA	CysH	CysD	CysN	CysK
+CysE	CysI	CysJ	CysN	CysD	CysH
+CysN-CysC	CysD	CysU	CysW	CysA	CysH
+CysD	CysU	CysW	CysA	CysH
+CysJ	CysI	CysH	assSat	CysK	MetB
+CysH	CysD	CysN	CysJ	CysI	MetB
+MalY	bCSE	bCBS	bCSE	MetA	OAHS
+OAHS	CysK	CysA	CysN
+OAHS	CysK	CysA	CysN	CysD
+OAHS	CysK	CysA	CysN	CysD	CysH
+MetB	CysK	CysD	CysH	CysA	CysW
+CysK	CysD	CysH	CysA
+CysK	CysD	CysH	CysA	CysW
+CysN-CysC	CysD	CysC	CysA	CysU	CysU
+CysN	CysD	CysH	OAHS	CysK	OAHS
+CysD	CysH	OAHS	CysK	OAHS
+CysH	OAHS	CysK	OAHS
+OAHS	CysA	CysW	CysU	MetQ	CysA
+CysA	CysA	CysW	CysU	CysN
+CysA	CysA	CysW	CysU	CysN	CysD
+CysC	CysD	CysN-CysC	CysW
+CysC	CysD	CysN-CysC	CysW	CysU	CysA
+CysD	CysN-CysC	CysW	CysU	CysA
+CysN-CysC	CysW	CysU	CysA
+bCSE	MetC	MetH	CysC
+bCSE	MetC	MetH	CysC	assSat	CysH
+CysN	CysD	CysK	CysH	CysI	OAHS
+CysU	CysW	CysA	CysN-CysC	CysD	CysC
+CysN	CysD	CysJ	CysI	CysK	CysH
+CysU	CysW	CysA	CysD	CysN	CysI
+CysW	CysA	CysD	CysN	CysI
+CysN	CysD	CysC	CysK	CysH	CysI
+CysA	MetQ	CysA	MalY	bCSE	CysK
+MetQ	CysA	MalY	bCSE	CysK
+bCSE	CysJ	CysI	CysH	assSat	CysC
+CysA	CysW	CysU	CysD	CysN	CysH
+CysN	CysD	CysK	CysU	CysA
+CysN	CysD	CysK	CysU	CysA	CysH
+CysK	CysU	CysA	CysH
+CysH	CysN-CysC	CysD	CysA	CysW	CysU
+bCSE	MetQ	CysA	MalY	CysA
+bCSE	MetQ	CysA	MalY	CysA	MetQ
+MetQ	CysA	MalY	CysA
+CysK	OAHS	CysH	CysN	CysD	CysA
+OAHS	CysH	CysN	CysD	CysA
+CysA	MetQ	bCSE	bCBS	MetQ	CysA
+CysC	assSat	CysH	CysA	CysW	CysU
+MetB	CysH	CysA	CysW
+MetB	CysH	CysA	CysW	CysU
+MetB	CysH	CysA	CysW	CysU	CysK
+CysH	CysA	CysW	CysU	CysK
+CysN	CysD	CysA	CysW	CysU	CysA
+CysD	CysA	CysW	CysU	CysA
+CysA	CysA	MetB	CysW	CysU	OAHS
+OAHS	CysM	bCSE	CysD	CysN	CysH
+bCSE	CysD	CysN	CysH
+MetA	CysK	MetB	CysN	CysD	CysH
+CysI	assSat	CysC	CysH	CysU	CysA
+MetQ	MetQ	CysA	CysU	CysW	CysA
+CysA	CysU	CysW	CysA	CysD	CysN-OAHS
+bCSE	CysM	CysI	CysH	assSat	CysC
+CysA	MetQ	CysA	bCSE	MalY	MetA
+MetQ	CysA	bCSE	MalY	MetA
+CysU	CysH	CysD	CysN	CysJ	CysI
+CysC	CysN	CysD	CysI	CysH
+CysC	CysN	CysD	CysI	CysH	CysJ
+CysU	CysW	CysA	bCSE	CysW	CysU
+CysA	bCSE	CysW	CysU
+CysC	CysD	CysN-CysC	CysU	CysU	CysA
+CysA	CysW	CysU	CysW	CysU	CysA
+CysK	CysH	CysD	CysN	CysU
+CysK	CysH	CysD	CysN	CysU	CysA
+CysH-CysD	CysN-CysC	CysU	CysW	CysA	bCBS
+CysA	CysW	CysU	CysH	CysN	CysD
+CysW	CysU	CysH	CysN	CysD
+CysD	CysN	CysH-CysC	CysU	CysW	CysA
+CysU	CysW	CysA	CysK	CysH	assSat
+CysN-CysC	CysC	CysD	CysU
+CysN-CysC	CysC	CysD	CysU	CysW	CysA
+CysK	CysU	CysW	CysA	CysN
+CysK	CysU	CysW	CysA	CysN	CysD
+CysN	CysD	CysH	CysI	CysA	CysU
+CysD	CysH	CysI	CysA	CysU
+CysN	CysD	CysH	CysJ	CysI	OAHS
+CysH	CysJ	CysI	OAHS
+CysI	CysJ	CysH	CysD	CysN	CysU
+CysJ	CysH	CysD	CysN	CysU
+CysH	CysI	CysJ	CysU
+CysH	CysI	CysJ	CysU	CysW	CysA
+MetE	CysH	CysJ	CysI	bCSE	MetC
+CysM	CysE	CysN	CysD	CysH	CysI
+CysW	CysU	CysA	assSat-CysC	CysH	CysI
+CysI	CysH	assSat	CysC	MetC
+CysI	CysH	assSat	CysC	MetC	OAHS
+CysH	assSat	CysC	MetC
+bCSE	CysK	CysK	CysA
+bCSE	CysK	CysK	CysA	CysW	CysU
+CysH	CysC	assSat	CysA	CysW	CysU
+CysD	CysN-CysC	CysN	CysD
+CysD	CysN-CysC	CysN	CysD	CysH	CysI
+CysN-CysC	CysN	CysD	CysH	CysI
+CysU	CysW	CysA	assSat	CysH	OAHS
+CysK	CysA	CysW	CysU	CysN
+CysK	CysA	CysW	CysU	CysN	CysD
+CysU	CysW	CysA	CysH	assSat	CysK
+CysU	CysW	CysA	OAHS	bCSE
+CysU	CysW	CysA	OAHS	bCSE	bCBS
+CysA	CysW	CysU	bCSE	MetC	CysE
+MetH	bCSE	bCSE	assSat	CysH	CysC
+bCSE	assSat	CysH	CysC
+CysA	CysW	CysU	CysC	CysH	assSat
+CysW	CysU	CysC	CysH	assSat
+CysD	CysN	CysU	CysW	CysA	CysC
+MalY	CysW	CysA	CysU	CysA
+MalY	CysW	CysA	CysU	CysA	CysU
+CysN	CysD	CysH	CysK	MetC	bCSE
+CysI	CysJ	CysH	CysN	CysD	CysA
+OAHS	bCSE	CysH	CysD	CysN	CysJ
+bCSE	CysH	CysD	CysN	CysJ
+CysM	CysI	CysH	CysC	assSat	CysK
+MetC	bCSE	CysC	CysH	CysD	CysN
+CysA	CysK	CysH	CysD	CysN
+CysA	CysK	CysH	CysD	CysN	OAHS
+CysN	CysC	CysH	CysA
+CysN	CysC	CysH	CysA	CysW	CysU
+CysH	CysD	CysN	CysE	CysK	bCSE
+CysI	CysH	CysK	CysA	CysW	CysU
+OAHS	MetQ	CysA	bCSE	bCSE	bCBS
+CysA	CysW	CysU	CysK	CysD
+CysA	CysW	CysU	CysK	CysD	CysN-CysC
+CysW	CysU	CysK	CysD
+CysD	CysN	CysE	CysK	CysJ
+CysD	CysN	CysE	CysK	CysJ	CysI
+CysD	CysN	CysC	CysH	CysI	CysJ
+CysN	CysC	CysH	CysI	CysJ
+CysU	CysA	CysW	CysU	CysA	CysE
+CysA	CysW	CysU	CysA	CysE
+CysA	CysW	CysU	CysC	CysD
+CysA	CysW	CysU	CysC	CysD	CysN
+CysD	CysN-CysC	CysE	CysK	bCSE	CysK
+CysK	CysJ	CysI	CysH	CysD	CysN
+CysC	CysD	CysN-CysC	CysU	CysW	CysA
+CysI	CysN-CysC	CysD	CysH	OAHS	CysK
+CysI	CysH	CysD	CysN	CysK	MetB
+CysH	CysD	CysN	CysK	MetB
+CysD	CysN	CysK	MetB
+CysU	CysA	bCBS	bCSE	CysA	CysM
+CysN	CysN	CysD	CysA	CysW	CysU
+CysA	MetQ	bCSE	MalY	MetA
+CysA	MetQ	bCSE	MalY	MetA	OAHS
+CysU	CysU	CysA	CysD	CysN	CysH
+MetK	CysK	MetQ	CysA	bCBS	bCSE
+CysK	MetQ	CysA	bCBS	bCSE
+bCSE	MetC	bCSE	CysA	CysK	OAHS
+bCSE	CysA	CysK	OAHS
+CysA	CysI	CysN	CysD	CysH	CysK
+CysH	CysI	CysU	CysW	CysA	CysK
+OAHS	CysW	CysU	CysH
+OAHS	CysW	CysU	CysH	CysD	CysN
+CysA	CysW	CysU	CysK	OAHS	CysK
+CysU	CysK	OAHS	CysK
+CysI	CysN	CysD	CysH	CysK	CysA
+CysA	CysU	CysU	CysM	CysM
+CysA	CysU	CysU	CysM	CysM	CysA
+CysU	CysU	CysM	CysM
+CysN	CysN	CysD	CysH	CysW	CysU
+CysH	CysI	CysJ	CysN	CysD	CysC
+MetQ	CysA	bCBS	MetB	OAHS	CysA
+CysA	bCBS	MetB	OAHS
+CysA	CysU	MetC	CysM	CysU
+CysA	CysU	MetC	CysM	CysU	CysA
+CysN	CysD	CysH	CysC	CysM	CysI
+CysK	CysK	MalY	bCSE	MetQ
+CysK	CysK	MalY	bCSE	MetQ	CysA
+MetQ	CysA	CysA	OAHS	bCBS	bCSE
+CysA	CysA	OAHS	bCBS	bCSE
+CysN	CysD	CysH	MetB	MetC	MetK
+CysA	bCSE	CysK	bCSE	MalY	OAHS
+bCSE	MalY	MetQ	CysA	CysA	MetQ
+CysA	CysU	CysA	CysW	CysN-CysC	CysD
+CysU	CysA	CysW	CysN-CysC	CysD
+CysI	CysH	CysD	CysN-CysC	CysU
+CysI	CysH	CysD	CysN-CysC	CysU	CysW
+CysD	CysN	CysC	CysU	CysW	CysA
+CysN	CysC	CysU	CysW	CysA
+CysU	CysW	CysA	CysH	CysN	CysD
+CysW	CysA	CysH	CysN	CysD
+MalY	MetH	CysK	CysM	CysU	CysA
+CysU	CysW	CysA	CysD	CysN	MalY
+CysW	CysA	CysD	CysN	MalY
+CysA	CysD	CysN	MalY
+MetK	OAHS	bCSE	CysH	CysM	MetH
+OAHS	bCSE	CysH	CysM	MetH
+OAHS	bCSE	CysK	CysA	MetQ
+OAHS	bCSE	CysK	CysA	MetQ	CysE
+CysN-CysC	CysD	CysC	CysA	CysW	CysU
+CysD	CysC	CysA	CysW	CysU
+CysD	CysN	CysU	CysW	CysA	OAHS
+CysN	CysU	CysW	CysA	OAHS
+CysJ	CysI	CysH	CysD	CysC	CysA
+CysI	CysH	CysD	CysC	CysA
+CysC	CysJ	CysI	CysH	CysD	CysN
+CysA	CysW	CysU	OAHS	MetQ
+CysA	CysW	CysU	OAHS	MetQ	CysA
+CysA	CysW	CysU	CysK	CysU
+CysA	CysW	CysU	CysK	CysU	CysW
+CysW	CysU	CysK	CysU
+CysW	CysA	CysD	CysN	OAHS	CysK
+CysA	CysD	CysN	OAHS	CysK
+CysN	CysD	CysC	CysH	CysI	CysA
+MetK	OAHS	MetH	CysH
+MetK	OAHS	MetH	CysH	CysD
+MetK	OAHS	MetH	CysH	CysD	CysN
+OAHS	MetH	CysH	CysD
+OAHS	MetH	CysH	CysD	CysN
+CysA	CysI	CysH	CysA
+CysA	CysI	CysH	CysA	CysW
+CysA	CysI	CysH	CysA	CysW	CysU
+CysA	CysW	CysU	bCBS	bCSE
+CysA	CysW	CysU	bCBS	bCSE	CysU
+CysW	CysU	bCBS	bCSE
+CysA	CysW	CysU	CysI	CysK
+CysA	CysW	CysU	CysI	CysK	CysA
+CysW	CysU	CysA	MetA	CysA	CysU
+CysH	assSat	CysC	CysJ	CysI	bCBS
+OAHS	bCSE	MetH	CysH	CysD
+OAHS	bCSE	MetH	CysH	CysD	CysN
+CysA	CysW	CysU	CysC	CysN	CysH
+CysU	CysC	CysN	CysH
+CysI	CysJ	CysH	CysD	CysN	bCSE
+MetA	MalY	bCSE	MetQ	CysA	CysA
+MetQ	CysA	bCSE	bCSE	MetA	OAHS
+CysA	bCSE	bCSE	MetA
+CysA	bCSE	bCSE	MetA	OAHS
+CysU	CysA	CysN	CysD	CysH	CysI
+CysC	CysH	assSat	CysJ	CysI	bCSE
+CysA	MalY	MetA	CysI	OAHS	bCSE
+CysI	CysH	CysD	CysN	CysD
+CysI	CysH	CysD	CysN	CysD	CysN
+CysH	CysD	CysN	CysD	CysN
+CysD	CysN	CysD	CysN
+CysI	assSat	CysH	CysA	CysW	CysU
+assSat	CysC	CysH	CysJ	CysI	MetH
+CysH	CysJ	CysI	MetH
+MetH	CysH	bCSE	OAHS	MetK	CysK
+CysA	CysW	CysU	MetQ	bCSE
+CysA	CysW	CysU	MetQ	bCSE	CysA
+MetE	CysH	assSat	CysJ	CysI	CysC
+CysI	CysJ	CysC	assSat	CysH	CysA
+CysJ	CysC	assSat	CysI	CysJ	CysH
+CysU	CysW	CysA	CysW	CysU	CysA
+CysU	CysW	CysA	MetQ	CysA	MetQ
+CysW	CysA	MetQ	CysA	MetQ
+CysC	assSat	CysH	CysI	CysJ	CysA
+assSat	CysH	CysI	CysJ	CysA
+CysC	CysN	CysD	CysH	CysJ	bCSE
+CysA	MetQ	bCBS	bCSE	CysK	MalY
+CysA	CysW	CysN-CysH	CysD	CysJ	CysI
+CysU	CysU	CysA	CysD	CysN	CysC
+CysE	MetQ	CysA	MetQ	bCBS	bCSE
+MetQ	CysA	MetQ	bCBS
+MetQ	CysA	MetQ	bCBS	bCSE
+MetK	OAHS	CysH	CysD	CysN	MetH
+CysU	CysW	CysA	CysD	CysN	MetA
+CysA	CysA	CysW	CysU	CysE	MetH
+CysI	CysK	OAHS	CysC	CysD	CysN-CysC
+CysA	CysW	CysU	CysN	CysD	CysC
+CysU	CysA	CysW	CysA	CysW	CysU
+MetE	MalY	bCSE	bCSE	CysK	CysA
+MalY	bCSE	bCSE	CysK
+CysC	CysH	CysI	CysJ	CysD	CysN-CysC
+CysK	bCSE	MetC	CysU	CysW	CysA
+bCSE	CysH	CysD	CysN	CysM	MetH
+CysA	CysH	CysJ	CysI	assSat	CysC
+CysK	bCSE	MetC	CysK	OAHS	CysC
+CysU	CysW	CysA	CysN	CysH
+CysU	CysW	CysA	CysN	CysH	CysI
+CysW	CysA	CysN	CysH
+CysW	CysA	CysN	CysH	CysI
+CysN-CysC	CysD	CysJ	CysI	CysH	CysN
+CysD	CysN	CysC	CysJ
+CysD	CysN	CysC	CysJ	CysI	CysH
+CysD	bCSE	MalY	CysA	CysW	CysU
+bCSE	bCSE	CysA	CysA
+bCSE	bCSE	CysA	CysA	CysU	CysU
+CysU	CysA	CysW	CysU	CysA	MetB
+CysA	CysW	CysU	CysA	MetB
+CysI	CysH	CysD	CysN-CysC	CysU	CysA
+CysH	CysD	CysN-CysC	CysU	CysA
+bCSE	MalY	CysK	CysK	CysA
+bCSE	MalY	CysK	CysK	CysA	CysA
+CysK	CysK	CysA	CysA
+CysH	CysI	CysJ	CysD	CysN-CysC	MetH
+bCBS	bCSE	CysK	CysA	CysW	CysA
+CysA	CysU	CysW	CysU	bCSE
+CysA	CysU	CysW	CysU	bCSE	CysA
+CysU	CysW	CysU	bCSE
+CysW	CysU	bCSE	CysA
+CysI	CysH	CysC	CysN	CysD	CysN
+CysN	CysD	CysH	CysI	MetE
+CysN	CysD	CysH	CysI	MetE	OAHS
+CysA	MetE	CysI	CysH	CysD	CysN
+CysU	CysA	CysU	CysW	CysA	CysK
+MetQ	CysA	OAHS	CysU	CysW	CysA
+CysU	CysU	CysA	CysH	assSat	CysC
+CysU	CysA	CysH	assSat	CysC
+MetB	CysH	CysI	CysJ	CysK	assSat
+CysI	CysC	CysH	assSat	CysA	MetH
+CysU	CysW	CysA	CysJ	CysI	CysH
+CysM	MetK	OAHS	bCSE	CysH	MetH
+CysW	CysA	bCSE	CysU	CysU
+CysW	CysA	bCSE	CysU	CysU	CysA
+CysN	CysD	CysH	CysJ	CysI	MetC
+CysH	CysJ	CysI	MetC
+OAHS	CysJ	CysI	CysH	CysD	CysN
+CysN	CysD	CysA	CysW	CysU	CysE
+CysU	CysA	MetH	CysA
+CysU	CysA	MetH	CysA	CysW	CysU
+CysA	MetH	CysA	CysW
+CysA	CysU	MetC	MetA	CysA	CysU
+CysD	OAHS	MetQ	CysA	CysK	CysK
+MalY	CysK	CysA	CysW	CysU	OAHS
+CysH	CysD	CysN	CysN	CysD
+CysN	CysD	CysN-CysC	CysU
+CysN	CysD	CysN-CysC	CysU	CysW	CysA
+CysA	CysW	CysU	MetQ	MetQ
+CysA	CysW	CysU	MetQ	MetQ	CysA
+CysW	CysU	MetQ	MetQ	CysA
+CysU	MetQ	MetQ	CysA
+MetQ	MetQ	OAHS	MetE	MetA	bCSE
+OAHS	CysN	CysD	CysH	CysJ	CysI
+CysU	CysU	CysA	CysN	CysD
+CysU	CysU	CysA	CysN	CysD	CysC
+MetB	CysH	CysI	CysJ	CysK	assSat-CysC
+CysC	CysU	CysA	CysH	CysD	CysN
+OAHS	CysK	CysE	bCSE	MetC	CysK
+CysE	bCSE	MetC	CysK
+CysI	CysH	CysD	CysN	bCBS	CysA
+CysK	CysA	CysU	CysN	CysD
+CysK	CysA	CysU	CysN	CysD	CysH
+CysA	CysM	CysD	CysN	CysJ	CysI
+CysA	CysW	CysU	CysA	CysW	CysM
+CysW	CysU	CysA	CysW	CysM
+CysU	CysA	CysW	CysM
+CysW	CysA	CysU	CysW	CysA	CysM
+CysW	CysA	CysD	CysN	CysH	MalY
+CysH	CysN	CysD	CysA	CysU	OAHS
+CysN	CysD	CysA	CysU	OAHS
+CysD	CysA	CysU	OAHS
+OAHS	CysK	OAHS	CysI
+OAHS	CysK	OAHS	CysI	CysK	CysH
+CysK	OAHS	CysI	CysK
+CysN	CysD	CysH	CysA	CysU	CysW
+CysD	CysH	CysA	CysU	CysW
+CysD	CysN	CysH	bCSE	bCSE
+CysD	CysN	CysH	bCSE	bCSE	CysM
+CysN	CysH	bCSE	bCSE
+CysH	bCSE	bCSE	CysM
+CysK	bCSE	CysK	assSat	CysH	CysI
+bCSE	CysK	assSat	CysH
+CysW	CysU	CysA	CysW	CysU	CysA
+CysN-CysC	CysD	CysH	CysI	CysA
+CysN-CysC	CysD	CysH	CysI	CysA	CysW
+CysD	CysH	CysI	CysA	CysW
+CysI	CysU	CysW	CysA	CysH
+CysI	CysU	CysW	CysA	CysH	CysD
+CysE	CysK	CysN-CysC	CysD	CysH	CysI
+OAHS	CysU	CysW	CysA	CysD	CysN-OAHS
+MalY	CysK	bCSE	bCBS	OAHS	CysA
+CysA	CysA	bCSE	MalY	CysK	CysK
+MetH	CysA	CysU	CysU	CysH	CysN
+CysW	CysA	CysD	CysN	CysH	CysA
+CysA	CysD	CysN	CysH	CysA
+CysH	CysN	CysD	CysA	OAHS	MalY
+CysW	CysA	CysK	CysU	CysW	bCBS
+MetA	CysK	CysA	OAHS
+MetA	CysK	CysA	OAHS	bCBS	bCSE
+CysK	CysA	OAHS	bCBS
+CysM	CysN	CysD	CysA
+CysM	CysN	CysD	CysA	CysW	CysU
+CysK	CysA	CysW	CysU	MetA	MetA
+CysA	CysW	CysU	OAHS	CysA	CysU
+CysW	CysU	OAHS	CysA	CysU
+CysU	OAHS	CysA	CysU
+CysU	CysD	CysC	CysN	CysI	CysH
+CysC	CysN	CysI	CysH
+CysI	CysN	CysD	CysH	CysA	CysU
+CysA	CysU	CysU	CysK	MetQ	CysA
+CysU	CysK	MetQ	CysA
+CysA	bCSE	MalY	CysA	MetQ	CysK
+CysK	CysE	bCSE	CysA	CysW	CysU
+MetB	bCBS	MetQ	OAHS	CysK	MetC
+bCBS	MetQ	OAHS	CysK
+CysA	CysU	CysU	MetB	CysK	OAHS
+CysA	MetQ	bCSE	CysK	OAHS	CysA
+MetQ	bCSE	CysK	OAHS	CysA
+CysA	CysU	CysA	CysW	CysU	OAHS
+CysU	CysA	CysW	CysU	OAHS
+bCSE	CysU	CysU	CysA	CysA	CysW
+CysN	CysD	CysC	CysH	CysM	CysE
+CysD	CysN	OAHS	CysU	CysW	CysA
+CysN	OAHS	CysU	CysW	CysA
+MetE	bCSE	bCBS	bCSE	CysA	OAHS
+bCSE	bCBS	bCSE	CysA	OAHS
+CysD	CysN	CysA	CysU	CysW
+CysD	CysN	CysA	CysU	CysW	CysA
+CysU	CysW	CysD	CysN	CysK
+CysU	CysW	CysD	CysN	CysK	MetQ
+CysW	CysD	CysN	CysK
+CysU	CysK	CysE	CysA	CysW
+CysU	CysK	CysE	CysA	CysW	CysU
+CysW	CysA	CysE	CysK	CysA	CysU
+CysA	CysE	CysK	CysA
+CysU	CysU	CysA	CysC	CysN	CysD
+CysU	CysA	CysC	CysN
+CysU	CysA	CysC	CysN	CysD
+CysA	MetQ	CysA	bCSE	MalY	CysK
+MetQ	CysA	bCSE	MalY	CysK
+CysK	MetQ	CysA	CysA	OAHS	CysK
+MetK	OAHS	bCSE	MetH	CysH	CysD
+CysH	CysD	CysN-CysC	CysM	CysI	CysE
+CysC	CysH	assSat	CysU
+CysC	CysH	assSat	CysU	CysW
+CysC	CysH	assSat	CysU	CysW	CysA
+assSat	CysC	CysI	CysH	CysU	CysA
+CysA	CysU	CysU	CysK	CysA	CysW
+CysH	CysD	CysN	bCSE	MetC	CysM
+CysN	CysD	CysA	CysW	CysU	MetA
+CysA	CysU	OAHS	CysK	CysU	CysW
+CysU	OAHS	CysK	CysU
+bCSE	MalY	CysA	MetQ	bCSE	bCBS
+MetC	bCSE	OAHS	CysU	CysW	CysA
+CysK	OAHS	bCBS	MetB	CysA	CysA
+CysA	MetA	OAHS	CysU	CysW	CysA
+MetA	OAHS	CysU	CysW	CysA
+MetQ	CysA	CysA	MalY
+MetQ	CysA	CysA	MalY	bCSE
+MetQ	CysA	CysA	MalY	bCSE	CysK
+CysA	CysA	MalY	bCSE	CysK
+CysI	CysH	CysE	CysK	CysA	CysU
+MetC	MetQ	CysA	CysA	CysW	CysU
+CysW	CysU	MetQ	MetQ	CysA	OAHS
+CysH	CysN	CysD	CysA	CysW	CysU
+CysH	CysD	CysN	CysI	CysA	CysK
+CysJ	CysK	CysE	CysN	CysD	CysH
+CysJ	CysI	CysA	CysW	CysU	CysH
+CysN-CysC	CysA	CysW	CysU	CysA	CysU
+CysA	CysJ	CysI	CysH	CysD
+CysA	CysJ	CysI	CysH	CysD	CysN
+OAHS	MetA	MalY	bCSE	CysA	MetQ
+CysW	CysU	CysA	assSat-CysC	CysN-CysC	CysD
+CysD	CysN	CysH	CysJ	CysI	CysJ
+CysU	CysW	CysA	CysK	CysE	bCSE
+CysI	assSat	CysU	CysW	CysA
+CysI	assSat	CysU	CysW	CysA	CysH
+CysD	CysH	CysA	CysW	CysU	OAHS
+CysH-CysI	CysC	assSat	CysA	CysW	CysW
+OAHS	CysU	CysW	CysA	CysH	CysI
+CysD	CysW	CysU	CysA	CysH	CysI
+CysW	CysU	CysA	CysH	CysI
+CysN-CysC	CysD	CysH	CysA	CysU	CysW
+CysH	CysK	bCSE	bCSE	CysM	CysI
+CysN-CysC	CysD	CysH	CysI	CysK	bCSE
+CysA	MalY	bCSE	CysA	MetQ	MetQ
+MalY	bCSE	CysA	MetQ	MetQ
+CysK	CysH	CysD	CysN	MetB	MalY
+bCBS	CysJ	CysI	CysH	assSat	CysC
+MetC	CysC	CysH	assSat	CysJ	CysI
+CysK	bCSE	CysH	CysD	CysN	CysI
+CysH	CysK	OAHS	CysK	CysE	OAHS
+OAHS	MetA	MetH	CysK	CysA	CysA
+CysU	CysW	CysA	CysK	CysD
+CysU	CysW	CysA	CysK	CysD	CysN
+MetB	bCBS	CysA	MetQ	bCSE	MetB
+CysN	CysJ	CysI	CysU	CysW	CysA
+CysW	CysA	CysA	CysU	CysW	CysU
+CysU	CysA	CysW	CysU	bCSE
+CysU	CysA	CysW	CysU	bCSE	CysK
+CysW	CysU	CysA	CysU	CysW	CysA
+CysU	CysW	CysA	CysJ	CysI	CysH	CysN
+CysA	CysJ	CysI	CysH	CysN
+OAHS	CysH	CysD	CysN	CysJ	CysI	bCSE
+CysA	CysC	CysN	CysD	CysH	CysI	CysJ
+CysU	CysW	CysA	OAHS	CysH	CysD
+CysU	CysW	CysA	OAHS	CysH	CysD	CysN
+CysI	CysH	CysC	assSat	CysU	CysW
+CysI	CysH	CysC	assSat	CysU	CysW	CysA
+CysA	CysH	CysD	CysN	MetB	CysE	CysK
+CysH	CysI	CysN-CysC	CysD	CysU	CysW	CysA
+CysA	CysW	CysU	CysI	CysH	CysD	CysN
+CysU	CysI	CysH	CysD	CysN
+CysN	CysD	CysH	CysA	CysW	CysU	CysE
+OAHS	CysN	CysD	CysA	CysW	CysU	CysK
+bCSE	CysN	CysD	CysA	CysW	CysU	OAHS
+bCSE	CysI	CysN	CysD	CysH	CysK	OAHS
+CysH	CysJ	CysI	CysD	CysN	OAHS	MetA
+CysD	CysN	OAHS	MetA
+CysU	CysW	CysA	CysK	CysH	CysD
+CysU	CysW	CysA	CysK	CysH	CysD	CysN-CysC
+CysN-CysC	CysD	CysH	CysA	CysW	CysU	CysK
+CysD	CysH	CysA	CysW	CysU	CysK
+CysU	CysW	CysA	CysH	CysD	CysN	CysA
+CysW	CysA	CysH	CysD	CysN	CysA
+CysH	CysD	CysN	CysU	CysW	CysA	CysK
+CysM	CysH	CysD	CysN-CysC	CysU	CysW	CysA
+CysC	CysN	CysD	CysH	CysI	CysJ	CysA
+CysM	CysK	bCSE	OAHS	MalY	CysA	MetQ
+bCSE	OAHS	MalY	CysA	MetQ
+CysI	CysJ	CysK	CysE	CysN	CysD	CysH
+CysN	CysD	OAHS	CysA	CysW	CysU	CysE
+CysI	CysK	CysN	CysD	CysH	CysK	OAHS
+CysK	CysN	CysD	CysH	CysK
+CysK	CysN	CysD	CysH	CysK	OAHS
+CysU	CysW	CysA	CysN	CysD	CysH	CysI
+CysW	CysA	CysN	CysD	CysH	CysI
+CysA	CysW	CysU	CysN	CysD	MalY	bCSE
+CysN	CysD	CysA	CysW	CysU	CysK	bCSE
+CysU	CysW	CysA	CysD	CysN	OAHS	CysA
+CysA	CysD	CysN	OAHS	CysA
+CysD	CysN	OAHS	CysA
+OAHS	CysN	CysD	CysH	CysA	CysW
+OAHS	CysN	CysD	CysH	CysA	CysW	CysU
+CysA	CysW	CysU	CysN	CysD	CysH	CysI
+CysW	CysU	CysN	CysD	CysH	CysI
+bCSE	bCBS	CysK	OAHS	CysK	CysE	OAHS
+CysI	CysJ	CysN	CysD	CysH	bCSE
+CysI	CysJ	CysN	CysD	CysH	bCSE	OAHS
+MetQ	CysA	bCSE	CysK	CysA
+MetQ	CysA	bCSE	CysK	CysA	MetC	bCSE
+CysA	bCSE	CysK	CysA
+MetC	bCSE	CysN	CysD	CysH	CysK	OAHS
+bCSE	CysN	CysD	CysH	CysK	OAHS
+MetE	CysI	CysJ	assSat	CysH	CysC	MetA
+CysC	CysH	CysN	CysD	CysA	CysW	CysU
+CysK	CysH	CysI	CysJ	CysD	CysN-CysC	CysJ
+bCSE	MalY	CysA	MetQ	bCSE	bCBS	OAHS
+CysN	CysD	CysH	CysA	CysW	CysU	OAHS
+CysK	OAHS	MetA	MetQ
+CysK	OAHS	MetA	MetQ	CysA
+CysK	OAHS	MetA	MetQ	CysA	MetC	bCSE
+CysN-CysC	CysD	CysH	CysA	CysW	CysU	OAHS
+bCSE	CysN	CysD	CysH	CysA
+bCSE	CysN	CysD	CysH	CysA	CysW	CysU
+CysA	MetQ	bCSE	MalY	CysK	CysK	CysA
+MetQ	bCSE	MalY	CysK	CysK	CysA
+CysA	bCBS	CysK	bCSE
+CysA	bCBS	CysK	bCSE	MalY	OAHS	CysK
+OAHS	CysA	CysW	CysU	CysN	CysD	CysH
+CysA	CysA	CysW	CysU	CysN-CysC	CysD	CysH
+assSat	CysH	CysI	CysJ	CysU
+assSat	CysH	CysI	CysJ	CysU	CysW	CysA
+CysU	CysW	CysA	CysH	CysD	CysN	CysI
+CysU	CysN	CysD	CysH	CysA
+CysU	CysN	CysD	CysH	CysA	CysW
+CysU	CysN	CysD	CysH	CysA	CysW	CysU
+CysJ	CysI	CysE	CysK	CysH	CysD	CysN
+CysE	CysK	CysH	CysD	CysN
+CysN	CysD	CysH	CysI	CysA	CysW	CysU
+CysD	CysH	CysI	CysA	CysW	CysU
+CysN	CysD	CysH	CysA	CysU	CysK
+CysN	CysD	CysH	CysA	CysU	CysK	OAHS
+CysD	CysH	CysA	CysU	CysK
+OAHS	CysA	CysW	CysU	OAHS
+OAHS	CysA	CysW	CysU	OAHS	CysK	CysA
+CysW	CysU	OAHS	CysK	CysA
+OAHS	CysK	CysN	CysD	CysA
+OAHS	CysK	CysN	CysD	CysA	CysW	CysU
+MetH	CysA	CysU	CysU	CysH	CysN	CysD
+CysN	CysD	CysA	CysW	CysU	CysA	MetQ
+CysN	CysD	CysA	CysW	CysU	CysA	OAHS
+CysA	CysW	CysU	CysA	OAHS
+CysN-CysH	CysD	CysJ	CysI	CysU	CysW	CysA
+CysD	CysJ	CysI	CysU
+CysD	CysJ	CysI	CysU	CysW	CysA
+CysA	MetQ	CysN	CysD	CysA	CysW	CysU
+CysJ	CysI	CysH	CysK	CysA	CysW	CysU
+CysI	CysH	CysD	CysN-CysC	CysU	CysW	CysA
+OAHS	MetA	MalY	bCSE	CysA	MetQ	CysA
+CysI	CysH	CysA	CysU	CysW	CysD	CysN
+CysA	CysU	CysW	CysD	CysN
+CysA	CysA	CysN	CysD	CysH	CysJ	CysI
+CysA	CysN	CysD	CysH	CysJ
+CysA	CysN	CysD	CysH	CysJ	CysI
+CysI	CysA	CysW	CysU	assSat
+CysI	CysA	CysW	CysU	assSat	CysC
+CysI	CysA	CysW	CysU	assSat	CysC	CysH
+OAHS	CysH	CysD	CysN	CysE
+OAHS	CysH	CysD	CysN	CysE	CysJ	CysI
+CysU	CysW	CysA	CysN	CysD	CysI
+CysU	CysW	CysA	CysN	CysD	CysI	CysH
+CysW	CysA	CysN	CysD	CysI
+CysW	CysA	CysN	CysD	CysI	CysH
+CysH	CysD	CysN	CysJ	CysI	CysK	CysE
+CysN	CysJ	CysI	CysK
+OAHS	OAHS	CysU	CysW
+OAHS	OAHS	CysU	CysW	CysA	CysD	CysN
+CysK	CysN	CysD	CysH	CysA	CysW
+CysK	CysN	CysD	CysH	CysA	CysW	CysU
+CysA	bCSE	MetB	CysK	CysW	CysU	CysK
+MetB	CysK	CysW	CysU	CysK
+CysK	CysW	CysU	CysK
+CysU	CysW	CysH	CysA
+CysU	CysW	CysH	CysA	CysD
+CysU	CysW	CysH	CysA	CysD	CysN
+CysU	CysW	CysH	CysA	CysD	CysN	CysI
+CysW	CysH	CysA	CysD	CysN
+CysW	CysH	CysA	CysD	CysN	CysI
+CysU	CysA	bCSE	MalY
+CysU	CysA	bCSE	MalY	MetQ	CysA	CysK
+CysA	bCSE	MalY	MetQ	CysA	CysK
+OAHS	bCBS	bCSE	MetQ	CysA	MetQ	CysA
+bCBS	bCSE	MetQ	CysA	MetQ
+bCBS	bCSE	MetQ	CysA	MetQ	CysA
+bCSE	MetQ	CysA	MetQ	CysA
+CysE	MetA	MalY	bCSE	CysK	CysA	OAHS
+CysK	MetQ	CysK	MetC	bCSE	OAHS	MetA
+MetQ	CysK	MetC	bCSE
+OAHS	CysN-CysC	CysD	CysH	CysA
+OAHS	CysN-CysC	CysD	CysH	CysA	CysW	CysU
+CysA	CysU	CysW	CysA	CysH	CysD	CysN
+CysD	CysN	CysI	CysH	CysU	CysW	CysA
+CysA	CysA	CysK	bCSE	MetC	CysK
+CysA	CysA	CysK	bCSE	MetC	CysK	CysM
+OAHS	bCSE	CysH	CysD	CysN	CysM	MetH
+CysA	CysN	CysD	CysA	CysW	CysU	CysK
+CysN-CysC	CysD	CysJ	CysI	CysH	CysK	MetB
+CysM	CysA	CysW	CysU	CysN	CysD	CysH
+CysK	CysU	CysW	CysA	CysH	CysD	CysN
+CysA	MetQ	bCBS	bCSE	CysK	CysE	OAHS
+CysU	CysW	CysA	CysH	CysD	CysN-CysC	CysK
+MetK	OAHS	bCSE	CysH	CysD	CysN	MetH
+OAHS	bCSE	CysH	CysD	CysN	MetH
+CysK	OAHS	bCSE	MalY	CysA	MetQ	bCSE
+OAHS	bCSE	MalY	CysA	MetQ
+CysH	CysD	CysN	CysJ	CysI	CysU
+CysH	CysD	CysN	CysJ	CysI	CysU	CysA
+CysD	CysN	CysJ	CysI	CysU
+CysN	CysJ	CysI	CysU	CysA
+CysA	CysK	CysN	CysD	CysA	CysW	CysU
+CysA	CysU	CysW	CysN	CysD
+CysA	CysU	CysW	CysN	CysD	CysH
+CysA	CysU	CysW	CysN	CysD	CysH	CysI
+CysU	CysW	CysN	CysD	CysH
+CysU	CysW	CysN	CysD	CysH	CysI
+CysW	CysN	CysD	CysH	CysI
+CysE	CysK	CysN	CysD	CysI
+CysE	CysK	CysN	CysD	CysI	CysJ	CysH
+CysK	OAHS	MetQ	CysA	MetA	bCSE	MetC
+CysN	CysD	CysC	CysH	CysI	CysA	CysA
+CysU	CysW	CysA	CysK	CysH	CysD	CysN
+CysA	OAHS	MetC	bCSE	CysK	OAHS	MetA
+CysA	CysW	CysU	CysH	CysN	CysD	CysM
+CysA	CysU	CysW	CysA	CysN	CysD
+CysA	CysU	CysW	CysA	CysN	CysD	CysH
+CysA	CysW	CysU	CysN	CysD	CysH	CysA
+CysW	CysU	CysN	CysD	CysH	CysA
+CysM	CysC-assSat	CysK	CysE	CysH	CysI	bCSE
+CysH	CysD	CysN	CysE	CysJ	CysI	bCSE
+MetB	CysU	CysW	CysA	CysH
+MetB	CysU	CysW	CysA	CysH	CysN
+MetB	CysU	CysW	CysA	CysH	CysN	CysD
+CysI	CysH	CysN	CysD	CysA
+CysI	CysH	CysN	CysD	CysA	CysW
+CysI	CysH	CysN	CysD	CysA	CysW	CysU
+CysD	CysN	CysU	CysW	CysA	CysI	CysH
+CysU	CysW	CysA	CysI	CysJ	CysH	assSat
+CysA	CysI	CysJ	CysH
+CysA	CysW	CysU	CysN	CysD	CysH	OAHS
+CysU	CysN	CysD	CysH	OAHS
+CysA	CysW	CysU	CysC	CysH	assSat	CysI
+CysK	CysD	CysN	CysH	CysU	CysW	CysA
+bCSE	CysK	CysN	CysD	CysH	CysA
+bCSE	CysK	CysN	CysD	CysH	CysA	CysU
+bCSE	MetB	CysK	CysI	CysH	CysD	CysN
+CysK	CysA	CysW	CysN	CysD
+CysK	CysA	CysW	CysN	CysD	CysH
+CysK	CysA	CysW	CysN	CysD	CysH	CysU
+CysA	CysW	CysN	CysD	CysH	CysU
+CysW	CysN	CysD	CysH	CysU
+bCSE	MetC	CysK	CysH	CysD	CysN	CysI
+CysW	CysU	OAHS	CysA	CysW	CysU
+CysW	CysU	OAHS	CysA	CysW	CysU	CysH
+CysU	OAHS	CysA	CysW	CysU
+OAHS	CysA	CysW	CysU	CysH
+MetB	CysJ	CysI	CysH	CysK	CysD
+MetB	CysJ	CysI	CysH	CysK	CysD	CysN
+CysJ	CysI	CysH	CysK	CysD
+CysC	CysH	assSat	CysU	CysW	CysA	CysI
+CysH	assSat	CysU	CysW	CysA	CysI
+CysH	CysD	CysN	CysE	CysK	MetB	MetB
+CysU	CysW	CysA	OAHS	bCSE	bCBS	OAHS
+CysJ	CysI	CysH	CysK	CysU
+CysJ	CysI	CysH	CysK	CysU	CysW	CysA
+CysN	CysD	CysH	CysA	CysU	CysW	CysC
+CysA	CysU	CysW	CysC
+CysM	CysK	CysN	CysD	CysH	CysA	CysA
+CysH	CysD	CysN	CysU	CysW	CysA	CysA
+CysI	CysJ	CysH	CysN	CysD	CysA	CysU
+CysA	bCSE	bCBS	CysA	MalY	bCSE	CysK
+bCSE	bCBS	CysA	MalY
+OAHS	CysK	CysU	CysW	CysA	CysD
+OAHS	CysK	CysU	CysW	CysA	CysD	CysN
+CysD	CysH	CysI	MetB	MetB	OAHS	CysK
+CysA	CysW	CysU	CysN-CysC	CysD	CysH	CysK
+CysN	CysD	CysH	CysU	CysW	CysA	OAHS
+MetQ	bCSE	MetQ	CysA	MalY
+MetQ	bCSE	MetQ	CysA	MalY	CysK	CysA
+MetB	MetB	CysK	CysN	CysD	CysH	CysI
+OAHS	CysK	CysU	CysW	CysA	CysN
+OAHS	CysK	CysU	CysW	CysA	CysN	CysD
+MetC	MetQ	bCSE	CysK	OAHS	CysA	MalY
+CysA	CysA	CysJ	CysI	CysH	CysK	MetB
+CysC	CysN	CysD	CysH	CysI	CysJ	bCSE
+CysN	CysD	CysH	MetH	bCSE	OAHS	MetK
+CysA	CysA	CysW	CysU	CysH	CysD
+CysA	CysA	CysW	CysU	CysH	CysD	CysN
+CysK	CysA	MetQ	CysA	MetQ
+CysK	CysA	MetQ	CysA	MetQ	bCSE	bCBS
+OAHS	bCSE	MalY	CysK	CysA	MetQ	CysA
+CysI	CysC	assSat	CysH	CysU
+CysI	CysC	assSat	CysH	CysU	CysW	CysA
+CysU	CysW	CysA	CysD	CysN	OAHS	CysK
+CysA	CysW	CysU	CysH	CysD	CysN	CysU
+CysW	CysU	CysH	CysD	CysN	CysU
+CysU	CysH	CysD	CysN	CysU
+CysH	CysD	CysN	CysU	CysW	CysA	MetQ
+CysI	CysC	assSat	CysH	CysA	CysW	CysU
+CysC	assSat	CysH	CysU	CysW	CysA	CysA
+CysN	CysD	CysH	CysN	CysD	CysH
+CysN	CysD	CysH	CysN	CysD	CysH	bCSE
+CysD	CysH	CysN	CysD
+CysD	CysH	CysN	CysD	CysH
+CysH	CysN	CysD	CysH
+CysA	CysC	CysH	assSat	CysJ	CysI	bCBS
+MetQ	OAHS	CysA	CysW	CysU	CysW	CysU
+OAHS	CysA	CysW	CysU	CysW	CysU
+CysI	CysH	CysD	CysN	CysK	MetB	bCSE
+MalY	MalY	bCSE	bCBS
+MalY	MalY	bCSE	bCBS	bCSE
+MalY	MalY	bCSE	bCBS	bCSE	MetA	OAHS
+CysN	CysD	CysH	bCSE	OAHS	MetK	CysM
+CysA	MetQ	OAHS	MalY	CysU	CysW	CysA
+CysC	assSat	CysI	CysJ	CysH	MetC
+CysC	assSat	CysI	CysJ	CysH	MetC	MetE
+bCSE	MetC	MetH	CysH
+bCSE	MetC	MetH	CysH	assSat	CysC	CysI
+MetH	CysH	assSat	CysC	CysI
+CysI	CysC	assSat	CysH	bCSE	MetC	MetH
+CysH	bCSE	MetC	MetH
+MetH	CysC	assSat	CysH	CysA	CysW	CysU
+CysI	CysJ	assSat	CysH	CysC	MetE	bCSE
+CysK	CysA	CysW	CysU	CysH
+CysK	CysA	CysW	CysU	CysH	assSat	CysC
+CysA	CysA	CysN	CysD	CysC	CysH	CysI
+CysJ	CysI	CysU	CysW	CysH	CysD	CysN
+CysI	CysU	CysW	CysH
+CysI	CysU	CysW	CysH	CysD
+CysN-CysC	CysD	CysH	CysA	CysW	CysU	bCBS
+CysD	CysH	CysA	CysW	CysU	bCBS
+CysH	CysA	CysW	CysU	bCBS
+CysN	CysD	CysH	CysA	CysW	CysU	MetH
+MetK	CysK	CysJ	CysI	OAHS	bCSE	MetH
+CysK	CysJ	CysI	OAHS	bCSE	MetH
+CysU	CysW	CysA	CysI	CysH	assSat
+CysU	CysW	CysA	CysI	CysH	assSat	CysC
+MetK	OAHS	MetH	CysH	CysD	CysN	CysM
+CysA	CysC	assSat	CysH	CysA	CysW	CysU
+OAHS	MetA	bCSE	bCBS	bCSE	MalY	MetB
+MetQ	CysU	CysW	CysA	CysH	CysD
+MetQ	CysU	CysW	CysA	CysH	CysD	CysN
+CysA	CysW	CysU	CysN	CysD	CysC	CysK
+CysN	CysD	CysH	CysI	MetB	OAHS	MetE
+CysD	CysH	CysI	MetB	OAHS
+CysJ	CysA	CysW	CysU	CysJ	CysI	CysH
+CysU	CysW	CysA	CysN-CysC	CysD	CysH	CysI
+MetA	CysA	CysW	CysU	CysH	assSat	CysC
+bCSE	CysH	CysD	CysN-CysC	CysU	CysW	CysA
+MetH	MetC	bCSE	CysI	CysC	assSat	CysH
+CysW	CysU	CysN	CysD	CysH	CysJ
+CysW	CysU	CysN	CysD	CysH	CysJ	CysI
+CysC	assSat	CysI	CysJ	CysH	MetC	bCSE
+CysI	CysJ	CysC	assSat	CysH	CysA	MetQ
+MetC	CysJ	CysI	CysH	CysD	CysN	CysC
+MetK	CysH	CysD	CysN	CysK
+MetK	CysH	CysD	CysN	CysK	CysJ	CysI
+OAHS	CysI	CysJ	CysK	CysN	CysD
+OAHS	CysI	CysJ	CysK	CysN	CysD	MetK
+CysI	CysJ	CysK	CysN	CysD	MetK
+CysD	CysN	CysH-CysC	CysU	CysW	CysA	CysK
+CysK	MetK	OAHS	bCSE	CysH	CysD	CysN
+CysU	CysW	CysA	CysK	CysH	CysI	CysA
+bCSE	bCBS	MetQ	CysA	MetQ	OAHS
+bCSE	bCBS	MetQ	CysA	MetQ	OAHS	CysA
+MetQ	CysA	MetQ	OAHS	CysA
+CysA	CysW	CysU	CysH	CysD	CysN	CysK
+CysU	CysH	CysD	CysN	CysK
+CysN	CysD	CysE	CysJ	CysI	CysK	CysH
+CysD	CysE	CysJ	CysI
+CysH	CysD	CysN	CysK	CysJ	CysI	bCSE
+CysD	CysN	CysK	CysJ	CysI	bCSE
+CysK	CysJ	CysI	bCSE
+CysC	CysH	CysJ	CysI	assSat	bCSE	MetE
+CysJ	CysI	assSat	bCSE
+CysN	CysD	CysH	CysI	MetE	OAHS	MetB
+MetK	CysH	CysD	CysN	CysJ	CysI
+MetK	CysH	CysD	CysN	CysJ	CysI	OAHS
+CysD	CysN	CysJ	CysI	OAHS
+CysN	CysJ	CysI	OAHS
+MetB	CysJ	CysI	CysH	CysK	CysD	CysN-CysC
+CysJ	CysI	CysH	CysK	CysD	CysN-CysC
+CysA	CysW	CysU	CysJ	CysI	CysH	CysK
+CysU	CysJ	CysI	CysH	CysK
+CysI	CysH	CysD	CysN	CysK	bCSE
+CysI	CysH	CysD	CysN	CysK	bCSE	bCSE
+CysU	CysW	CysA	CysW	CysU	CysA	CysW-CysU
+CysK	MetC	bCSE	MetQ
+CysK	MetC	bCSE	MetQ	CysA	MetQ	MalY
+CysA	CysN	CysD	CysC	CysH	CysI	CysA
+CysH	assSat	CysC	CysK	bCSE	MetC	MetH
+CysM	CysN	CysD	CysA	CysW	CysU	CysK
+bCBS	CysA	CysW	CysU	CysH	assSat	CysC
+CysI	CysH	MetQ	MetQ	CysA	CysW	CysU
+CysU	CysW	CysA	CysJ	CysI	CysD
+CysU	CysW	CysA	CysJ	CysI	CysD	CysN
+CysA	CysJ	CysI	CysD
+CysA	CysJ	CysI	CysD	CysN
+CysM	CysH	CysD	CysN	CysK	CysJ	CysI
+MetH	CysK	MalY	OAHS	OAHS	bCBS	bCSE
+CysI	CysN	CysD	CysH	CysU
+CysI	CysN	CysD	CysH	CysU	CysW
+CysI	CysN	CysD	CysH	CysU	CysW	CysA
+CysJ	CysN	CysD	CysH	CysU	CysW
+CysJ	CysN	CysD	CysH	CysU	CysW	CysA
+CysH	CysN	CysD	CysA	CysW	CysK	OAHS
+CysN	CysD	CysA	CysW	CysK
+CysD	CysA	CysW	CysK
+CysA	CysW	CysK	OAHS
+MetK	OAHS	MetC	MetH	CysH	CysD	CysN
+CysA	CysK	CysU	CysW	CysA
+CysA	CysK	CysU	CysW	CysA	CysD	CysN
+CysI	CysJ	CysN	CysD	CysH	CysU	CysW
+MetK	CysK	CysN	CysD	CysI	CysJ	CysH
+CysU	CysW	CysA	CysK	CysH	OAHS	CysI
+CysA	CysK	CysH	OAHS
+CysK	CysH	OAHS	CysI
+MalY	CysH	CysD	CysN	CysA	CysW	CysU
+CysN-CysC	CysD	CysH	OAHS	CysA	CysW	CysU
+OAHS	CysA	CysU	CysU	CysD	CysN	CysH
+CysA	CysU	CysU	CysD
+CysA	CysU	CysU	CysD	CysN
+CysA	CysU	CysU	CysD	CysN	CysH
+CysU	CysU	CysD	CysN
+CysU	CysU	CysD	CysN	CysH
+MalY	MetQ	CysA	CysK	CysK	MalY	bCSE
+CysN	CysC	OAHS	CysU	CysW	CysA	CysK
+CysI	CysJ	CysK	CysN	CysD	CysH	MetC
+MalY	CysN	CysD	CysA	CysW	CysU	CysA
+CysD	CysN	MalY	CysU	CysW	CysA	OAHS
+OAHS	bCSE	CysH	CysD	CysN	CysE	CysK
+bCSE	CysH	CysD	CysN	CysE	CysK
+CysK	CysJ	CysI	CysH	CysD	CysN	CysC
+CysA	CysW	CysU	CysD	CysN-CysH	CysJ	CysI
+MetA	OAHS	OAHS	CysA	CysA	bCBS	bCSE
+CysK	OAHS	bCBS	bCSE	CysU	CysW	CysA
+OAHS	bCBS	bCSE	CysU	CysW
+OAHS	CysK	MalY	bCSE	CysA	MetQ	CysA
+CysN-CysC	CysD	CysH	CysI	CysA	CysU	CysU
+CysA	CysD	CysN	CysH	CysU	CysW	CysA
+CysI	CysJ	CysN	CysD	CysH	OAHS	bCSE
+CysN	CysD	CysH	OAHS	bCSE
+CysW	CysU	OAHS	CysK	CysA	CysW	CysU
+assSat	CysH	CysK	CysU	CysW	CysA	CysC
+CysD	CysN	CysU	CysW	CysA	OAHS	MetA
+MetA	OAHS	CysU	CysW	CysA	CysK	CysM
+CysA	CysA	CysN-CysC	CysD	CysH	CysU
+CysA	CysA	CysN-CysC	CysD	CysH	CysU	CysW
+CysA	CysN-CysC	CysD	CysH	CysU	CysW
+MetQ	CysA	bCBS	bCSE	MetK
+MetQ	CysA	bCBS	bCSE	MetK	OAHS	CysK
+CysA	MetQ	OAHS	bCSE	MalY
+CysA	MetQ	OAHS	bCSE	MalY	bCBS	CysM
+MetQ	OAHS	bCSE	MalY
+OAHS	bCSE	MalY	bCBS
+CysK	CysA	CysW	CysU	CysH	CysD
+CysK	CysA	CysW	CysU	CysH	CysD	CysN
+MetB	bCSE	CysN	CysD	CysA	CysW	CysU
+MalY	MalY	bCSE	bCBS	bCSE	OAHS
+MalY	MalY	bCSE	bCBS	bCSE	OAHS	CysA
+MalY	bCSE	bCBS	bCSE	OAHS
+MetC	bCSE	CysA	MetQ	OAHS	CysK	MetA
+bCSE	CysA	MetQ	OAHS	CysK
+MetQ	OAHS	CysK	MetA
+CysJ	CysI	CysN-CysH	CysD	CysU	CysW	CysA
+CysN	CysD	CysH	CysA	CysW	CysU	bCSE
+CysD	CysH	CysA	CysW	CysU	bCSE
+CysH	CysA	CysW	CysU	bCSE
+CysU	CysW	CysA	MetA	CysK	OAHS	CysK
+CysU	CysW	CysA	CysE	CysK	CysA	CysU
+CysK	CysH	CysI	CysJ	CysD	CysN	CysU
+CysI	CysJ	CysD	CysN	CysU
+CysJ	CysD	CysN	CysU
+CysU	CysW	CysA	CysD	CysN	CysH	OAHS
+CysW	CysA	CysD	CysN	CysH	OAHS
+CysH	CysI	CysN	CysD	CysU	CysW	CysA
+CysI	CysN	CysD	CysU
+CysI	CysN	CysD	CysU	CysW
+CysI	CysN	CysD	CysU	CysW	CysA
+CysK	CysU	CysW	CysA	CysD	CysN	MetH
+CysW	CysA	CysD	CysN	CysH	OAHS	MalY
+CysK	bCSE	MetB	MetA	OAHS	CysK	CysA
+CysA	CysW	CysU	CysI	CysJ	CysN	CysD
+OAHS	CysH	CysD	CysN	CysJ	CysI	MetB
+MetK	bCSE	bCSE	CysH	CysD	CysN	CysK
+bCSE	bCSE	CysH	CysD
+bCSE	bCSE	CysH	CysD	CysN
+bCSE	bCSE	CysH	CysD	CysN	CysK
+CysI	CysJ	CysK	CysN	CysD	CysH	OAHS
+CysK	CysN	CysD	CysH	OAHS
+CysW	CysU	CysA	CysW	CysU	CysK
+CysU	CysA	CysW	CysU	CysK
+CysK	CysM	CysI	OAHS	CysH	CysA	CysW	CysU
+OAHS	CysN	CysD	CysH	CysA	CysW	CysU	OAHS
+CysN	CysD	CysH	CysI	CysA	CysW	CysU	OAHS
+CysI	CysA	CysW	CysU	OAHS
+bCSE	CysN	CysD	CysA	CysW	CysU	OAHS	CysK
+CysN	CysD	CysA	CysW	CysU	OAHS	CysK
+CysU	CysD	CysN	CysH	OAHS	CysK	OAHS	MetB
+OAHS	CysK	OAHS	MetB
+CysU	CysA	CysU	CysW	CysN	CysD
+CysU	CysA	CysU	CysW	CysN	CysD	CysH	CysI
+CysW	CysA	CysH	CysD	CysN	OAHS	CysI	CysK
+MetC	bCSE	CysU	CysW	CysA	CysH	CysD	CysN
+CysK	OAHS	CysH	CysD	CysN	CysU	CysW	CysA
+CysN-CysC	CysD	CysH	CysU	CysW	CysA	CysJ	CysI
+CysH	CysU	CysW	CysA	CysJ
+CysH	CysU	CysW	CysA	CysJ	CysI
+OAHS	CysN	CysD	CysA	CysW	CysU	CysK	CysA
+CysA	CysU	CysW	CysA	CysH	CysD	CysN	CysK
+CysU	CysW	CysA	CysH	CysD	CysN-CysC	CysJ	CysI
+CysN	CysD	CysH	CysI	CysA	CysW	CysU	CysA
+CysD	CysH	CysI	CysA	CysW	CysU	CysA
+MetA	OAHS	CysK	MetQ	MetQ	CysA	bCSE	MalY
+OAHS	CysK	MetQ	MetQ	CysA
+CysA	CysA	CysW	CysU	CysN-CysC	CysD	CysH	CysI
+CysN	CysD	CysH	CysA	CysW	CysU	bCSE	CysK
+CysH	CysA	CysW	CysU	bCSE	CysK
+CysU	CysU	CysW	CysA	CysI	CysH	CysD	CysN
+CysC	assSat	CysH	CysU	CysW	CysA	CysI
+CysC	assSat	CysH	CysU	CysW	CysA	CysI	CysJ
+CysI	CysN	CysD	CysH	CysA	CysW	CysU	bCSE
+MetC	bCSE	CysN	CysD	CysH	CysA
+MetC	bCSE	CysN	CysD	CysH	CysA	CysW	CysU
+CysI	CysJ	CysK	CysE	CysN	CysD	CysH	CysA
+CysK	CysE	CysN	CysD	CysH	CysA
+CysK	bCSE	CysH	CysD	CysN	CysA	CysW	CysU
+bCSE	CysH	CysD	CysN	CysA	CysW	CysU
+MetC	bCSE	CysK	CysN	CysD	CysH	CysA	CysA
+CysU	CysW	CysA	OAHS	CysI
+CysU	CysW	CysA	OAHS	CysI	CysH	CysD	CysN
+CysN	CysD	CysH	CysU	CysW	CysA	CysK	bCSE
+CysU	CysW	CysA	CysK	CysI
+CysU	CysW	CysA	CysK	CysI	CysH	CysD	CysN
+CysA	CysK	CysI	CysH
+CysK	MetB	OAHS	CysA	CysW	CysU	CysN-CysC	CysD
+MetB	OAHS	CysA	CysW	CysU
+CysI	CysJ	CysN	CysD	CysH	CysU	CysW	CysA
+OAHS	CysA	CysW	CysU	CysH	CysD	CysN	CysI
+CysH	CysI	CysU	CysW	CysA	CysC	CysD	CysN
+CysH	CysD	CysN	CysJ	CysI	CysU	CysW	CysA
+CysH	CysI	CysJ	CysD	CysN-CysC	CysU	CysW	CysA
+CysN	CysA	CysW	CysU	CysI
+CysN	CysA	CysW	CysU	CysI	CysN	CysD	CysH
+CysA	CysW	CysU	CysI	CysN
+CysA	CysW	CysU	CysI	CysN	CysD
+CysA	CysW	CysU	CysI	CysN	CysD	CysH
+CysW	CysU	CysI	CysN	CysD
+CysI	CysH	CysC	CysD	CysN	CysA	CysU	CysK
+CysN	CysA	CysU	CysK
+CysN	CysD	CysH	CysI	CysJ	CysA	CysW	CysU
+CysD	CysH	CysI	CysJ	CysA	CysW	CysU
+CysI	CysH	CysD	CysN	CysC	CysU	CysW	CysA
+CysA	CysU	CysN	CysD	CysH	CysA
+CysA	CysU	CysN	CysD	CysH	CysA	CysW
+CysA	CysU	CysN	CysD	CysH	CysA	CysW	CysU
+CysU	CysU	CysW	CysA	OAHS	CysH	CysD	CysN
+OAHS	CysU	CysW	CysA	OAHS	CysH	CysD	CysN
+CysN	CysD	CysH	CysI	CysJ	CysU
+CysN	CysD	CysH	CysI	CysJ	CysU	CysW	CysA
+CysA	CysW	CysU	CysN	CysD	CysH	CysI	CysA
+CysW	CysU	CysN	CysD	CysH	CysI	CysA
+CysU	CysN	CysD	CysH	CysI	CysA
+CysJ	CysI	CysN	CysD	CysH	CysA	CysW	CysU
+OAHS	CysK	CysA	CysU	CysW	CysA	CysD	CysN
+CysU	CysU	CysA	CysH	CysD	CysN	CysI
+CysU	CysU	CysA	CysH	CysD	CysN	CysI	MetB
+CysA	CysK	OAHS	CysN	CysD	CysA	CysW	CysU
+MetQ	CysA	OAHS	MetA	bCBS	bCSE	MetK	CysK
+MetA	bCBS	bCSE	MetK	CysK
+CysI	CysA	CysA	CysW	CysU	assSat	CysH	CysC
+CysA	CysA	CysW	CysU	assSat	CysH	CysC
+CysU	CysW	CysA	CysU	CysW	CysK
+CysU	CysW	CysA	CysU	CysW	CysK	CysM	CysE
+CysW	CysA	CysU	CysW	CysK
+CysI	CysH	CysC	CysN	CysD	CysU	CysW	CysA
+CysC	CysN	CysD	CysU
+CysH	CysI	CysN	CysC	CysD	CysU	CysW	CysA
+CysA	CysW	CysU	CysN	CysD	CysH	CysJ
+CysA	CysW	CysU	CysN	CysD	CysH	CysJ	CysI
+CysK	CysM	CysD	CysN	CysH	CysU	CysW	CysA
+CysU	CysU	CysA	CysH	CysD	CysN	CysI	bCSE
+CysN	CysD	CysA	CysW	CysU	MetQ
+CysN	CysD	CysA	CysW	CysU	MetQ	CysK	bCSE
+CysD	CysA	CysW	CysU	MetQ
+CysA	CysW	CysU	MetQ	CysK
+CysJ	CysH	CysI	CysD	CysN	CysU	CysW
+CysJ	CysH	CysI	CysD	CysN	CysU	CysW	CysA
+CysH	CysI	CysD	CysN	CysU	CysW
+CysH	CysI	CysD	CysN	CysU	CysW	CysA
+CysI	CysD	CysN	CysU	CysW
+CysI	CysD	CysN	CysU	CysW	CysA
+CysI	CysH	CysD	CysN	CysE	CysU	CysW	CysA
+MetK	bCSE	CysH	CysD	CysN	CysK
+MetK	bCSE	CysH	CysD	CysN	CysK	CysJ	CysI
+bCSE	CysH	CysD	CysN	CysK	CysJ	CysI
+CysK	assSat	CysA	CysU	CysH	CysC	MetC	MetC
+MetC	bCSE	CysA	CysW	CysU	CysH	CysD	CysN
+bCSE	CysK	CysI	CysN	CysD	CysH	CysK	OAHS
+CysC	CysK	CysU	CysW	CysA	CysD	CysN	OAHS
+CysN	CysD	CysK	CysA	CysW	CysU	CysA	OAHS
+CysU	CysA	CysA	CysW	CysU	CysN	CysD	CysH
+MetC	bCSE	MetA	CysA	MetQ	OAHS	CysK	MetA
+OAHS	CysI	CysA	CysW	CysU	assSat	CysH	CysC
+MetH	MetC	bCSE	CysK	CysI	CysC	assSat	CysH
+MetB	CysJ	CysI	CysH	CysK	CysD	CysN-CysC	CysA
+CysK	CysU	CysW	CysA	CysH	CysD	CysN	CysI
+CysA	CysU	CysU	CysA	CysN-CysC	CysD	CysH	CysI
+CysU	CysA	CysN-CysC	CysD	CysH
+CysU	CysA	CysN-CysC	CysD	CysH	CysI
+OAHS	bCBS	bCSE	MetQ	CysA	MetQ	CysA	CysK
+CysA	CysA	CysW	CysU	CysI	CysH
+CysA	CysA	CysW	CysU	CysI	CysH	CysD	CysN
+CysI	CysJ	CysK	CysE	CysN	CysD	CysH	bCSE
+CysI	CysJ	CysC	assSat	CysH	CysU	CysW	CysA
+CysA	CysN	CysD	CysH	CysA	CysU
+CysA	CysN	CysD	CysH	CysA	CysU	CysJ	CysI
+CysN	CysD	CysH	CysA	CysU	CysJ	CysI
+CysU	CysW	CysA	CysC	CysN
+CysU	CysW	CysA	CysC	CysN	CysD	CysH	CysI
+CysC	CysH	assSat	CysU	CysW	CysA	CysI	CysA
+CysU	CysW	CysA	CysI	CysA
+CysW	CysA	CysI	CysA
+CysN-CysC	CysD	CysC	OAHS	CysK	CysI	MetQ	CysA
+CysU	CysW	CysA	OAHS	CysH	CysD	CysN	CysK
+CysN	CysD	CysA	CysW	CysU	OAHS	bCBS	bCSE
+MetK	CysH	CysD	CysN	CysK	CysJ	CysI	OAHS
+CysA	MetQ	CysN-CysC	CysD
+CysA	MetQ	CysN-CysC	CysD	CysH	CysA	CysW	CysU
+CysU	CysW	CysA	CysJ	CysI	CysH	assSat	CysK
+CysI	CysJ	CysK	CysN	CysD	CysH	OAHS	MetK
+CysK	bCSE	bCBS	CysU	CysW	CysA	CysD	CysN
+bCSE	bCBS	CysU	CysW	CysA	CysD	CysN
+bCBS	CysU	CysW	CysA	CysD
+bCBS	CysM	CysD	CysN	CysH	CysU	CysW	CysA
+CysK	CysU	CysW	CysA	CysD	CysN	CysA	OAHS
+CysU	CysW	CysA	CysD	CysN	CysA	OAHS
+CysA	CysD	CysN	CysA	OAHS
+bCSE	CysH	CysD	CysN	CysI	MetC	CysU	CysW
+MetE	MetC	bCSE	CysH	CysJ	CysI	assSat	CysC
+bCSE	CysH	CysJ	CysI
+bCSE	CysH	CysJ	CysI	assSat	CysC
+CysU	CysW	CysA	CysH	CysD	CysN	CysJ
+CysU	CysW	CysA	CysH	CysD	CysN	CysJ	CysI
+CysN	CysD	CysH	CysI	CysW	CysU
+CysN	CysD	CysH	CysI	CysW	CysU	CysW	CysA
+CysH	CysI	CysW	CysU
+MetK	CysH	CysD	CysN	CysE	CysK	CysJ	CysI
+CysE	CysA	CysW	CysU	CysN	CysD	MalY	bCSE
+OAHS	MetB	MetQ	CysA	MetQ	CysA	CysW	CysU
+MetB	MetQ	CysA	MetQ	CysA
+CysA	CysC	CysN	CysD	CysH	CysI	CysJ	bCSE
+OAHS	CysU	CysW	CysA	CysH	CysD	CysN	CysI
+CysK	CysA	CysW	CysU	CysN	CysD	CysH	CysM
+CysA	CysW	CysU	CysN	CysD	CysH	CysM
+CysN	CysD	CysH	CysW	CysA
+CysN	CysD	CysH	CysW	CysA	CysU
+CysN	CysD	CysH	CysW	CysA	CysU	CysW	CysA
+CysW-CysA	CysA	CysW	CysU	CysI	CysH	CysD	CysN
+CysK	OAHS	CysM	CysU	CysW	CysA	MetB	bCSE
+CysU	CysW	CysA	CysN	CysD	CysH	MetB	CysK
+CysK	CysU	CysW	CysA	OAHS	CysH	CysD	CysN
+MetQ	CysA	CysA	OAHS	bCBS	bCSE	CysK	OAHS
+CysA	CysW	CysU	CysK	CysH	CysI	CysJ	CysD
+CysI	CysJ	CysH	CysD	CysN	CysA	CysW	CysU
+OAHS	CysA	CysW	CysU	CysN	CysD	CysH	CysA
+MetH	CysK	bCBS	bCSE	CysN	CysD	CysA	CysW
+CysN	CysD	CysH	CysA	CysW	CysU	MetB	CysK
+CysD	CysH	CysA	CysW	CysU	MetB
+CysN	CysD	CysH	CysI	OAHS	CysK	OAHS	CysK
+OAHS	CysK	OAHS	CysK
+OAHS	CysN	CysD	CysH	CysA	CysW	CysU	CysA
+CysU	CysW	CysA	CysK	CysH	CysD	CysN-CysC	CysI
+CysW	CysA	CysA	CysW	CysU	CysH	CysD	CysN
+MetH	CysK	CysU	CysW	CysA	CysD	CysN	OAHS
+bCSE	bCSE	CysH	CysD	CysN	CysK	CysJ	CysI
+OAHS	bCSE	bCBS	CysU	CysW	CysA	CysD	CysN
+CysI	CysJ	CysA	CysW	CysU	CysH	assSat	CysC
+CysJ	CysA	CysW	CysU	CysH	assSat	CysC
+CysI	CysH	CysN	CysD	CysA	CysW	CysU	MetB
+CysN	CysD	CysA	CysW	CysU	MetB
+CysN-CysC	CysD	CysH	CysA	CysU	CysW	CysI	CysE
+CysI	CysD	CysN	CysC	CysH	CysA	CysW	CysU
+CysK	CysA	CysW	CysU	CysK	CysN	CysD	CysH	MetB
+CysA	CysW	CysU	CysK	CysN
+CysA	CysW	CysU	CysK	CysN	CysD
+CysA	CysK	MetB	CysH	CysD	CysN	CysA	CysW	CysU
+MalY	CysU	CysW	CysA	CysU	CysW	CysA	CysD	CysN
+CysU	CysW	CysA	CysU	CysW	CysA	CysD	CysN
+CysK	CysU	CysW	CysA	CysD	CysN	OAHS	OAHS	CysK
+CysU	CysW	CysA	CysD	CysN	OAHS	OAHS
+CysA	CysD	CysN	OAHS	OAHS
+CysD	CysN	OAHS	OAHS
+bCSE	CysK	CysN	CysD	CysH	OAHS
+bCSE	CysK	CysN	CysD	CysH	OAHS	CysA	CysW	CysU
+bCBS	bCSE	OAHS	CysH	CysD	CysN	CysA	CysW	CysU
+OAHS	CysH	CysD	CysN	CysA
+bCSE	CysK	OAHS	CysN	CysD	CysH
+bCSE	CysK	OAHS	CysN	CysD	CysH	OAHS	CysW	CysU
+CysK	OAHS	CysN	CysD	CysH	OAHS
+OAHS	CysN	CysD	CysH	OAHS	CysW	CysU
+CysN	CysD	CysH	OAHS	CysW	CysU
+CysD	CysH	OAHS	CysW	CysU
+CysI	CysJ	CysH	assSat	CysC	CysK	CysA	CysW	CysU
+CysK	CysE	CysI	CysH	CysC	assSat	CysU	CysW	CysA
+OAHS	CysK	bCSE	bCBS	MetQ	CysA	bCSE	CysA	MetQ
+bCSE	bCBS	MetQ	CysA	bCSE
+bCSE	bCBS	MetQ	CysA	bCSE	CysA
+CysN	CysD	CysC	CysH	CysI	CysJ	CysA	CysW	CysU
+CysC	CysH	CysI	CysJ	CysA
+CysU	CysW	CysA	CysJ	CysI	CysH	CysK
+CysU	CysW	CysA	CysJ	CysI	CysH	CysK	CysD	CysN-CysC
+OAHS	MetA	CysU	CysW
+OAHS	MetA	CysU	CysW	CysA	OAHS	CysH	CysD	CysN
+CysI	CysJ	CysH	CysD	CysN	bCSE	CysU	CysW	CysA
+CysI	CysN	CysD	CysH	CysK	CysA	CysW	CysU	CysM
+CysU	CysW	CysA	CysU	CysA	CysN	CysD
+CysU	CysW	CysA	CysU	CysA	CysN	CysD	CysH	CysI
+CysW	CysA	CysU	CysA	CysN	CysD
+CysA	CysU	CysA	CysN	CysD
+CysA	CysU	CysA	CysN	CysD	CysH
+CysA	CysU	CysA	CysN	CysD	CysH	CysI
+CysC	assSat	CysI	CysJ	CysH	bCSE	MetC	MetE	CysJ
+CysN-CysC	CysD	CysJ	CysI	CysH	CysK	CysU	CysW	CysA
+CysH	CysJ	CysI	CysD	CysN	CysU	CysW	CysA	CysK
+CysJ	CysI	CysD	CysN	CysU
+CysJ	CysI	CysD	CysN	CysU	CysW	CysA
+MetQ	CysA	CysU	CysW	CysA	CysI	CysH	CysD	CysN-CysC
+CysU	CysW	CysA	CysI	CysH	CysD	CysN-CysC
+bCSE	CysK	MetA	CysU	CysW	CysA	CysD	CysN	CysI
+MetK	CysM	CysA	CysA	CysI	CysH	CysN	CysJ	bCSE
+CysA	CysA	CysI	CysH	CysN
+CysI	CysH	CysN	CysJ
+CysH	CysN	CysJ	bCSE
+CysI	CysJ	CysK	CysE	CysN	CysD	CysH	bCSE	OAHS
+CysI	CysJ	CysC	assSat	CysH	CysU	CysW	CysA	CysA
+CysN-CysC	CysD	CysH	CysA	CysW	CysU	MetQ	MetQ	CysA
+CysK	CysJ	CysI	CysH	CysD	CysN	CysC	MetE	MetB
+CysN	CysD	CysH	CysJ	CysI	CysU	CysW	CysA	OAHS
+CysH	CysJ	CysI	CysU
+CysH	CysJ	CysI	CysU	CysW	CysA
+MetQ	CysA	CysI	CysJ	CysN	CysH	CysU	CysW	CysA
+CysA	CysI	CysJ	CysN
+CysA	CysI	CysJ	CysN	CysH	CysU	CysW	CysA
+CysI	CysJ	CysN	CysH	CysU
+CysI	CysJ	CysN	CysH	CysU	CysW
+CysI	CysJ	CysN	CysH	CysU	CysW	CysA
+CysJ	CysN	CysH	CysU
+CysJ	CysN	CysH	CysU	CysW
+CysJ	CysN	CysH	CysU	CysW	CysA
+CysI	CysJ	CysK	CysN	CysD	CysH	bCSE	MetC	MetK
+MetK	MetC	MetB	CysH	CysD	CysN	CysK	CysJ	CysI
+MetB	CysH	CysD	CysN	CysK	CysJ	CysI
+CysU	CysW	CysA	CysD	CysN-CysC	CysN	CysD	CysH	CysI
+CysU	CysW	CysA	CysD	CysN-CysC	CysN	CysD
+MetH	MetC	bCSE	CysC
+MetH	MetC	bCSE	CysC	assSat	CysH
+MetH	MetC	bCSE	CysC	assSat	CysH	CysI	CysK	CysK
+assSat	CysH	CysI	CysK
+CysH	CysI	CysK	CysK
+MetH	bCSE	OAHS	CysI	CysJ	CysK	CysN	CysD	MetK
+CysU	CysW	CysA	CysN-CysC	CysD	CysN	CysD	CysH	CysI
+CysA	CysN-CysC	CysD	CysN
+CysA	CysA	CysW	CysU	CysN	CysD	CysH	CysJ	CysI
+CysI	CysH	CysD	CysN	CysU	CysW	CysA	OAHS	MetA
+CysI	CysJ	CysN-CysC	CysD	CysH	CysA	CysW	CysU	bCBS
+CysI	CysJ	CysK	CysN	CysD	CysH	MetB	bCSE	MetK
+CysN	CysD	CysH	MetB	bCSE
+CysI	CysJ	CysN	CysD	CysH	CysU	CysW	CysA	CysU
+CysA	MalY	bCSE	CysA	MetQ	MetQ	CysK	OAHS	MetA
+MetK	bCSE	bCSE	CysH	CysD	CysN	CysK	CysJ	CysI
+MetQ	CysA	MetA	OAHS	bCBS	bCSE	MetK	CysK	MalY
+CysK	bCSE	CysU	CysW	CysA	CysD	CysN
+CysK	bCSE	CysU	CysW	CysA	CysD	CysN	CysH	CysI
+bCSE	CysU	CysW	CysA	CysD	CysN	CysH	CysI
+OAHS	CysK	CysU	CysW	CysA	OAHS	CysH	CysD	CysN
+CysK	OAHS	CysU	CysW	CysA	CysI	CysH	CysD	CysN
+bCSE	CysM	CysI	CysH	assSat	CysC	CysA	CysU	CysW
+CysI	CysH	assSat	CysC	CysA
+CysI	CysN	CysD	CysH	CysA	CysW	CysU	MetB	CysK
+CysK	CysE	OAHS	MetA	MetQ	CysA	MalY	CysM	bCSE
+OAHS	CysI	CysJ	CysK	CysN	CysD	CysH	bCSE	MetK
+MetC	bCSE	CysA	MetQ	assSat	CysC	CysU	CysW	CysA	CysK
+CysC	CysU	CysW	CysA	CysK
+MetH	CysI	CysH	CysD	CysN
+MetH	CysI	CysH	CysD	CysN	CysU	CysW	CysA	OAHS	MetA
+bCSE	bCSE	CysU	CysW	CysA	CysH	CysD	CysN	CysJ	CysI
+bCSE	bCSE	CysU	CysW	CysA
+CysA	bCSE	MetC	CysU	CysW	CysA	OAHS	CysH	CysD	CysN-CysC
+OAHS	CysN	CysD	CysH	OAHS	CysA	CysW	CysU	MetQ	CysA
+CysU	CysA	CysM	CysA	CysW	CysU	MetC	CysN	CysD	CysH
+OAHS	CysU	CysW	CysA	CysN
+OAHS	CysU	CysW	CysA	CysN	CysD
+OAHS	CysU	CysW	CysA	CysN	CysD	CysH	CysK	CysE	bCSE
+CysU	CysW	CysA	CysN	CysD	CysH	CysK
+CysA	CysN	CysD	CysH	CysK
+bCSE	OAHS	CysK	CysU	CysW	CysA	CysN-CysC	CysD	CysH	MetB
+CysU-CysW	CysA	CysI	CysJ	CysN	CysD	CysH	CysU	CysW	CysA
+CysA	CysI	CysJ	CysN	CysD
+CysA	CysI	CysJ	CysN	CysD	CysH
+CysK	CysU	CysW	CysA	CysD	CysN	CysU	CysW	CysA	OAHS
+CysU	CysW	CysA	CysD	CysN	CysU
+CysU	CysW	CysA	CysD	CysN	CysU	CysW	CysA
+CysU	CysW	CysA	CysD	CysN	CysU	CysW	CysA	OAHS
+CysW	CysA	CysD	CysN	CysU
+CysW	CysA	CysD	CysN	CysU	CysW	CysA
+CysA	CysD	CysN	CysU	CysW	CysA
+CysA	CysD	CysN	CysU	CysW	CysA	OAHS
+OAHS	CysI	CysJ	CysK	CysN	CysD	CysH	bCSE	bCSE	MetK
+CysK	CysU	CysW	CysA	CysN	CysD	CysH	MetB	CysK	CysA
+CysI	MetB	CysH	CysC	assSat	CysA	CysU	CysW	CysU	CysA
+CysH	CysA	CysW	CysU	bCSE	bCBS	CysK	OAHS	CysK	CysE	OAHS
+bCSE	MetC	CysK	MetA	OAHS	CysN	CysD	CysH	CysA	CysW	CysU
+OAHS	CysN	CysD	CysH	CysA	CysW	CysU	CysA	OAHS	bCBS	bCSE
+OAHS	CysN	CysD	CysH	CysA	CysW	CysU	OAHS	bCBS	bCSE
+OAHS	CysN	CysD	CysH	CysA	CysW	CysU	OAHS	bCBS	bCSE	MetQ
+CysN	CysD	CysH	CysA	CysW	CysU	OAHS	bCBS	bCSE
+CysN	CysD	CysH	CysA	CysW	CysU	OAHS	bCBS	bCSE	MetQ
+CysA	CysM	CysI	CysJ	CysH	CysD	CysN	bCSE	CysU	CysW	CysA
+CysN	CysD	CysH	OAHS	CysA	CysW	CysU	OAHS	CysK	CysA	MetQ
+CysN	CysD	CysH	CysA	CysW	CysU	OAHS	bCBS	bCSE	MetQ	CysA
+CysK	CysU	CysW	CysA	OAHS	CysI	CysH	CysD	CysN	bCSE	bCSE
+CysI	CysH	CysD	CysN	bCSE
+CysI	CysH	CysD	CysN	bCSE	bCSE
+CysD	CysN	bCSE	bCSE
+OAHS	CysN	CysD	CysH	CysA	CysW	CysU	OAHS	bCBS	bCSE	MetQ	CysA
+CysM	CysK	MetB	CysU
+CysM	CysK	MetB	CysU	CysW	CysA	CysH	CysD	CysN	CysI	OAHS	CysK	CysE
+CysN	CysI	OAHS	CysK

@@ -505,12 +505,8 @@ def build_library(config):
 
     selectors = [f"{row['module']}@{row['package']}" for row in selected_modules]
 
-    config.library_is_default = is_default
-    config.selected_hmm_modules = selectors
-    config.selected_hmm_files = [str(entry["path"]) for entry in selected_files]
-
     if library_matches_selection(config.library, selected_files):
-        config.library_rebuilt = False
+        rebuilt = False
 
         log.info(
             "Existing HMM library is identical to the selected resources; reusing %s",
@@ -519,7 +515,7 @@ def build_library(config):
 
     else:
         write_library(config.library, selected_files)
-        config.library_rebuilt = True
+        rebuilt = True
 
         log.info(
             "Built HMM library with %d HMM files: %s",
@@ -537,7 +533,7 @@ def build_library(config):
 
     return {
         "is_default": is_default,
-        "rebuilt": config.library_rebuilt,
+        "rebuilt": rebuilt,
         "modules": selectors,
         "hmm_count": len(selected_files),
     }

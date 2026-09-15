@@ -1,0 +1,5 @@
+ACP Spt bCerS CerR
+SulA SulS CapA
+GldA GldB GldC GldD GldE GldF GldG GldH GldI GldJ GldK GldL GldM GldN GldO
+SprA SprB SprC SprD SprE SprF
+SecE SecG SecY
