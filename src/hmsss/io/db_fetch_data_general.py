@@ -13,16 +13,17 @@ Funktionen in diesem Modul:
     * Zusammenführen der Ergebnisse über alle Kombinationen
 """
 
-import sys
 import re
+import sqlite3
+import sys
 from itertools import product
-from typing import Any, Dict, List, Tuple, Set
+from typing import Any, Dict, List, Set, Tuple
 
 from hmsss.cli.config import Config
 from hmsss.core.logging import get_logger
-from hmsss.io import db_fetch_taxonomy, db_fetch_protein, db_fetch_read
-
 from hmsss.graft.read_models import Read
+from hmsss.io import db_fetch_protein, db_fetch_read, db_fetch_taxonomy
+from hmsss.parse_reports import parse_reports
 
 logger = get_logger(__name__)
 
@@ -137,19 +138,38 @@ def expand_required_proteins(raw: list[str]) -> list[list[str]]:
     return all_combos
 
 
+def _limiter_value_is_set(value) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return value.strip() not in ("", "0")
+    return bool(value)
+
+
+def _limiter_requested(config: Config) -> bool:
+    return bool(
+        config.fetch_genomes
+        or config.dataset_limit_lineage
+        or config.dataset_limit_taxon
+        or _limiter_value_is_set(config.dataset_limit_proteins)
+        or _limiter_value_is_set(config.dataset_limit_keywords)
+    )
+
+
 def _build_limiter_dict(config: Config) -> Dict[str, Any]:
-    """
-    Erzeugt das limiter_dict:
-    - optional eingeschränkt über Taxonomie (dataset_limit_lineage/-taxon)
-    - erweitert um explizit angegebene fetch_genomes
-    """
     limiter_dict: Dict[str, Any] = {}
 
-    # Taxonomie-Limiter (liefert nur Keys; Inhalte sind hier egal)
-    if config.dataset_limit_lineage:
+    dataset_limiter_requested = bool(
+        config.dataset_limit_lineage
+        or config.dataset_limit_taxon
+        or _limiter_value_is_set(config.dataset_limit_proteins)
+        or _limiter_value_is_set(config.dataset_limit_keywords)
+    )
+
+    if dataset_limiter_requested:
         limiter_dict = db_fetch_taxonomy.fetch_limiter_data_keys_only(config)
 
-    # Explizite Genomliste ergänzt / überschreibt die Keys
+    # Explicit genome IDs are added to the limiter.
     if config.fetch_genomes:
         for gid in config.fetch_genomes:
             limiter_dict.setdefault(gid, {})
@@ -160,131 +180,100 @@ def _build_limiter_dict(config: Config) -> Dict[str, Any]:
 def fetch_fasta_and_hit_data(
     config: Config,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
-    """
-    Zentrale Fetch-Routine für Output-Operatoren.
-
-    Unterstützt:
-      - -fc (fetch_csbs): Gene-Cluster-Modus
-      - -fd (fetch_proteins): freie Proteinsuche im Genom
-      - OR-Gruppen mit | oder + (z.B. 'A|B', 'C+D')
-      - Kombination aller Alternativen
-      - Zusammenführen der Ergebnisse aus allen Kombinationen
-
-    Rückgabe:
-        sum_protein_dict: proteinID -> proteinObj
-        sum_cluster_dict: clusterID -> clusterObj
-        sum_taxon_dict:   genomeID  -> taxonomy / metadata
-    """
-    # Limiter vorbereiten
     limiter_dict = _build_limiter_dict(config)
+
+    if _limiter_requested(config) and not limiter_dict:
+        logger.info("Genome limiter matched no genomes.")
+        return {}, {}, {}, {}
+
     excluded_domains = config.fetch_not_csb_with_these_domains
 
     raw_required: List[str] = []
-    additional_proteins: List[str] = []
+    additional_proteins: List[List[str]] = []
+    required_combinations: List[List[str]] = []
 
-    # Quelle bestimmen: CSB oder Proteindomänen
     if config.fetch_csbs and config.fetch_proteins:
         fetch_from_gene_cluster = True
-        raw_required = config.fetch_csbs
-        required_combinations = expand_required_proteins(raw_required)
-        logger.info(f"Collecting gene clusters containing: {required_combinations}")
+        required_combinations = expand_required_proteins(config.fetch_csbs)
+        additional_proteins = expand_required_proteins(config.fetch_proteins)
 
-        raw_required = config.fetch_proteins
-        additional_proteins = expand_required_proteins(raw_required)
+        logger.info("Collecting gene clusters containing: %s", required_combinations)
         logger.info(
-            f"Adding proteins to genomes with these gene clusters: {additional_proteins}"
+            "Adding proteins to genomes with these gene clusters: %s",
+            additional_proteins,
         )
 
     elif config.fetch_csbs:
         fetch_from_gene_cluster = True
-        raw_required = config.fetch_csbs
-        required_combinations = expand_required_proteins(raw_required)
-        logger.info(f"Collecting gene clusters containing: {raw_required}")
+        required_combinations = expand_required_proteins(config.fetch_csbs)
+        logger.info("Collecting gene clusters containing: %s", required_combinations)
+
     elif config.fetch_proteins:
         fetch_from_gene_cluster = False
-        raw_required = config.fetch_proteins
-        required_combinations = expand_required_proteins(raw_required)
-        logger.info(f"Collecting proteins containing: {raw_required}")
+        required_combinations = expand_required_proteins(config.fetch_proteins)
+        logger.info("Collecting proteins containing: %s", required_combinations)
+
     else:
-        # Keine Angabe von domains, daher alles für die gewünschten Genome
-        logger.info(f"Fetching all hits for genomes {limiter_dict.keys()}")
+        logger.info("Fetching all hits for selected genomes.")
+
         protein_dict, cluster_dict, taxon_dict = db_fetch_protein.fetch_bulk_data(
             database=config.database_directory,
-            syntenic_domains=raw_required,
+            syntenic_domains=[],
             limiter_dict=limiter_dict,
             fetch_from_gene_clusters=False,
             excluded_domains=excluded_domains,
             use_non_valid_hits=config.use_non_valid_hits,
         )
+
         return protein_dict, cluster_dict, taxon_dict, {}
 
-    # Sammel-Container über alle Kombinationen
-    sum_protein_dict: Dict[str, Any] = {}
-    sum_cluster_dict: Dict[str, Any] = {}
-    sum_taxon_dict: Dict[str, Any] = {}
-    sum_combo_to_genomes_dict: Dict[str, Any] = {}
-
-    # Jede Kombination sequenziell abfragen und zusammenführen
-    for combo in required_combinations:
-        logger.debug(f"Fetching combination: {combo}")
-        protein_dict, cluster_dict, taxon_dict = db_fetch_protein.fetch_bulk_data(
+    sum_protein_dict, sum_cluster_dict, sum_taxon_dict, sum_combo_to_genomes_dict = (
+        db_fetch_protein.fetch_bulk_data_for_combinations(
             database=config.database_directory,
-            syntenic_domains=combo,
+            combinations=required_combinations,
             limiter_dict=limiter_dict,
             fetch_from_gene_clusters=fetch_from_gene_cluster,
             excluded_domains=excluded_domains,
             use_non_valid_hits=config.use_non_valid_hits,
         )
-
-        # Merge-Strategie:
-        # - spätere Treffer überschreiben frühere bei gleichen Keys
-        #   (vermeidet Duplikate, einfaches Verhalten)
-        # - falls nötig, könnte man das später zu Aggregation anpassen
-        if protein_dict:
-            sum_protein_dict.update(protein_dict)
-        if cluster_dict:
-            sum_cluster_dict.update(cluster_dict)
-        if taxon_dict:
-            sum_taxon_dict.update(taxon_dict)
-            combo_key = tuple(combo)
-            sum_combo_to_genomes_dict.setdefault(combo_key, set()).update(
-                taxon_dict.keys()
-            )
-
-    # Addition von einzelnen proteinen
-    for combo in additional_proteins:
-        logger.debug(f"Fetching combination: {combo}")
-        fd_limiter = sum_taxon_dict if not config.fd_can_add_genomes else {}
-        protein_dict, cluster_dict, taxon_dict = db_fetch_protein.fetch_bulk_data(
-            database=config.database_directory,
-            syntenic_domains=combo,
-            limiter_dict=fd_limiter,
-            fetch_from_gene_clusters=False,
-            excluded_domains=excluded_domains,
-            use_non_valid_hits=config.use_non_valid_hits,
-        )
-
-        # Merge-Strategie:
-        # - spätere Treffer überschreiben frühere bei gleichen Keys
-        #   (vermeidet Duplikate, einfaches Verhalten)
-        # - falls nötig, könnte man das später zu Aggregation anpassen
-        if protein_dict:
-            sum_protein_dict.update(protein_dict)
-        if cluster_dict:
-            sum_cluster_dict.update(cluster_dict)
-        if taxon_dict:
-            sum_taxon_dict.update(taxon_dict)
-
-        # Für die strain variability muss hier noch die gesamtheit der genomeIDs gespeichert werden
-        # combo => genomeIDs
-
-    logger.info(
-        "Fetch summary: %d proteins, %d taxa",
-        len(sum_protein_dict),
-        len(sum_taxon_dict),
     )
 
-    return sum_protein_dict, sum_cluster_dict, sum_taxon_dict, sum_combo_to_genomes_dict
+    if additional_proteins:
+        if not config.fd_can_add_genomes and not sum_taxon_dict:
+            logger.info(
+                "Skipping additional -fd proteins because the preceding -fc search matched no genomes."
+            )
+        else:
+            fd_limiter = {} if config.fd_can_add_genomes else sum_taxon_dict
+
+            add_proteins, add_clusters, add_taxa, _ = (
+                db_fetch_protein.fetch_bulk_data_for_combinations(
+                    database=config.database_directory,
+                    combinations=additional_proteins,
+                    limiter_dict=fd_limiter,
+                    fetch_from_gene_clusters=False,
+                    excluded_domains=excluded_domains,
+                    use_non_valid_hits=config.use_non_valid_hits,
+                )
+            )
+
+            sum_protein_dict.update(add_proteins)
+            sum_cluster_dict.update(add_clusters)
+            sum_taxon_dict.update(add_taxa)
+
+    logger.info(
+        "Fetch summary: %d proteins, %d taxa, %d required combinations",
+        len(sum_protein_dict),
+        len(sum_taxon_dict),
+        len(sum_combo_to_genomes_dict),
+    )
+
+    return (
+        sum_protein_dict,
+        sum_cluster_dict,
+        sum_taxon_dict,
+        sum_combo_to_genomes_dict,
+    )
 
 
 #

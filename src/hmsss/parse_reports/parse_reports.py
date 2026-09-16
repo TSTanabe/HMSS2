@@ -5,8 +5,7 @@ import re
 import subprocess
 from bisect import bisect_right
 from dataclasses import dataclass, field, replace
-
-from typing import Dict, Any, Set, List, Tuple, FrozenSet
+from typing import Any, Dict, FrozenSet, List, Set, Tuple
 
 from hmsss.core.logging import get_logger
 
@@ -430,6 +429,9 @@ class Protein:
         self.domains = self.best_nonoverlapping_domain_set(
             self, self.low_score_domains, inclusive=False
         )
+        self.valid_hit = any(
+            "Tc" in domain.selection_comment_list for domain in self.domains
+        )
 
     def define_selection_comment(self) -> None:
         """
@@ -762,7 +764,7 @@ def update_protein_validity_by_synteny(
 
 def remove_invalid_bc_only_proteins(
     protein_dict: dict[str, Protein],
-) -> dict[str, Protein]:
+) -> tuple[dict[str, Protein], list[Any]]:
     to_remove = []
 
     allowed_comments = {"Bc", "Nb"}
@@ -786,7 +788,21 @@ def remove_invalid_bc_only_proteins(
     for protein_id in to_remove:
         del protein_dict[protein_id]
 
-    return protein_dict
+    return protein_dict, to_remove
+
+
+def remove_proteins_from_clusters(cluster_dict, removed_protein_ids):
+    if not removed_protein_ids:
+        return cluster_dict
+
+    for cluster in cluster_dict.values():
+        genes = cluster.get_genes()
+        genes[:] = [gene for gene in genes if gene not in removed_protein_ids]
+
+        if hasattr(cluster, "covered_protein_ids"):
+            cluster.covered_protein_ids.difference_update(removed_protein_ids)
+
+    return cluster_dict
 
 
 def define_best_score_hits_for_protein_dict(

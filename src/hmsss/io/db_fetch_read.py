@@ -40,7 +40,9 @@ def _prepare_required_domains_temp(
     doms = _clean_values(required_domains)
 
     cur.execute(
-        f"CREATE TEMP TABLE IF NOT EXISTS {table_name} (domain_type TEXT PRIMARY KEY);"
+        f"""CREATE TEMP TABLE IF NOT EXISTS {table_name} (
+            domain_type TEXT PRIMARY KEY
+        ) WITHOUT ROWID"""
     )
     cur.execute(f"DELETE FROM {table_name};")
 
@@ -70,7 +72,9 @@ def _prepare_required_metagenomes_temp(
     mids = _clean_values(metagenome_ids)
 
     cur.execute(
-        f"CREATE TEMP TABLE IF NOT EXISTS {table_name} (metagenomeID TEXT PRIMARY KEY);"
+        f"""CREATE TEMP TABLE IF NOT EXISTS {table_name} (
+            metagenomeID TEXT PRIMARY KEY
+        ) WITHOUT ROWID"""
     )
     cur.execute(f"DELETE FROM {table_name};")
 
@@ -98,13 +102,11 @@ def _fetch_metagenome_metadata(
     out: Dict[str, Dict[str, Any]] = {}
 
     if mids:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TEMP TABLE IF NOT EXISTS tmp_meta_lookup (
                 metagenomeID TEXT PRIMARY KEY
-            );
-            """
-        )
+            ) WITHOUT ROWID
+        """)
         cur.execute("DELETE FROM tmp_meta_lookup;")
         cur.executemany(
             "INSERT OR IGNORE INTO tmp_meta_lookup(metagenomeID) VALUES (?)",
@@ -161,13 +163,11 @@ def _fetch_lineage_metadata(
     if not lids:
         return out
 
-    cur.execute(
-        """
+    cur.execute("""
         CREATE TEMP TABLE IF NOT EXISTS tmp_lineage_lookup (
             lineageID TEXT PRIMARY KEY
-        );
-        """
-    )
+        ) WITHOUT ROWID
+    """)
     cur.execute("DELETE FROM tmp_lineage_lookup;")
     cur.executemany(
         "INSERT OR IGNORE INTO tmp_lineage_lookup(lineageID) VALUES (?)",
@@ -210,145 +210,98 @@ def _fetch_lineage_metadata(
     return out
 
 
-def generate_fetch_query(
-    *,
-    use_domain_filter: bool,
-    use_metagenome_filter: bool,
-) -> str:
-    """
-    Build the SQL query for fetching reads from Placement joined to Metagenomes
-    and optionally Lineage.
+def _hydrate_read_metadata(
+    read_dict: Dict[Tuple[str, str, str], Read],
+    metagenome_dict: Dict[str, Dict[str, Any]],
+    lineage_dict: Dict[str, Dict[str, Any]],
+) -> None:
+    """Attach metagenome and lineage metadata to Read objects."""
 
-    Filtering logic
-    ---------------
-    - no filters        -> fetch all placements
-    - domain filter     -> only requested domain_type / gpkg names
-    - metagenome filter -> only requested metagenomeIDs
-    - both              -> intersection of both
-    """
-    join_req_domains = (
+    for read in read_dict.values():
+        meta = metagenome_dict.get(read.metagenomeID)
+        if meta:
+            read.genomeID = meta.get("genomeID") or ""
+
+        lineage = lineage_dict.get(read.lineageID)
+        if lineage:
+            read.lineage = {
+                "root": lineage.get("root") or "",
+                "k": lineage.get("kingdom") or "",
+                "p": lineage.get("phylum") or "",
+                "c": lineage.get("class") or "",
+                "o": lineage.get("order") or "",
+                "f": lineage.get("family") or "",
+                "g": lineage.get("genus") or "",
+                "s": lineage.get("species") or "",
+            }
+        else:
+            read.lineage = {}
+
+
+def generate_fetch_query(
+    *, use_domain_filter: bool, use_metagenome_filter: bool
+) -> str:
+    """Build a narrow Placement query. Metagenome and lineage metadata are hydrated afterwards."""
+
+    join_domains = (
         "JOIN tmp_req_domains rd ON rd.domain_type = p.domain_type"
         if use_domain_filter
         else ""
     )
-    join_req_metas = (
+    join_metas = (
         "JOIN tmp_req_metagenomes rm ON rm.metagenomeID = p.metagenomeID"
         if use_metagenome_filter
         else ""
     )
 
-    sql = f"""
-    SELECT
-        p.domain_type,
-        p.readID,
-        p.metagenomeID,
-        p.proteinID,
-        p.lineageID,
-        p.dom_start,
-        p.dom_end,
-        p.coverage,
-        p.sequence,
-        p.alignment,
-
-        m.genomeID,
-        m.forward_reads,
-        m.reverse_reads,
-        m.prokaryotic_fraction,
-
-        l.root,
-        l.kingdom,
-        l.phylum,
-        l.class,
-        l."order" AS tax_order,
-        l.family,
-        l.genus,
-        l.species,
-        l.raw_lineage
-    FROM Placement p
-    JOIN Metagenomes m
-      ON m.metagenomeID = p.metagenomeID
-    LEFT JOIN Lineage l
-      ON l.lineageID = p.lineageID
-    {join_req_domains}
-    {join_req_metas}
+    return f"""
+        SELECT p.domain_type, p.readID, p.metagenomeID, p.proteinID, p.lineageID,
+               p.dom_start, p.dom_end, p.coverage, p.sequence, p.alignment
+        FROM Placement p
+        {join_domains}
+        {join_metas}
     """
-    return sql
 
 
 def build_reads_from_query(
     cur: sqlite3.Cursor,
     sql: str,
-) -> Tuple[
-    Dict[Tuple[str, str, str], Read],
-    Dict[str, Dict[str, Any]],
-    Dict[str, Dict[str, Any]],
-]:
-    """
-    Execute the SQL query and build:
-    - read_dict keyed by (readID, gpkg_name, metagenomeID)
-    - metagenome_dict keyed by metagenomeID
-    - lineage_dict keyed by lineageID
-    """
+) -> Tuple[Dict[Tuple[str, str, str], Read], set[str], set[str]]:
+    """Build Read objects and collect referenced metagenome and lineage IDs."""
+
     read_dict: Dict[Tuple[str, str, str], Read] = {}
-    metagenome_dict: Dict[str, Dict[str, Any]] = {}
-    lineage_dict: Dict[str, Dict[str, Any]] = {}
+    metagenome_ids: set[str] = set()
+    lineage_ids: set[str] = set()
 
     cur.execute(sql)
 
     for row in cur:
-        key = (row["readID"], row["domain_type"], row["metagenomeID"])
+        mid = row["metagenomeID"]
+        lid = row["lineageID"]
+        key = (row["readID"], row["domain_type"], mid)
 
-        r = Read(
+        read = Read(
             readID=row["readID"],
             alignment=row["alignment"] or "",
             sequence=row["sequence"] or "",
             gpkg_name=row["domain_type"],
-            metagenomeID=row["metagenomeID"],
-            genomeID=row["genomeID"] or "",
+            metagenomeID=mid,
+            genomeID="",
         )
-        r.start = row["dom_start"] if row["dom_start"] is not None else 0
-        r.end = row["dom_end"] if row["dom_end"] is not None else 1
-        r.coverage = row["coverage"] if row["coverage"] is not None else 1.0
-        r.lineageID = row["lineageID"] or ""
-        r.lineage = {
-            "root": row["root"] or "",
-            "k": row["kingdom"] or "",
-            "p": row["phylum"] or "",
-            "c": row["class"] or "",
-            "o": row["tax_order"] or "",
-            "f": row["family"] or "",
-            "g": row["genus"] or "",
-            "s": row["species"] or "",
-        }
 
-        read_dict[key] = r
+        read.start = row["dom_start"] if row["dom_start"] is not None else 0
+        read.end = row["dom_end"] if row["dom_end"] is not None else 1
+        read.coverage = row["coverage"] if row["coverage"] is not None else 1.0
+        read.lineageID = lid or ""
+        read.lineage = {}
 
-        mid = row["metagenomeID"]
-        if mid not in metagenome_dict:
-            metagenome_dict[mid] = {
-                "metagenomeID": mid,
-                "genomeID": row["genomeID"],
-                "forward_reads": row["forward_reads"],
-                "reverse_reads": row["reverse_reads"],
-                "prokaryotic_fraction": row["prokaryotic_fraction"],
-            }
+        read_dict[key] = read
+        metagenome_ids.add(mid)
 
-        lid = row["lineageID"]
-        if lid and lid not in lineage_dict:
-            lineage_dict[lid] = {
-                "lineageID": lid,
-                "root": row["root"],
-                "kingdom": row["kingdom"],
-                "phylum": row["phylum"],
-                "class": row["class"],
-                "order": row["tax_order"],
-                "family": row["family"],
-                "genus": row["genus"],
-                "species": row["species"],
-                "raw_lineage": row["raw_lineage"],
-            }
+        if lid:
+            lineage_ids.add(lid)
 
-    return read_dict, metagenome_dict, lineage_dict
+    return read_dict, metagenome_ids, lineage_ids
 
 
 def fetch_gpkg_lengths(
@@ -380,18 +333,16 @@ def fetch_gpkg_lengths(
         con.row_factory = sqlite3.Row
         cur = con.cursor()
 
-        cur.execute("PRAGMA foreign_keys = ON;")
-        cur.execute("PRAGMA cache_size = 100000;")
-        cur.execute("PRAGMA synchronous = OFF;")
+        cur.execute("PRAGMA foreign_keys = ON")
+        cur.execute("PRAGMA temp_store = MEMORY")
+        cur.execute("PRAGMA cache_size = -131072")
 
         if req_domains:
-            cur.execute(
-                """
+            cur.execute("""
                 CREATE TEMP TABLE IF NOT EXISTS tmp_req_gpkg_lengths (
                     domain_type TEXT PRIMARY KEY
-                );
-                """
-            )
+                ) WITHOUT ROWID
+            """)
             cur.execute("DELETE FROM tmp_req_gpkg_lengths;")
             cur.executemany(
                 "INSERT OR IGNORE INTO tmp_req_gpkg_lengths(domain_type) VALUES (?)",
@@ -433,58 +384,44 @@ def fetch_bulk_read_data(
     Dict[str, Dict[str, Any]],
     Dict[str, Dict[str, Any]],
 ]:
-    """
-    Fetch read placements from the database, filtered by:
-    - one or more domain/gpkg names
-    - one or more metagenomeIDs
+    """Fetch placements first and hydrate only metadata actually referenced by those placements."""
 
-    Parameters
-    ----------
-    database : str
-        Path to SQLite database.
-    domain_types : iterable[str] | None
-        Requested Placement.domain_type values (GPKG / protein types).
-    metagenome_ids : iterable[str] | None
-        Requested metagenome IDs.
-
-    Returns
-    -------
-    read_dict
-        Dict keyed by (readID, gpkg_name, metagenomeID).
-    metagenome_dict
-        Dict keyed by metagenomeID with metadata.
-    lineage_dict
-        Dict keyed by lineageID with taxonomy metadata.
-    """
     abs_db = os.path.abspath(database)
     db_path = f"file:{abs_db}?mode=ro&immutable=1"
-
-    read_dict: Dict[Tuple[str, str, str], Read] = {}
-    metagenome_dict: Dict[str, Dict[str, Any]] = {}
-    lineage_dict: Dict[str, Dict[str, Any]] = {}
 
     with sqlite3.connect(db_path, uri=True) as con:
         con.row_factory = sqlite3.Row
         cur = con.cursor()
 
-        cur.execute("PRAGMA foreign_keys = ON;")
-        cur.execute("PRAGMA cache_size = 100000;")
-        cur.execute("PRAGMA synchronous = OFF;")
+        cur.execute("PRAGMA foreign_keys = ON")
+        cur.execute("PRAGMA temp_store = MEMORY")
+        cur.execute("PRAGMA cache_size = -262144")
 
         n_domains = _prepare_required_domains_temp(cur, domain_types)
         n_metas = _prepare_required_metagenomes_temp(cur, metagenome_ids)
 
         sql = generate_fetch_query(
-            use_domain_filter=(n_domains > 0),
-            use_metagenome_filter=(n_metas > 0),
+            use_domain_filter=n_domains > 0,
+            use_metagenome_filter=n_metas > 0,
         )
 
         logger.info(
-            "Fetching reads from database | domain_types=%s | metagenome_ids=%s",
-            n_domains if n_domains > 0 else "ALL",
-            n_metas if n_metas > 0 else "ALL",
+            "Fetching reads | domain types=%s | metagenomes=%s",
+            n_domains if n_domains else "ALL",
+            n_metas if n_metas else "ALL",
         )
 
-        read_dict, metagenome_dict, lineage_dict = build_reads_from_query(cur, sql)
+        read_dict, used_metagenomes, used_lineages = build_reads_from_query(cur, sql)
+
+        metagenome_dict = _fetch_metagenome_metadata(cur, used_metagenomes)
+        lineage_dict = _fetch_lineage_metadata(cur, used_lineages)
+        _hydrate_read_metadata(read_dict, metagenome_dict, lineage_dict)
+
+    logger.info(
+        "Fetched %d placements from %d metagenomes with %d lineages.",
+        len(read_dict),
+        len(metagenome_dict),
+        len(lineage_dict),
+    )
 
     return read_dict, metagenome_dict, lineage_dict

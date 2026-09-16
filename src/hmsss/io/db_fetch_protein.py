@@ -1,227 +1,164 @@
 #!/usr/bin/python
+from __future__ import annotations
+
 import os
 import sqlite3
-from typing import Any, Dict, List, Optional, Set, Tuple, Iterable
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
+from hmsss.core.logging import get_logger
 from hmsss.io import db_fetch_taxonomy
 from hmsss.parse_reports import parse_reports
-from hmsss.utils import myUtil
-from hmsss.core.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-def fetch_bulk_data(
-    database: str,
-    syntenic_domains: Optional[List[str]],
-    limiter_dict: Optional[Dict[str, str]] = None,
-    fetch_from_gene_clusters: bool = False,
-    excluded_domains: Optional[List[str]] = None,
-    use_non_valid_hits: bool = False,
-) -> tuple[dict[str, Any], dict[str, Any], dict[str, dict[str, str]]]:
-    """
-    Fetch bulk data from the database based on specified conditions, using batching
-    to avoid SQLite's variable limit.
-
-    This version expects the SELECT produced by `generate_fetch_query(...)` to provide
-    stable, unique column aliases. Specifically, the following aliases are used here:
-
-      proteinID, genomeID, clusterID,
-      contig, gene_start, gene_end, gene_strand, protein_sequence,
-      domain, domStart, domEnd, score,
-      dom_count, comment
-
-    Implementation notes:
-      - Uses sqlite3.Row for name-based access to row fields (avoids index errors).
-      - Keeps your existing flow: build Protein objects on-the-fly, collect Cluster
-        stubs (one per clusterID), then enrich clusters with Keywords and genomes
-        with taxonomy in batched queries.
-      - `min_cluster_completeness` is available for optional filtering after keyword
-        hydration (left unchanged here to preserve current behavior).
-    """
-    protein_dict: Dict[str, Any] = {}
-    cluster_dict: Dict[str, Any] = {}
-    genome_id_set: Set[str] = set()
-    fusion_prot_ids: Set[str] = set()
-    if limiter_dict is None:
-        limiter_dict = {}
-
-    abs_db = os.path.abspath(database)
-    db_path = f"file:{abs_db}?mode=ro&immutable=1"
-    with sqlite3.connect(db_path, uri=True) as con:
-        con.row_factory = sqlite3.Row
-        cur = con.cursor()
-
-        # Pragmas
-        cur.execute("PRAGMA foreign_keys = ON;")
-        cur.execute(
-            "PRAGMA cache_size = 100000;"
-        )  # ~100k Pages (~100k * 1.5–2 KB je nach build)
-        cur.execute("PRAGMA synchronous = OFF;")
-        # excluded_domains = ['sHdrB2']
-
-        _prepare_required_domains_temp(cur, syntenic_domains)
-        _prepare_excluded_domains_temp(cur, excluded_domains)
-        n = _prepare_limiter_genomes_temp(cur, limiter_dict)
-
-        # print(syntenic_domains)
-        # print(excluded_domains)
-        # Delete row if sqliteDB downwards compatibility is not an issue anymore
-        valid_hit_column_available = has_column(cur, "Proteins", "valid_hit")
-        if fetch_from_gene_clusters:
-            logger.info(f"Searching for syntenic {syntenic_domains}")
-            sql, args = generate_fetch_query_covering_domains(
-                set(syntenic_domains),
-                use_limiter=(n > 0),
-                use_exclusions=True,
-                use_non_valid_hits=use_non_valid_hits,  # Default True
-                valid_hit_column_available=valid_hit_column_available,
-            )  # Fetches all domains that are in a syntenic gene cluster, but not csb including the exclusion
-        else:
-            logger.info(f"Searching for co-occuring {syntenic_domains}")
-            sql, args = generate_fetch_query_domains_anywhere_excluding_clusters(
-                use_limiter=(n > 0),  # -fg wirklich anwenden
-                use_exclusions=True,
-                require_all_domains_in_same_genome=bool(syntenic_domains),
-                # nur fordern, wenn explizite Domains übergeben wurden. Kann leer sein, wenn komplettes genom gefordert
-                use_non_valid_hits=use_non_valid_hits,  # Default True
-                valid_hit_column_available=valid_hit_column_available,
-            )
-
-        fusion_prot_ids: Set[str] = set()
-        build_proteins_from_query(
-            cur=cur,
-            sql=sql,
-            args=args,
-            protein_dict=protein_dict,
-            genome_id_set=genome_id_set,
-            fusion_prot_ids=fusion_prot_ids,
-        )
-        logger.info(f"Fetched {len(protein_dict)} proteins.")
-
-    # 2) Add all domains for fused proteins (batched)
-    if fusion_prot_ids:
-        hydrate_fused_protein_domains(db_path, fusion_prot_ids, protein_dict)
-
-    # 4) Get taxonomy
-    taxon_dict = db_fetch_taxonomy.fetch_taxonomy_dict(
-        db_path=db_path,
-    )
-    # 5) Filter taxonomy entries to only include genomes present in protein_dict
-    genome_ids_in_proteins = {
-        p.genomeID for p in protein_dict.values() if getattr(p, "genomeID", None)
-    }
-    before = len(taxon_dict)
-    taxon_dict = {
-        gid: rec for gid, rec in taxon_dict.items() if gid in genome_ids_in_proteins
-    }
-    after = len(taxon_dict)
-    logger.info(f"Hits were present in {after} genome lineages of {before}.")
-
-    parse_reports.define_best_score_hits_for_protein_dict(protein_dict)
-    return protein_dict, cluster_dict, taxon_dict
+def _db_uri(database: str) -> str:
+    """Return a read-only immutable SQLite URI."""
+    if database.startswith("file:"):
+        return database
+    return f"file:{os.path.abspath(database)}?mode=ro&immutable=1"
 
 
-################
-####   Generate fetch query
-################
+# ---------------------------------------------------------------------------
+# TEMP-table preparation
+# ---------------------------------------------------------------------------
 
 
 def _prepare_required_domains_temp(
-    cur: sqlite3.Cursor, required_domains: "Iterable[str]"
+    cur: sqlite3.Cursor,
+    required_domains: Optional[Iterable[str]],
 ) -> int:
     """
-    Legt die TEMP-Tabelle tmp_req_domains(domain TEXT PRIMARY KEY) an und befüllt sie.
+    Store requested external domain names and resolve them once to domain_pk.
 
-    Verhalten:
-    - Wenn required_domains leer oder None → es werden ALLE Domains aus der DB geladen.
-    - Sonst → nur die übergebenen Domains (entdoppelt, ohne leere Strings).
+    If required_domains is empty/None, all DomainTypes are inserted. This
+    preserves the previous behaviour used when all hits of selected genomes
+    should be fetched.
 
-    Returns: Anzahl eingefügter unterschiedlicher Domains.
+    Unknown requested domain names remain in the table with domain_pk = NULL.
+    This is intentional: an ALL-of query containing an unknown domain must
+    return no candidate rather than silently ignoring that domain.
     """
-
-    # TEMP-Tabelle anlegen & leeren
-    cur.execute(
-        "CREATE TEMP TABLE IF NOT EXISTS tmp_req_domains (domain TEXT PRIMARY KEY);"
+    domains = sorted(
+        {str(d).strip() for d in (required_domains or []) if str(d).strip()}
     )
-    cur.execute("DELETE FROM tmp_req_domains;")
 
-    # Domains normalisieren
-    doms = {d for d in (required_domains or []) if d}
+    cur.execute("""
+        CREATE TEMP TABLE IF NOT EXISTS tmp_req_domains (
+            domain TEXT PRIMARY KEY,
+            domain_pk INTEGER
+        ) WITHOUT ROWID
+    """)
+    cur.execute("DELETE FROM tmp_req_domains")
 
-    if not doms:
-        # → keine Vorgabe: alle Domains holen
-        cur.execute(
-            "INSERT OR IGNORE INTO tmp_req_domains(domain) SELECT DISTINCT domain FROM Domains;"
-        )
+    if not domains:
+        cur.execute("""
+            INSERT INTO tmp_req_domains(domain, domain_pk)
+            SELECT domain, domain_pk FROM DomainTypes
+        """)
         return cur.rowcount
 
-    # → gewählte Domains einfügen
     cur.executemany(
-        "INSERT OR IGNORE INTO tmp_req_domains(domain) VALUES (?)", ((d,) for d in doms)
+        "INSERT INTO tmp_req_domains(domain) VALUES (?)", ((d,) for d in domains)
     )
-    return cur.rowcount or len(doms)
+    cur.execute("""
+        UPDATE tmp_req_domains
+        SET domain_pk = (
+            SELECT dt.domain_pk
+            FROM DomainTypes dt
+            WHERE dt.domain = tmp_req_domains.domain
+        )
+    """)
+    return len(domains)
 
 
 def _prepare_excluded_domains_temp(
-    cur: sqlite3.Cursor, excluded_domains: "Iterable[str] | None"
+    cur: sqlite3.Cursor,
+    excluded_domains: Optional[Iterable[str]],
 ) -> int:
-    doms = {d for d in (excluded_domains or []) if d}
-    cur.execute(
-        "CREATE TEMP TABLE IF NOT EXISTS tmp_excl_domains (domain TEXT PRIMARY KEY);"
+    """Store excluded external domain names and resolve them to domain_pk."""
+    domains = sorted(
+        {str(d).strip() for d in (excluded_domains or []) if str(d).strip()}
     )
-    cur.execute("DELETE FROM tmp_excl_domains;")
-    if not doms:
+
+    cur.execute("""
+        CREATE TEMP TABLE IF NOT EXISTS tmp_excl_domains (
+            domain TEXT PRIMARY KEY,
+            domain_pk INTEGER
+        ) WITHOUT ROWID
+    """)
+    cur.execute("DELETE FROM tmp_excl_domains")
+
+    if not domains:
         return 0
+
     cur.executemany(
-        "INSERT OR IGNORE INTO tmp_excl_domains(domain) VALUES (?)",
-        ((d,) for d in doms),
+        "INSERT INTO tmp_excl_domains(domain) VALUES (?)", ((d,) for d in domains)
     )
-    return cur.rowcount or len(doms)
+    cur.execute("""
+        UPDATE tmp_excl_domains
+        SET domain_pk = (
+            SELECT dt.domain_pk
+            FROM DomainTypes dt
+            WHERE dt.domain = tmp_excl_domains.domain
+        )
+    """)
+    return len(domains)
 
 
 def _prepare_limiter_genomes_temp(
-    cur: sqlite3.Cursor, taxon_dict: Optional[Dict[str, Any]]
+    cur: sqlite3.Cursor,
+    limiter_dict: Optional[Dict[str, Any]],
 ) -> int:
     """
-    Erstellt TEMP-Tabelle tmp_req_genomes(genomeID TEXT PRIMARY KEY)
-    und befüllt sie, falls taxon_dict nicht leer ist.
+    Store external genomeIDs and resolve them once to genome_pk.
 
-    Returns:
-        Anzahl eingefügter GenomeIDs, oder 0 falls taxon_dict leer war.
+    A non-empty limiter containing unknown genomeIDs still counts as an active
+    limiter; unresolved rows simply have genome_pk = NULL and cannot match.
     """
-    if not taxon_dict:
-        # Nichts zu tun → keine Einschränkung
+    if not limiter_dict:
         return 0
 
-    gids = {str(g).strip() for g in taxon_dict.keys() if str(g).strip()}
-    if not gids:
+    genome_ids = sorted({str(g).strip() for g in limiter_dict if str(g).strip()})
+    if not genome_ids:
         return 0
 
-    cur.execute(
-        "CREATE TEMP TABLE IF NOT EXISTS tmp_req_genomes (genomeID TEXT PRIMARY KEY);"
-    )
-    cur.execute("DELETE FROM tmp_req_genomes;")
+    cur.execute("""
+        CREATE TEMP TABLE IF NOT EXISTS tmp_req_genomes (
+            genomeID TEXT PRIMARY KEY,
+            genome_pk INTEGER
+        ) WITHOUT ROWID
+    """)
+    cur.execute("DELETE FROM tmp_req_genomes")
     cur.executemany(
-        "INSERT OR IGNORE INTO tmp_req_genomes(genomeID) VALUES (?)",
-        ((g,) for g in gids),
+        "INSERT INTO tmp_req_genomes(genomeID) VALUES (?)", ((g,) for g in genome_ids)
     )
-    return cur.rowcount or len(gids)
+    cur.execute("""
+        UPDATE tmp_req_genomes
+        SET genome_pk = (
+            SELECT g.genome_pk
+            FROM Genomes g
+            WHERE g.genomeID = tmp_req_genomes.genomeID
+        )
+    """)
+    return len(genome_ids)
 
 
 def has_column(cur: sqlite3.Cursor, table_name: str, column_name: str) -> bool:
-    """
-    Prüft, ob eine bestimmte Spalte in einer Tabelle existiert.
-    Nutzt den bestehenden Cursor/Connection-Kontext.
-    """
+    """Compatibility helper retained for callers/tests using the old API."""
     try:
-        cur.execute(f"PRAGMA table_info({table_name});")
+        cur.execute(f"PRAGMA table_info({table_name})")
         return any(row[1] == column_name for row in cur.fetchall())
-    except sqlite3.Error as e:
+    except sqlite3.Error as exc:
         logger.warning(
-            f"Fehler bei Prüfung der Spalte '{column_name}' in Tabelle '{table_name}': {e}"
+            "Could not inspect column %s.%s: %s", table_name, column_name, exc
         )
         return False
+
+
+# ---------------------------------------------------------------------------
+# Query generators for single-combination fetches
+# ---------------------------------------------------------------------------
 
 
 def generate_fetch_query_covering_domains(
@@ -229,109 +166,76 @@ def generate_fetch_query_covering_domains(
     use_limiter: bool = True,
     use_exclusions: bool = True,
     use_non_valid_hits: bool = True,
-    valid_hit_column_available: bool = False,
+    valid_hit_column_available: bool = True,
 ) -> Tuple[str, List[Any]]:
     """
-    Liefert ein SELECT, das ALLE Proteine (mit Domains) aus genau den Clustern zurückgibt,
-    die das komplette Set der geforderten Domains enthalten.
+    Return all protein/domain rows from clusters containing every requested domain.
 
-    Wenn use_limiter=True, wird zusätzlich tmp_req_genomes benutzt
-    (muss vorher befüllt sein). Ist taxon_dict leer, übergibt man use_limiter=False.
-
-    Rückgabe: (SQL, [])
+    Candidate selection uses ClusterDomains; full annotations are then read from
+    Proteins/Domains. Excluded domains exclude a cluster irrespective of
+    valid_hit, matching the previous -fc behaviour.
     """
-    # Basis-CTEs: req + optional lim
-    sql = """
-    WITH req AS (
-        SELECT domain FROM tmp_req_domains
-    )
-    """
-    if use_limiter:
-        sql += """,
-    lim AS (
-        SELECT genomeID FROM tmp_req_genomes
-    )
-    """
+    del required_domains, valid_hit_column_available
 
-    valid_and = ""
-    if not use_non_valid_hits and valid_hit_column_available:
-        valid_and = " AND p.valid_hit = 1"
-
-    # CTE: alle Cluster, die das komplette erforderliche Domain-Set abdecken
-    sql += """,
-    clusters_covering AS (
-        SELECT p.clusterID AS clusterID
-        FROM Proteins p
-        {join_limiter}
-        JOIN Domains d ON d.proteinID = p.proteinID
-        JOIN req r     ON r.domain    = d.domain
-        WHERE 1=1 {valid_and}
-        GROUP BY p.clusterID
-        HAVING COUNT(DISTINCT r.domain) = (SELECT COUNT(*) FROM req)
-    )
+    limiter_join = (
+        """
+        JOIN Clusters lc ON lc.cluster_pk = cd.cluster_pk
+        JOIN tmp_req_genomes lg ON lg.genome_pk = lc.genome_pk
     """
-
-    # CTE: alle Cluster, die mindestens eine ausgeschlossene Domäne enthalten
-    if use_exclusions:
-        sql += """,
-    clusters_excluded AS (
-        SELECT p.clusterID AS clusterID
-        FROM Proteins p
-        {join_limiter2}
-        JOIN Domains d   ON d.proteinID = p.proteinID
-        JOIN tmp_excl_domains e ON e.domain = d.domain
-        GROUP BY p.clusterID
-    )
-    """
-
-    sql += """    
-    SELECT
-        p.proteinID        AS proteinID,
-        p.genomeID         AS genomeID,
-        p.clusterID        AS clusterID,
-        p.contig           AS contig,
-        p.start            AS gene_start,
-        p.end              AS gene_end,
-        p.strand           AS gene_strand,
-        p.sequence         AS protein_sequence,
-        d.domain           AS domain,
-        d.domStart         AS domStart,
-        d.domEnd           AS domEnd,
-        d.score            AS score,
-        p.dom_count        AS dom_count,
-        p.comment          AS comment,
-        p.alternative_hit  AS alternative_hit
-    FROM Proteins p
-        {join_limiter3}
-    JOIN clusters_covering c ON c.clusterID = p.clusterID
-    {left_join_excl}
-    JOIN Domains d           ON d.proteinID = p.proteinID
-    {where_clause}
-    """
-
-    join_txt = "JOIN lim lg ON lg.genomeID = p.genomeID" if use_limiter else ""
-    left_join_excl = (
-        "LEFT JOIN clusters_excluded x ON x.clusterID = p.clusterID"
-        if use_exclusions
+        if use_limiter
         else ""
     )
 
-    # flexible WHERE-Klausel
-    where_parts = []
-    if use_exclusions:
-        where_parts.append("x.clusterID IS NULL")
-    if not use_non_valid_hits and valid_hit_column_available:
-        where_parts.append("p.valid_hit = 1")
-    where_clause = f"WHERE {' AND '.join(where_parts)}" if where_parts else ""
+    presence_valid = "" if use_non_valid_hits else "AND cd.valid_present = 1"
+    protein_valid = "" if use_non_valid_hits else "AND p.valid_hit = 1"
 
-    sql = sql.format(
-        join_limiter=join_txt,
-        valid_and=valid_and,
-        join_limiter2=join_txt,
-        join_limiter3=join_txt,
-        left_join_excl=left_join_excl,
-        where_clause=where_clause,
-    )
+    exclusion_cte = ""
+    exclusion_join = ""
+    exclusion_where = ""
+    if use_exclusions:
+        exclusion_cte = """,
+        clusters_excluded AS (
+            SELECT DISTINCT xd.cluster_pk
+            FROM ClusterDomains xd
+            JOIN tmp_excl_domains e ON e.domain_pk = xd.domain_pk
+            WHERE e.domain_pk IS NOT NULL
+        )
+        """
+        exclusion_join = "LEFT JOIN clusters_excluded x ON x.cluster_pk = p.cluster_pk"
+        exclusion_where = "AND x.cluster_pk IS NULL"
+
+    sql = f"""
+        WITH req AS (
+            SELECT domain_pk FROM tmp_req_domains
+        ),
+        req_count AS (
+            SELECT COUNT(*) AS n_req FROM tmp_req_domains
+        ),
+        clusters_covering AS (
+            SELECT cd.cluster_pk
+            FROM ClusterDomains cd
+            {limiter_join}
+            JOIN req r ON r.domain_pk = cd.domain_pk
+            WHERE 1=1 {presence_valid}
+            GROUP BY cd.cluster_pk
+            HAVING COUNT(*) = (SELECT n_req FROM req_count)
+        )
+        {exclusion_cte}
+
+        SELECT p.proteinID AS proteinID, g.genomeID AS genomeID, c.clusterID AS clusterID,
+               p.contig AS contig, p.start AS gene_start, p.end AS gene_end,
+               p.strand AS gene_strand, dt.domain AS domain, d.domStart AS domStart,
+               d.domEnd AS domEnd, d.score AS score, p.dom_count AS dom_count,
+               p.comment AS comment, p.alternative_hit AS alternative_hit
+        FROM clusters_covering cc
+        JOIN Proteins p ON p.cluster_pk = cc.cluster_pk
+        JOIN Genomes g ON g.genome_pk = p.genome_pk
+        JOIN Clusters c ON c.cluster_pk = p.cluster_pk
+        JOIN Domains d ON d.protein_pk = p.protein_pk
+        JOIN DomainTypes dt ON dt.domain_pk = d.domain_pk
+        {exclusion_join}
+        WHERE 1=1 {protein_valid} {exclusion_where}
+    """
     return sql, []
 
 
@@ -339,207 +243,121 @@ def generate_fetch_query_domains_anywhere(
     required_domains: Iterable[str],
     use_limiter: bool = True,
 ) -> Tuple[str, List[Any]]:
-    """
-    Baut ein SELECT, das *alle* Domain-Hits (egal wo lokalisiert, unabhängig von Clustern)
-    für ein gegebenes Set von Domains zurückliefert.
+    """Return requested domain hits anywhere in the selected genomes."""
+    del required_domains
 
-    Limiter-Logik:
-      - Wenn use_limiter=True, wird die TEMP-Tabelle tmp_req_genomes genutzt
-        (muss zuvor via prepare_limiter_genomes_temp(...) befüllt sein).
-      - Wenn use_limiter=False (oder Limiter leer), erfolgt *keine* GenomeID-Einschränkung.
-
-    VORAUSSETZUNGEN (analog zur ersten Routine):
-      - prepare_required_domains_temp(cur, required_domains) wurde ausgeführt
-        und befüllt die TEMP-Tabelle tmp_req_domains(domain).
-      - Optional: prepare_limiter_genomes_temp(cur, taxon_dict) für den Genome-Limiter.
-
-    Rückgabe-Spalten (identisch zu deiner bestehenden generate_fetch_query):
-      proteinID, genomeID, clusterID, contig, gene_start, gene_end, gene_strand,
-      protein_sequence, domain, domStart, domEnd, score, dom_count, comment, alternative_hit
-
-    Returns:
-      (sql, args) — args ist leer, da wir mit TEMP-Tabellen arbeiten (keine 999-Placeholder-Probleme).
-    """
-    sql = """
-    WITH req AS (
-        SELECT domain FROM tmp_req_domains
+    limiter_join = (
+        "JOIN tmp_req_genomes lg ON lg.genome_pk = p.genome_pk" if use_limiter else ""
     )
-    """
-    if use_limiter:
-        sql += """,
-    lim AS (
-        SELECT genomeID FROM tmp_req_genomes
-    )
-    """
 
-    sql += """
-    SELECT
-        p.proteinID        AS proteinID,
-        p.genomeID         AS genomeID,
-        p.clusterID        AS clusterID,
-        p.contig           AS contig,
-        p.start            AS gene_start,
-        p.end              AS gene_end,
-        p.strand           AS gene_strand,
-        p.sequence         AS protein_sequence,
-        d.domain           AS domain,
-        d.domStart         AS domStart,
-        d.domEnd           AS domEnd,
-        d.score            AS score,
-        p.dom_count        AS dom_count,
-        p.comment          AS comment,
-        p.alternative_hit  AS alternative_hit
-    FROM Domains d
-    JOIN req r      ON r.domain   = d.domain
-    JOIN Proteins p ON p.proteinID = d.proteinID
-    {join_limiter}
+    sql = f"""
+        SELECT p.proteinID AS proteinID, g.genomeID AS genomeID, c.clusterID AS clusterID,
+               p.contig AS contig, p.start AS gene_start, p.end AS gene_end,
+               p.strand AS gene_strand, dt.domain AS domain, d.domStart AS domStart,
+               d.domEnd AS domEnd, d.score AS score, p.dom_count AS dom_count,
+               p.comment AS comment, p.alternative_hit AS alternative_hit
+        FROM Domains d
+        JOIN tmp_req_domains r ON r.domain_pk = d.domain_pk
+        JOIN Proteins p ON p.protein_pk = d.protein_pk
+        JOIN DomainTypes dt ON dt.domain_pk = d.domain_pk
+        JOIN Genomes g ON g.genome_pk = p.genome_pk
+        LEFT JOIN Clusters c ON c.cluster_pk = p.cluster_pk
+        {limiter_join}
     """
-
-    join_limiter = "JOIN lim lg ON lg.genomeID = p.genomeID" if use_limiter else ""
-    sql = sql.format(join_limiter=join_limiter)
-
     return sql, []
 
 
-# Testing routine
 def generate_fetch_query_domains_anywhere_excluding_clusters(
     use_limiter: bool = False,
     use_exclusions: bool = True,
     require_all_domains_in_same_genome: bool = True,
     use_non_valid_hits: bool = True,
-    valid_hit_column_available: bool = False,
+    valid_hit_column_available: bool = True,
 ) -> tuple[str, list]:
     """
-    Selektiert alle Domain-Hits aus tmp_req_domains, schließt aber Proteine aus
-    Clustern aus, in denen irgendeine Domäne aus tmp_excl_domains vorkommt.
-    Optional: nur Genomes zulassen, die *alle* gewünschten Domänen enthalten.
+    Return requested domain hits from genomes satisfying the complete requested set.
 
-    Erwartete TEMP-Tabellen:
-      - tmp_req_domains(domain TEXT)          (Pflicht)
-      - tmp_excl_domains(domain TEXT)         (wenn use_exclusions=True)
-      - tmp_req_genomes(genomeID TEXT)        (wenn use_limiter=True)
+    Genome candidate selection uses GenomeDomains. Cluster exclusions preserve the
+    previous -fd semantics: when valid-only mode is active, a cluster is excluded
+    only when the excluded domain is present on at least one valid protein.
     """
-    sql = """
-    WITH req AS (
-        SELECT domain FROM tmp_req_domains
+    del valid_hit_column_available
+
+    presence_valid = "" if use_non_valid_hits else "AND gd.valid_present = 1"
+    exclusion_valid = "" if use_non_valid_hits else "AND cd.valid_present = 1"
+    protein_valid = "" if use_non_valid_hits else "AND p.valid_hit = 1"
+
+    limiter_candidate = (
+        "JOIN tmp_req_genomes lg ON lg.genome_pk = gd.genome_pk" if use_limiter else ""
     )
-    """
-    if use_limiter:
-        sql += """,
-    lim AS (
-        SELECT genomeID FROM tmp_req_genomes
+    limiter_final = (
+        "JOIN tmp_req_genomes lg2 ON lg2.genome_pk = p.genome_pk" if use_limiter else ""
     )
-    """
 
-    valid_where = ""
-    if (not use_non_valid_hits) and valid_hit_column_available:
-        valid_where = "WHERE p.valid_hit = 1"
-
-    # 1) Genomes finden, die *alle* gewünschten Domänen haben (mind. je 1 Hit)
-    #    -> zählt DISTINCT req.domains pro genomeID
+    genome_cte = ""
+    genome_join = ""
     if require_all_domains_in_same_genome:
-        sql += """,
-    req_count AS (
-        SELECT COUNT(*) AS n_req FROM req
-    ),
-    genomes_ok AS (
-        SELECT p.genomeID
-        FROM Proteins p
-        {join_limiter0}
-        JOIN Domains d ON d.proteinID = p.proteinID
-        JOIN req r     ON r.domain    = d.domain
-        {valid_where}
-        GROUP BY p.genomeID
-        HAVING COUNT(DISTINCT r.domain) = (SELECT n_req FROM req_count)
-    )
-    """.format(
-            join_limiter0=(
-                "JOIN lim lg0 ON lg0.genomeID = p.genomeID" if use_limiter else ""
-            ),
-            valid_where=valid_where,
+        genome_cte = f""",
+        req_count AS (
+            SELECT COUNT(*) AS n_req FROM tmp_req_domains
+        ),
+        genomes_ok AS (
+            SELECT gd.genome_pk
+            FROM GenomeDomains gd
+            {limiter_candidate}
+            JOIN req r ON r.domain_pk = gd.domain_pk
+            WHERE 1=1 {presence_valid}
+            GROUP BY gd.genome_pk
+            HAVING COUNT(*) = (SELECT n_req FROM req_count)
         )
+        """
+        genome_join = "JOIN genomes_ok gok ON gok.genome_pk = p.genome_pk"
 
-    valid_and = ""
-    if (not use_non_valid_hits) and valid_hit_column_available:
-        valid_and = " AND p.valid_hit = 1"
-
-    # 2) Cluster ausschließen, die irgendeine Exklusionsdomäne enthalten
+    exclusion_cte = ""
+    exclusion_join = ""
+    exclusion_where = ""
     if use_exclusions:
-        sql += """,
-    clusters_excluded AS (
-        SELECT p.clusterID AS clusterID
-        FROM Proteins p
-        {join_limiter2}
-        JOIN Domains d   ON d.proteinID = p.proteinID
-        JOIN tmp_excl_domains e ON e.domain = d.domain
-        WHERE p.clusterID IS NOT NULL
-        {valid_and}
-        GROUP BY p.clusterID
-    )
-    """.format(
-            join_limiter2=(
-                "JOIN lim lg2 ON lg2.genomeID = p.genomeID" if use_limiter else ""
-            ),
-            valid_and=valid_and,
+        exclusion_cte = f""",
+        clusters_excluded AS (
+            SELECT DISTINCT cd.cluster_pk
+            FROM ClusterDomains cd
+            JOIN tmp_excl_domains e ON e.domain_pk = cd.domain_pk
+            WHERE e.domain_pk IS NOT NULL {exclusion_valid}
         )
+        """
+        exclusion_join = "LEFT JOIN clusters_excluded x ON x.cluster_pk = p.cluster_pk"
+        exclusion_where = "AND x.cluster_pk IS NULL"
 
-    # 3) Finale Auswahl
-    sql += """
-    SELECT
-        p.proteinID        AS proteinID,
-        p.genomeID         AS genomeID,
-        p.clusterID        AS clusterID,
-        p.contig           AS contig,
-        p.start            AS gene_start,
-        p.end              AS gene_end,
-        p.strand           AS gene_strand,
-        p.sequence         AS protein_sequence,
-        d.domain           AS domain,
-        d.domStart         AS domStart,
-        d.domEnd           AS domEnd,
-        d.score            AS score,
-        p.dom_count        AS dom_count,
-        p.comment          AS comment,
-        p.alternative_hit  AS alternative_hit
-    FROM Domains d
-    JOIN req r      ON r.domain    = d.domain
-    JOIN Proteins p ON p.proteinID = d.proteinID
-    {join_limiter3}
-    {join_genomes_ok}
-    {left_join_excl}
-    {where_clause}
-    ORDER BY p.genomeID, COALESCE(p.clusterID, -1), p.contig, p.start, d.domStart
+    sql = f"""
+        WITH req AS (
+            SELECT domain_pk FROM tmp_req_domains
+        )
+        {genome_cte}
+        {exclusion_cte}
+
+        SELECT p.proteinID AS proteinID, g.genomeID AS genomeID, c.clusterID AS clusterID,
+               p.contig AS contig, p.start AS gene_start, p.end AS gene_end,
+               p.strand AS gene_strand, dt.domain AS domain, d.domStart AS domStart,
+               d.domEnd AS domEnd, d.score AS score, p.dom_count AS dom_count,
+               p.comment AS comment, p.alternative_hit AS alternative_hit
+        FROM Domains d
+        JOIN req r ON r.domain_pk = d.domain_pk
+        JOIN Proteins p ON p.protein_pk = d.protein_pk
+        JOIN DomainTypes dt ON dt.domain_pk = d.domain_pk
+        JOIN Genomes g ON g.genome_pk = p.genome_pk
+        LEFT JOIN Clusters c ON c.cluster_pk = p.cluster_pk
+        {limiter_final}
+        {genome_join}
+        {exclusion_join}
+        WHERE 1=1 {protein_valid} {exclusion_where}
+        ORDER BY p.genome_pk, p.cluster_pk, p.contig, p.start, d.domStart
     """
-
-    join_limiter3 = "JOIN lim lg3 ON lg3.genomeID = p.genomeID" if use_limiter else ""
-    join_genomes_ok = (
-        "JOIN genomes_ok gok ON gok.genomeID = p.genomeID"
-        if require_all_domains_in_same_genome
-        else ""
-    )
-    left_join_excl = (
-        "LEFT JOIN clusters_excluded x ON x.clusterID = p.clusterID"
-        if use_exclusions
-        else ""
-    )
-
-    where_parts = []
-    if use_exclusions:
-        where_parts.append("x.clusterID IS NULL")
-    if not use_non_valid_hits and valid_hit_column_available:
-        where_parts.append("p.valid_hit = 1")
-    where_clause = f"WHERE {' AND '.join(where_parts)}" if where_parts else ""
-
-    sql = sql.format(
-        join_limiter3=join_limiter3,
-        join_genomes_ok=join_genomes_ok,
-        left_join_excl=left_join_excl,
-        where_clause=where_clause,
-    )
     return sql, []
 
 
-#
+# ---------------------------------------------------------------------------
+# Protein-object hydration
+# ---------------------------------------------------------------------------
 
 
 def build_proteins_from_query(
@@ -548,171 +366,587 @@ def build_proteins_from_query(
     args: tuple | list | None,
     protein_dict: Dict[str, parse_reports.Protein],
     genome_id_set: Set[str],
-    fusion_prot_ids: Set[str] | None = None,
+    fusion_prot_ids: Optional[Set[str]] = None,
 ) -> None:
-    """
-    Execute SQL and build Protein objects directly from the cursor iterator.
+    """Execute a query and stream its rows into Protein objects."""
+    cur.execute(sql, args or [])
 
-    This avoids cur.fetchall() and processes rows as they stream from SQLite.
-    """
-    cur.execute(sql, args)
-
-    for row in cur:  # streamed, no full result loaded
+    for row in cur:
         protein_id = row["proteinID"]
-        genome_id = row["genomeID"]
-        cluster_id = row["clusterID"]
-
-        domain = row["domain"]
-        dom_start = row["domStart"]
-        dom_end = row["domEnd"]
-        score = row["score"]
-
         existing = protein_dict.get(protein_id)
+
         if existing is not None:
-            existing.add_domain(domain, dom_start, dom_end, score)
+            existing.add_domain(
+                row["domain"], row["domStart"], row["domEnd"], row["score"]
+            )
         else:
-            p = parse_reports.Protein(protein_id, domain, dom_start, dom_end, score)
-            p.genomeID = genome_id
-            p.clusterID = cluster_id
-            p.gene_contig = row["contig"]
-            p.gene_start = row["gene_start"]
-            p.gene_end = row["gene_end"]
-            p.gene_strand = row["gene_strand"]
-            p.protein_sequence = row["protein_sequence"]
-            p.selection_comment = row["comment"]
-            p.alternative_hit = row["alternative_hit"]
-            protein_dict[protein_id] = p
-            genome_id_set.add(genome_id)
+            protein = parse_reports.Protein(
+                protein_id, row["domain"], row["domStart"], row["domEnd"], row["score"]
+            )
+            protein.genomeID = row["genomeID"]
+            protein.clusterID = row["clusterID"] or ""
+            protein.gene_contig = row["contig"] or ""
+            protein.gene_start = row["gene_start"] or 0
+            protein.gene_end = row["gene_end"] or 0
+            protein.gene_strand = row["gene_strand"] or "."
+            protein.protein_sequence = ""
+            protein.selection_comment = row["comment"] or ""
+            protein.alternative_hit = row["alternative_hit"] or ""
+            protein_dict[protein_id] = protein
 
-        if fusion_prot_ids is not None:
-            dom_count = row["dom_count"]
-            if dom_count is not None and int(dom_count) >= 2:
-                fusion_prot_ids.add(protein_id)
+            if row["genomeID"]:
+                genome_id_set.add(row["genomeID"])
+
+        if (
+            fusion_prot_ids is not None
+            and row["dom_count"] is not None
+            and int(row["dom_count"]) >= 2
+        ):
+            fusion_prot_ids.add(protein_id)
 
 
-# Fused protein fetch
+def hydrate_protein_sequences(cur: sqlite3.Cursor, protein_dict: Dict[str, Any]) -> int:
+    """Load each selected protein sequence once, after hit selection is complete."""
+    if not protein_dict:
+        return 0
+
+    cur.execute("""
+        CREATE TEMP TABLE IF NOT EXISTS tmp_sequence_protein_ids (
+            proteinID TEXT PRIMARY KEY
+        ) WITHOUT ROWID
+    """)
+    cur.execute("DELETE FROM tmp_sequence_protein_ids")
+    cur.executemany(
+        "INSERT OR IGNORE INTO tmp_sequence_protein_ids(proteinID) VALUES (?)",
+        ((pid,) for pid in protein_dict),
+    )
+
+    cur.execute("""
+        SELECT p.proteinID, s.sequence
+        FROM tmp_sequence_protein_ids t
+        JOIN Proteins p ON p.proteinID = t.proteinID
+        JOIN ProteinSequences s ON s.protein_pk = p.protein_pk
+    """)
+
+    added = 0
+    for row in cur:
+        protein = protein_dict.get(row["proteinID"])
+        if protein is not None:
+            protein.protein_sequence = row["sequence"] or ""
+            added += 1
+
+    logger.debug("Hydrated sequences for %d proteins.", added)
+    return added
+
+
+def hydrate_fused_protein_domains_from_cursor(
+    cur: sqlite3.Cursor,
+    fusion_prot_ids: Iterable[str],
+    protein_dict: Dict[str, Any],
+) -> int:
+    """
+    Add all domains for selected multi-domain proteins using integer joins after
+    resolving external proteinIDs once.
+    """
+    fusion_ids = {str(pid) for pid in fusion_prot_ids if pid}
+    if not fusion_ids:
+        return 0
+
+    cur.execute("""
+        CREATE TEMP TABLE IF NOT EXISTS tmp_fused_protein_ids (
+            proteinID TEXT PRIMARY KEY
+        ) WITHOUT ROWID
+    """)
+    cur.execute("DELETE FROM tmp_fused_protein_ids")
+    cur.executemany(
+        "INSERT OR IGNORE INTO tmp_fused_protein_ids(proteinID) VALUES (?)",
+        ((pid,) for pid in fusion_ids),
+    )
+
+    cur.execute("""
+        SELECT p.proteinID, dt.domain, d.domStart, d.domEnd, d.score
+        FROM tmp_fused_protein_ids t
+        JOIN Proteins p ON p.proteinID = t.proteinID
+        JOIN Domains d ON d.protein_pk = p.protein_pk
+        JOIN DomainTypes dt ON dt.domain_pk = d.domain_pk
+    """)
+
+    added = 0
+    for row in cur:
+        protein = protein_dict.get(row["proteinID"])
+        if protein is not None:
+            protein.add_domain(
+                row["domain"], row["domStart"], row["domEnd"], row["score"]
+            )
+            added += 1
+
+    logger.debug(
+        "Hydrated %d fused-domain rows for %d proteins.", added, len(fusion_ids)
+    )
+    return added
 
 
 def hydrate_fused_protein_domains(
     db_path: str,
-    fusion_prot_ids: "set[str] | list[str]",
-    protein_dict: dict,
+    fusion_prot_ids: Iterable[str],
+    protein_dict: Dict[str, Any],
 ) -> int:
-    """
-    Fügt für alle Proteine in `fusion_prot_ids` sämtliche Domains hinzu – effizient und 999-sicher.
-    Implementierung:
-      1) TEMP-Tabelle tmp_fused_ids(proteinID TEXT PRIMARY KEY) befüllen (executemany).
-      2) Ein einziges SELECT JOIN Domains d ON d.proteinID = tmp_fused_ids.proteinID.
-      3) Iteration über Resultate: protein_dict[pid].add_domain(...)
-
-    Returns:
-        Anzahl der hinzugefügten Domains (Zeilen aus Domains).
-    """
-
+    """Backward-compatible wrapper opening its own read-only connection."""
     if not fusion_prot_ids:
         return 0
 
+    with sqlite3.connect(_db_uri(db_path), uri=True) as con:
+        con.row_factory = sqlite3.Row
+        cur = con.cursor()
+        cur.execute("PRAGMA temp_store = MEMORY")
+        return hydrate_fused_protein_domains_from_cursor(
+            cur, fusion_prot_ids, protein_dict
+        )
+
+
+# ---------------------------------------------------------------------------
+# Standard single-combination fetch
+# ---------------------------------------------------------------------------
+
+
+def fetch_bulk_data(
+    database: str,
+    syntenic_domains: Optional[List[str]],
+    limiter_dict: Optional[Dict[str, Any]] = None,
+    fetch_from_gene_clusters: bool = False,
+    excluded_domains: Optional[List[str]] = None,
+    use_non_valid_hits: bool = False,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, dict[str, str]]]:
+    """Fetch proteins for one requested domain combination."""
+    protein_dict: Dict[str, Any] = {}
+    cluster_dict: Dict[str, Any] = {}
+    genome_id_set: Set[str] = set()
+    fusion_prot_ids: Set[str] = set()
+
+    db_path = _db_uri(database)
+
     with sqlite3.connect(db_path, uri=True) as con:
         con.row_factory = sqlite3.Row
         cur = con.cursor()
 
-        # TEMP-Tabelle anlegen & leeren
-        cur.execute(
-            "CREATE TEMP TABLE IF NOT EXISTS tmp_fused_ids (proteinID TEXT PRIMARY KEY);"
-        )
-        cur.execute("DELETE FROM tmp_fused_ids;")
+        cur.execute("PRAGMA foreign_keys = ON")
+        cur.execute("PRAGMA temp_store = MEMORY")
+        cur.execute("PRAGMA cache_size = -262144")
 
-        # Atomare Bulk-Inserts ohne manuelles BEGIN/COMMIT:
-        # Der 'with con:' Kontext oben sorgt für Transaktion pro Block.
-        cur.executemany(
-            "INSERT OR IGNORE INTO tmp_fused_ids(proteinID) VALUES (?)",
-            ((pid,) for pid in fusion_prot_ids),
+        _prepare_required_domains_temp(cur, syntenic_domains)
+        n_excluded = _prepare_excluded_domains_temp(cur, excluded_domains)
+        n_limiter = _prepare_limiter_genomes_temp(cur, limiter_dict)
+
+        if fetch_from_gene_clusters:
+            logger.info("Searching for syntenic %s", syntenic_domains)
+            sql, args = generate_fetch_query_covering_domains(
+                syntenic_domains or [],
+                use_limiter=n_limiter > 0,
+                use_exclusions=n_excluded > 0,
+                use_non_valid_hits=use_non_valid_hits,
+            )
+        else:
+            logger.info("Searching for co-occurring %s", syntenic_domains)
+            sql, args = generate_fetch_query_domains_anywhere_excluding_clusters(
+                use_limiter=n_limiter > 0,
+                use_exclusions=n_excluded > 0,
+                require_all_domains_in_same_genome=bool(syntenic_domains),
+                use_non_valid_hits=use_non_valid_hits,
+            )
+
+        build_proteins_from_query(
+            cur, sql, args, protein_dict, genome_id_set, fusion_prot_ids
         )
 
-        # Domains in einem Rutsch joinen
+        if fusion_prot_ids and not fetch_from_gene_clusters:
+            hydrate_fused_protein_domains_from_cursor(
+                cur, fusion_prot_ids, protein_dict
+            )
+
+        hydrate_protein_sequences(cur, protein_dict)
+
+    taxon_dict = db_fetch_taxonomy.fetch_taxonomy_dict(
+        db_path, genome_ids=genome_id_set
+    )
+    parse_reports.define_best_score_hits_for_protein_dict(protein_dict)
+
+    logger.info(
+        "Fetched %d proteins from %d genomes.", len(protein_dict), len(genome_id_set)
+    )
+    return protein_dict, cluster_dict, taxon_dict
+
+
+# ---------------------------------------------------------------------------
+# Multi-combination candidate collection
+# ---------------------------------------------------------------------------
+
+
+def _prepare_candidate_tables(cur: sqlite3.Cursor) -> None:
+    """
+    Prepare TEMP tables used while evaluating OR/optional combinations.
+
+    For -fd we store candidate (genome_pk, domain_pk) pairs rather than one
+    global domain union. This preserves the exact union of the former
+    combination-by-combination fetches even for disjoint combinations.
+    """
+    ddl = (
+        "CREATE TEMP TABLE IF NOT EXISTS tmp_combo_genomes (genome_pk INTEGER PRIMARY KEY)",
+        "CREATE TEMP TABLE IF NOT EXISTS tmp_combo_output_genomes (genome_pk INTEGER PRIMARY KEY)",
+        "CREATE TEMP TABLE IF NOT EXISTS tmp_combo_clusters (cluster_pk INTEGER PRIMARY KEY)",
+        """CREATE TEMP TABLE IF NOT EXISTS tmp_candidate_genome_domains (
+               genome_pk INTEGER NOT NULL,
+               domain_pk INTEGER NOT NULL,
+               PRIMARY KEY (genome_pk, domain_pk)
+           ) WITHOUT ROWID""",
+        "CREATE TEMP TABLE IF NOT EXISTS tmp_candidate_clusters (cluster_pk INTEGER PRIMARY KEY)",
+    )
+    for sql in ddl:
+        cur.execute(sql)
+
+    for table in (
+        "tmp_combo_genomes",
+        "tmp_combo_output_genomes",
+        "tmp_combo_clusters",
+        "tmp_candidate_genome_domains",
+        "tmp_candidate_clusters",
+    ):
+        cur.execute(f"DELETE FROM {table}")
+
+
+def _collect_genome_candidates_for_combo(
+    cur: sqlite3.Cursor,
+    combo: Iterable[str],
+    *,
+    use_limiter: bool,
+    use_exclusions: bool,
+    use_non_valid_hits: bool,
+) -> Set[str]:
+    """
+    Evaluate one -fd combination without hydrating Protein objects.
+
+    The ALL-of candidate check happens on GenomeDomains. Candidate domain pairs
+    are retained only for domains belonging to combinations that the genome
+    actually satisfies.
+    """
+    _prepare_required_domains_temp(cur, combo)
+    cur.execute("DELETE FROM tmp_combo_genomes")
+    cur.execute("DELETE FROM tmp_combo_output_genomes")
+
+    limiter_join = (
+        "JOIN tmp_req_genomes lim ON lim.genome_pk = gd.genome_pk"
+        if use_limiter
+        else ""
+    )
+    presence_valid = "" if use_non_valid_hits else "AND gd.valid_present = 1"
+
+    cur.execute(f"""
+        INSERT OR IGNORE INTO tmp_combo_genomes(genome_pk)
+        SELECT gd.genome_pk
+        FROM GenomeDomains gd
+        {limiter_join}
+        JOIN tmp_req_domains r ON r.domain_pk = gd.domain_pk
+        WHERE 1=1 {presence_valid}
+        GROUP BY gd.genome_pk
+        HAVING COUNT(*) = (SELECT COUNT(*) FROM tmp_req_domains)
+    """)
+
+    if not use_exclusions:
         cur.execute("""
-                    SELECT d.proteinID AS proteinID,
-                           d.domain AS domain,
-                d.domStart  AS domStart,
-                d.domEnd    AS domEnd,
-                d.score     AS score
-                    FROM Domains d
-                        JOIN tmp_fused_ids t
-                    ON t.proteinID = d.proteinID
-                    """)
+            INSERT OR IGNORE INTO tmp_combo_output_genomes(genome_pk)
+            SELECT genome_pk FROM tmp_combo_genomes
+        """)
+        cur.execute("""
+            INSERT OR IGNORE INTO tmp_candidate_genome_domains(genome_pk, domain_pk)
+            SELECT cg.genome_pk, r.domain_pk
+            FROM tmp_combo_genomes cg
+            CROSS JOIN tmp_req_domains r
+            WHERE r.domain_pk IS NOT NULL
+        """)
+    else:
+        protein_valid = "" if use_non_valid_hits else "AND p.valid_hit = 1"
+        exclusion_valid = "" if use_non_valid_hits else "AND xd.valid_present = 1"
 
-        added = 0
-        for i, r in enumerate(cur):
-            pid = r["proteinID"]
-            protein = protein_dict.get(pid)
-            if protein is not None:
-                protein.add_domain(r["domain"], r["domStart"], r["domEnd"], r["score"])
-                added += 1
-                if (i + 1) % 25000 == 0:
-                    logger.debug(f"Added fused domains rows: {i + 1}")
-            # Wenn protein fehlt, silently skip (oder optional warnen)
+        eligible_rows = f"""
+            FROM tmp_combo_genomes cg
+            JOIN Proteins p ON p.genome_pk = cg.genome_pk
+            JOIN Domains d ON d.protein_pk = p.protein_pk
+            JOIN tmp_req_domains r ON r.domain_pk = d.domain_pk
+            WHERE r.domain_pk IS NOT NULL
+              {protein_valid}
+              AND (
+                  p.cluster_pk IS NULL
+                  OR NOT EXISTS (
+                      SELECT 1
+                      FROM ClusterDomains xd
+                      JOIN tmp_excl_domains e ON e.domain_pk = xd.domain_pk
+                      WHERE xd.cluster_pk = p.cluster_pk {exclusion_valid}
+                  )
+              )
+        """
 
-        logger.info(
-            f"Added {added} fused-domain rows for {len(fusion_prot_ids)} proteins (single-pass)."
-        )
-    return added
+        cur.execute(f"""
+            INSERT OR IGNORE INTO tmp_combo_output_genomes(genome_pk)
+            SELECT DISTINCT cg.genome_pk
+            {eligible_rows}
+        """)
+        cur.execute(f"""
+            INSERT OR IGNORE INTO tmp_candidate_genome_domains(genome_pk, domain_pk)
+            SELECT DISTINCT cg.genome_pk, d.domain_pk
+            {eligible_rows}
+        """)
+
+    cur.execute("""
+        SELECT g.genomeID
+        FROM tmp_combo_output_genomes t
+        JOIN Genomes g ON g.genome_pk = t.genome_pk
+    """)
+    return {row[0] for row in cur}
 
 
-def fetch_taxonomy_dict(
-    db_path: str,
-    genome_ids: Iterable[str],
-    trennzeichen: str,
-    existing: Optional[Dict[str, str]] = None,
-) -> Dict[str, str]:
+def _collect_cluster_candidates_for_combo(
+    cur: sqlite3.Cursor,
+    combo: Iterable[str],
+    *,
+    use_limiter: bool,
+    use_exclusions: bool,
+    use_non_valid_hits: bool,
+) -> Set[str]:
+    """Evaluate one -fc combination using ClusterDomains only."""
+    _prepare_required_domains_temp(cur, combo)
+    cur.execute("DELETE FROM tmp_combo_clusters")
+
+    limiter_join = (
+        """
+        JOIN Clusters lc ON lc.cluster_pk = cd.cluster_pk
+        JOIN tmp_req_genomes lim ON lim.genome_pk = lc.genome_pk
     """
-    Holt Taxonomie-Infos für die gegebenen genomeIDs in EINEM Query, 999-sicher.
-    - Nutzt eine TEMP-Tabelle für die IDs.
-    - Verwendet myUtil.taxonomy_lineage(row, trennzeichen) für die Formatierung.
-    - 'existing' kann ein bereits teilweise gefülltes taxon_dict sein.
+        if use_limiter
+        else ""
+    )
 
-    Returns:
-        Dict[str, str]: genomeID -> taxonomy_lineage
+    presence_valid = "" if use_non_valid_hits else "AND cd.valid_present = 1"
+
+    exclusion = ""
+    if use_exclusions:
+        exclusion = """
+            AND NOT EXISTS (
+                SELECT 1
+                FROM ClusterDomains xd
+                JOIN tmp_excl_domains e ON e.domain_pk = xd.domain_pk
+                WHERE xd.cluster_pk = cd.cluster_pk
+            )
+        """
+
+    cur.execute(f"""
+        INSERT OR IGNORE INTO tmp_combo_clusters(cluster_pk)
+        SELECT cd.cluster_pk
+        FROM ClusterDomains cd
+        {limiter_join}
+        JOIN tmp_req_domains r ON r.domain_pk = cd.domain_pk
+        WHERE 1=1 {presence_valid} {exclusion}
+        GROUP BY cd.cluster_pk
+        HAVING COUNT(*) = (SELECT COUNT(*) FROM tmp_req_domains)
+    """)
+
+    cur.execute("""
+        INSERT OR IGNORE INTO tmp_candidate_clusters(cluster_pk)
+        SELECT cluster_pk FROM tmp_combo_clusters
+    """)
+
+    cur.execute("""
+        SELECT DISTINCT g.genomeID
+        FROM tmp_combo_clusters t
+        JOIN Clusters c ON c.cluster_pk = t.cluster_pk
+        JOIN Genomes g ON g.genome_pk = c.genome_pk
+    """)
+    return {row[0] for row in cur}
+
+
+def _fetch_candidate_clusters(
+    cur: sqlite3.Cursor,
+    *,
+    protein_dict: Dict[str, Any],
+    genome_id_set: Set[str],
+    use_non_valid_hits: bool,
+) -> None:
+    """Hydrate all protein/domain rows belonging to the union of candidate clusters."""
+    valid_where = "" if use_non_valid_hits else "WHERE p.valid_hit = 1"
+
+    sql = f"""
+        SELECT p.proteinID AS proteinID, g.genomeID AS genomeID, c.clusterID AS clusterID,
+               p.contig AS contig, p.start AS gene_start, p.end AS gene_end,
+               p.strand AS gene_strand, dt.domain AS domain, d.domStart AS domStart,
+               d.domEnd AS domEnd, d.score AS score, p.dom_count AS dom_count,
+               p.comment AS comment, p.alternative_hit AS alternative_hit
+        FROM tmp_candidate_clusters x
+        JOIN Proteins p ON p.cluster_pk = x.cluster_pk
+        JOIN Genomes g ON g.genome_pk = p.genome_pk
+        JOIN Clusters c ON c.cluster_pk = p.cluster_pk
+        JOIN Domains d ON d.protein_pk = p.protein_pk
+        JOIN DomainTypes dt ON dt.domain_pk = d.domain_pk
+        {valid_where}
+        ORDER BY p.genome_pk, p.cluster_pk, p.contig, p.start, d.domStart
     """
-    taxon_dict: Dict[str, str] = dict(existing or {})
-    # IDs, die noch fehlen
-    wanted = [gid for gid in set(genome_ids) if gid not in taxon_dict]
-    if not wanted:
-        return taxon_dict
+    build_proteins_from_query(
+        cur, sql, [], protein_dict, genome_id_set, fusion_prot_ids=None
+    )
+
+
+def _fetch_candidate_genomes(
+    cur: sqlite3.Cursor,
+    *,
+    protein_dict: Dict[str, Any],
+    genome_id_set: Set[str],
+    fusion_prot_ids: Set[str],
+    use_exclusions: bool,
+    use_non_valid_hits: bool,
+) -> None:
+    """
+    Hydrate the exact union of requested domain hits for qualifying genomes.
+
+    tmp_candidate_genome_domains prevents over-fetching domains that belong to
+    another disjoint OR combination not satisfied by the same genome.
+    """
+    protein_valid = "" if use_non_valid_hits else "AND p.valid_hit = 1"
+    exclusion = ""
+
+    if use_exclusions:
+        exclusion_valid = "" if use_non_valid_hits else "AND xd.valid_present = 1"
+        exclusion = f"""
+            AND (
+                p.cluster_pk IS NULL
+                OR NOT EXISTS (
+                    SELECT 1
+                    FROM ClusterDomains xd
+                    JOIN tmp_excl_domains e ON e.domain_pk = xd.domain_pk
+                    WHERE xd.cluster_pk = p.cluster_pk {exclusion_valid}
+                )
+            )
+        """
+
+    sql = f"""
+        SELECT p.proteinID AS proteinID, g.genomeID AS genomeID, c.clusterID AS clusterID,
+               p.contig AS contig, p.start AS gene_start, p.end AS gene_end,
+               p.strand AS gene_strand, dt.domain AS domain, d.domStart AS domStart,
+               d.domEnd AS domEnd, d.score AS score, p.dom_count AS dom_count,
+               p.comment AS comment, p.alternative_hit AS alternative_hit
+        FROM tmp_candidate_genome_domains cg
+        JOIN Proteins p ON p.genome_pk = cg.genome_pk
+        JOIN Domains d ON d.protein_pk = p.protein_pk AND d.domain_pk = cg.domain_pk
+        JOIN DomainTypes dt ON dt.domain_pk = d.domain_pk
+        JOIN Genomes g ON g.genome_pk = p.genome_pk
+        LEFT JOIN Clusters c ON c.cluster_pk = p.cluster_pk
+        WHERE 1=1 {protein_valid} {exclusion}
+        ORDER BY p.genome_pk, p.cluster_pk, p.contig, p.start, d.domStart
+    """
+    build_proteins_from_query(
+        cur, sql, [], protein_dict, genome_id_set, fusion_prot_ids
+    )
+
+
+def fetch_bulk_data_for_combinations(
+    database: str,
+    combinations: Iterable[Iterable[str]],
+    limiter_dict: Optional[Dict[str, Any]] = None,
+    fetch_from_gene_clusters: bool = False,
+    excluded_domains: Optional[Iterable[str]] = None,
+    use_non_valid_hits: bool = False,
+) -> tuple[
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, Any],
+    dict[tuple[str, ...], set[str]],
+]:
+    """
+    Evaluate many OR/optional combinations cheaply, then hydrate the union once.
+
+    Returns the same external structures used by the former loop of repeated
+    fetch_bulk_data() calls, including combo -> genomeID mapping.
+    """
+    combos = [list(combo) for combo in combinations if combo]
+    if not combos:
+        return {}, {}, {}, {}
+
+    protein_dict: Dict[str, Any] = {}
+    cluster_dict: Dict[str, Any] = {}
+    genome_id_set: Set[str] = set()
+    fusion_prot_ids: Set[str] = set()
+    combo_to_genomes: Dict[tuple[str, ...], set[str]] = {}
+
+    db_path = _db_uri(database)
+
     with sqlite3.connect(db_path, uri=True) as con:
         con.row_factory = sqlite3.Row
         cur = con.cursor()
 
-        cur.execute(
-            "CREATE TEMP TABLE IF NOT EXISTS tmp_tax_fetch (id TEXT PRIMARY KEY);"
-        )
-        cur.execute("DELETE FROM tmp_tax_fetch;")
+        cur.execute("PRAGMA foreign_keys = ON")
+        cur.execute("PRAGMA temp_store = MEMORY")
+        cur.execute("PRAGMA cache_size = -262144")
 
-        cur.executemany(
-            "INSERT OR IGNORE INTO tmp_tax_fetch(id) VALUES (?)", ((g,) for g in wanted)
-        )
+        n_limiter = _prepare_limiter_genomes_temp(cur, limiter_dict)
+        n_excluded = _prepare_excluded_domains_temp(cur, excluded_domains)
+        _prepare_candidate_tables(cur)
 
-        cur.execute("""
-                    SELECT genomeID     AS genomeID,
-                           Superkingdom AS Superkingdom,
-                           Phylum       AS Phylum,
-                           Class        AS Class,
-                           Ordnung      AS Ordnung,
-                           Family       AS Family,
-                           Genus        AS Genus,
-                           Species      AS Species
-                    FROM Genomes
-                             JOIN tmp_tax_fetch t ON t.id = Genomes.genomeID
-                    """)
+        for i, combo in enumerate(combos, start=1):
+            logger.info(
+                "Searching combination %d/%d: %s",
+                i,
+                len(combos),
+                ", ".join(combo),
+            )
 
-        added = 0
-        for i, r in enumerate(cur):
-            gid = r["genomeID"]
-            taxon_dict[gid] = myUtil.taxonomy_lineage(r, trennzeichen)
-            added += 1
-            if (i + 1) % 10000 == 0:
-                logger.debug(f"fetch_taxonomy_dict: {i + 1} Zeilen verarbeitet.")
+            if fetch_from_gene_clusters:
+                genomes = _collect_cluster_candidates_for_combo(
+                    cur,
+                    combo,
+                    use_limiter=n_limiter > 0,
+                    use_exclusions=n_excluded > 0,
+                    use_non_valid_hits=use_non_valid_hits,
+                )
+            else:
+                genomes = _collect_genome_candidates_for_combo(
+                    cur,
+                    combo,
+                    use_limiter=n_limiter > 0,
+                    use_exclusions=n_excluded > 0,
+                    use_non_valid_hits=use_non_valid_hits,
+                )
 
-        logger.info(
-            f"fetch_taxonomy_dict: {added} Taxonomie-Zeilen für {len(wanted)} genomeIDs hinzugefügt."
-        )
-    return taxon_dict
+            combo_to_genomes[tuple(combo)] = genomes
+
+        if fetch_from_gene_clusters:
+            _fetch_candidate_clusters(
+                cur,
+                protein_dict=protein_dict,
+                genome_id_set=genome_id_set,
+                use_non_valid_hits=use_non_valid_hits,
+            )
+        else:
+            _fetch_candidate_genomes(
+                cur,
+                protein_dict=protein_dict,
+                genome_id_set=genome_id_set,
+                fusion_prot_ids=fusion_prot_ids,
+                use_exclusions=n_excluded > 0,
+                use_non_valid_hits=use_non_valid_hits,
+            )
+
+            if fusion_prot_ids:
+                hydrate_fused_protein_domains_from_cursor(
+                    cur, fusion_prot_ids, protein_dict
+                )
+
+        hydrate_protein_sequences(cur, protein_dict)
+
+    taxon_dict = db_fetch_taxonomy.fetch_taxonomy_dict(
+        db_path, genome_ids=genome_id_set
+    )
+    parse_reports.define_best_score_hits_for_protein_dict(protein_dict)
+
+    logger.info(
+        "Fetched %d proteins from %d genomes across %d combinations.",
+        len(protein_dict),
+        len(genome_id_set),
+        len(combos),
+    )
+    return protein_dict, cluster_dict, taxon_dict, combo_to_genomes

@@ -5,20 +5,24 @@ import os
 import sys
 from pathlib import Path
 
-from hmsss.db.database import index_database
-from hmsss.graft import initial_read_mapping
-
-from hmsss.fasta_preparation import fasta_preparation
-from hmsss.search import initial_search
+from hmsss.core import project as project
+from hmsss.core import ressource_prep
+from hmsss.core.logging import get_logger, print_header, setup_logging
 from hmsss.cross_check import cross_check
-from hmsss.stages import taxonomy  # import collect_taxonomy_information
-from hmsss.stages import process_seqfiles  # import process_operator
-
-from hmsss.core import project as project, ressource_prep
-from hmsss.io import print_command_args, db_fetch_genome_reports, output_dataset
-from hmsss.io import metabolic_pathway_sankey
-
-from hmsss.core.logging import setup_logging, print_header, get_logger
+from hmsss.db.database import index_database, rebuild_presence_tables
+from hmsss.fasta_preparation import fasta_preparation
+from hmsss.graft import initial_read_mapping
+from hmsss.io import (
+    db_fetch_genome_reports,
+    metabolic_pathway_sankey,
+    output_dataset,
+    print_command_args,
+)
+from hmsss.search import initial_search
+from hmsss.stages import (
+    process_seqfiles,  # import process_operator
+    taxonomy,  # import collect_taxonomy_information
+)
 
 logger = get_logger(__name__)
 
@@ -124,6 +128,7 @@ def run_pipeline(config) -> None:
             logger.error(
                 f"Database not found in given project {config.result_files_directory}. Please use a valid project directory or use the -db argument to provide a valid database for fetch operations."
             )
+        rebuild_presence_tables(config.database_directory)
         index_database(config.database_directory)
         output_dataset.output_operator(config)
 

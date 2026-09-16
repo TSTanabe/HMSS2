@@ -546,7 +546,9 @@ def search_n_process_genome(
             )
 
             # --- 7.5) remove below cutoff hits that are not rescued by synteny or pattern
-            protein_dict = parse_reports.remove_invalid_bc_only_proteins(protein_dict)
+            protein_dict, removed_protein_ids = parse_reports.remove_invalid_bc_only_proteins(protein_dict)
+
+            cluster_dict = parse_reports.remove_proteins_from_clusters(cluster_dict, removed_protein_ids)
 
             # --- 7.4) to do calculate plausability for singleton non valid hits and add above threshold hits
             # Currently disabled as models add more noise than true values

@@ -3,11 +3,11 @@
 
 from __future__ import annotations
 
+import csv
 import os
 import sqlite3
-import csv
 from pathlib import Path
-from typing import Any, Dict, Iterable, Optional, List, Set, TextIO
+from typing import Any, Dict, Iterable, List, Optional, Set, TextIO
 
 from hmsss.core.logging import get_logger
 from hmsss.parse_reports import parse_reports
@@ -51,24 +51,22 @@ def _count_total_reports(
     use_non_valid_hits: bool,
     valid_hit_column_available: bool,
 ) -> int:
-    """Return the number of genome report files expected to be written."""
+    """Return the number of genome reports expected to be written."""
+
     if write_empty:
-        cur.execute("SELECT COUNT(*) AS n FROM Genomes;")
-        row = cur.fetchone()
-        return int(row["n"] if row is not None else 0)
+        row = cur.execute("SELECT COUNT(*) AS n FROM Genomes").fetchone()
+        return int(row["n"] if row else 0)
 
-    valid_where = ""
     if not use_non_valid_hits and valid_hit_column_available:
-        valid_where = "WHERE p.valid_hit = 1"
+        row = cur.execute(
+            "SELECT COUNT(DISTINCT genome_pk) AS n FROM GenomeDomains WHERE valid_present = 1"
+        ).fetchone()
+    else:
+        row = cur.execute(
+            "SELECT COUNT(DISTINCT genome_pk) AS n FROM GenomeDomains"
+        ).fetchone()
 
-    cur.execute(f"""
-        SELECT COUNT(DISTINCT p.genomeID) AS n
-        FROM Proteins p
-        JOIN Domains d ON d.proteinID = p.proteinID
-        {valid_where};
-    """)
-    row = cur.fetchone()
-    return int(row["n"] if row is not None else 0)
+    return int(row["n"] if row else 0)
 
 
 def _log_report_progress(
@@ -96,13 +94,8 @@ def _log_report_progress(
 
 
 def _protein_from_row(row: sqlite3.Row) -> parse_reports.Protein:
-    """Create a Protein object from one protein-domain SQL row.
+    """Create a Protein object from one protein-domain SQL row."""
 
-    Important: p.comment is stored as the domain-level selection comment.
-    The downstream output routine rebuilds protein.selection_comment from
-    Domain.selection_comment_list, so the comment must be passed into the
-    Protein constructor and not only assigned to protein.selection_comment.
-    """
     protein = parse_reports.Protein(
         row["proteinID"],
         row["domain"],
@@ -111,6 +104,7 @@ def _protein_from_row(row: sqlite3.Row) -> parse_reports.Protein:
         row["score"],
         selection_comment=row["comment"] or "",
     )
+
     protein.genomeID = row["genomeID"] or ""
     protein.clusterID = row["clusterID"] or ""
     protein.gene_contig = row["contig"] or ""
@@ -118,9 +112,10 @@ def _protein_from_row(row: sqlite3.Row) -> parse_reports.Protein:
     protein.gene_end = row["gene_end"] or 0
     protein.gene_strand = row["gene_strand"] or "."
     protein.gene_locustag = row["locustag"] or ""
-    protein.protein_sequence = row["protein_sequence"] or ""
+    protein.protein_sequence = ""
     protein.selection_comment = row["comment"] or ""
     protein.alternative_hit = row["alternative_hit"] or ""
+
     return protein
 
 
@@ -286,6 +281,39 @@ def _write_genome_pathways(
     return n_written
 
 
+def _hydrate_genome_sequences(
+    cur: sqlite3.Cursor,
+    genome_pk: int,
+    protein_dict: Dict[str, parse_reports.Protein],
+    use_non_valid_hits: bool,
+) -> int:
+    """Load sequences for the proteins of the current streamed genome."""
+
+    if not protein_dict:
+        return 0
+
+    valid_where = "" if use_non_valid_hits else "AND p.valid_hit = 1"
+
+    cur.execute(
+        f"""
+        SELECT p.proteinID, s.sequence
+        FROM Proteins p
+        JOIN ProteinSequences s ON s.protein_pk = p.protein_pk
+        WHERE p.genome_pk = ? {valid_where}
+    """,
+        (genome_pk,),
+    )
+
+    added = 0
+    for row in cur:
+        protein = protein_dict.get(row["proteinID"])
+        if protein is not None:
+            protein.protein_sequence = row["sequence"] or ""
+            added += 1
+
+    return added
+
+
 def _write_one_report(
     *,
     out_dir: Path,
@@ -347,51 +375,48 @@ def _stream_hit_rows(
     valid_hit_column_available: bool,
 ) -> Iterable[sqlite3.Row]:
     """
-    Stream all protein-domain rows ordered by genome.
+    Stream protein-domain rows ordered by internal genome key.
 
-    The ORDER BY is intentional: it makes all rows for a genome contiguous,
-    so only one genome has to be held in memory at any time. For performance,
-    create these indexes once on the database:
-
-        CREATE INDEX IF NOT EXISTS idx_proteins_report_order
-        ON Proteins(genomeID, contig, start, proteinID);
-
-        CREATE INDEX IF NOT EXISTS idx_domains_protein_start
-        ON Domains(proteinID, domStart);
+    Ordering by genome_pk keeps all rows of one genome contiguous, allowing
+    report generation with only one genome in memory at a time.
     """
+
     valid_where = ""
     if not use_non_valid_hits and valid_hit_column_available:
         valid_where = "WHERE p.valid_hit = 1"
 
     sql = f"""
         SELECT
-            p.proteinID       AS proteinID,
-            p.genomeID        AS genomeID,
-            p.clusterID       AS clusterID,
-            p.contig          AS contig,
-            p.start           AS gene_start,
-            p.end             AS gene_end,
-            p.strand          AS gene_strand,
-            p.locustag        AS locustag,
-            p.sequence        AS protein_sequence,
-            p.comment         AS comment,
+            p.genome_pk AS genome_pk,
+            p.protein_pk AS protein_pk,
+            p.proteinID AS proteinID,
+            g.genomeID AS genomeID,
+            c.clusterID AS clusterID,
+            p.contig AS contig,
+            p.start AS gene_start,
+            p.end AS gene_end,
+            p.strand AS gene_strand,
+            p.locustag AS locustag,
+            p.comment AS comment,
             p.alternative_hit AS alternative_hit,
-            d.domain          AS domain,
-            d.domStart        AS domStart,
-            d.domEnd          AS domEnd,
-            d.score           AS score,
-            g.Superkingdom    AS Superkingdom,
-            g.Phylum          AS Phylum,
-            g.Class           AS Class,
-            g.Ordnung         AS Ordnung,
-            g.Family          AS Family,
-            g.Genus           AS Genus,
-            g.Species         AS Species
+            dt.domain AS domain,
+            d.domStart AS domStart,
+            d.domEnd AS domEnd,
+            d.score AS score,
+            g.Superkingdom AS Superkingdom,
+            g.Phylum AS Phylum,
+            g.Class AS Class,
+            g.Ordnung AS Ordnung,
+            g.Family AS Family,
+            g.Genus AS Genus,
+            g.Species AS Species
         FROM Proteins p
-        JOIN Domains d ON d.proteinID = p.proteinID
-        LEFT JOIN Genomes g ON g.genomeID = p.genomeID
+        JOIN Genomes g ON g.genome_pk = p.genome_pk
+        JOIN Domains d ON d.protein_pk = p.protein_pk
+        JOIN DomainTypes dt ON dt.domain_pk = d.domain_pk
+        LEFT JOIN Clusters c ON c.cluster_pk = p.cluster_pk
         {valid_where}
-        ORDER BY p.genomeID, p.contig, p.start;
+        ORDER BY p.genome_pk, p.contig, p.start, p.protein_pk, d.domStart
     """
 
     cur.execute(sql)
@@ -494,6 +519,7 @@ def write_individual_genome_reports(config) -> None:
 
     written_genome_ids: set[str] = set()
     current_gid: Optional[str] = None
+    current_genome_pk: Optional[int] = None
     current_taxon: Optional[Dict[str, str]] = None
     current_proteins: Dict[str, parse_reports.Protein] = {}
 
@@ -527,10 +553,12 @@ def write_individual_genome_reports(config) -> None:
         with sqlite3.connect(db_path, uri=True) as con:
             con.row_factory = sqlite3.Row
             cur = con.cursor()
+            stream_cur = con.cursor()
+            sequence_cur = con.cursor()
 
-            cur.execute("PRAGMA foreign_keys = ON;")
-            cur.execute("PRAGMA temp_store = MEMORY;")
-            cur.execute("PRAGMA cache_size = 200000;")
+            cur.execute("PRAGMA foreign_keys = ON")
+            cur.execute("PRAGMA temp_store = MEMORY")
+            cur.execute("PRAGMA cache_size = -262144")  # ~256 MiB
 
             valid_col = _has_column(cur, "Proteins", "valid_hit")
             total_reports = _count_total_reports(
@@ -547,19 +575,25 @@ def write_individual_genome_reports(config) -> None:
             # print(expected_msg, flush=True)
 
             for row in _stream_hit_rows(
-                cur,
+                stream_cur,
                 use_non_valid_hits=use_non_valid,
                 valid_hit_column_available=valid_col,
             ):
                 n_rows += 1
+                genome_pk = int(row["genome_pk"])
                 gid = row["genomeID"]
                 pid = row["proteinID"]
 
-                if current_gid is None:
+                if current_genome_pk is None:
+                    current_genome_pk = genome_pk
                     current_gid = gid
                     current_taxon = _taxon_from_row(row)
 
-                if gid != current_gid:
+                if genome_pk != current_genome_pk:
+                    _hydrate_genome_sequences(
+                        sequence_cur, current_genome_pk, current_proteins, use_non_valid
+                    )
+
                     n_pathway_rows += _write_one_report(
                         out_dir=out_dir,
                         genome_id=current_gid,
@@ -569,6 +603,7 @@ def write_individual_genome_reports(config) -> None:
                         pathway_writer=pathway_handle,
                         write_individual_report=write_individual_reports,
                     )
+
                     written_genome_ids.add(current_gid)
                     n_reports_with_hits += 1
 
@@ -579,6 +614,7 @@ def write_individual_genome_reports(config) -> None:
                         log_every=log_every,
                     )
 
+                    current_genome_pk = genome_pk
                     current_gid = gid
                     current_taxon = _taxon_from_row(row)
                     current_proteins = {}
@@ -597,6 +633,10 @@ def write_individual_genome_reports(config) -> None:
 
             # Flush final genome with hits.
             if current_gid is not None:
+                _hydrate_genome_sequences(
+                    sequence_cur, current_genome_pk, current_proteins, use_non_valid
+                )
+
                 n_pathway_rows += _write_one_report(
                     out_dir=out_dir,
                     genome_id=current_gid,
@@ -606,8 +646,10 @@ def write_individual_genome_reports(config) -> None:
                     pathway_writer=pathway_handle,
                     write_individual_report=write_individual_reports,
                 )
+
                 written_genome_ids.add(current_gid)
                 n_reports_with_hits += 1
+
                 _log_report_progress(
                     written_reports=len(written_genome_ids),
                     total_reports=total_reports,

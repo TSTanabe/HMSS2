@@ -1,10 +1,10 @@
 #!/usr/bin/python
-import sqlite3
 import os
+import sqlite3
 import sys
-import traceback
 import time
-from typing import List, Dict, Set, Any, Tuple
+import traceback
+from typing import Any, Dict, Iterable, List, Set, Tuple
 
 from hmsss.core.logging import get_logger
 from hmsss.graft.read_models import Read
@@ -17,368 +17,949 @@ logger = get_logger(__name__)
 
 def create_database(database: str) -> None:
     """
-    11.9.22
-    Creating a database file for midterm storage of results
+    Create the HMSS3 SQLite database.
 
-    Args:
-        database    Pathway to database file
+    Internal relations use INTEGER primary/foreign keys for efficient joins.
+
+    Human-readable/external identifiers such as genomeID, proteinID,
+    clusterID and domain remain UNIQUE and are used at the Python/API level.
+
+    Large protein sequences are stored separately from Proteins.
+
+    Presence tables GenomeDomains and ClusterDomains are used later for
+    fast candidate selection during -fd and -fc database fetches.
     """
-    # create database
+
+    logger.info("Creating database %s", database)
+
     with sqlite3.connect(database) as con:
         cur = con.cursor()
-        cur.execute("""PRAGMA foreign_keys = ON;""")
-        cur.execute("""CREATE TABLE Genomes (
-        genomeID    varchar(32)     PRIMARY KEY     NOT NULL,
-        Superkingdom      varchar(128)              DEFAULT 'NULL',
-        Clade       varchar(128)                    DEFAULT 'NULL',
-        Phylum      varchar(128)                    DEFAULT 'NULL',
-        Class       varchar(128)                    DEFAULT 'NULL',
-        Ordnung     varchar(128)                    DEFAULT 'NULL',
-        Family      varchar(128)                    DEFAULT 'NULL',
-        Genus       varchar(128)                    DEFAULT 'NULL',
-        Species     varchar(128)                    DEFAULT 'NULL',
-        Strain      varchar(128)                    DEFAULT 'NULL',
-        TypeStrain  tinyint(4)                      DEFAULT NULL,
-        Completeness decimal(5,2)                   DEFAULT NULL,
-        Contamination decimal(5,2)                  DEFAULT NULL,
-        dRep        tinyint(1)                      DEFAULT NULL,
-        NCBITaxon   int(11)                         DEFAULT NULL,
-        NCBIProject int(11)                         DEFAULT NULL,
-        NCBIBioproject varchar(32)                  DEFAULT NULL,
-        NCBIBiosample varchar(32)                   DEFAULT NULL,
-        NCBIAssembly varchar(32)                    DEFAULT NULL
-        );""")
 
-        cur.execute("""CREATE TABLE Clusters (
-        clusterID   varchar(32)     PRIMARY KEY     NOT NULL,
-        genomeID    varchar(32)                     NOT NULL,
-        CONSTRAINT fk_genomeID FOREIGN KEY (genomeID) REFERENCES Genomes(genomeID) ON DELETE CASCADE ON UPDATE CASCADE
-        );""")
+        cur.execute("PRAGMA foreign_keys = ON;")
 
-        cur.execute("""CREATE TABLE Keywords (
-        ID          integer         PRIMARY KEY     AUTOINCREMENT,
-        clusterID   varchar(32)                     NOT NULL,
-        keyword     varchar(32)                     NOT NULL,
-        completeness    varchar(32)                 DEFAULT NULL,
-        collinearity    varchar(32)                 DEFAULT NULL,
-        CONSTRAINT fk_clusterID FOREIGN KEY (clusterID) REFERENCES Clusters(clusterID) ON DELETE CASCADE ON UPDATE CASCADE
-        );""")
-
-        cur.execute("""CREATE TABLE Proteins (
-        proteinID   varchar(128)     PRIMARY KEY     NOT NULL,
-        genomeID    varchar(64)                     NOT NULL,
-        clusterID   varchar(64)                     DEFAULT NULL, 
-        locustag    varchar(32)                     DEFAULT NULL,
-        contig      varchar(32)                     DEFAULT NULL,
-        start       int(11)                         DEFAULT NULL,
-        end         int(11)                         DEFAULT NULL,
-        strand      varchar(1)                      DEFAULT NULL,
-        comment     varchar(12)                     DEFAULT NULL,
-        alternative_hit     varchar(64)                     DEFAULT NULL,
-        dom_count   smallint(6)                     DEFAULT NULL,
-        valid_hit       tinyint(1)                  DEFAULT 0,
-        sequence    varchar(4096)                   DEFAULT NULL,
-        UNIQUE(proteinID,genomeID),
-        CONSTRAINT fk_genomeID FOREIGN KEY (genomeID) REFERENCES Genomes(genomeID) ON DELETE CASCADE ON UPDATE CASCADE,
-        CONSTRAINT fk_clusterID FOREIGN KEY (clusterID) REFERENCES Clusters(clusterID) ON DELETE SET NULL ON UPDATE CASCADE
-        );""")
-
-        cur.execute("""CREATE TABLE Domains (
-        ID          integer         PRIMARY KEY     AUTOINCREMENT,
-        proteinID   varchar(32)                     NOT NULL,
-        domain      varchar(32)                     DEFAULT NULL,
-        score       smallint(6)                     DEFAULT NULL,
-        blast_score_ratio       smallint(6)                     DEFAULT NULL,
-        identity       smallint(6)                     DEFAULT NULL,
-        domStart    int(11)                             DEFAULT NULL,
-        domEnd      int(11)                             DEFAULT NULL,
-        CONSTRAINT fk_proteinID FOREIGN KEY (proteinID) REFERENCES Proteins(proteinID) ON DELETE CASCADE ON UPDATE CASCADE
-        );""")
+        # ==========================================================
+        # Genomes
+        # ==========================================================
 
         cur.execute("""
-        CREATE TABLE IF NOT EXISTS Metagenomes (
-            metagenomeID         varchar(128) PRIMARY KEY NOT NULL,
-            genomeID             varchar(32)  NOT NULL,
-            forward_reads        INTEGER      DEFAULT NULL,
-            reverse_reads        INTEGER      DEFAULT NULL,
-            prokaryotic_fraction REAL         DEFAULT 1.0,
+            CREATE TABLE Genomes (
+                genome_pk       INTEGER PRIMARY KEY,
+                genomeID        TEXT NOT NULL UNIQUE,
 
-            FOREIGN KEY (genomeID)
-                REFERENCES Genomes(genomeID)
-                ON DELETE CASCADE
-                ON UPDATE CASCADE
-        );
+                Superkingdom    TEXT DEFAULT NULL,
+                Clade           TEXT DEFAULT NULL,
+                Phylum          TEXT DEFAULT NULL,
+                Class           TEXT DEFAULT NULL,
+                Ordnung         TEXT DEFAULT NULL,
+                Family          TEXT DEFAULT NULL,
+                Genus           TEXT DEFAULT NULL,
+                Species         TEXT DEFAULT NULL,
+                Strain          TEXT DEFAULT NULL,
+
+                TypeStrain      INTEGER DEFAULT NULL,
+                Completeness    REAL DEFAULT NULL,
+                Contamination   REAL DEFAULT NULL,
+                dRep            INTEGER DEFAULT NULL,
+
+                NCBITaxon       INTEGER DEFAULT NULL,
+                NCBIProject     INTEGER DEFAULT NULL,
+                NCBIBioproject  TEXT DEFAULT NULL,
+                NCBIBiosample   TEXT DEFAULT NULL,
+                NCBIAssembly    TEXT DEFAULT NULL
+            );
         """)
+
+        # ==========================================================
+        # Clusters
+        # ==========================================================
 
         cur.execute("""
-        CREATE TABLE IF NOT EXISTS GpkgLengths (
-            domain_type    VARCHAR(64) PRIMARY KEY NOT NULL,
-            protein_length INTEGER     NOT NULL
-        );
+            CREATE TABLE Clusters (
+                cluster_pk  INTEGER PRIMARY KEY,
+                clusterID   TEXT NOT NULL UNIQUE,
+                genome_pk   INTEGER NOT NULL,
+
+                FOREIGN KEY (genome_pk)
+                    REFERENCES Genomes(genome_pk)
+                    ON DELETE CASCADE
+                    ON UPDATE CASCADE
+            );
         """)
+
+        # ==========================================================
+        # Proteins
+        # ==========================================================
 
         cur.execute("""
-        CREATE TABLE IF NOT EXISTS Lineage (
-            lineageID VARCHAR(64) PRIMARY KEY NOT NULL,
-    
-            root       VARCHAR(64)  DEFAULT NULL,
-            kingdom    VARCHAR(256) DEFAULT NULL,
-            phylum     VARCHAR(256) DEFAULT NULL,
-            class      VARCHAR(256) DEFAULT NULL,
-            "order"    VARCHAR(256) DEFAULT NULL,
-            family     VARCHAR(256) DEFAULT NULL,
-            genus      VARCHAR(256) DEFAULT NULL,
-            species    VARCHAR(256) DEFAULT NULL,
-    
-            raw_lineage TEXT DEFAULT NULL
-        );
+            CREATE TABLE Proteins (
+                protein_pk       INTEGER PRIMARY KEY,
+                proteinID        TEXT NOT NULL UNIQUE,
+
+                genome_pk        INTEGER NOT NULL,
+                cluster_pk       INTEGER DEFAULT NULL,
+
+                locustag         TEXT DEFAULT NULL,
+                contig           TEXT DEFAULT NULL,
+                start            INTEGER DEFAULT NULL,
+                end              INTEGER DEFAULT NULL,
+                strand           TEXT DEFAULT NULL,
+
+                comment          TEXT DEFAULT NULL,
+                alternative_hit  TEXT DEFAULT NULL,
+
+                dom_count        INTEGER DEFAULT NULL,
+                valid_hit        INTEGER NOT NULL DEFAULT 0,
+
+                FOREIGN KEY (genome_pk)
+                    REFERENCES Genomes(genome_pk)
+                    ON DELETE CASCADE
+                    ON UPDATE CASCADE,
+
+                FOREIGN KEY (cluster_pk)
+                    REFERENCES Clusters(cluster_pk)
+                    ON DELETE SET NULL
+                    ON UPDATE CASCADE,
+
+                CHECK (valid_hit IN (0, 1))
+            );
         """)
+
+        # ==========================================================
+        # Protein sequences
+        #
+        # Large payload deliberately separated from Proteins.
+        # ==========================================================
 
         cur.execute("""
-        CREATE TABLE IF NOT EXISTS Placement (
-            domain_type  VARCHAR(64)  NOT NULL,
-            readID       VARCHAR(256) NOT NULL,
-            metagenomeID VARCHAR(128) NOT NULL,
-    
-            proteinID    VARCHAR(128) DEFAULT NULL,
-            lineageID    VARCHAR(64)  DEFAULT NULL,
-    
-            dom_start      INTEGER      DEFAULT NULL,
-            dom_end        INTEGER      DEFAULT NULL,
-            coverage       REAL         DEFAULT NULL,
-    
-            sequence     TEXT         DEFAULT NULL,
-            alignment    TEXT         DEFAULT NULL,
-    
-            PRIMARY KEY (metagenomeID, domain_type, readID),
-    
-            FOREIGN KEY (proteinID)
-                REFERENCES Proteins(proteinID)
-                ON DELETE SET NULL
-                ON UPDATE CASCADE,
-    
-            FOREIGN KEY (lineageID)
-                REFERENCES Lineage(lineageID)
-                ON DELETE SET NULL
-                ON UPDATE CASCADE,
-    
-            FOREIGN KEY (metagenomeID)
-                REFERENCES Metagenomes(metagenomeID)
-                ON DELETE CASCADE
-                ON UPDATE CASCADE
-        );
+            CREATE TABLE ProteinSequences (
+                protein_pk  INTEGER PRIMARY KEY,
+                sequence    TEXT NOT NULL,
+
+                FOREIGN KEY (protein_pk)
+                    REFERENCES Proteins(protein_pk)
+                    ON DELETE CASCADE
+                    ON UPDATE CASCADE
+            );
         """)
 
-    con.commit()
-    con.close()
+        # ==========================================================
+        # Domain types
+        #
+        # Domain names are stored once and represented internally by
+        # small INTEGER keys.
+        # ==========================================================
 
-    return
+        cur.execute("""
+            CREATE TABLE DomainTypes (
+                domain_pk   INTEGER PRIMARY KEY,
+                domain      TEXT NOT NULL UNIQUE
+            );
+        """)
+
+        # ==========================================================
+        # Domains
+        #
+        # No artificial domain-hit ID required.
+        # The natural hit identity is the composite primary key.
+        # ==========================================================
+
+        cur.execute("""
+            CREATE TABLE Domains (
+                protein_pk         INTEGER NOT NULL,
+                domain_pk          INTEGER NOT NULL,
+
+                domStart           INTEGER NOT NULL,
+                domEnd             INTEGER NOT NULL,
+
+                score              REAL DEFAULT NULL,
+                blast_score_ratio  REAL DEFAULT NULL,
+                identity           REAL DEFAULT NULL,
+
+                PRIMARY KEY (
+                    protein_pk,
+                    domain_pk,
+                    domStart,
+                    domEnd
+                ),
+
+                FOREIGN KEY (protein_pk)
+                    REFERENCES Proteins(protein_pk)
+                    ON DELETE CASCADE
+                    ON UPDATE CASCADE,
+
+                FOREIGN KEY (domain_pk)
+                    REFERENCES DomainTypes(domain_pk)
+                    ON DELETE RESTRICT
+                    ON UPDATE CASCADE
+            ) WITHOUT ROWID;
+        """)
+
+        # ==========================================================
+        # Keywords
+        # ==========================================================
+
+        cur.execute("""
+            CREATE TABLE Keywords (
+                cluster_pk    INTEGER NOT NULL,
+                keyword       TEXT NOT NULL,
+
+                completeness  TEXT DEFAULT NULL,
+                collinearity  TEXT DEFAULT NULL,
+
+                PRIMARY KEY (
+                    cluster_pk,
+                    keyword
+                ),
+
+                FOREIGN KEY (cluster_pk)
+                    REFERENCES Clusters(cluster_pk)
+                    ON DELETE CASCADE
+                    ON UPDATE CASCADE
+            ) WITHOUT ROWID;
+        """)
+
+        # ==========================================================
+        # Genome/domain presence table
+        #
+        # Used for fast -fd candidate selection.
+        # ==========================================================
+
+        cur.execute("""
+            CREATE TABLE GenomeDomains (
+                genome_pk      INTEGER NOT NULL,
+                domain_pk      INTEGER NOT NULL,
+                valid_present  INTEGER NOT NULL DEFAULT 0,
+
+                PRIMARY KEY (
+                    genome_pk,
+                    domain_pk
+                ),
+
+                FOREIGN KEY (genome_pk)
+                    REFERENCES Genomes(genome_pk)
+                    ON DELETE CASCADE
+                    ON UPDATE CASCADE,
+
+                FOREIGN KEY (domain_pk)
+                    REFERENCES DomainTypes(domain_pk)
+                    ON DELETE CASCADE
+                    ON UPDATE CASCADE,
+
+                CHECK (valid_present IN (0, 1))
+            ) WITHOUT ROWID;
+        """)
+
+        # ==========================================================
+        # Cluster/domain presence table
+        #
+        # Used for fast -fc candidate selection.
+        # ==========================================================
+
+        cur.execute("""
+            CREATE TABLE ClusterDomains (
+                cluster_pk     INTEGER NOT NULL,
+                domain_pk      INTEGER NOT NULL,
+                valid_present  INTEGER NOT NULL DEFAULT 0,
+
+                PRIMARY KEY (
+                    cluster_pk,
+                    domain_pk
+                ),
+
+                FOREIGN KEY (cluster_pk)
+                    REFERENCES Clusters(cluster_pk)
+                    ON DELETE CASCADE
+                    ON UPDATE CASCADE,
+
+                FOREIGN KEY (domain_pk)
+                    REFERENCES DomainTypes(domain_pk)
+                    ON DELETE CASCADE
+                    ON UPDATE CASCADE,
+
+                CHECK (valid_present IN (0, 1))
+            ) WITHOUT ROWID;
+        """)
+
+        # ==========================================================
+        # Metagenomes
+        #
+        # Kept largely compatible for now. The read/placement part
+        # can be converted to integer surrogate keys separately later.
+        # ==========================================================
+
+        cur.execute("""
+            CREATE TABLE Metagenomes (
+                metagenomeID         TEXT PRIMARY KEY NOT NULL,
+                genomeID             TEXT NOT NULL,
+
+                forward_reads        INTEGER DEFAULT NULL,
+                reverse_reads        INTEGER DEFAULT NULL,
+                prokaryotic_fraction REAL DEFAULT 1.0,
+
+                FOREIGN KEY (genomeID)
+                    REFERENCES Genomes(genomeID)
+                    ON DELETE CASCADE
+                    ON UPDATE CASCADE
+            );
+        """)
+
+        # ==========================================================
+        # GraftM package lengths
+        # ==========================================================
+
+        cur.execute("""
+            CREATE TABLE GpkgLengths (
+                domain_type     TEXT PRIMARY KEY NOT NULL,
+                protein_length  INTEGER NOT NULL
+            );
+        """)
+
+        # ==========================================================
+        # Read lineage
+        # ==========================================================
+
+        cur.execute("""
+            CREATE TABLE Lineage (
+                lineageID   TEXT PRIMARY KEY NOT NULL,
+
+                root        TEXT DEFAULT NULL,
+                kingdom     TEXT DEFAULT NULL,
+                phylum      TEXT DEFAULT NULL,
+                class       TEXT DEFAULT NULL,
+                "order"     TEXT DEFAULT NULL,
+                family      TEXT DEFAULT NULL,
+                genus       TEXT DEFAULT NULL,
+                species     TEXT DEFAULT NULL,
+
+                raw_lineage TEXT DEFAULT NULL
+            );
+        """)
+
+        # ==========================================================
+        # Read placements
+        #
+        # Kept compatible for the first migration phase.
+        # ==========================================================
+
+        cur.execute("""
+            CREATE TABLE Placement (
+                domain_type   TEXT NOT NULL,
+                readID        TEXT NOT NULL,
+                metagenomeID  TEXT NOT NULL,
+
+                proteinID     TEXT DEFAULT NULL,
+                lineageID     TEXT DEFAULT NULL,
+
+                dom_start     INTEGER DEFAULT NULL,
+                dom_end       INTEGER DEFAULT NULL,
+                coverage      REAL DEFAULT NULL,
+
+                sequence      TEXT DEFAULT NULL,
+                alignment     TEXT DEFAULT NULL,
+
+                PRIMARY KEY (
+                    metagenomeID,
+                    domain_type,
+                    readID
+                ),
+
+                FOREIGN KEY (proteinID)
+                    REFERENCES Proteins(proteinID)
+                    ON DELETE SET NULL
+                    ON UPDATE CASCADE,
+
+                FOREIGN KEY (lineageID)
+                    REFERENCES Lineage(lineageID)
+                    ON DELETE SET NULL
+                    ON UPDATE CASCADE,
+
+                FOREIGN KEY (metagenomeID)
+                    REFERENCES Metagenomes(metagenomeID)
+                    ON DELETE CASCADE
+                    ON UPDATE CASCADE
+            );
+        """)
+
+    logger.info("Created database")
 
 
 def index_database(database: str) -> None:
-    """
-    12.11.22
-    Indexes the relevant columns in the database to improve search and join performance.
-    This is especially important for large databases (> 3000 genomes).
-    """
-    logger.info(f"Indexing database {database}")
+    """Create indexes for the normalized HMSS3 database and update planner statistics."""
 
-    # List of indexes to create, each represented as a tuple (index_name, create_statement)
     indexes = [
         (
-            "tab_dom_pid_index",
-            "CREATE INDEX IF NOT EXISTS tab_dom_pid_index ON Domains(proteinID)",
+            "idx_clusters_genome",
+            "CREATE INDEX IF NOT EXISTS idx_clusters_genome ON Clusters(genome_pk)",
         ),
         (
-            "tab_prot_gid_index",
-            "CREATE INDEX IF NOT EXISTS tab_prot_gid_index ON Proteins(genomeID)",
+            "idx_proteins_genome",
+            "CREATE INDEX IF NOT EXISTS idx_proteins_genome ON Proteins(genome_pk)",
         ),
         (
-            "tab_prot_cid_index",
-            "CREATE INDEX IF NOT EXISTS tab_prot_cid_index ON Proteins(clusterID)",
+            "idx_proteins_cluster",
+            "CREATE INDEX IF NOT EXISTS idx_proteins_cluster ON Proteins(cluster_pk)",
         ),
         (
-            "tab_key_cid_index",
-            "CREATE INDEX IF NOT EXISTS tab_key_cid_index ON Keywords(clusterID)",
+            "idx_proteins_genome_order",
+            "CREATE INDEX IF NOT EXISTS idx_proteins_genome_order ON Proteins(genome_pk, contig, start, protein_pk)",
         ),
         (
-            "tab_clus_gid_index",
-            "CREATE INDEX IF NOT EXISTS tab_clus_gid_index ON Clusters(genomeID)",
+            "idx_proteins_cluster_order",
+            "CREATE INDEX IF NOT EXISTS idx_proteins_cluster_order ON Proteins(cluster_pk, genome_pk, contig, start, protein_pk)",
         ),
         (
-            "tab_dom_did_index",
-            "CREATE INDEX IF NOT EXISTS tab_dom_did_index ON Domains(domain)",
+            "idx_proteins_cluster_valid",
+            "CREATE INDEX IF NOT EXISTS idx_proteins_cluster_valid ON Proteins(cluster_pk, valid_hit, protein_pk)",
+        ),
+        # Domains PRIMARY KEY already starts with protein_pk.
+        # This index provides the reverse access direction: domain -> proteins.
+        (
+            "idx_domains_domain_protein",
+            "CREATE INDEX IF NOT EXISTS idx_domains_domain_protein ON Domains(domain_pk, protein_pk)",
         ),
         (
-            "tab_key_kid_index",
-            "CREATE INDEX IF NOT EXISTS tab_key_kid_index ON Keywords(keyword)",
+            "idx_domains_protein_start",
+            "CREATE INDEX IF NOT EXISTS idx_domains_protein_start ON Domains(protein_pk, domStart, domain_pk)",
+        ),
+        # Keywords PRIMARY KEY already starts with cluster_pk.
+        (
+            "idx_keywords_keyword_cluster",
+            "CREATE INDEX IF NOT EXISTS idx_keywords_keyword_cluster ON Keywords(keyword, cluster_pk)",
+        ),
+        # Reverse indexes for presence searches.
+        (
+            "idx_genomedomains_domain",
+            "CREATE INDEX IF NOT EXISTS idx_genomedomains_domain ON GenomeDomains(domain_pk, valid_present, genome_pk)",
+        ),
+        (
+            "idx_clusterdomains_domain",
+            "CREATE INDEX IF NOT EXISTS idx_clusterdomains_domain ON ClusterDomains(domain_pk, valid_present, cluster_pk)",
+        ),
+        # Read/metagenome side remains largely unchanged.
+        (
+            "idx_metagenomes_genome",
+            "CREATE INDEX IF NOT EXISTS idx_metagenomes_genome ON Metagenomes(genomeID)",
+        ),
+        (
+            "idx_placement_protein",
+            "CREATE INDEX IF NOT EXISTS idx_placement_protein ON Placement(proteinID)",
+        ),
+        (
+            "idx_placement_lineage",
+            "CREATE INDEX IF NOT EXISTS idx_placement_lineage ON Placement(lineageID)",
+        ),
+        (
+            "idx_placement_domain_meta_read",
+            "CREATE INDEX IF NOT EXISTS idx_placement_domain_meta_read ON Placement(domain_type, metagenomeID, readID)",
         ),
     ]
 
-    indexes.extend(
-        [
-            # --- Metagenomes FKs / joins ---
-            (
-                "tab_meta_gid_index",
-                "CREATE INDEX IF NOT EXISTS tab_meta_gid_index ON Metagenomes(genomeID)",
-            ),
-            # --- Placement FKs / joins ---
-            (
-                "tab_place_mid_index",
-                "CREATE INDEX IF NOT EXISTS tab_place_mid_index ON Placement(metagenomeID)",
-            ),
-            (
-                "tab_place_pid_index",
-                "CREATE INDEX IF NOT EXISTS tab_place_pid_index ON Placement(proteinID)",
-            ),
-            (
-                "tab_place_lid_index",
-                "CREATE INDEX IF NOT EXISTS tab_place_lid_index ON Placement(lineageID)",
-            ),
-            # useful for filtering/grouping
-            (
-                "tab_place_dtype_index",
-                "CREATE INDEX IF NOT EXISTS tab_place_dtype_index ON Placement(domain_type)",
-            ),
-            (
-                "tab_place_readid_index",
-                "CREATE INDEX IF NOT EXISTS tab_place_readid_index ON Placement(readID)",
-            ),
-        ]
+    logger.info("Indexing database %s", database)
+
+    with sqlite3.connect(database) as con:
+        cur = con.cursor()
+        cur.execute("PRAGMA foreign_keys = ON;")
+
+        for name, sql in indexes:
+            logger.debug("Creating index %s", name)
+            cur.execute(sql)
+
+        logger.info("Updating SQLite query planner statistics")
+        cur.execute("ANALYZE")
+        cur.execute("PRAGMA optimize")
+
+    logger.info("Finished indexing database %s", database)
+
+
+def rebuild_presence_tables(database: str) -> None:
+    """
+    Rebuild GenomeDomains and ClusterDomains from the current Proteins/Domains state.
+
+    valid_present = 1 if at least one corresponding protein hit has valid_hit = 1.
+    """
+
+    logger.info("Building domain presence tables")
+
+    with sqlite3.connect(database) as con:
+        cur = con.cursor()
+        cur.execute("PRAGMA foreign_keys = ON")
+        cur.execute("PRAGMA temp_store = MEMORY")
+
+        cur.execute("DELETE FROM GenomeDomains")
+        cur.execute("""
+            INSERT INTO GenomeDomains(genome_pk, domain_pk, valid_present)
+            SELECT p.genome_pk, d.domain_pk, MAX(CASE WHEN p.valid_hit = 1 THEN 1 ELSE 0 END)
+            FROM Proteins p
+            JOIN Domains d ON d.protein_pk = p.protein_pk
+            GROUP BY p.genome_pk, d.domain_pk
+        """)
+
+        genome_rows = cur.rowcount
+
+        cur.execute("DELETE FROM ClusterDomains")
+        cur.execute("""
+            INSERT INTO ClusterDomains(cluster_pk, domain_pk, valid_present)
+            SELECT p.cluster_pk, d.domain_pk, MAX(CASE WHEN p.valid_hit = 1 THEN 1 ELSE 0 END)
+            FROM Proteins p
+            JOIN Domains d ON d.protein_pk = p.protein_pk
+            WHERE p.cluster_pk IS NOT NULL
+            GROUP BY p.cluster_pk, d.domain_pk
+        """)
+
+        cluster_rows = cur.rowcount
+
+    logger.info(
+        "Presence tables rebuilt: %d genome-domain and %d cluster-domain entries",
+        genome_rows,
+        cluster_rows,
     )
 
-    try:
-        with sqlite3.connect(database) as con:
-            cur = con.cursor()
-            cur.execute("""PRAGMA foreign_keys = ON;""")
 
-            # Start a transaction for batch index creation
-            with con:
-                for index_name, create_stmt in indexes:
-                    cur.execute(create_stmt)
+def _lookup_pk_map(
+    cur: sqlite3.Cursor,
+    values: Iterable[str],
+    *,
+    temp_table: str,
+    source_table: str,
+    external_col: str,
+    pk_col: str,
+    strict: bool = True,
+) -> Dict[str, int]:
+    """
+    Resolve external TEXT identifiers to internal INTEGER primary keys.
 
-    except sqlite3.Error as e:
-        logger.error(f"Error while indexing the database: {e}")
-        sys.exit(1)
-    except Exception as e:
-        logger.error(f"Unexpected error during indexing: {e}")
-        sys.exit(1)
+    Large identifier sets are passed through a TEMP table instead of IN (...).
+
+    The table/column names passed here are internal constants only and must
+    never originate from user input.
+    """
+
+    ids = sorted(
+        {
+            str(value).strip()
+            for value in values
+            if value is not None and str(value).strip()
+        }
+    )
+
+    if not ids:
+        return {}
+
+    cur.execute(
+        f"""
+        CREATE TEMP TABLE IF NOT EXISTS {temp_table} (
+            external_id TEXT PRIMARY KEY
+        ) WITHOUT ROWID
+        """
+    )
+
+    cur.execute(f"DELETE FROM {temp_table}")
+
+    cur.executemany(
+        f"""
+        INSERT OR IGNORE INTO {temp_table}(external_id)
+        VALUES (?)
+        """,
+        ((value,) for value in ids),
+    )
+
+    cur.execute(
+        f"""
+        SELECT
+            s.{external_col} AS external_id,
+            s.{pk_col} AS internal_pk
+        FROM {source_table} s
+        JOIN {temp_table} t
+          ON t.external_id = s.{external_col}
+        """
+    )
+
+    result = {str(row[0]): int(row[1]) for row in cur}
+
+    if strict and len(result) != len(ids):
+        missing = [value for value in ids if value not in result]
+
+        raise KeyError(
+            f"Could not resolve {len(missing)} identifiers in "
+            f"{source_table}.{external_col}. "
+            f"Examples: {missing[:10]}"
+        )
+
+    return result
+
+
+def _ensure_domain_types(
+    cur: sqlite3.Cursor,
+    domains: Iterable[str],
+) -> Dict[str, int]:
+    """
+    Ensure all requested domain names exist in DomainTypes and return
+
+        domain_name -> domain_pk
+    """
+
+    domain_names = sorted(
+        {
+            str(domain).strip()
+            for domain in domains
+            if domain is not None and str(domain).strip()
+        }
+    )
+
+    if not domain_names:
+        return {}
+
+    cur.executemany(
+        """
+        INSERT OR IGNORE INTO DomainTypes(domain)
+        VALUES (?)
+        """,
+        ((domain,) for domain in domain_names),
+    )
+
+    return _lookup_pk_map(
+        cur,
+        domain_names,
+        temp_table="tmp_lookup_domain_types",
+        source_table="DomainTypes",
+        external_col="domain",
+        pk_col="domain_pk",
+    )
 
 
 def insert_database_genome_ids(database: str, genome_ids: Set[str]) -> None:
-    """
-    22.6.24
-        Args:
-            Database    Name of the database to be appended
-            GenomeIDs   List of genomeIDs to be added to the Genomes table
-    """
     with sqlite3.connect(database) as con:
         cur = con.cursor()
-        cur.execute("""PRAGMA foreign_keys = ON;""")
-        cur.execute("""PRAGMA synchronous = OFF;""")
-        cur.execute("""PRAGMA journal_mode = OFF;""")
-        # Prepare a list of tuples, each containing one genomeID
-        genome_id_tuples = [(genomeID,) for genomeID in genome_ids]
-        # Use executemany to insert all genomeIDs in a single batch
+
+        cur.execute("PRAGMA foreign_keys = ON;")
+        cur.execute("PRAGMA synchronous = OFF;")
+        cur.execute("PRAGMA journal_mode = OFF;")
+
         cur.executemany(
-            """INSERT OR IGNORE INTO Genomes (genomeID) VALUES (?)""", genome_id_tuples
+            """
+            INSERT OR IGNORE INTO Genomes(genomeID)
+            VALUES (?)
+            """,
+            ((genomeID,) for genomeID in genome_ids),
         )
-        con.commit()
-    con.close()
-    return
 
 
-def insert_database_proteins(database: str, protein_dict: Dict[str, Any]) -> None:
+def insert_database_proteins(
+    database: str,
+    protein_dict: Dict[str, Any],
+) -> None:
     """
-    Inserts for concatenated glob hmm searches. GenomeId must be defined within the protein object
-    Args:
-        database (str): Path to database file.
-        protein_dict (dict): Dictionary of protein objects. protein_id => obj
+    Insert proteins, sequences and domains using internal INTEGER keys.
+
+    External identifiers remain unchanged:
+        genomeID
+        proteinID
+        domain
+
+    Internally stored relations use:
+        genome_pk
+        protein_pk
+        domain_pk
     """
+
+    if not protein_dict:
+        return
 
     try:
         with sqlite3.connect(database) as con:
-            # Inside 'with con', if an exception occurs, it will rollback automatically
             cur = con.cursor()
-            cur.execute("""PRAGMA foreign_keys = ON;""")
-            cur.execute("""PRAGMA synchronous = OFF;""")
-            cur.execute("""PRAGMA journal_mode = OFF;""")
+
+            cur.execute("PRAGMA foreign_keys = ON;")
+            cur.execute("PRAGMA synchronous = OFF;")
+            cur.execute("PRAGMA journal_mode = OFF;")
+            cur.execute("PRAGMA temp_store = MEMORY;")
 
             protein_list = sorted(
-                protein_dict.values(), key=lambda x: (x.gene_contig, x.gene_start)
+                protein_dict.values(),
+                key=lambda x: (
+                    x.genomeID or "",
+                    x.gene_contig or "",
+                    x.gene_start or 0,
+                ),
             )
-            protein_records = []
-            domain_records = []
+
+            # ------------------------------------------------------
+            # 1. Collect external identifiers
+            # ------------------------------------------------------
+
+            genome_ids: Set[str] = set()
+            domain_names: Set[str] = set()
 
             for protein in protein_list:
-                genome_id = protein.genomeID
-                protein_id = f"{genome_id}-{protein.proteinID}"
-                domains = protein.domains
-                if not genome_id or not protein_id:
-                    print(f"[WARN] Undefined error for {protein.proteinID}")
+                if protein.genomeID:
+                    genome_ids.add(str(protein.genomeID))
+
+                for domain in protein.domains:
+                    if domain.domain:
+                        domain_names.add(str(domain.domain))
+
+            # ------------------------------------------------------
+            # 2. Resolve genomeID -> genome_pk
+            # ------------------------------------------------------
+
+            genome_pk_map = _lookup_pk_map(
+                cur,
+                genome_ids,
+                temp_table="tmp_lookup_protein_genomes",
+                source_table="Genomes",
+                external_col="genomeID",
+                pk_col="genome_pk",
+            )
+
+            # ------------------------------------------------------
+            # 3. Ensure domain types and obtain domain -> domain_pk
+            # ------------------------------------------------------
+
+            domain_pk_map = _ensure_domain_types(
+                cur,
+                domain_names,
+            )
+
+            # ------------------------------------------------------
+            # 4. Build protein records
+            # ------------------------------------------------------
+
+            protein_records = []
+
+            # Keep sequence/domain records temporarily using the
+            # external proteinID. protein_pk does not exist until after
+            # Proteins has been inserted.
+            sequence_records_pending = []
+            domain_records_pending = []
+
+            protein_ids: Set[str] = set()
+
+            for protein in protein_list:
+                genome_id = str(protein.genomeID or "").strip()
+
+                if not genome_id:
+                    logger.warning(
+                        "Skipping protein without genomeID: %s",
+                        protein.proteinID,
+                    )
                     continue
 
-                # Prepare the protein record
-                protein_record = (
-                    protein_id,
-                    genome_id,
-                    protein.gene_locustag,
-                    protein.gene_contig,
-                    protein.gene_start,
-                    protein.gene_end,
-                    protein.gene_strand,
-                    protein.get_selection_comment_csv(),
-                    protein.alternative_hit,
-                    len(domains),
-                    protein.valid_hit,
-                    protein.get_sequence(),
-                )
-                protein_records.append(protein_record)
+                genome_pk = genome_pk_map[genome_id]
 
-                # Prepare domain records
-                for domain in domains:
-                    domain_record = (
+                # Keep the existing HMSS3 protein identifier convention.
+                protein_id = f"{genome_id}-{protein.proteinID}"
+
+                protein_ids.add(protein_id)
+
+                domains = protein.domains
+
+                protein_records.append(
+                    (
                         protein_id,
-                        domain.domain,
-                        domain.start,
-                        domain.end,
-                        domain.score,
-                        domain.identity,
-                        domain.bsr,
+                        genome_pk,
+                        protein.gene_locustag,
+                        protein.gene_contig,
+                        protein.gene_start,
+                        protein.gene_end,
+                        protein.gene_strand,
+                        protein.get_selection_comment_csv(),
+                        protein.alternative_hit,
+                        len(domains),
+                        int(bool(protein.valid_hit)),
                     )
-                    domain_records.append(domain_record)
+                )
 
-            # Batch insert for proteins
+                sequence = protein.get_sequence()
+
+                if sequence is not None:
+                    sequence_records_pending.append(
+                        (
+                            protein_id,
+                            sequence,
+                        )
+                    )
+
+                for domain in domains:
+                    domain_name = str(domain.domain)
+
+                    domain_records_pending.append(
+                        (
+                            protein_id,
+                            domain_pk_map[domain_name],
+                            domain.start,
+                            domain.end,
+                            domain.score,
+                            domain.identity,
+                            domain.bsr,
+                        )
+                    )
+
+            # ------------------------------------------------------
+            # 5. Insert Proteins
+            # ------------------------------------------------------
+
             cur.executemany(
                 """
-                INSERT INTO Proteins
-                  (proteinID, genomeID, locustag, contig, start, end, strand, comment, alternative_hit, dom_count, valid_hit, sequence)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO Proteins (
+                    proteinID,
+                    genome_pk,
+                    locustag,
+                    contig,
+                    start,
+                    end,
+                    strand,
+                    comment,
+                    alternative_hit,
+                    dom_count,
+                    valid_hit
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+
                 ON CONFLICT(proteinID) DO UPDATE SET
-                  genomeID         = COALESCE(Proteins.genomeID, excluded.genomeID),
-                  locustag         = COALESCE(Proteins.locustag, excluded.locustag),
-                  contig           = COALESCE(Proteins.contig, excluded.contig),
-                  start            = COALESCE(Proteins.start, excluded.start),
-                  end              = COALESCE(Proteins.end, excluded.end),
-                  strand           = COALESCE(Proteins.strand, excluded.strand),
-                  comment          = COALESCE(Proteins.comment, excluded.comment),
-                  alternative_hit  = COALESCE(Proteins.alternative_hit, excluded.alternative_hit),
-                  dom_count        = COALESCE(Proteins.dom_count, excluded.dom_count),
-                  valid_hit        = COALESCE(Proteins.valid_hit, excluded.valid_hit),
-                  sequence         = COALESCE(Proteins.sequence, excluded.sequence)
+
+                    locustag = COALESCE(
+                        Proteins.locustag,
+                        excluded.locustag
+                    ),
+
+                    contig = COALESCE(
+                        Proteins.contig,
+                        excluded.contig
+                    ),
+
+                    start = COALESCE(
+                        Proteins.start,
+                        excluded.start
+                    ),
+
+                    end = COALESCE(
+                        Proteins.end,
+                        excluded.end
+                    ),
+
+                    strand = COALESCE(
+                        Proteins.strand,
+                        excluded.strand
+                    ),
+
+                    comment = COALESCE(
+                        Proteins.comment,
+                        excluded.comment
+                    ),
+
+                    alternative_hit = COALESCE(
+                        Proteins.alternative_hit,
+                        excluded.alternative_hit
+                    ),
+
+                    dom_count = COALESCE(
+                        COALESCE(Proteins.dom_count, 0),
+                        COALESCE(excluded.dom_count, 0)
+                    ),
+
+                    valid_hit = COALESCE(
+                        Proteins.valid_hit,
+                        excluded.valid_hit
+                    )
                 """,
                 protein_records,
             )
 
-            # Batch insert for domains
-            cur.executemany(
-                """INSERT OR IGNORE INTO Domains
-                (proteinID, domain, domStart, domEnd, score, identity, blast_score_ratio)
-                VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                domain_records,
+            # ------------------------------------------------------
+            # 6. Resolve proteinID -> protein_pk
+            # ------------------------------------------------------
+
+            protein_pk_map = _lookup_pk_map(
+                cur,
+                protein_ids,
+                temp_table="tmp_lookup_inserted_proteins",
+                source_table="Proteins",
+                external_col="proteinID",
+                pk_col="protein_pk",
             )
 
-            # No need to manually call con.commit() — 'with' will handle it
+            # ------------------------------------------------------
+            # 7. Insert sequences
+            # ------------------------------------------------------
+
+            sequence_records = [
+                (
+                    protein_pk_map[protein_id],
+                    sequence,
+                )
+                for protein_id, sequence in sequence_records_pending
+            ]
+
+            if sequence_records:
+                cur.executemany(
+                    """
+                    INSERT INTO ProteinSequences (
+                        protein_pk,
+                        sequence
+                    )
+                    VALUES (?, ?)
+
+                    ON CONFLICT(protein_pk) DO UPDATE SET
+                        sequence = excluded.sequence
+                    """,
+                    sequence_records,
+                )
+
+            # ------------------------------------------------------
+            # 8. Insert domain hits
+            # ------------------------------------------------------
+
+            domain_records = [
+                (
+                    protein_pk_map[protein_id],
+                    domain_pk,
+                    dom_start,
+                    dom_end,
+                    score,
+                    identity,
+                    bsr,
+                )
+                for (
+                    protein_id,
+                    domain_pk,
+                    dom_start,
+                    dom_end,
+                    score,
+                    identity,
+                    bsr,
+                ) in domain_records_pending
+            ]
+
+            if domain_records:
+                cur.executemany(
+                    """
+                    INSERT INTO Domains (
+                        protein_pk,
+                        domain_pk,
+                        domStart,
+                        domEnd,
+                        score,
+                        identity,
+                        blast_score_ratio
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+
+                    ON CONFLICT(
+                        protein_pk,
+                        domain_pk,
+                        domStart,
+                        domEnd
+                    ) DO NOTHING
+                    """,
+                    domain_records,
+                )
+
+            logger.info(
+                "Inserted/updated %d proteins, %d domain hits and %d sequences.",
+                len(protein_records),
+                len(domain_records),
+                len(sequence_records),
+            )
 
     except Exception as e:
         logger.warning(
@@ -388,64 +969,219 @@ def insert_database_proteins(database: str, protein_dict: Dict[str, Any]) -> Non
     return
 
 
-def insert_database_clusters(database: str, cluster_dict: Dict[str, Any]) -> None:
+def insert_database_clusters(
+    database: str,
+    cluster_dict: Dict[str, Any],
+) -> None:
     """
-    Inserts clusters and associated proteins/keywords.
+    Insert clusters and assign proteins/keywords using internal cluster_pk.
+    """
 
-    Args:
-        database (str): Path to database file.
-        cluster_dict (dict): Cluster objects.
-    """
+    if not cluster_dict:
+        return
 
     try:
         with sqlite3.connect(database) as con:
             cur = con.cursor()
-            cur.execute("""PRAGMA foreign_keys = ON;""")
-            cur.execute("""PRAGMA synchronous = OFF;""")
-            cur.execute("""PRAGMA journal_mode = OFF;""")
 
-            cluster_inserts = []
-            protein_updates = []
-            keyword_inserts = []
+            cur.execute("PRAGMA foreign_keys = ON;")
+            cur.execute("PRAGMA synchronous = OFF;")
+            cur.execute("PRAGMA journal_mode = OFF;")
+            cur.execute("PRAGMA temp_store = MEMORY;")
 
-            for cluster_index, cluster in cluster_dict.items():
+            cluster_records_pending = []
+            protein_updates_pending = []
+            keyword_records_pending = []
+
+            genome_ids: Set[str] = set()
+            cluster_ids: Set[str] = set()
+            protein_ids: Set[str] = set()
+
+            # ------------------------------------------------------
+            # Collect identifiers
+            # ------------------------------------------------------
+
+            for cluster in cluster_dict.values():
                 cluster_id = cluster.get_cluster_id()
-                if cluster_id is None:
+
+                if not cluster_id:
                     continue
 
-                cluster_inserts.append((cluster_id, cluster.genomeID))
+                genome_id = str(cluster.genomeID)
 
-                for proteinID in cluster.get_genes():
-                    full_protein_id = f"{cluster.genomeID}-{proteinID}"
-                    protein_updates.append((cluster_id, full_protein_id))
+                cluster_ids.add(cluster_id)
+                genome_ids.add(genome_id)
 
-                for Keyword in cluster.get_keywords():
-                    keyword_inserts.append(
+                cluster_records_pending.append(
+                    (
+                        cluster_id,
+                        genome_id,
+                    )
+                )
+
+                for protein_id in cluster.get_genes():
+                    full_protein_id = f"{genome_id}-{protein_id}"
+                    protein_ids.add(full_protein_id)
+                    protein_updates_pending.append(
                         (
                             cluster_id,
-                            Keyword.get_keyword(),
-                            Keyword.get_completeness(),
-                            Keyword.get_csb(),
+                            full_protein_id,
                         )
                     )
 
-            # Batch insert clusters
-            cur.executemany(
-                """INSERT OR IGNORE INTO Clusters (clusterID, genomeID) VALUES (?, ?)""",
-                cluster_inserts,
+                for keyword in cluster.get_keywords():
+                    keyword_records_pending.append(
+                        (
+                            cluster_id,
+                            keyword.get_keyword(),
+                            keyword.get_completeness(),
+                            keyword.get_csb(),
+                        )
+                    )
+
+            # ------------------------------------------------------
+            # Resolve genome IDs
+            # ------------------------------------------------------
+
+            genome_pk_map = _lookup_pk_map(
+                cur,
+                genome_ids,
+                temp_table="tmp_lookup_cluster_genomes",
+                source_table="Genomes",
+                external_col="genomeID",
+                pk_col="genome_pk",
             )
 
-            # Batch update proteins
+            # ------------------------------------------------------
+            # Insert clusters
+            # ------------------------------------------------------
+
+            cluster_records = [
+                (
+                    cluster_id,
+                    genome_pk_map[genome_id],
+                )
+                for cluster_id, genome_id in cluster_records_pending
+            ]
+
             cur.executemany(
-                """UPDATE Proteins SET clusterID = ? WHERE proteinID = ?""",
-                protein_updates,
+                """
+                INSERT INTO Clusters (
+                    clusterID,
+                    genome_pk
+                )
+                VALUES (?, ?)
+
+                ON CONFLICT(clusterID) DO NOTHING
+                """,
+                cluster_records,
             )
 
-            # Batch insert or replace keywords
-            cur.executemany(
-                """INSERT OR REPLACE INTO Keywords (clusterID, keyword, completeness, collinearity) VALUES (?, ?, ?, ?)""",
-                keyword_inserts,
+            # ------------------------------------------------------
+            # Resolve cluster_pk
+            # ------------------------------------------------------
+
+            cluster_pk_map = _lookup_pk_map(
+                cur,
+                cluster_ids,
+                temp_table="tmp_lookup_inserted_clusters",
+                source_table="Clusters",
+                external_col="clusterID",
+                pk_col="cluster_pk",
             )
+
+            # ------------------------------------------------------
+            # Resolve protein_pk
+            # ------------------------------------------------------
+
+            protein_pk_map = _lookup_pk_map(
+                cur,
+                protein_ids,
+                temp_table="tmp_lookup_cluster_proteins",
+                source_table="Proteins",
+                external_col="proteinID",
+                pk_col="protein_pk",
+                strict=False,
+            )
+
+            missing_proteins = protein_ids - set(protein_pk_map)
+
+            if missing_proteins:
+                logger.warning(
+                    "%d proteins referenced by clusters were not present "
+                    "in Proteins. Examples: %s",
+                    len(missing_proteins),
+                    sorted(missing_proteins)[:10],
+                )
+
+            # ------------------------------------------------------
+            # Assign cluster_pk to proteins
+            # ------------------------------------------------------
+
+            protein_updates = [
+                (
+                    cluster_pk_map[cluster_id],
+                    protein_pk_map[protein_id],
+                )
+                for cluster_id, protein_id in protein_updates_pending
+                if protein_id in protein_pk_map
+            ]
+
+            if protein_updates:
+                cur.executemany(
+                    """
+                    UPDATE Proteins
+                    SET cluster_pk = ?
+                    WHERE protein_pk = ?
+                    """,
+                    protein_updates,
+                )
+
+            # ------------------------------------------------------
+            # Insert keywords
+            # ------------------------------------------------------
+
+            keyword_records = [
+                (
+                    cluster_pk_map[cluster_id],
+                    keyword,
+                    completeness,
+                    collinearity,
+                )
+                for (
+                    cluster_id,
+                    keyword,
+                    completeness,
+                    collinearity,
+                ) in keyword_records_pending
+            ]
+
+            if keyword_records:
+                cur.executemany(
+                    """
+                    INSERT INTO Keywords (
+                        cluster_pk,
+                        keyword,
+                        completeness,
+                        collinearity
+                    )
+                    VALUES (?, ?, ?, ?)
+
+                    ON CONFLICT(cluster_pk, keyword) DO UPDATE SET
+                        completeness = excluded.completeness,
+                        collinearity = excluded.collinearity
+                    """,
+                    keyword_records,
+                )
+
+            logger.info(
+                "Inserted/updated %d clusters, assigned %d proteins "
+                "and stored %d keywords.",
+                len(cluster_records),
+                len(protein_updates),
+                len(keyword_records),
+            )
+
     except Exception as e:
         logger.warning(
             f"Due to an error - {str(e)}\nTraceback: {traceback.format_exc()}"
@@ -688,51 +1424,57 @@ def insert_database_stub_proteins_from_reads(
     database: str,
     reads: Dict[tuple, "Read"],
 ) -> None:
-    """
-    Insert stub proteins for reads into Proteins so that Placement.proteinID can reference them.
+    pending = {}
+    genome_ids = set()
 
-    Strategy:
-    - proteinID := read.readID
-    - genomeID  := read.genomeID  (REQUIRED, NOT NULL in Proteins)
-    - INSERT OR IGNORE to avoid collisions if already present
-    """
-    protein_records = []
-    seen = set()
+    for read in reads.values():
+        protein_id = read.readID
+        genome_id = read.genomeID
 
-    for r in reads.values():
-        pid = r.readID
-        gid = r.genomeID
-
-        if not pid or not gid:
+        if not protein_id or not genome_id:
             continue
 
-        key = (pid, gid)
-        if key in seen:
-            continue
-        seen.add(key)
+        pending[protein_id] = genome_id
+        genome_ids.add(genome_id)
 
-        protein_records.append((pid, gid))
-
-    if not protein_records:
+    if not pending:
         return
 
     with sqlite3.connect(database) as con:
         cur = con.cursor()
+
         cur.execute("PRAGMA foreign_keys = ON;")
         cur.execute("PRAGMA synchronous = OFF;")
         cur.execute("PRAGMA journal_mode = OFF;")
+        cur.execute("PRAGMA temp_store = MEMORY;")
+
+        genome_pk_map = _lookup_pk_map(
+            cur,
+            genome_ids,
+            temp_table="tmp_lookup_stub_genomes",
+            source_table="Genomes",
+            external_col="genomeID",
+            pk_col="genome_pk",
+        )
+
+        records = [
+            (
+                protein_id,
+                genome_pk_map[genome_id],
+            )
+            for protein_id, genome_id in pending.items()
+        ]
 
         cur.executemany(
             """
-            INSERT OR IGNORE INTO Proteins
-              (proteinID, genomeID)
+            INSERT OR IGNORE INTO Proteins (
+                proteinID,
+                genome_pk
+            )
             VALUES (?, ?)
             """,
-            protein_records,
+            records,
         )
-        con.commit()
-    con.close()
-    return
 
 
 def insert_database_placements(database: str, reads: Dict[tuple, "Read"]) -> None:
@@ -824,28 +1566,86 @@ def insert_database_gpkg_lengths(
 def update_domain(
     database: str, protein_diction: Dict[str, Any], old_tag: str, new_tag: str
 ) -> None:
-    """
-    18.11.22
-        Args:
-           database     Name of the database to be worked on
-           protein_diction Dictionary of protein IDs to be updated
-           old_tag     The old domain tag that needs to be updated
-           new_tag     The new domain tag that will replace the old tag
-    """
+    """Change one domain type to another for the selected proteins only."""
+
+    if not protein_diction or old_tag == new_tag:
+        return
+
     try:
         with sqlite3.connect(database) as con:
             cur = con.cursor()
-            query = (
-                """UPDATE Domains SET domain = ? WHERE proteinID = ? AND domain = ?"""
+            cur.execute("PRAGMA foreign_keys = ON")
+            cur.execute("PRAGMA temp_store = MEMORY")
+
+            old_row = cur.execute(
+                "SELECT domain_pk FROM DomainTypes WHERE domain = ?", (old_tag,)
+            ).fetchone()
+
+            if old_row is None:
+                logger.warning("Domain %s does not exist in DomainTypes", old_tag)
+                return
+
+            old_domain_pk = int(old_row[0])
+            new_domain_pk = _ensure_domain_types(cur, [new_tag])[new_tag]
+
+            protein_pk_map = _lookup_pk_map(
+                cur,
+                protein_diction.keys(),
+                temp_table="tmp_lookup_update_domain_proteins",
+                source_table="Proteins",
+                external_col="proteinID",
+                pk_col="protein_pk",
+                strict=False,
             )
-            data = [(new_tag, proteinID, old_tag) for proteinID in protein_diction]
-            cur.executemany(query, data)
-        logger.info(
-            f"Updated {len(protein_diction)} domains from {old_tag} to {new_tag}"
-        )
-    except Exception as e:
-        logger.error(f"Error updating domains: {e}")
-    return
+
+            if not protein_pk_map:
+                return
+
+            cur.execute("""
+                CREATE TEMP TABLE IF NOT EXISTS tmp_update_domain_proteins (
+                    protein_pk INTEGER PRIMARY KEY
+                )
+            """)
+            cur.execute("DELETE FROM tmp_update_domain_proteins")
+            cur.executemany(
+                "INSERT OR IGNORE INTO tmp_update_domain_proteins(protein_pk) VALUES (?)",
+                ((pk,) for pk in protein_pk_map.values()),
+            )
+
+            # Copy old hits with the new domain_pk. INSERT OR IGNORE also handles
+            # the case where the corresponding new-tag hit already exists.
+            cur.execute(
+                """
+                INSERT OR IGNORE INTO Domains
+                    (protein_pk, domain_pk, domStart, domEnd, score, blast_score_ratio, identity)
+                SELECT d.protein_pk, ?, d.domStart, d.domEnd, d.score, d.blast_score_ratio, d.identity
+                FROM Domains d
+                JOIN tmp_update_domain_proteins t ON t.protein_pk = d.protein_pk
+                WHERE d.domain_pk = ?
+            """,
+                (new_domain_pk, old_domain_pk),
+            )
+
+            # Remove the corresponding old-tag hits.
+            cur.execute(
+                """
+                DELETE FROM Domains
+                WHERE domain_pk = ?
+                  AND EXISTS (
+                      SELECT 1 FROM tmp_update_domain_proteins t
+                      WHERE t.protein_pk = Domains.protein_pk
+                  )
+            """,
+                (old_domain_pk,),
+            )
+
+            changed = cur.rowcount
+
+        logger.info("Updated %d domain hits from %s to %s", changed, old_tag, new_tag)
+
+    except Exception:
+        logger.exception("Error updating domains from %s to %s", old_tag, new_tag)
+        raise
 
 
 ##############################################################
@@ -854,32 +1654,57 @@ def update_domain(
 
 
 def update_keywords(
-    database: str, keyword_dict: Dict[str, Set[str]], batch_size: int = 400
+    database: str, keyword_dict: Dict[str, Set[str]], batch_size: int = 10000
 ) -> None:
-    """
-    Update keywords in the database in batches.
+    """Add keywords to clusters while resolving external clusterID to cluster_pk."""
 
-    Args:
-        database: Name of the database to be worked on.
-        keyword_dict: Dictionary containing the new keywords and associated clusterIDs.
-        batch_size: Number of (clusterID, keyword) pairs per batch insert.
-    """
-    if keyword_dict:
-        try:
-            with sqlite3.connect(database) as con:
-                cur = con.cursor()
-                query = """INSERT INTO Keywords (clusterID, keyword) VALUES (?, ?)"""
-                inserts = []
-                for new_keyword, clusterIDs in keyword_dict.items():
-                    for clusterID in clusterIDs:
-                        inserts.append((clusterID, new_keyword))
-                for i in range(0, len(inserts), batch_size):
-                    batch = inserts[i : i + batch_size]
-                    cur.executemany(query, batch)
-            logger.info(f"Updated keywords with {len(inserts)} entries.")
-        except Exception as e:
-            logger.error(f"Error updating keywords: {e}")
-    return
+    if not keyword_dict:
+        return
+
+    cluster_ids = {cid for cluster_ids in keyword_dict.values() for cid in cluster_ids}
+
+    try:
+        with sqlite3.connect(database) as con:
+            cur = con.cursor()
+            cur.execute("PRAGMA foreign_keys = ON")
+            cur.execute("PRAGMA temp_store = MEMORY")
+
+            cluster_pk_map = _lookup_pk_map(
+                cur,
+                cluster_ids,
+                temp_table="tmp_lookup_keyword_clusters",
+                source_table="Clusters",
+                external_col="clusterID",
+                pk_col="cluster_pk",
+                strict=False,
+            )
+
+            missing = cluster_ids - set(cluster_pk_map)
+            if missing:
+                logger.warning(
+                    "%d clusterIDs for keywords were not found. Examples: %s",
+                    len(missing),
+                    sorted(missing)[:10],
+                )
+
+            inserts = [
+                (cluster_pk_map[cid], keyword)
+                for keyword, cluster_ids_for_keyword in keyword_dict.items()
+                for cid in cluster_ids_for_keyword
+                if cid in cluster_pk_map
+            ]
+
+            for i in range(0, len(inserts), batch_size):
+                cur.executemany(
+                    "INSERT OR IGNORE INTO Keywords(cluster_pk, keyword) VALUES (?, ?)",
+                    inserts[i : i + batch_size],
+                )
+
+        logger.info("Updated keywords with %d entries", len(inserts))
+
+    except Exception:
+        logger.exception("Error updating keywords")
+        raise
 
 
 def delete_keywords_from_csb(
@@ -933,15 +1758,17 @@ def fetch_genome_ids(database: str) -> Set[str]:
 
 
 def fetch_genome_ids_with_proteins(database: str) -> Set[str]:
-    """
-    Returns genomeIDs that already have at least one protein in Proteins.
-    This is a better 'already processed' signal than Genomes entries, because
-    Genomes are inserted at pipeline start.
-    """
     with sqlite3.connect(database) as con:
         cur = con.cursor()
-        cur.execute("SELECT DISTINCT genomeID FROM Proteins")
-        return {row[0] for row in cur.fetchall()}
+
+        cur.execute("""
+            SELECT DISTINCT g.genomeID
+            FROM Proteins p
+            JOIN Genomes g
+              ON g.genome_pk = p.genome_pk
+        """)
+
+        return {row[0] for row in cur}
 
 
 def clean_database_locks(database_path, wait_seconds=10):
