@@ -790,6 +790,12 @@ def create_metabolic_pathway_plots(config) -> None:
     """
     pathway_report_file = getattr(config, "pathway_report_file", None)
     pathway_plot_dir = getattr(config, "metabolic_pathway_directory", None)
+    write_individual_reports = not bool(
+        getattr(config, "disable_individual_reports", False)
+    )
+
+    if not write_individual_reports:
+        return
 
     if not pathway_report_file:
         logger.info(
