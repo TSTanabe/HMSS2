@@ -9,7 +9,7 @@ from hmsss.core import project as project
 from hmsss.core import ressource_prep
 from hmsss.core.logging import get_logger, print_header, setup_logging
 from hmsss.cross_check import cross_check
-from hmsss.db.database import index_database, rebuild_presence_tables
+from hmsss.db import database
 from hmsss.fasta_preparation import fasta_preparation
 from hmsss.graft import initial_read_mapping
 from hmsss.io import (
@@ -128,8 +128,8 @@ def run_pipeline(config) -> None:
             logger.error(
                 f"Database not found in given project {config.result_files_directory}. Please use a valid project directory or use the -db argument to provide a valid database for fetch operations."
             )
-        rebuild_presence_tables(config.database_directory)
-        index_database(config.database_directory)
+        database.rebuild_presence_tables(config.database_directory)
+        database.index_database(config.database_directory)
         output_dataset.output_operator(config)
 
     if getattr(config, "stat_genomes", False):

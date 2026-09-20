@@ -1,0 +1,486 @@
+domain	reaction	protein_description	system	metabolism
+dHdrA	disulfide_or_sulfur_intermediate_redox	heterodisulfide reductase-related protein dHdrA	Hdr-like sulfur redox system	Inorganic sulfur metabolism
+dHdrB	disulfide_or_sulfur_intermediate_redox	heterodisulfide reductase-related protein dHdrB	Hdr-like sulfur redox system	Inorganic sulfur metabolism
+dHdrC	disulfide_or_sulfur_intermediate_redox	heterodisulfide reductase-related protein dHdrC	Hdr-like sulfur redox system	Inorganic sulfur metabolism
+DsrE3A	sulfur_intermediate_redox	sulfur transferase	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+DsrE3B	sulfur_intermediate_redox	sulfur transferase	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+DsrE3C	sulfur_intermediate_redox	sulfur transferase	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+DsrE4	sulfur_intermediate_redox	sulfur transferase	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+DsrE5	sulfur_intermediate_redox	sulfur transferase	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+DoxD	thiosulfate_or_sulfur_oxidation	Thiosulfate\:quinone oxidoreductase	Thiosulfate/tetrathionate conversion	Inorganic sulfur metabolism
+DoxA	thiosulfate_or_sulfur_oxidation	Thiosulfate\:quinone oxidoreductase	Thiosulfate/tetrathionate conversion	Inorganic sulfur metabolism
+Otr	not_assigned	Octaheme tetrathionate reductase Otr	Reduction of tetrathionate	Inorganic sulfur metabolism
+PhsA	thiosulfate_or_polysulfide=>sulfide	Polysulfide/Thiosulfate/Sulfur reductase	Reduction of polysulfides/ thiosulfate/sulfur	Inorganic sulfur metabolism
+PhsB	thiosulfate_or_polysulfide=>sulfide	Polysulfide/Thiosulfate/Sulfur reductase	Reduction of polysulfides/ thiosulfate/sulfur	Inorganic sulfur metabolism
+PhsC	thiosulfate_or_polysulfide=>sulfide	Polysulfide/Thiosulfate/Sulfur reductase	Reduction of polysulfides/ thiosulfate/sulfur	Inorganic sulfur metabolism
+Rhd442	sulfurtransfer	sulfur redox protein Rhd442	Rhodanese sulfur transfer	Sulfur-transfer & electron-transfer systems
+SDOI	sulfide_or_sulfur_oxygenation	Sulfur dioxygenase	Sulfide detoxification: sulfane sulfur oxidation	Inorganic sulfur metabolism
+SDOII	sulfide_or_sulfur_oxygenation	Sulfur dioxygenase	Sulfide detoxification: sulfane sulfur oxidation	Inorganic sulfur metabolism
+CstA	not_assigned	putative protein CstA	Unclassified/context	Context / auxiliary HMMs
+CstB	not_assigned	putative protein CstB	Unclassified/context	Context / auxiliary HMMs
+SQRI	sulfide=>polysulfide_or_sulfur	Sulfide\:quinone oxidoreductase	Sulfide oxidation	Inorganic sulfur metabolism
+SQRII	sulfide=>polysulfide_or_sulfur	Sulfide\:quinone oxidoreductase	Sulfide oxidation	Inorganic sulfur metabolism
+SQRIII	sulfide=>polysulfide_or_sulfur	Sulfide\:quinone oxidoreductase	Sulfide oxidation	Inorganic sulfur metabolism
+SQRIV	sulfide=>polysulfide_or_sulfur	Sulfide\:quinone oxidoreductase	Sulfide oxidation	Inorganic sulfur metabolism
+SQRV	sulfide=>polysulfide_or_sulfur	Sulfide\:quinone oxidoreductase	Sulfide oxidation	Inorganic sulfur metabolism
+SQRVI	sulfide=>polysulfide_or_sulfur	Sulfide\:quinone oxidoreductase	Sulfide oxidation	Inorganic sulfur metabolism
+SOR	sulfur=>sulfite_thiosulfate_sulfide	Cytoplasmic sulfur oxygenase/reductase	Elemental sulfur oxidation	Inorganic sulfur metabolism
+sHdrJ	disulfide_or_sulfur_intermediate_redox	heterodisulfide reductase-related protein sHdrJ	Hdr-like sulfur redox system	Inorganic sulfur metabolism
+sHdrR	disulfide_or_sulfur_intermediate_redox	heterodisulfide reductase-related protein sHdrR	Hdr-like sulfur redox system	Inorganic sulfur metabolism
+TmcD	electron_transfer	Transmembrane transfer of electron from periplasmic hydrogen oxidation	Electron transport	Sulfur-transfer & electron-transfer systems
+HmcD	electron_transfer	Transmembrane complex mediating electron transfer from hydrogen to sulfate	Electron transport	Sulfur-transfer & electron-transfer systems
+TusB	sulfur_carrier_transfer	Sulfur transferase TusBCD	2-thiouridine synthesis	Sulfur-transfer & electron-transfer systems
+TusC	sulfur_carrier_transfer	Sulfur transferase TusBCD	2-thiouridine synthesis	Sulfur-transfer & electron-transfer systems
+TusD	sulfur_carrier_transfer	Sulfur transferase TusBCD	2-thiouridine synthesis	Sulfur-transfer & electron-transfer systems
+TusE	sulfur_carrier_transfer	Sulfur transferase	2-thiouridine synthesis	Sulfur-transfer & electron-transfer systems
+Tth	not_assigned	Tetrathionate hydrolase	Tetrathionate oxidation	Inorganic sulfur metabolism
+HmcA	electron_transfer	Transmembrane complex mediating electron transfer from hydrogen to sulfate	Electron transport	Sulfur-transfer & electron-transfer systems
+HmcB	electron_transfer	Transmembrane complex mediating electron transfer from hydrogen to sulfate	Electron transport	Sulfur-transfer & electron-transfer systems
+HmcC	electron_transfer	Transmembrane complex mediating electron transfer from hydrogen to sulfate	Electron transport	Sulfur-transfer & electron-transfer systems
+HmcE	electron_transfer	Transmembrane complex mediating electron transfer from hydrogen to sulfate	Electron transport	Sulfur-transfer & electron-transfer systems
+HmcF	electron_transfer	Transmembrane complex mediating electron transfer from hydrogen to sulfate	Electron transport	Sulfur-transfer & electron-transfer systems
+TmcA	electron_transfer	Transmembrane transfer of electron from periplasmic hydrogen oxidation	Electron transport	Sulfur-transfer & electron-transfer systems
+TmcB	electron_transfer	Transmembrane transfer of electron from periplasmic hydrogen oxidation	Electron transport	Sulfur-transfer & electron-transfer systems
+TmcC	electron_transfer	Transmembrane transfer of electron from periplasmic hydrogen oxidation	Electron transport	Sulfur-transfer & electron-transfer systems
+DsrL	sulfur_intermediate_redox	NAD(P)H\:acceptor oxidoreductase	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+DsrR	sulfur_intermediate_redox	IscA-like protein involved in dsr posttranslational control	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+DsrS	sulfur_intermediate_redox	Participation in dsr posttranslational control	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+EMO	DMSP_DMS_or_DMSO_transformation	non-cubane [4Fe-4S] cluster-binding sHdr system component	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+FccB	electron_transfer	Sulfide dehydrogenase hemoprotein	Sulfide oxidation	Inorganic sulfur metabolism
+FlxA	electron_transfer	Part of NADH dehydrogenase/heterodisulfide reductase	NADH dehydrogenase/ heterodisulfide reductase	Sulfur-transfer & electron-transfer systems
+FlxB	electron_transfer	Part of NADH dehydrogenase/heterodisulfide reductase	NADH dehydrogenase/ heterodisulfide reductase	Sulfur-transfer & electron-transfer systems
+FlxC	electron_transfer	Part of NADH dehydrogenase/heterodisulfide reductase	NADH dehydrogenase/ heterodisulfide reductase	Sulfur-transfer & electron-transfer systems
+FlxD	electron_transfer	Part of NADH dehydrogenase/heterodisulfide reductase	NADH dehydrogenase/ heterodisulfide reductase	Sulfur-transfer & electron-transfer systems
+MccA	electron_transfer	Octaheme sulfite reductase	Sulfite reduction	Inorganic sulfur metabolism
+MccB	electron_transfer	Octaheme sulfite reductase	Sulfite reduction	Inorganic sulfur metabolism
+MccC	electron_transfer	Octaheme sulfite reductase	Sulfite reduction	Inorganic sulfur metabolism
+MccD	electron_transfer	Octaheme sulfite reductase	Sulfite reduction	Inorganic sulfur metabolism
+MccR	electron_transfer	electron-transfer complex protein MccR	Other electron-transfer proteins	Sulfur-transfer & electron-transfer systems
+MccS	electron_transfer	electron-transfer complex protein MccS	Other electron-transfer proteins	Sulfur-transfer & electron-transfer systems
+RhdI	sulfurtransfer	sulfur redox protein RhdI	Rhodanese sulfur transfer	Sulfur-transfer & electron-transfer systems
+ShyA	electron_transfer	Sulfhydrogenase	Reduction of polysulfides/ thiosulfate/sulfur	Inorganic sulfur metabolism
+ShyB	electron_transfer	Sulfhydrogenase	Reduction of polysulfides/ thiosulfate/sulfur	Inorganic sulfur metabolism
+ShyC	electron_transfer	Sulfhydrogenase	Reduction of polysulfides/ thiosulfate/sulfur	Inorganic sulfur metabolism
+ShyD	electron_transfer	Sulfhydrogenase	Reduction of polysulfides/ thiosulfate/sulfur	Inorganic sulfur metabolism
+SorA	sulfur_redox	sulfite-oxidizing enzyme	Sulfite oxidation in periplasm	Inorganic sulfur metabolism
+SorB	sulfur_redox	sulfite-oxidizing enzyme	Sulfite oxidation in periplasm	Inorganic sulfur metabolism
+SoxT1	thiosulfate_or_reduced_sulfur=>sulfate	YeeE-like transporter	Thiosulfate oxidation in periplasm	Inorganic sulfur metabolism
+TtrB	tetrathionate=>thiosulfate	Tetrathionate reductase	Reduction of tetrathionate	Inorganic sulfur metabolism
+oxDsrK	reduced_sulfur=>sulfite	electron-transferring DsrMK(JOP) complex, oxidative type	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+oxDsrN	reduced_sulfur=>sulfite	amidation of siroheme, oxidative type	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+qHdrB	disulfide_or_sulfur_intermediate_redox	qHdrBC replace QmoC in some organisms	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+qHdrC	disulfide_or_sulfur_intermediate_redox	qHdrBC replace QmoC in some organisms	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+sEtfA	not_assigned	electron-transferring flavoprotein associated with sHdr	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+sEtfB	not_assigned	electron-transferring flavoprotein associated with sHdr	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+sHdrA	disulfide_or_sulfur_intermediate_redox	Sulfur oxidizing heterodisulfide reductase-like system	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+sHdrB2	disulfide_or_sulfur_intermediate_redox	Sulfur oxidizing heterodisulfide reductase-like system	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+sHdrT	disulfide_or_sulfur_intermediate_redox	TK90\_0645-like membrane protein of unknown function	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+AprM	APS_redox	oxidative-type adenylylsulfate reductase, membrane subunit	Sulfite oxidation in cytoplasm	Inorganic sulfur metabolism
+AsrA	sulfite=>sulfide	Anaerobic sulfite reductase	Sulfite reduction	Inorganic sulfur metabolism
+AsrB	sulfite=>sulfide	Anaerobic sulfite reductase	Sulfite reduction	Inorganic sulfur metabolism
+AsrC	sulfite=>sulfide	Anaerobic sulfite reductase	Sulfite reduction	Inorganic sulfur metabolism
+DsrE	sulfur_intermediate_redox	sulfur transferase DsrEFH	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+DsrE2	sulfur_intermediate_redox	sulfur transferase	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+DsrF	sulfur_intermediate_redox	sulfur transferase DsrEFH	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+DsrH	sulfur_intermediate_redox	sulfur transferase DsrEFH	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+DsrT	sulfur_intermediate_redox	unknown function	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+FccA	electron_transfer	Sulfide dehydrogenase flavoprotein	Sulfide oxidation	Inorganic sulfur metabolism
+LbpA1	not_assigned	Lipoate-binding protein	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+LbpA2	not_assigned	Lipoate-binding protein	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+LipS1	not_assigned	Radical S-adenosyl domain containing protein	LbpA biosynthesis	Sulfur-transfer & electron-transfer systems
+LipS2	not_assigned	Radical S-adenosyl domain containing protein	LbpA biosynthesis	Sulfur-transfer & electron-transfer systems
+LipT	not_assigned	Flavoprotein similar to geranylgeranyl reductase	LbpA biosynthesis	Sulfur-transfer & electron-transfer systems
+QmoA	electron_transfer	Quinone reactive oxidoreductase, electron transfer to/from APS reductase	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+QmoB	electron_transfer	Quinone reactive oxidoreductase, electron transfer to/from APS reductase	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+QmoC	electron_transfer	Quinone reactive oxidoreductase, electron transfer to/from APS reductase	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+QrcA	electron_transfer	Menaquinone-reducing membrane complex involved in sulfate reduction	Electron transport	Sulfur-transfer & electron-transfer systems
+QrcB	electron_transfer	Menaquinone-reducing membrane complex involved in sulfate reduction	Electron transport	Sulfur-transfer & electron-transfer systems
+QrcC	electron_transfer	Menaquinone-reducing membrane complex involved in sulfate reduction	Electron transport	Sulfur-transfer & electron-transfer systems
+QrcD	electron_transfer	Menaquinone-reducing membrane complex involved in sulfate reduction	Electron transport	Sulfur-transfer & electron-transfer systems
+SoeA	not_assigned	sulfite-oxidizing enzyme	Sulfite oxidation in cytoplasm	Inorganic sulfur metabolism
+SoeB	not_assigned	sulfite-oxidizing enzyme	Sulfite oxidation in cytoplasm	Inorganic sulfur metabolism
+SoeC	not_assigned	sulfite-oxidizing enzyme	Sulfite oxidation in cytoplasm	Inorganic sulfur metabolism
+SoxA	thiosulfate_or_reduced_sulfur=>sulfate	Thiosulfate-oxidizing multienzyme system, c-type cytochrome	Thiosulfate oxidation in periplasm	Inorganic sulfur metabolism
+SoxB	thiosulfate_or_reduced_sulfur=>sulfate	Thiosulfate-oxidizing multienzyme system, thiosulfohydrolase	Thiosulfate oxidation in periplasm	Inorganic sulfur metabolism
+SoxC	thiosulfate_or_reduced_sulfur=>sulfate	Thiosulfate-oxidizing multienzyme system, sulfane dehydrogenase	Thiosulfate oxidation in periplasm	Inorganic sulfur metabolism
+SoxD	thiosulfate_or_reduced_sulfur=>sulfate	Thiosulfate-oxidizing multienzyme system, sulfane dehydrogenase	Thiosulfate oxidation in periplasm	Inorganic sulfur metabolism
+SoxE	thiosulfate_or_reduced_sulfur=>sulfate	diheme cytochrome c	Thiosulfate oxidation in periplasm	Inorganic sulfur metabolism
+SoxF	thiosulfate_or_reduced_sulfur=>sulfate	flavoprotein	Thiosulfate oxidation in periplasm	Inorganic sulfur metabolism
+SoxG	thiosulfate_or_reduced_sulfur=>sulfate	periplasmic, MBL fold metallo-hydrolase	Thiosulfate oxidation in periplasm	Inorganic sulfur metabolism
+SoxH	thiosulfate_or_reduced_sulfur=>sulfate	periplasmic, MBL fold metallo-hydrolase	Thiosulfate oxidation in periplasm	Inorganic sulfur metabolism
+SoxL	thiosulfate_or_reduced_sulfur=>sulfate	Sox sulfur oxidation protein SoxL	Sox-associated proteins	Inorganic sulfur metabolism
+SoxR	thiosulfate_or_reduced_sulfur=>sulfate	Sox sulfur oxidation protein SoxR	Sox-associated proteins	Inorganic sulfur metabolism
+SoxS	thiosulfate_or_reduced_sulfur=>sulfate	periplasmic thioredoxin, thiol-disulfide oxidoreductase	Thiosulfate oxidation in periplasm	Inorganic sulfur metabolism
+SoxV	thiosulfate_or_reduced_sulfur=>sulfate	membrane protein, disulfide transporter, reduces SoxW	Thiosulfate oxidation in periplasm	Inorganic sulfur metabolism
+SoxW	thiosulfate_or_reduced_sulfur=>sulfate	periplasmic thioredoxin	Thiosulfate oxidation in periplasm	Inorganic sulfur metabolism
+SoxX	thiosulfate_or_reduced_sulfur=>sulfate	Thiosulfate-oxidizing multienzyme system, c-type cytochrome	Thiosulfate oxidation in periplasm	Inorganic sulfur metabolism
+SoxY	thiosulfate_or_reduced_sulfur=>sulfate	Thiosulfate-oxidizing multienzyme system, substrate binding	Thiosulfate oxidation in periplasm	Inorganic sulfur metabolism
+SoxZ	thiosulfate_or_reduced_sulfur=>sulfate	Thiosulfate-oxidizing multienzyme system, substrate binding	Thiosulfate oxidation in periplasm	Inorganic sulfur metabolism
+SoxT2	thiosulfate_or_reduced_sulfur=>sulfate	YeeE-like transporter	Thiosulfate oxidation in periplasm	Inorganic sulfur metabolism
+SudA	not_assigned	Sulfide dehydrogenase	Reduction of polysulfides/ thiosulfate/sulfur	Inorganic sulfur metabolism
+SudB	not_assigned	Sulfide dehydrogenase	Reduction of polysulfides/ thiosulfate/sulfur	Inorganic sulfur metabolism
+TsdA	thiosulfate<=>tetrathionate	Thiosulfate dehydrogenase	Thiosulfate/tetrathionate conversion	Inorganic sulfur metabolism
+TsdB	thiosulfate<=>tetrathionate	Thiosulfate dehydrogenase	Thiosulfate/tetrathionate conversion	Inorganic sulfur metabolism
+TtrA	tetrathionate=>thiosulfate	Tetrathionate reductase	Reduction of tetrathionate	Inorganic sulfur metabolism
+TtrC	tetrathionate=>thiosulfate	Tetrathionate reductase	Reduction of tetrathionate	Inorganic sulfur metabolism
+TtrR	tetrathionate=>thiosulfate	Transcriptional regulator component	Reduction of tetrathionate	Inorganic sulfur metabolism
+TtrS	tetrathionate=>thiosulfate	Transcriptional regulator component	Reduction of tetrathionate	Inorganic sulfur metabolism
+TusA	sulfur_carrier_transfer	Sulfur transferase	2-thiouridine synthesis	Sulfur-transfer & electron-transfer systems
+assAprA	APS=>sulfite	assimilatory-type AprAB adenylylsulfate reductase	Assimilatory reduction of APS	Inorganic sulfur metabolism
+assAprB	APS=>sulfite	assimilatory-type AprAB adenylylsulfate reductase	Assimilatory reduction of APS	Inorganic sulfur metabolism
+oxAprAI	APS=>sulfite	oxidative-type adenylylsulfate reductase	Sulfite oxidation in cytoplasm	Inorganic sulfur metabolism
+oxAprAII	APS=>sulfite	oxidative-type adenylylsulfate reductase	Sulfite oxidation in cytoplasm	Inorganic sulfur metabolism
+oxAprBI	APS=>sulfite	oxidative-type adenylylsulfate reductase	Sulfite oxidation in cytoplasm	Inorganic sulfur metabolism
+oxAprBII	APS=>sulfite	oxidative-type adenylylsulfate reductase , lineage II	Sulfite oxidation in cytoplasm	Inorganic sulfur metabolism
+oxDsrA	reduced_sulfur=>sulfite	oxidative-type dissimilatory sulfite reductase	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+oxDsrB	reduced_sulfur=>sulfite	oxidative-type dissimilatory sulfite reductase	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+oxDsrC	reduced_sulfur=>sulfite	sulfur-binding protein substrate of DsrAB, oxidative type	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+oxDsrJ	reduced_sulfur=>sulfite	electron-transferring DsrMK(JOP) complex, oxidative type	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+oxDsrM	reduced_sulfur=>sulfite	electron-transferring DsrMK(JOP) complex, oxidative type	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+oxDsrO	reduced_sulfur=>sulfite	electron-transferring DsrMK(JOP) complex, oxidative type	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+oxDsrP	reduced_sulfur=>sulfite	electron-transferring DsrMK(JOP) complex, oxidative type	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+oxSat	sulfate=>APS	oxidative-type sulfate adenylyltransferase	Sulfite oxidation in cytoplasm	Inorganic sulfur metabolism
+redAprA	sulfite=>APS	reductive-type adenylylsufate reductase flavoprotein	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+redAprB	sulfite=>APS	reductive-type adenylylsufate reductase iron-sulfur protein	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+redDsrA	sulfite=>reduced_sulfur	reductive-type dissimilatory siroheme-sulfite reductase	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+redDsrB	sulfite=>reduced_sulfur	reductive-type dissimilatory sirohem-sulfite reductase	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+redDsrC	sulfite=>reduced_sulfur	sulfur-binding protein substrate of DsrAB, reductive type	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+redDsrD	sulfite=>reduced_sulfur	allosteric DsrAB activator	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+redDsrE	sulfite=>reduced_sulfur	sulfur transferase DsrEFH type II	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+redDsrF	sulfite=>reduced_sulfur	sulfur transferase DsrEFH type II	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+redDsrH	sulfite=>reduced_sulfur	sulfur transferase DsrEFH type II	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+redDsrJ	sulfite=>reduced_sulfur	electron-transferring DsrMK(JOP) complex, reductive type	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+redDsrK	sulfite=>reduced_sulfur	electron-transferring DsrMK(JOP) complex, reductive type	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+redDsrM	sulfite=>reduced_sulfur	electron-transferring DsrMK(JOP) complex, reductive type	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+redDsrN	sulfite=>reduced_sulfur	amidation of siroheme, reductive type	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+redDsrO	sulfite=>reduced_sulfur	electron-transferring DsrMK(JOP) complex, reductive type	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+redDsrP	sulfite=>reduced_sulfur	electron-transferring DsrMK(JOP) complex, reductive type	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+redSat	APS=>sulfate	reductive-type sulfate adenylyltransferase	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+sHdrB1	disulfide_or_sulfur_intermediate_redox	Sulfur oxidizing heterodisulfide reductase-like system	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+sHdrB3	disulfide_or_sulfur_intermediate_redox	non-cubane [4Fe-4S] cluster-binding sHdr system component	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+sHdrC1	disulfide_or_sulfur_intermediate_redox	Sulfur oxidizing heterodisulfide reductase-like system	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+sHdrC2	disulfide_or_sulfur_intermediate_redox	Sulfur oxidizing heterodisulfide reductase-like system	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+sHdrH	disulfide_or_sulfur_intermediate_redox	sHdr system component of unknown function	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+sHdrI	disulfide_or_sulfur_intermediate_redox	Hden\_0695-like protein of unknown function associated with sHdr/LbpA	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+sLplAB	not_assigned	Lipoate\:protein ligase	LbpA biosynthesis	Sulfur-transfer & electron-transfer systems
+ACP	not_assigned	cell envelope, secretion, or motility-associated protein ACP	Cell envelope/secretion context	Context / auxiliary HMMs
+CerR	not_assigned	cell envelope, secretion, or motility-associated protein CerR	Cell envelope/secretion context	Context / auxiliary HMMs
+ChiA	not_assigned	cell envelope, secretion, or motility-associated protein ChiA	Cell envelope/secretion context	Context / auxiliary HMMs
+GldA	not_assigned	cell envelope, secretion, or motility-associated protein GldA	Cell envelope/secretion context	Context / auxiliary HMMs
+GldB	not_assigned	cell envelope, secretion, or motility-associated protein GldB	Cell envelope/secretion context	Context / auxiliary HMMs
+GldC	not_assigned	cell envelope, secretion, or motility-associated protein GldC	Cell envelope/secretion context	Context / auxiliary HMMs
+GldD	not_assigned	cell envelope, secretion, or motility-associated protein GldD	Cell envelope/secretion context	Context / auxiliary HMMs
+GldE	not_assigned	cell envelope, secretion, or motility-associated protein GldE	Cell envelope/secretion context	Context / auxiliary HMMs
+GldF	not_assigned	cell envelope, secretion, or motility-associated protein GldF	Cell envelope/secretion context	Context / auxiliary HMMs
+GldG	not_assigned	cell envelope, secretion, or motility-associated protein GldG	Cell envelope/secretion context	Context / auxiliary HMMs
+GldH	not_assigned	cell envelope, secretion, or motility-associated protein GldH	Cell envelope/secretion context	Context / auxiliary HMMs
+GldI	not_assigned	cell envelope, secretion, or motility-associated protein GldI	Cell envelope/secretion context	Context / auxiliary HMMs
+GldJ	not_assigned	cell envelope, secretion, or motility-associated protein GldJ	Cell envelope/secretion context	Context / auxiliary HMMs
+GldK	not_assigned	cell envelope, secretion, or motility-associated protein GldK	Cell envelope/secretion context	Context / auxiliary HMMs
+GldL	not_assigned	cell envelope, secretion, or motility-associated protein GldL	Cell envelope/secretion context	Context / auxiliary HMMs
+GldM	not_assigned	cell envelope, secretion, or motility-associated protein GldM	Cell envelope/secretion context	Context / auxiliary HMMs
+GldN	not_assigned	cell envelope, secretion, or motility-associated protein GldN	Cell envelope/secretion context	Context / auxiliary HMMs
+GldO	not_assigned	cell envelope, secretion, or motility-associated protein GldO	Cell envelope/secretion context	Context / auxiliary HMMs
+SecE	not_assigned	cell envelope, secretion, or motility-associated protein SecE	Cell envelope/secretion context	Context / auxiliary HMMs
+SecG	not_assigned	cell envelope, secretion, or motility-associated protein SecG	Cell envelope/secretion context	Context / auxiliary HMMs
+SecY	not_assigned	cell envelope, secretion, or motility-associated protein SecY	Cell envelope/secretion context	Context / auxiliary HMMs
+SprA	not_assigned	cell envelope, secretion, or motility-associated protein SprA	Cell envelope/secretion context	Context / auxiliary HMMs
+SprB	not_assigned	cell envelope, secretion, or motility-associated protein SprB	Cell envelope/secretion context	Context / auxiliary HMMs
+SprC	not_assigned	cell envelope, secretion, or motility-associated protein SprC	Cell envelope/secretion context	Context / auxiliary HMMs
+SprD	not_assigned	cell envelope, secretion, or motility-associated protein SprD	Cell envelope/secretion context	Context / auxiliary HMMs
+SprE	not_assigned	cell envelope, secretion, or motility-associated protein SprE	Cell envelope/secretion context	Context / auxiliary HMMs
+SprF	not_assigned	cell envelope, secretion, or motility-associated protein SprF	Cell envelope/secretion context	Context / auxiliary HMMs
+Spt	not_assigned	cell envelope, secretion, or motility-associated protein Spt	Cell envelope/secretion context	Context / auxiliary HMMs
+bCerS	not_assigned	cell envelope, secretion, or motility-associated protein bCerS	Cell envelope/secretion context	Context / auxiliary HMMs
+CapA	not_assigned	cell envelope, secretion, or motility-associated protein CapA	Cell envelope/secretion context	Context / auxiliary HMMs
+SulA	not_assigned	cell envelope, secretion, or motility-associated protein SulA	Cell envelope/secretion context	Context / auxiliary HMMs
+SulS	not_assigned	cell envelope, secretion, or motility-associated protein SulS	Cell envelope/secretion context	Context / auxiliary HMMs
+Cs2H	not_assigned	CS2 lyase	Growth on CS2	Inorganic sulfur metabolism
+CosH	not_assigned	Carbony sulfide hydrolase	Growth on CS2	Inorganic sulfur metabolism
+SsuA	organosulfur=>sulfite_or_sulfide	Alkanesulfonate ABC transporter	Alkanesulfonate	Sulfonates & arylsulfates
+SsuB	organosulfur=>sulfite_or_sulfide	Alkanesulfonate ABC transporter	Alkanesulfonate	Sulfonates & arylsulfates
+SsuC	organosulfur=>sulfite_or_sulfide	Alkanesulfonate ABC transporter	Alkanesulfonate	Sulfonates & arylsulfates
+SsuD	organosulfur=>sulfite_or_sulfide	Alkanesulfonate monooxygenase	Alkanesulfonate	Sulfonates & arylsulfates
+SsuE	organosulfur=>sulfite_or_sulfide	Alkanesulfonate monooxygenase, FMN reductase (NADPH)	Alkanesulfonate	Sulfonates & arylsulfates
+DszC	organosulfur=>sulfite_or_sulfide	Dibenzothiophene monooxygenase	Arylsulfatases	Sulfonates & arylsulfates
+AtsA	organosulfur=>sulfite_or_sulfide	Arylsulfatase	Arylsulfatases	Sulfonates & arylsulfates
+AtsB	organosulfur=>sulfite_or_sulfide	Serine-type anaerobic sulfatase-maturating enzyme	Arylsulfatases	Sulfonates & arylsulfates
+DszA	organosulfur=>sulfite_or_sulfide	Dibenzothiophene-sulfone monooxygenase	Arylsulfatases	Sulfonates & arylsulfates
+DszB	organosulfur=>sulfite_or_sulfide	2'-hydroxybiphenyl-2-sulfinate desulfinase	Arylsulfatases	Sulfonates & arylsulfates
+DszD	organosulfur=>sulfite_or_sulfide	NADH\:FMN oxidoreductase	Arylsulfatases	Sulfonates & arylsulfates
+SncA	not_assigned	Thiocyanate hydrolase subunit alpha	Thiocyanate	Inorganic sulfur metabolism
+SncB	not_assigned	Thiocyanate hydrolase subunit beta	Thiocyanate	Inorganic sulfur metabolism
+SncC	not_assigned	Thiocyanate hydrolase subunit gamma	Thiocyanate	Inorganic sulfur metabolism
+TcdH	not_assigned	Thiocyanat dehydrogenase	Thiocyanate	Inorganic sulfur metabolism
+TcdS	not_assigned	Thiocyanat dehydrogenase associated histidine kinase	Thiocyanate	Inorganic sulfur metabolism
+TcdT	not_assigned	Thiocyanat dehydrogenase associated thiorhedoxin	Thiocyanate	Inorganic sulfur metabolism
+MarB	not_assigned	Methylthio-alkane reductase	Methylthioalkanereductase	Methylated sulfur compounds
+MarD	not_assigned	Methylthio-alkane reductase	Methylthioalkanereductase	Methylated sulfur compounds
+MarH	not_assigned	Methylthio-alkane reductase	Methylthioalkanereductase	Methylated sulfur compounds
+MarK	not_assigned	Methylthio-alkane reductase	Methylthioalkanereductase	Methylated sulfur compounds
+AprA	sulfite=>APS	adenylylsulfate reductase alpha subunit	Reductive APS reductase	Inorganic sulfur metabolism
+AprB	sulfite=>APS	adenylylsulfate reductase beta subunit	Reductive APS reductase	Inorganic sulfur metabolism
+ETHE1	not_assigned	putative protein ETHE1	Unclassified/context	Context / auxiliary HMMs
+DsrO	sulfur_intermediate_redox	Dsr sulfur metabolism protein DsrO	Dsr-associated sulfur metabolism	Inorganic sulfur metabolism
+DsoB	DMSP_DMS_or_DMSO_transformation	Assimilatory DMS monooxygenase	Assimilatory DMS monooxygenase	Methylated sulfur compounds
+Npsr	not_assigned	putative protein Npsr	Unclassified/context	Context / auxiliary HMMs
+Nsr	not_assigned	putative protein Nsr	Unclassified/context	Context / auxiliary HMMs
+SdoI	sulfide_or_sulfur_oxygenation	Sulfur dioxygenase	Sulfide detoxification: sulfane sulfur oxidation	Inorganic sulfur metabolism
+SdoSI	sulfide_or_sulfur_oxygenation	Sulfur dioxygenase	Sulfide detoxification: sulfane sulfur oxidation	Inorganic sulfur metabolism
+SdoSII	sulfide_or_sulfur_oxygenation	Sulfur dioxygenase	Sulfide detoxification: sulfane sulfur oxidation	Inorganic sulfur metabolism
+sorT	sulfur_redox	putative protein sorT	Sulfite oxidation-associated proteins	Inorganic sulfur metabolism
+TauD	organosulfur=>sulfite_or_sulfide	Taurine dioxygenase	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+Toa	organosulfur=>sulfite_or_sulfide	Taurine : 2-oxoglutarate aminotransferas	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+Tpa	organosulfur=>sulfite_or_sulfide	Taurine : pyruvate aminotransferase	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+HpfY	organosulfur=>sulfite_or_sulfide	3-sulfopropionate-CoA ligase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+HpsO	organosulfur=>sulfite_or_sulfide	DHPS 2-dehydrogenases	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+IseR	organosulfur=>sulfite_or_sulfide	Isethionate dissimilation regulator	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+SauT	organosulfur=>sulfite_or_sulfide	Sulfoacetate--CoA ligase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+SlcC	organosulfur=>sulfite_or_sulfide	( S)-sulfolactate dehydrogenase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+SlcF	organosulfur=>sulfite_or_sulfide	Sulfolactate TRAP Transporter	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+SlcH	organosulfur=>sulfite_or_sulfide	Sulfolactate TRAP Transporter	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+SuyB	organosulfur=>sulfite_or_sulfide	(R)-Sulfolactate sulfo-lyase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+TauB	organosulfur=>sulfite_or_sulfide	Taurine ABC transporter	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+TauC	organosulfur=>sulfite_or_sulfide	Taurine ABC transporter	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+TauY	organosulfur=>sulfite_or_sulfide	Taurine dehydrogenase	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+TauZ	organosulfur=>sulfite_or_sulfide	Hypothetical protein	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+AlaDH	organosulfur=>sulfite_or_sulfide	Alanine dehydrogenase	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+ComC	organosulfur=>sulfite_or_sulfide	Sulfopyruvate decarboxylase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+DhpA	organosulfur=>sulfite_or_sulfide	DHPS dehydrogenase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+HpfD	organosulfur=>sulfite_or_sulfide	NADH-dependent sulfopropionaldehyde reductase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+HpfG	organosulfur=>sulfite_or_sulfide	DHPS-dehydratase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+HpsG	organosulfur=>sulfite_or_sulfide	DHPS-sulfolyase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+HpsM	organosulfur=>sulfite_or_sulfide	DHPS TRAP transporter	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+HpsN	organosulfur=>sulfite_or_sulfide	DHPS 3-dehydrogenase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+HpsP	organosulfur=>sulfite_or_sulfide	DHPS 2-dehydrogenases	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+HpsU	organosulfur=>sulfite_or_sulfide	DHPS uptake	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+IseJ	organosulfur=>sulfite_or_sulfide	Isethionate dehydrogenase	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+IseM	organosulfur=>sulfite_or_sulfide	Isethionate TRAP transporter	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+IsfD	organosulfur=>sulfite_or_sulfide	NADPH-dependent sulfoacetaldehyde reductase	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+Pta	organosulfur=>sulfite_or_sulfide	Phosphate acetyltransferase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+SarD	organosulfur=>sulfite_or_sulfide	NADH-dependent sulfoacetaldehyde reductase	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+SauS	organosulfur=>sulfite_or_sulfide	Sulfoacetaldehyde dehydrogenase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+SauU	organosulfur=>sulfite_or_sulfide	Sulfoacetate transporter	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+SlcD	organosulfur=>sulfite_or_sulfide	sulfolactate dehydrogenase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+TauA	organosulfur=>sulfite_or_sulfide	Taurine ABC transporter	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+TauK	organosulfur=>sulfite_or_sulfide	Taurine TRAP transporter	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+TauM	organosulfur=>sulfite_or_sulfide	Taurine TRAP transporter	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+TauR	organosulfur=>sulfite_or_sulfide	Taurine dissimilation regulator	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+Xsc	organosulfur=>sulfite_or_sulfide	Sulfoacetaldehyde acetyltransferase	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+AdhE	organosulfur=>sulfite_or_sulfide	Acetaldehyde dehydrogenase	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+BmcsA	not_assigned	BMC shell protein	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+BmcsB	not_assigned	BMC shell protein	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+BmcsC	not_assigned	BMC shell protein	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+ComD	organosulfur=>sulfite_or_sulfide	Sulfopyruvate decarboxylase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+ComE	organosulfur=>sulfite_or_sulfide	Sulfopyruvate decarboxylase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+CuyA	not_assigned	L-cysteate sulfo-lyase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+CuyZ	not_assigned	Hypothetical membrane protein	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+HpfE	organosulfur=>sulfite_or_sulfide	3-HPS exporter	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+HpfH	organosulfur=>sulfite_or_sulfide	DHPS-dehydratase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+HpfX	organosulfur=>sulfite_or_sulfide	3-sulfopropionatealdehyde dehydrogenase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+HpfZ	organosulfur=>sulfite_or_sulfide	3-sulfopropionate-CoA ligase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+HpsH	organosulfur=>sulfite_or_sulfide	DHPS-sulfolyase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+HpsK	organosulfur=>sulfite_or_sulfide	DHPS TRAP transporter	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+HpsL	organosulfur=>sulfite_or_sulfide	DHPS TRAP transporter	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+IseK	organosulfur=>sulfite_or_sulfide	Isethionate TRAP transporter	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+IseL	organosulfur=>sulfite_or_sulfide	Isethionate TRAP transporter	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+IsfE	organosulfur=>sulfite_or_sulfide	Isethionate exporter	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+SlcG	organosulfur=>sulfite_or_sulfide	Sulfolactate TRAP Transporter	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+SuyA	organosulfur=>sulfite_or_sulfide	(R)-Sulfolactate sulfo-lyase	DHPS, Sulfolactate, Sulfoacetate	Taurine, isethionate & C2/C3 sulfonates
+TauE	organosulfur=>sulfite_or_sulfide	Sulfite exporter	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+TauL	organosulfur=>sulfite_or_sulfide	Taurine TRAP transporter	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+TauX	organosulfur=>sulfite_or_sulfide	Taurine dehydrogenase	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+oxAprA	APS=>sulfite	adenylylsulfate reductase-related protein oxAprA	Oxidative APS reductase variants	Inorganic sulfur metabolism
+oxAprB	APS=>sulfite	adenylylsulfate reductase-related protein oxAprB	Oxidative APS reductase variants	Inorganic sulfur metabolism
+oxDsrL	reduced_sulfur=>sulfite	Dsr sulfur metabolism protein oxDsrL	Oxidative Dsr variants	Inorganic sulfur metabolism
+assSat	sulfate=>APS	sulfate adenylyltransferase-related protein assSat	Assimilatory sulfate activation	Inorganic sulfur metabolism
+Alma1	DMSP_DMS_or_DMSO_transformation	DMSP/DMS/DMSO metabolism protein Alma1	Methylated sulfur compounds (additional)	Methylated sulfur compounds
+TauF	organosulfur=>sulfite_or_sulfide	organosulfur compound utilization protein TauF	Taurine/isethionate utilization (additional)	Taurine, isethionate & C2/C3 sulfonates
+DMSOR	DMSP_DMS_or_DMSO_transformation	DMSP/DMS/DMSO metabolism protein DMSOR	Methylated sulfur compounds (additional)	Methylated sulfur compounds
+DmsA	DMSP_DMS_or_DMSO_transformation	DMSO reductase	DMS	Methylated sulfur compounds
+DddD	DMSP_DMS_or_DMSO_transformation	DMSP lyase	DMSP degradation	Methylated sulfur compounds
+DddL	DMSP_DMS_or_DMSO_transformation	DMSP lyase	DMSP degradation	Methylated sulfur compounds
+DddP	DMSP_DMS_or_DMSO_transformation	DMSP lyase	DMSP degradation	Methylated sulfur compounds
+DddQ	DMSP_DMS_or_DMSO_transformation	DMSP lyase	DMSP degradation	Methylated sulfur compounds
+DddW	DMSP_DMS_or_DMSO_transformation	DMSP lyase	DMSP degradation	Methylated sulfur compounds
+DddX	DMSP_DMS_or_DMSO_transformation	DMSP lyase DddX	Methylated sulfur compounds (additional)	Methylated sulfur compounds
+DddY	DMSP_DMS_or_DMSO_transformation	DMSP lyase	DMSP degradation	Methylated sulfur compounds
+DdhA	DMSP_DMS_or_DMSO_transformation	DMSP/DMS/DMSO metabolism protein DdhA	Methylated sulfur compounds (additional)	Methylated sulfur compounds
+DmoA	DMSP_DMS_or_DMSO_transformation	DMS monooxygenase	DMS	Methylated sulfur compounds
+DsyB	DMSP_DMS_or_DMSO_transformation	DMSP/DMS/DMSO metabolism protein DsyB	Methylated sulfur compounds (additional)	Methylated sulfur compounds
+MddA	DMSP_DMS_or_DMSO_transformation	Methanethiol S-methyltransferase	DMS	Methylated sulfur compounds
+MmtN	DMSP_DMS_or_DMSO_transformation	DMSP/DMS/DMSO metabolism protein MmtN	Methylated sulfur compounds (additional)	Methylated sulfur compounds
+MsmA	DMSP_DMS_or_DMSO_transformation	Methanesulfonate monooxygenase, hydroxylase	Dissimilatory methanesulfonate monooxygenase	Methylated sulfur compounds
+MtoX	DMSP_DMS_or_DMSO_transformation	methanethiol oxidase MtoX	Methylated sulfur compounds (additional)	Methylated sulfur compounds
+MtsA	DMSP_DMS_or_DMSO_transformation	DMSP/DMS/DMSO metabolism protein MtsA	Methylated sulfur compounds (additional)	Methylated sulfur compounds
+SfnG	DMSP_DMS_or_DMSO_transformation	DMSO2 monooxygenase	Assimilatory DMSO2 monooxygenase	Methylated sulfur compounds
+Tmm	DMSP_DMS_or_DMSO_transformation	trimethylamine monooxygenase-like sulfur compound monooxygenase	Methylated sulfur compounds (additional)	Methylated sulfur compounds
+DdhB	DMSP_DMS_or_DMSO_transformation	DMSP/DMS/DMSO metabolism protein DdhB	Methylated sulfur compounds (additional)	Methylated sulfur compounds
+DdhC	DMSP_DMS_or_DMSO_transformation	DMSP/DMS/DMSO metabolism protein DdhC	Methylated sulfur compounds (additional)	Methylated sulfur compounds
+DdhD	DMSP_DMS_or_DMSO_transformation	DMSP/DMS/DMSO metabolism protein DdhD	Methylated sulfur compounds (additional)	Methylated sulfur compounds
+Mtox	DMSP_DMS_or_DMSO_transformation	putative protein Mtox	Methylated sulfur compounds (additional)	Methylated sulfur compounds
+DmdC	DMSP_DMS_or_DMSO_transformation	3-methylmercaptopropionyl-CoA dehydrogenase	DMSP demethylase	Methylated sulfur compounds
+DmdB	DMSP_DMS_or_DMSO_transformation	3-methylmercaptopropionyl-CoA ligase	DMSP demethylase	Methylated sulfur compounds
+AcuI	DMSP_DMS_or_DMSO_transformation	Acrylate hydrolase	DMSP degradation	Methylated sulfur compounds
+AcuN	DMSP_DMS_or_DMSO_transformation	Acrylate hydrolase	DMSP degradation	Methylated sulfur compounds
+DddA	DMSP_DMS_or_DMSO_transformation	alcohol dehydrogenase	DMSP degradation	Methylated sulfur compounds
+DddC	DMSP_DMS_or_DMSO_transformation	aldehyde dehydrogenase	DMSP degradation	Methylated sulfur compounds
+DorR	DMSP_DMS_or_DMSO_transformation	DMSO reductase regulator	DMS	Methylated sulfur compounds
+MsmG	DMSP_DMS_or_DMSO_transformation	Methanesulfonate ABC Transporter	Dissimilatory methanesulfonate monooxygenase	Methylated sulfur compounds
+AcuK	DMSP_DMS_or_DMSO_transformation	Acrylate hydrolase	DMSP degradation	Methylated sulfur compounds
+DddT	DMSP_DMS_or_DMSO_transformation	BCCT-type transporter	DMSP degradation	Methylated sulfur compounds
+DmdA	DMSP_DMS_or_DMSO_transformation	Dimethylsulfoniopropionate demethylase	DMSP demethylase	Methylated sulfur compounds
+DmdD	DMSP_DMS_or_DMSO_transformation	Methylthioacryloyl-CoA hydratase	DMSP demethylase	Methylated sulfur compounds
+DmsB	DMSP_DMS_or_DMSO_transformation	DMSO reductase	DMS	Methylated sulfur compounds
+DmsC	DMSP_DMS_or_DMSO_transformation	DMSO reductase	DMS	Methylated sulfur compounds
+DmsD	DMSP_DMS_or_DMSO_transformation	DMSO reductase maturation protein	DMS	Methylated sulfur compounds
+DorA	DMSP_DMS_or_DMSO_transformation	DMSO reductase	DMS	Methylated sulfur compounds
+DorC	DMSP_DMS_or_DMSO_transformation	DMSO reductase	DMS	Methylated sulfur compounds
+DorD	DMSP_DMS_or_DMSO_transformation	DMSO reductase	DMS	Methylated sulfur compounds
+DorS	DMSP_DMS_or_DMSO_transformation	DMSO reductase regulator	DMS	Methylated sulfur compounds
+DsoA	DMSP_DMS_or_DMSO_transformation	Assimilatory DMS monooxygenase	Assimilatory DMS monooxygenase	Methylated sulfur compounds
+DsoC	DMSP_DMS_or_DMSO_transformation	Assimilatory DMS monooxygenase	Assimilatory DMS monooxygenase	Methylated sulfur compounds
+DsoD	DMSP_DMS_or_DMSO_transformation	Assimilatory DMS monooxygenase	Assimilatory DMS monooxygenase	Methylated sulfur compounds
+DsoE	DMSP_DMS_or_DMSO_transformation	Assimilatory DMS monooxygenase	Assimilatory DMS monooxygenase	Methylated sulfur compounds
+DsoF	DMSP_DMS_or_DMSO_transformation	Assimilatory DMS monooxygenase	Assimilatory DMS monooxygenase	Methylated sulfur compounds
+MddH	DMSP_DMS_or_DMSO_transformation	Methanethiol S-methyltransferase	DMS	Methylated sulfur compounds
+MsmB	DMSP_DMS_or_DMSO_transformation	Methanesulfonate monooxygenase, hydroxylase	Dissimilatory methanesulfonate monooxygenase	Methylated sulfur compounds
+MsmC	DMSP_DMS_or_DMSO_transformation	Methanesulfonate monooxygenase, ferredoxin component	Dissimilatory methanesulfonate monooxygenase	Methylated sulfur compounds
+MsmD	DMSP_DMS_or_DMSO_transformation	Methanesulfonate monooxygenase, reductase	Dissimilatory methanesulfonate monooxygenase	Methylated sulfur compounds
+MsmE	DMSP_DMS_or_DMSO_transformation	Methanesulfonate ABC Transporter	Dissimilatory methanesulfonate monooxygenase	Methylated sulfur compounds
+MsmF	DMSP_DMS_or_DMSO_transformation	Methanesulfonate ABC Transporter	Dissimilatory methanesulfonate monooxygenase	Methylated sulfur compounds
+MsmH	DMSP_DMS_or_DMSO_transformation	Methanesulfonate ABC Transporter	Dissimilatory methanesulfonate monooxygenase	Methylated sulfur compounds
+MsuC	DMSP_DMS_or_DMSO_transformation	methanesulfonate sulfonatase	Assimilatory methanesulfonate monooxygenase	Methylated sulfur compounds
+MsuD	DMSP_DMS_or_DMSO_transformation	methanesulfonate sulfonatase	Assimilatory methanesulfonate monooxygenase	Methylated sulfur compounds
+MsuE	DMSP_DMS_or_DMSO_transformation	methanesulfonate sulfonatase	Assimilatory methanesulfonate monooxygenase	Methylated sulfur compounds
+SnfG	DMSP_DMS_or_DMSO_transformation	DMSO2 monooxygenase	Assimilatory DMSO2 monooxygenase	Methylated sulfur compounds
+SfcD	not_assigned	sulfogalactonolactone lactonase	Sulfofucose degradation	Sulfo-sugars & sulfolipids
+SfcE	not_assigned	2-keto-3-deoxy-sulfogalactonate aldolase	Sulfofucose degradation	Sulfo-sugars & sulfolipids
+SfcF	not_assigned	sulfogalactonate dehydratase	Sulfofucose degradation	Sulfo-sugars & sulfolipids
+SfcG	not_assigned	sulfofucose transporter	Sulfofucose degradation	Sulfo-sugars & sulfolipids
+SfcH	not_assigned	sulfofucose dehydrogenase	Sulfofucose degradation	Sulfo-sugars & sulfolipids
+SfcI	not_assigned	sulfofucose transporter	Sulfofucose degradation	Sulfo-sugars & sulfolipids
+SfcJ	not_assigned	sulfofucose transporter	Sulfofucose degradation	Sulfo-sugars & sulfolipids
+SfcK	not_assigned	sulfofucose transporter	Sulfofucose degradation	Sulfo-sugars & sulfolipids
+SmoE	sulfoquinovose_or_sulfolipid_transformation	ABC Transporter ATP binding domain	Sulfoquinovose degradation Sulfo-monooxygenase	Sulfo-sugars & sulfolipids
+SmoF	sulfoquinovose_or_sulfolipid_transformation	ABC transporter substrate binding domain	Sulfoquinovose degradation Sulfo-monooxygenase	Sulfo-sugars & sulfolipids
+SmoG	sulfoquinovose_or_sulfolipid_transformation	ABC transporter membrane spanning domain	Sulfoquinovose degradation Sulfo-monooxygenase	Sulfo-sugars & sulfolipids
+SmoH	sulfoquinovose_or_sulfolipid_transformation	ABC transporter membrane spanning domain	Sulfoquinovose degradation Sulfo-monooxygenase	Sulfo-sugars & sulfolipids
+Sqdh	sulfoquinovose_or_sulfolipid_transformation	Sulfoquinovose 1-dehydrogenase	Sulfoquinovose degradation Sulfo-ED	Sulfo-sugars & sulfolipids
+YihU	sulfoquinovose_or_sulfolipid_transformation	3-sulfolactaldehyde reductase	Sulfoquinovose degradation Sulfo-EMP	Sulfo-sugars & sulfolipids
+Sladh	sulfoquinovose_or_sulfolipid_transformation	3-sulfolactaldehyde dehydrogenase	Sulfoquinovose degradation Sulfo-ED	Sulfo-sugars & sulfolipids
+SqiA	sulfoquinovose_or_sulfolipid_transformation	Sulfofructosephosphate aldolase	Sulfoquinovose degradation Sulfo-EMP	Sulfo-sugars & sulfolipids
+YihV	sulfoquinovose_or_sulfolipid_transformation	Sulfofructose kinase	Sulfoquinovose degradation Sulfo-EMP	Sulfo-sugars & sulfolipids
+SftA	sulfoquinovose_or_sulfolipid_transformation	sulfoquinovose importer	Sulfoquinovose degradation transaldolase	Sulfo-sugars & sulfolipids
+SftD	sulfoquinovose_or_sulfolipid_transformation	SLA dehydrogenase	Sulfoquinovose degradation transaldolase	Sulfo-sugars & sulfolipids
+SftE	sulfoquinovose_or_sulfolipid_transformation	Sulfolactate exporter	Sulfoquinovose degradation transaldolase	Sulfo-sugars & sulfolipids
+SftE2	sulfoquinovose_or_sulfolipid_transformation	DHPS exporter	Sulfoquinovose degradation transaldolase	Sulfo-sugars & sulfolipids
+SftF	sulfoquinovose_or_sulfolipid_transformation	transcriptional regulator	Sulfoquinovose degradation transaldolase	Sulfo-sugars & sulfolipids
+SftI	sulfoquinovose_or_sulfolipid_transformation	SQ isomerase	Sulfoquinovose degradation transaldolase	Sulfo-sugars & sulfolipids
+SftR	sulfoquinovose_or_sulfolipid_transformation	sulfoquinovose/sulfolipid metabolism protein SftR	Sulfoquinovose metabolism (additional)	Sulfo-sugars & sulfolipids
+SftT	sulfoquinovose_or_sulfolipid_transformation	6-deoxy-6-sulfofructose transaldolase	Sulfoquinovose degradation transaldolase	Sulfo-sugars & sulfolipids
+Sgdh	sulfoquinovose_or_sulfolipid_transformation	6-deoxy-6-sulfo-D-gluconate dehydratase	Sulfoquinovose degradation Sulfo-ED	Sulfo-sugars & sulfolipids
+SmoA	sulfoquinovose_or_sulfolipid_transformation	flavin reductase	Sulfoquinovose degradation Sulfo-monooxygenase	Sulfo-sugars & sulfolipids
+SmoB	sulfoquinovose_or_sulfolipid_transformation	Oxidoreductase	Sulfoquinovose degradation Sulfo-monooxygenase	Sulfo-sugars & sulfolipids
+SmoC	sulfoquinovose_or_sulfolipid_transformation	alkanesulfonate monooxygenase	Sulfoquinovose degradation Sulfo-monooxygenase	Sulfo-sugars & sulfolipids
+SmoD	sulfoquinovose_or_sulfolipid_transformation	GntR-like regulator	Sulfoquinovose degradation Sulfo-monooxygenase	Sulfo-sugars & sulfolipids
+Sgald	sulfoquinovose_or_sulfolipid_transformation	2-dehydro-3,6-dideoxy-6-sulfogluconate aldolase	Sulfoquinovose degradation Sulfo-ED	Sulfo-sugars & sulfolipids
+SqgA	sulfoquinovose_or_sulfolipid_transformation	Sulfoquinovosidase (SqgA-type)	Sulfoquinovose degradation Sulfo-monooxygenase	Sulfo-sugars & sulfolipids
+SqiK	sulfoquinovose_or_sulfolipid_transformation	Sulfofructose kinase	Sulfoquinovose degradation Sulfo-EMP	Sulfo-sugars & sulfolipids
+Sgl	sulfoquinovose_or_sulfolipid_transformation	6-deoxy-6-sulfogluconolactonase	Sulfoquinovose degradation Sulfo-ED	Sulfo-sugars & sulfolipids
+SqoD	sulfoquinovose_or_sulfolipid_transformation	alkanesulfonate dioxygenase	Sulfoquinovose degradation Sulfo-monooxygenase	Sulfo-sugars & sulfolipids
+SqoL	sulfoquinovose_or_sulfolipid_transformation	TRAP transport for SQ	Sulfoquinovose degradation Sulfo-monooxygenase	Sulfo-sugars & sulfolipids
+SqoM	sulfoquinovose_or_sulfolipid_transformation	TRAP transport for SQ	Sulfoquinovose degradation Sulfo-monooxygenase	Sulfo-sugars & sulfolipids
+SqwD	sulfoquinovose_or_sulfolipid_transformation	sulfoacetaldehyde dehydrogenase	Sulfoquinovose degradation transketolase	Sulfo-sugars & sulfolipids
+SqwG	sulfoquinovose_or_sulfolipid_transformation	6-deoxy-6-sulphofructose (SF) transketolase	Sulfoquinovose degradation transketolase	Sulfo-sugars & sulfolipids
+SqwH	sulfoquinovose_or_sulfolipid_transformation	6-deoxy-6-sulphofructose (SF) transketolase	Sulfoquinovose degradation transketolase	Sulfo-sugars & sulfolipids
+YihQ	sulfoquinovose_or_sulfolipid_transformation	Sulfoquinovosidase	Sulfoquinovose degradation Sulfo-EMP	Sulfo-sugars & sulfolipids
+SftX	sulfoquinovose_or_sulfolipid_transformation	unknown function	Sulfoquinovose degradation transaldolase	Sulfo-sugars & sulfolipids
+SqdA	sulfoquinovose_or_sulfolipid_transformation	Phospholipid/glycerol acyltransferase	Sulfoquinovose synthesis	Sulfo-sugars & sulfolipids
+SqdB	sulfoquinovose_or_sulfolipid_transformation	UDP-sulfoquinovose synthase	Sulfoquinovose synthesis	Sulfo-sugars & sulfolipids
+SqdC	sulfoquinovose_or_sulfolipid_transformation	Putative sulfolipid biosynthesis protein	Sulfoquinovose synthesis	Sulfo-sugars & sulfolipids
+SqdD	sulfoquinovose_or_sulfolipid_transformation	Glycosyl transferase (Sulfolipid biosynthesis) protein	Sulfoquinovose synthesis	Sulfo-sugars & sulfolipids
+SqdX	sulfoquinovose_or_sulfolipid_transformation	SqdX	Sulfoquinovose synthesis	Sulfo-sugars & sulfolipids
+SqoK	sulfoquinovose_or_sulfolipid_transformation	TRAP transport for SQ	Sulfoquinovose degradation Sulfo-monooxygenase	Sulfo-sugars & sulfolipids
+SqvB	sulfoquinovose_or_sulfolipid_transformation	DUF4867 mutarotase	Sulfoquinovose degradation Sulfo-EMP	Sulfo-sugars & sulfolipids
+SqwE	sulfoquinovose_or_sulfolipid_transformation	Isethionate transporter	Sulfoquinovose degradation transketolase	Sulfo-sugars & sulfolipids
+SqwF	sulfoquinovose_or_sulfolipid_transformation	NADH-dependent sulfoacetaldehyde (SA) reductase	Sulfoquinovose degradation transketolase	Sulfo-sugars & sulfolipids
+SqwI	sulfoquinovose_or_sulfolipid_transformation	4-deoxy-4-sulfoerythrose (SE) isomerase	Sulfoquinovose degradation transketolase	Sulfo-sugars & sulfolipids
+SqwK	sulfoquinovose_or_sulfolipid_transformation	sulfoacetate-CoA ligase	Sulfoquinovose degradation transketolase	Sulfo-sugars & sulfolipids
+SqwL	sulfoquinovose_or_sulfolipid_transformation	sulfoacetate-CoA ligase	Sulfoquinovose degradation transketolase	Sulfo-sugars & sulfolipids
+YihO	sulfoquinovose_or_sulfolipid_transformation	Putative sulfoquinovose importer	Sulfoquinovose degradation Sulfo-EMP	Sulfo-sugars & sulfolipids
+YihP	sulfoquinovose_or_sulfolipid_transformation	Putative 2,3-dihydroxypropane-1-sulfonate exporter	Sulfoquinovose degradation Sulfo-EMP	Sulfo-sugars & sulfolipids
+YihR	sulfoquinovose_or_sulfolipid_transformation	Mutarotase	Sulfoquinovose degradation Sulfo-EMP	Sulfo-sugars & sulfolipids
+YihS	sulfoquinovose_or_sulfolipid_transformation	Sulfoquinovose isomerase	Sulfoquinovose degradation Sulfo-EMP	Sulfo-sugars & sulfolipids
+YihT	sulfoquinovose_or_sulfolipid_transformation	Sulfofructosephosphate aldolase	Sulfoquinovose degradation Sulfo-EMP	Sulfo-sugars & sulfolipids
+DHDL	sulfoquinovose_or_sulfolipid_transformation	Dihydrolipoamide dehydrogenase	Glycine cleavage system	Sulfur-transfer & electron-transfer systems
+DsrD	sulfite=>reduced_sulfur	allosteric DsrAB activator	Dissimilatory sulfate reduction	Inorganic sulfur metabolism
+FlxCD	electron_transfer	electron-transfer complex protein FlxCD	Other electron-transfer proteins	Sulfur-transfer & electron-transfer systems
+GcvH	not_assigned	Lipoate-binding glycine cleavage system protein	Glycine cleavage system	Sulfur-transfer & electron-transfer systems
+HdrF	methyl_coenzyme_M_redox	heterodisulfide reductase-related protein HdrF	Methanogenesis context	Context / auxiliary HMMs
+LplA	not_assigned	putative protein LplA	Unclassified/context	Context / auxiliary HMMs
+McrA	methyl_coenzyme_M_redox	methyl-coenzyme M reductase alpha subunit	Methanogenesis context	Context / auxiliary HMMs
+McrB	methyl_coenzyme_M_redox	methyl-coenzyme M reductase beta subunit	Methanogenesis context	Context / auxiliary HMMs
+McrC	methyl_coenzyme_M_redox	methyl-coenzyme M reductase gamma subunit	Methanogenesis context	Context / auxiliary HMMs
+McrD	methyl_coenzyme_M_redox	methyl-coenzyme M reductase-associated protein McrD	Methanogenesis context	Context / auxiliary HMMs
+McrG	methyl_coenzyme_M_redox	methyl-coenzyme M reductase gamma subunit	Methanogenesis context	Context / auxiliary HMMs
+mHdrA	methyl_coenzyme_M_redox	heterodisulfide reductase-related protein mHdrA	Methanogenesis context	Context / auxiliary HMMs
+mHdrB	methyl_coenzyme_M_redox	heterodisulfide reductase-related protein mHdrB	Methanogenesis context	Context / auxiliary HMMs
+mHdrC	methyl_coenzyme_M_redox	heterodisulfide reductase-related protein mHdrC	Methanogenesis context	Context / auxiliary HMMs
+mHdrD	methyl_coenzyme_M_redox	heterodisulfide reductase-related protein mHdrD	Methanogenesis context	Context / auxiliary HMMs
+mHdrE	methyl_coenzyme_M_redox	heterodisulfide reductase-related protein mHdrE	Methanogenesis context	Context / auxiliary HMMs
+MvhA	methyl_coenzyme_M_redox	electron-transfer complex protein MvhA	Methanogenesis context	Context / auxiliary HMMs
+MvhD	methyl_coenzyme_M_redox	electron-transfer complex protein MvhD	Methanogenesis context	Context / auxiliary HMMs
+MvhG	methyl_coenzyme_M_redox	electron-transfer complex protein MvhG	Methanogenesis context	Context / auxiliary HMMs
+PsrAPhsASreA	thiosulfate_or_polysulfide=>sulfide	Polysulfide/Thiosulfate/Sulfur reductase	Reduction of polysulfides/ thiosulfate/sulfur	Inorganic sulfur metabolism
+PsrBPhsBSreB	thiosulfate_or_polysulfide=>sulfide	Polysulfide/Thiosulfate/Sulfur reductase	Reduction of polysulfides/ thiosulfate/sulfur	Inorganic sulfur metabolism
+PsrCPhsCSreC	thiosulfate_or_polysulfide=>sulfide	Polysulfide/Thiosulfate/Sulfur reductase	Reduction of polysulfides/ thiosulfate/sulfur	Inorganic sulfur metabolism
+SDOIII	sulfide_or_sulfur_oxygenation	sulfur redox protein SDOIII	Sulfur dioxygenase variants	Inorganic sulfur metabolism
+sHdrCCG1	disulfide_or_sulfur_intermediate_redox	heterodisulfide reductase-related protein sHdrCCG1	Hdr-like sulfur redox system	Inorganic sulfur metabolism
+sHdrCCG2	disulfide_or_sulfur_intermediate_redox	heterodisulfide reductase-related protein sHdrCCG2	Hdr-like sulfur redox system	Inorganic sulfur metabolism
+sHdrRSoxR	disulfide_or_sulfur_intermediate_redox	ArsR-type transcriptional regulator	Sulfane sulfur oxidation in cytoplasm	Inorganic sulfur metabolism
+SoxO	thiosulfate_or_reduced_sulfur=>sulfate	Periplasmic glutathione disulfide reductase	Tetrathionate oxidation	Inorganic sulfur metabolism
+TsdBA	thiosulfate<=>tetrathionate	sulfur redox protein TsdBA	Thiosulfate dehydrogenase variants	Inorganic sulfur metabolism
+TusADsrE	sulfur_carrier_transfer	sulfur redox protein TusADsrE	2-thiouridine synthesis	Sulfur-transfer & electron-transfer systems
+YeeE	not_assigned	putative protein YeeE	Unclassified/context	Context / auxiliary HMMs
+CysA	sulfate=>cysteine	assimilatory sulfate/cysteine biosynthesis protein CysA	Assimilatory sulfate reduction (Cys pathway)	Inorganic sulfur metabolism
+CysC	sulfate=>cysteine	assimilatory sulfate/cysteine biosynthesis protein CysC	Assimilatory sulfate reduction (Cys pathway)	Inorganic sulfur metabolism
+CysD	sulfate=>cysteine	assimilatory sulfate/cysteine biosynthesis protein CysD	Assimilatory sulfate reduction (Cys pathway)	Inorganic sulfur metabolism
+CysH	sulfate=>cysteine	assimilatory sulfate/cysteine biosynthesis protein CysH	Assimilatory sulfate reduction (Cys pathway)	Inorganic sulfur metabolism
+CysI	sulfate=>cysteine	assimilatory sulfate/cysteine biosynthesis protein CysI	Assimilatory sulfate reduction (Cys pathway)	Inorganic sulfur metabolism
+CysJ	sulfate=>cysteine	assimilatory sulfate/cysteine biosynthesis protein CysJ	Assimilatory sulfate reduction (Cys pathway)	Inorganic sulfur metabolism
+CysM	sulfate=>cysteine	assimilatory sulfate/cysteine biosynthesis protein CysM	Assimilatory sulfate reduction (Cys pathway)	Inorganic sulfur metabolism
+CysN	sulfate=>cysteine	assimilatory sulfate/cysteine biosynthesis protein CysN	Assimilatory sulfate reduction (Cys pathway)	Inorganic sulfur metabolism
+CysU	sulfate=>cysteine	assimilatory sulfate/cysteine biosynthesis protein CysU	Assimilatory sulfate reduction (Cys pathway)	Inorganic sulfur metabolism
+CysW	sulfate=>cysteine	assimilatory sulfate/cysteine biosynthesis protein CysW	Assimilatory sulfate reduction (Cys pathway)	Inorganic sulfur metabolism
+IseU	organosulfur=>sulfite_or_sulfide	Isethionate transporter	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+IslA	organosulfur=>sulfite_or_sulfide	Isethionate sulfite-lyase	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+IslB	organosulfur=>sulfite_or_sulfide	Isethionate sulfite-lyase	Isethionate & Taurine	Taurine, isethionate & C2/C3 sulfonates
+P0DOV5	not_assigned	Sulfoquinovose 1-dehydrogenase	Sulfoquinovose degradation Sulfo-ED	Sulfo-sugars & sulfolipids
+P0DOV6	not_assigned	6-deoxy-6-sulfogluconolactonase	Sulfoquinovose degradation Sulfo-ED	Sulfo-sugars & sulfolipids
+P0DOV7	not_assigned	6-deoxy-6-sulfo-D-gluconate dehydratase	Sulfoquinovose degradation Sulfo-ED	Sulfo-sugars & sulfolipids
+P0DOV8	not_assigned	2-dehydro-3,6-dideoxy-6-sulfogluconate aldolase	Sulfoquinovose degradation Sulfo-ED	Sulfo-sugars & sulfolipids
+P0DOV9	not_assigned	3-sulfolactaldehyde dehydrogenase	Sulfoquinovose degradation Sulfo-ED	Sulfo-sugars & sulfolipids
+SftG	sulfoquinovose_or_sulfolipid_transformation	Sulfoqinovosidase (YihQ-type)	Sulfoquinovose degradation transaldolase	Sulfo-sugars & sulfolipids
+SmoI	sulfoquinovose_or_sulfolipid_transformation	Sulfoqinovosidase (YihQ-type)	Sulfoquinovose degradation Sulfo-monooxygenase	Sulfo-sugars & sulfolipids
+AadD	not_assigned	accessory or resistance-associated protein AadD	Unclassified/context	Context / auxiliary HMMs
+Ant9	not_assigned	accessory or resistance-associated protein Ant9	Unclassified/context	Context / auxiliary HMMs
+CcrA	not_assigned	accessory or resistance-associated protein CcrA	Unclassified/context	Context / auxiliary HMMs
+CcrB	not_assigned	accessory or resistance-associated protein CcrB	Unclassified/context	Context / auxiliary HMMs
+CstR	not_assigned	accessory or resistance-associated protein CstR	Unclassified/context	Context / auxiliary HMMs
+CstRhd	sulfurtransfer	accessory or resistance-associated protein CstRhd	Rhodanese sulfur transfer	Sulfur-transfer & electron-transfer systems
+ErmA	not_assigned	accessory or resistance-associated protein ErmA	Unclassified/context	Context / auxiliary HMMs
+MecA	not_assigned	accessory or resistance-associated protein MecA	Unclassified/context	Context / auxiliary HMMs
+MecI	not_assigned	accessory or resistance-associated protein MecI	Unclassified/context	Context / auxiliary HMMs
+MecR1	not_assigned	accessory or resistance-associated protein MecR1	Unclassified/context	Context / auxiliary HMMs
+Pre	not_assigned	accessory or resistance-associated protein Pre	Unclassified/context	Context / auxiliary HMMs
+SA0034	not_assigned	accessory or resistance-associated protein SA0034	Unclassified/context	Context / auxiliary HMMs
+SA0035	not_assigned	accessory or resistance-associated protein SA0035	Unclassified/context	Context / auxiliary HMMs
+SA0036	not_assigned	accessory or resistance-associated protein SA0036	Unclassified/context	Context / auxiliary HMMs
+TnpA	not_assigned	accessory or resistance-associated protein TnpA	Unclassified/context	Context / auxiliary HMMs
+TnpB	not_assigned	accessory or resistance-associated protein TnpB	Unclassified/context	Context / auxiliary HMMs
+TnpC	not_assigned	accessory or resistance-associated protein TnpC	Unclassified/context	Context / auxiliary HMMs
+XylR	not_assigned	accessory or resistance-associated protein XylR	Unclassified/context	Context / auxiliary HMMs
+SqvE	sulfoquinovose_or_sulfolipid_transformation	sulfoquinovose/sulfolipid metabolism protein SqvE	Sulfoquinovose metabolism (additional)	Sulfo-sugars & sulfolipids
+SquD	sulfoquinovose_or_sulfolipid_transformation	sulfoquinovose/sulfolipid metabolism protein SquD	Sulfoquinovose metabolism (additional)	Sulfo-sugars & sulfolipids
+SquF	sulfoquinovose_or_sulfolipid_transformation	sulfoquinovose/sulfolipid metabolism protein SquF	Sulfoquinovose metabolism (additional)	Sulfo-sugars & sulfolipids
