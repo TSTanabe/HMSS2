@@ -88,7 +88,7 @@ def _make_paths(root: Path) -> Dict[str, Path]:
         HMMS_DIR, REFSEQ_DIR, RESULTS_DIR, PACKAGE_DIR, and source resource files.
     """
     data = root / "data"
-    gpkg = root / "gpkg"
+    gpkg = data / "gpkg"
     return {
         "ROOT_DIR": root,
         "BIN_DIR": root / "bin",
