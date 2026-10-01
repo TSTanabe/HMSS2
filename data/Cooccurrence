@@ -1,0 +1,136 @@
+cpb-1_	LipS1	LipS2	LipT	sLplAB
+cpb-2_	LipS1	LipS2	LipT
+cpb-3_	LipS1	LipS2
+cpb-4_	LipS1	LipS2	sLplAB
+cpb-5_	LipS1	LipS2	LplA	LplB
+cpb-6_	TsdA
+cpb-7_	TsdA	TsdB
+cpb-8_	Tth
+cpb-9_	TusA	TusB	TusC	TusD	TusE
+cpb-10_	Otr
+cpb-11_	Npsr
+cpb-12_	Nsr
+cpb-13_	SOR
+cpb-14_	SQRI
+cpb-15_	SQRII
+cpb-16_	SQRIII
+cpb-17_	SQRIV
+cpb-18_	SQRV
+cpb-19_	SQRVI
+cpb-20_	SDOI
+cpb-21_	SDOII
+cpb-22_	SdoI
+cpb-23_	ETHE1
+cpb-24_	SdoSI
+cpb-25_	SdoSII
+cpb-26_	SQRI	SDOI
+cpb-27_	SQRI	SDOII
+cpb-28_	SQRII	SDOI
+cpb-29_	SQRII	SDOII
+cpb-30_	SQRIII	SDOI
+cpb-31_	SQRIII	SDOII
+cpb-32_	SQRIV	SDOI
+cpb-33_	SQRIV	SDOII
+cpb-34_	SQRV	SDOI
+cpb-35_	SQRV	SDOII
+cpb-36_	SQRVI	SDOI
+cpb-37_	SQRVI	SDOII
+cpb-38_	RhdI	SQRI	SDOI
+cpb-39_	RhdI	SQRI	SDOII
+cpb-40_	RhdI	SQRII	SDOI
+cpb-41_	RhdI	SQRII	SDOII
+cpb-42_	RhdI	SQRIII	SDOI
+cpb-43_	RhdI	SQRIII	SDOII
+cpb-44_	RhdI	SQRIV	SDOI
+cpb-45_	RhdI	SQRIV	SDOII
+cpb-46_	RhdI	SQRV	SDOI
+cpb-47_	RhdI	SQRV	SDOII
+cpb-48_	RhdI	SQRVI	SDOI
+cpb-49_	RhdI	SQRVI	SDOII
+cpb-50_	Rhd442	SQRI	SDOI
+cpb-51_	Rhd442	SQRI	SDOII
+cpb-52_	Rhd442	SQRII	SDOI
+cpb-53_	Rhd442	SQRII	SDOII
+cpb-54_	Rhd442	SQRIII	SDOI
+cpb-55_	Rhd442	SQRIII	SDOII
+cpb-56_	Rhd442	SQRIV	SDOI
+cpb-57_	Rhd442	SQRIV	SDOII
+cpb-58_	Rhd442	SQRV	SDOI
+cpb-59_	Rhd442	SQRV	SDOII
+cpb-60_	Rhd442	SQRVI	SDOI
+cpb-61_	Rhd442	SQRVI	SDOII
+cpb-62_	Rhd442
+cpb-63_	SQRI	CstA	CstB	TauE
+cpb-64_	SQRII	CstA	CstB	TauE
+cpb-65_	SQRIII	CstA	CstB	TauE
+cpb-66_	SQRIV	CstA	CstB	TauE
+cpb-67_	SQRV	CstA	CstB	TauE
+cpb-68_	SQRVI	CstA	CstB	TauE
+cpb-69_	DsrE3A
+cpb-70_	DsrE3B
+cpb-71_	DsrE3C
+cpb-72_	DsrE2
+cpb-73_	TusA
+cpb-74_	ACP	Spt	bCerS	CerR
+cpb-75_	SulA	SulS	CapA
+cpb-76_	GldA	GldB	GldC	GldD	GldE	GldF	GldG	GldH	GldI	GldJ	GldK	GldL	GldM	GldN	GldO
+cpb-77_	SprA	SprB	SprC	SprD	SprE	SprF
+cpb-78_	SecE	SecG	SecYACP	Spt	bCerS	CerR
+cpb-79_	SulA	SulS	CapA
+cpb-80_	GldA	GldB	GldC	GldD	GldE	GldF	GldG	GldH	GldI	GldJ	GldK	GldL	GldM	GldN	GldO
+cpb-81_	SprA	SprB	SprC	SprD	SprE	SprF
+cpb-82_	SecE	SecG	SecYDmdA	DmdB	DmdC	DmdD
+cpb-83_	DmdA	DmdB	DmdC	DmdD	Mtox
+cpb-84_	DmdA	DmdB	DmdC	DmdD	MddA
+cpb-85_	DmdA	DmdB	DmdC	DmdD	MddH
+cpb-86_	DmdA	DmdB	DmdC	DmdD	DmoA
+cpb-87_	DmsA	DmsB	DmsC	DmsD
+cpb-88_	MsuC	MsuD	MsuE
+cpb-89_	DorC	DorA	DorD
+cpb-90_	SfnG	MsmA	MsmB	MsmC	MsmD
+cpb-91_	SfnG	MsuD	MsuE
+cpb-92_	DmoA
+cpb-93_	MddA
+cpb-94_	MddH
+cpb-95_	MddA	Mtox
+cpb-96_	MddH	Mtox
+cpb-97_	DmoA	Mtox
+cpb-98_	DddA	DmoA	Mtox
+cpb-99_	DddL	DmoA	Mtox
+cpb-100_	DddP	DmoA	Mtox
+cpb-101_	DddD	DmoA	Mtox
+cpb-102_	DddP	DmoA	Mtox
+cpb-103_	DddQ	DmoA	Mtox
+cpb-104_	DddW	DmoA	Mtox
+cpb-105_	DddY	DmoA	Mtox
+cpb-106_	DdhA	DdhB	DdhC	DdhD
+cpb-107_	DdhA	DdhB	DdhC
+cpb-108_	DddA	Mtox
+cpb-109_	DddL	Mtox
+cpb-110_	DddP	Mtox
+cpb-111_	DddD	Mtox
+cpb-112_	DddP	Mtox
+cpb-113_	DddQ	Mtox
+cpb-114_	DddW	Mtox
+cpb-115_	DddY	Mtox
+cpb-116_	DddX
+cpb-117_	DddY
+cpb-118_	DddW
+cpb-119_	DddD
+cpb-120_	DddP
+cpb-121_	DddQ
+cpb-122_	Alma1
+cpb-123_	DddD
+cpb-124_	DddL
+cpb-125_	DddP
+cpb-126_	DddQ
+cpb-127_	DddW
+cpb-128_	DddX
+cpb-129_	DddY
+cpb-130_	DdhA
+cpb-131_	DMSOR
+cpb-132_	DysB
+cpb-133_	MmtN
+cpb-134_	MsmA
+cpb-135_	MtsA
+cpb-136_	Tmm
