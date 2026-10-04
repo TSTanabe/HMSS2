@@ -106,7 +106,7 @@ HMSS2	Methylated sulfur compounds	Ddh	Ddh system	false	DdhA,DdhB	20	90
 DiSuCy	Methylated sulfur compounds	Ddh	Ddh system	false	DdhA	20	90
 basis	Methylated sulfur compounds	Mtox	Mtox methanethiol oxidation	true	Mtox	20	91
 HMSS2	Methylated sulfur compounds	Mtox	Mtox methanethiol oxidation	false	Mtox	20	91
-DiSuCy	Methylated sulfur compounds	Mtox	Mtox methanethiol oxidation	false	MtoX	20	91
+DiSuCy	Methylated sulfur compounds	Mtox	Mtox methanethiol oxidation	false	Mtox	20	91
 DiSuCy	Methylated sulfur compounds	MeS	Methylated sulfur compounds (additional)	false	Alma1,DMSOR,DsyB,MmtN,MtsA,Tmm	20	92
 basis	Taurine, isethionate & C2/C3 sulfonates	TauIse	Isethionate & Taurine	true	AdhE,AlaDH,BmcsA,BmcsB,BmcsC,IseJ,IseK,IseL,IseM,IseR,IsfD,IsfE,SarD,TauA,TauB,TauC,TauD,TauE,TauK,TauL,TauM,TauR,TauX,TauY,TauZ,Toa,Tpa,Xsc	30	10
 HMSS2	Taurine, isethionate & C2/C3 sulfonates	TauIse	Isethionate & Taurine	false	IseJ,IseK,IseL,IseM,IseR,IseU,IsfD,IsfE,IslA,IslB,TauA,TauB,TauC,TauD,TauE,TauK,TauL,TauM,TauR,TauX,TauY,TauZ,Toa,Tpa,Xsc	30	10
@@ -151,5 +151,5 @@ basis	Context / auxiliary HMMs	EnvelopeCtx	Cell envelope/secretion context	false
 basis	Context / auxiliary HMMs	Context	Unclassified/context	false	AadD,Ant9,CcrA,CcrB,CstA,CstB,CstR,ErmA,MecA,MecI,MecR1,Pre,SA0034,SA0035,SA0036,TnpA,TnpB,TnpC,XylR	90	30
 HMSS2	Context / auxiliary HMMs	Context	Unclassified/context	false	sLplAB,YeeE	90	30
 basis	Cysteine metabolism	Cys_transport	Sulfate transport	false	CysE,CysK,CysM,CysH,CysI,CysJ,assSat,CysN,CysD,CysC,CysA,CysU,CysW	90	1
-basis	Cysteine metabolism	Cys_transsulfuration	Cysteine transsulfuration and degradation	false	bCBS,bCSE,MalY,MetA,MetB,MetC,MetE,MetH,MetK,MetQ,OAHS	90	5
+basis	Cysteine metabolism	Cys_transsulfuration	Cysteine transsulfuration and degradation	true	bCBS,bCSE,MalY,MetA,MetB,MetC,MetE,MetH,MetK,MetQ,OAHS	90	5
 basis	Sulfobacin metabolism	Sulfobacin	Sulfobacin and sulfonolipid metabolism	true	Spt,CerR,bCerS,CapA,CapC,SulA,alfi1990,alfi1991,fjoh2422,fjoh2423,fjoh2424,fjoh2425,fjoh2426,fjoh2427	92	1
