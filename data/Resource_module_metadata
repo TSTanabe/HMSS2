@@ -35,22 +35,16 @@ DiSuCy	Inorganic sulfur metabolism	Sor	Sulfite oxidation in periplasm	false	SorA
 basis	Inorganic sulfur metabolism	oxApr	Sulfite oxidation in cytoplasm	true	AprM,oxAprAI,oxAprAII,oxAprBI,oxAprBII,oxSat	10	90
 HMSS2	Inorganic sulfur metabolism	oxApr	Sulfite oxidation in cytoplasm	false	AprM,oxAprAI,oxAprAII,oxAprBI,oxAprBII,oxSat	10	90
 DiSuCy	Inorganic sulfur metabolism	Soe	Sulfite oxidation in cytoplasm	false	AprM,SoeA	10	90
-DiSCo	Inorganic sulfur metabolism	oxSat	Sulfite oxidation in cytoplasm	false	oxSat	10	90
 basis	Inorganic sulfur metabolism	Soe	Sulfite oxidation in cytoplasm	true	SoeA,SoeB,SoeC	10	90
 HMSS2	Inorganic sulfur metabolism	Soe	Sulfite oxidation in cytoplasm	false	SoeA,SoeB,SoeC	10	90
 basis	Inorganic sulfur metabolism	redDsr	Reductive Dsr system	true	DsrT,redDsrA,redDsrB,redDsrC,redDsrD,redDsrE,redDsrF,redDsrH,redDsrJ,redDsrK,redDsrM,redDsrN,redDsrO,redDsrP	10	100
 HMSS2	Inorganic sulfur metabolism	redDsr	Reductive Dsr system	false	DsrD,DsrT,redDsrA,redDsrB,redDsrC,redDsrJ,redDsrK,redDsrM,redDsrN,redDsrO,redDsrP	10	100
 DiSuCy	Inorganic sulfur metabolism	redDsr	Reductive Dsr system	false	redDsrA,redDsrB,redDsrC,redDsrJ,redDsrK,redDsrM,redDsrO,redDsrP	10	100
 DiSCo	Inorganic sulfur metabolism	redDsr	Reductive Dsr system	false	DsrT,redDsrA,redDsrB,redDsrC,redDsrD,redDsrJ,redDsrK,redDsrM,redDsrO,redDsrP	10	100
-basis	Inorganic sulfur metabolism	redAprQmo	Reductive Apr/Qmo system	true	qHdrB,qHdrC,QmoA,QmoB,QmoC,redAprA,redAprB	10	101
-HMSS2	Inorganic sulfur metabolism	redAprQmo	Reductive Apr/Qmo system	false	qHdrB,qHdrC,QmoA,QmoB,QmoC,redAprA,redAprB	10	101
+basis	Inorganic sulfur metabolism	redAprQmo	Reductive Apr/Qmo system	true	qHdrB,qHdrC,QmoA,QmoB,QmoC,redAprA,redAprB,redSat	10	101
+HMSS2	Inorganic sulfur metabolism	redAprQmo	Reductive Apr/Qmo system	false	qHdrB,qHdrC,QmoA,QmoB,QmoC,redAprA,redAprB,redSat	10	101
 DiSuCy	Inorganic sulfur metabolism	redAprQmo	Reductive Apr/Qmo system	false	QmoA,QmoB,QmoC	10	101
-DiSCo	Inorganic sulfur metabolism	redAprQmo	Reductive Apr/Qmo system	false	QmoA,QmoB,QmoC,redAprA,redAprB	10	101
-basis	Inorganic sulfur metabolism	redSat	Reductive Sat system	true	redSat	10	102
-HMSS2	Inorganic sulfur metabolism	redSat	Reductive Sat system	false	redSat	10	102
-DiSCo	Inorganic sulfur metabolism	redSat	Reductive Sat system	false	redSat	10	102
-basis	Inorganic sulfur metabolism	Qmo	Qmo/qHdr electron transfer system	true	qHdrB,qHdrC,QmoA,QmoB,QmoC	10	101
-HMSS2	Inorganic sulfur metabolism	Qmo	Qmo/qHdr electron transfer system	false	qHdrB,qHdrC,QmoA,QmoB,QmoC	10	101
+DiSCo	Inorganic sulfur metabolism	redAprQmo	Reductive Apr/Qmo system	false	QmoA,QmoB,QmoC,redAprA,redAprB,redSat	10	101
 basis	Inorganic sulfur metabolism	assApr	Assimilatory reduction of APS	true	assAprA,assAprB	10	110
 HMSS2	Inorganic sulfur metabolism	assApr	Assimilatory reduction of APS	false	assAprA,assAprB	10	110
 DiSCo	Inorganic sulfur metabolism	assApr	Assimilatory reduction of APS	false	assAprA,assAprB	10	110
@@ -80,7 +74,7 @@ DiSuCy	Inorganic sulfur metabolism	Apr	Reductive APS reductase	false	AprA,AprB	1
 HMSS2	Inorganic sulfur metabolism	Cys	Assimilatory sulfate reduction (Cys pathway)	false	CysA,CysC,CysD,CysH,CysI,CysJ,CysM,CysN,CysU,CysW	10	180
 DiSCo	Inorganic sulfur metabolism	assSat	Assimilatory sulfate activation	false	assSat	10	190
 basis	Inorganic sulfur metabolism	dHdr	Hdr-like sulfur redox system	true	dHdrA,dHdrB,dHdrC	10	200
-DiSCo	Inorganic sulfur metabolism	oxApr	Oxidative APS reductase variants	false	oxAprA,oxAprB,AprM	10	240
+DiSCo	Inorganic sulfur metabolism	oxApr	Oxidative APS reductase variants	false	oxAprA,oxAprB,AprM,oxSat	10	240
 basis	Methylated sulfur compounds	DMSPdeg	DMSP degradation	true	AcuI,AcuK,AcuN,DddA,DddC,DddD,DddL,DddP,DddQ,DddT,DddW,DddX,DddY,	20	10
 HMSS2	Methylated sulfur compounds	DMSPdeg	DMSP degradation	false	AcuI,AcuK,AcuN,DddA,DddD,DddL,DddP,DddT,DddY	20	10
 DiSuCy	Methylated sulfur compounds	DMSPdeg	DMSP degradation	false	DddD,DddL,DddP,DddQ,DddW,DddX,DddY	20	10
@@ -100,7 +94,6 @@ HMSS2	Methylated sulfur compounds	Msu	Assimilatory methanesulfonate monooxygenas
 basis	Methylated sulfur compounds	Msm	Dissimilatory methanesulfonate monooxygenase	true	MsmA,MsmB,MsmC,MsmD,MsmE,MsmF,MsmG,MsmH	20	70
 HMSS2	Methylated sulfur compounds	Msm	Dissimilatory methanesulfonate monooxygenase	false	MsmA,MsmB,MsmE,MsmF,MsmG,MsmH	20	70
 DiSuCy	Methylated sulfur compounds	Msm	Dissimilatory methanesulfonate monooxygenase	false	MsmA	20	70
-basis	Methylated sulfur compounds	Mar	Methylthioalkanereductase	true	MarB,MarD,MarH,MarK,NflD,NflK	20	80
 basis	Methylated sulfur compounds	Ddh	Ddh system	true	DdhA,DdhB,DdhC,DdhD	20	90
 HMSS2	Methylated sulfur compounds	Ddh	Ddh system	false	DdhA,DdhB	20	90
 DiSuCy	Methylated sulfur compounds	Ddh	Ddh system	false	DdhA	20	90
@@ -112,7 +105,7 @@ basis	Taurine, isethionate & C2/C3 sulfonates	TauIse	Isethionate & Taurine	true	
 HMSS2	Taurine, isethionate & C2/C3 sulfonates	TauIse	Isethionate & Taurine	false	IseJ,IseK,IseL,IseM,IseR,IseU,IsfD,IsfE,IslA,IslB,TauA,TauB,TauC,TauD,TauE,TauK,TauL,TauM,TauR,TauX,TauY,TauZ,Toa,Tpa,Xsc	30	10
 basis	Taurine, isethionate & C2/C3 sulfonates	DHPS	DHPS, Sulfolactate, Sulfoacetate	true	ComC,ComD,ComE,CuyA,CuyZ,DhpA,HpfD,HpfE,HpfG,HpfH,HpfX,HpfY,HpfZ,HpsG,HpsH,HpsK,HpsL,HpsM,HpsN,HpsO,HpsP,HpsU,Pta,SauS,SauT,SauU,SlcC,SlcD,SlcF,SlcG,SlcH,SuyA,SuyB	30	20
 HMSS2	Taurine, isethionate & C2/C3 sulfonates	DHPS	DHPS, Sulfolactate, Sulfoacetate	false	ComC,ComD,ComE,CuyA,CuyZ,HpsK,HpsL,HpsM,HpsN,HpsO,HpsP,HpsU,Pta,SauS,SauT,SauU,SlcC,SlcD,SlcF,SlcH,SuyA,SuyB	30	20
-DiSuCy	Taurine, isethionate & C2/C3 sulfonates	TauF	Taurine/isethionate utilization (additional)	false	TauF	30	30
+DiSuCy	Taurine, isethionate & C2/C3 sulfonates	TauF	Isethionate & Taurine	false	TauF	30	30
 basis	Sulfo-sugars & sulfolipids	Sqd	Sulfoquinovose synthesis	true	SqdA,SqdB,SqdC,SqdD,SqdX	40	10
 HMSS2	Sulfo-sugars & sulfolipids	Sqd	Sulfoquinovose synthesis	false	SqdA,SqdB,SqdC,SqdD	40	10
 basis	Sulfo-sugars & sulfolipids	SulfoEMP	Sulfoquinovose degradation Sulfo-EMP	true	SqiA,SqiK,SqvB,YihO,YihP,YihQ,YihR,YihS,YihT,YihU,YihV	40	20
@@ -146,10 +139,11 @@ basis	Sulfur-transfer & electron-transfer systems	HmcQrcTmc	Electron transport	t
 HMSS2	Sulfur-transfer & electron-transfer systems	HmcQrcTmc	Electron transport	false	HmcA,HmcB,HmcC,HmcD,HmcE,HmcF,QrcA,QrcB,QrcC,QrcD,TmcA,TmcB,TmcC,TmcD	60	50
 basis	Sulfur-transfer & electron-transfer systems	Flx	NADH dehydrogenase/ heterodisulfide reductase	true	FlxA,FlxB,FlxC,FlxD	60	60
 HMSS2	Sulfur-transfer & electron-transfer systems	Flx	NADH dehydrogenase/ heterodisulfide reductase	false	FlxA,FlxB,FlxC,FlxD	60	60
+basis	Sulfur assimilation	Cys_assm	Cysteine biosynthesis	false	CysE,CysK,CysM,CysH,CysI,CysJ,assSat,CysN,CysD,CysC,CysA,CysU,CysW	90	1
+basis	Sulfur assimilation	Met_assm	Methionine biosynthesis	false	bCBS,bCSE,MalY,MetA,MetB,MetC,MetE,MetF,MetH,MetI,MetK,MetN,MetP,MetQ,MetX,MetY,MetZ	90	5
+basis	Sulfur assimilation	Thiol_assm	Thiol assimilation	false	AtrD,IsrD,MarD,Mar4D,Mar5D,MorD,NflB,NflH,NifS,SufS,Rhd,NflK
 HMSS2	Context / auxiliary HMMs	MethanoCtx	Methanogenesis context	false	HdrF,McrA,McrB,McrC,McrD,McrG,mHdrA,mHdrB,mHdrC,mHdrD,mHdrE,MvhA,MvhD,MvhG	90	10
 basis	Context / auxiliary HMMs	EnvelopeCtx	Cell envelope/secretion context	false	ACP,bCerS,CapA,CerR,ChiA,GldA,GldB,GldC,GldD,GldE,GldF,GldG,GldH,GldI,GldJ,GldK,GldL,GldM,GldN,GldO,SecE,SecG,SecY,SprA,SprB,SprC,SprD,SprE,SprF,Spt,SulA,SulS	90	20
 basis	Context / auxiliary HMMs	Context	Unclassified/context	false	AadD,Ant9,CcrA,CcrB,CstA,CstB,CstR,ErmA,MecA,MecI,MecR1,Pre,SA0034,SA0035,SA0036,TnpA,TnpB,TnpC,XylR	90	30
-HMSS2	Context / auxiliary HMMs	Context	Unclassified/context	false	sLplAB,YeeE	90	30
-basis	Cysteine metabolism	Cys_transport	Sulfate transport	false	CysE,CysK,CysM,CysH,CysI,CysJ,assSat,CysN,CysD,CysC,CysA,CysU,CysW	90	1
-basis	Cysteine metabolism	Cys_transsulfuration	Cysteine transsulfuration and degradation	true	bCBS,bCSE,MalY,MetA,MetB,MetC,MetE,MetH,MetK,MetQ,OAHS	90	5
+HMSS2	Context / auxiliary HMMs	Context	Unclassified/context	false	sLplAB,YeeE	90	30	
 basis	Sulfobacin metabolism	Sulfobacin	Sulfobacin and sulfonolipid metabolism	true	Spt,CerR,bCerS,CapA,CapC,SulA,alfi1990,alfi1991,fjoh2422,fjoh2423,fjoh2424,fjoh2425,fjoh2426,fjoh2427	92	1
