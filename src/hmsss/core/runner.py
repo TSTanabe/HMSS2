@@ -96,6 +96,8 @@ def run_pipeline(config) -> None:
         print_header("Cross check with reference sequences / cutoff optimization")
         if config.bool_cross_check:
             cross_check.reference_sequence_check(config)
+        database.rebuild_presence_tables(config.database_directory)
+        database.index_database(config.database_directory)
         config.stage = 3
 
     # --- Stage 6: Taxonomy ---
@@ -129,7 +131,6 @@ def run_pipeline(config) -> None:
                 f"Database not found in given project {config.result_files_directory}. Please use a valid project directory or use the -db argument to provide a valid database for fetch operations."
             )
         database.rebuild_presence_tables(config.database_directory)
-        database.index_database(config.database_directory)
         output_dataset.output_operator(config)
 
     if getattr(config, "stat_genomes", False):

@@ -141,9 +141,9 @@ basis	Sulfur-transfer & electron-transfer systems	Flx	NADH dehydrogenase/ hetero
 HMSS2	Sulfur-transfer & electron-transfer systems	Flx	NADH dehydrogenase/ heterodisulfide reductase	false	FlxA,FlxB,FlxC,FlxD	60	60
 basis	Sulfur assimilation	Cys_assm	Cysteine biosynthesis	false	CysE,CysK,CysM,CysH,CysI,CysJ,assSat,CysN,CysD,CysC,CysA,CysU,CysW	90	1
 basis	Sulfur assimilation	Met_assm	Methionine biosynthesis	false	bCBS,bCSE,MalY,MetA,MetB,MetC,MetE,MetF,MetH,MetI,MetK,MetN,MetP,MetQ,MetX,MetY,MetZ	90	5
-basis	Sulfur assimilation	Thiol_assm	Thiol assimilation	false	AtrD,IsrD,MarD,Mar4D,Mar5D,MorD,NflB,NflH,NifS,SufS,Rhd,NflK
+basis	Sulfur assimilation	Thiol_assm	(Methyl-)thioalkane assimilation	false	AtrD,IsrD,MarD,Mar4D,Mar5D,MorD,NflB,NflH,NifS,SufS,Rhd,NflK	90	5
 HMSS2	Context / auxiliary HMMs	MethanoCtx	Methanogenesis context	false	HdrF,McrA,McrB,McrC,McrD,McrG,mHdrA,mHdrB,mHdrC,mHdrD,mHdrE,MvhA,MvhD,MvhG	90	10
 basis	Context / auxiliary HMMs	EnvelopeCtx	Cell envelope/secretion context	false	ACP,bCerS,CapA,CerR,ChiA,GldA,GldB,GldC,GldD,GldE,GldF,GldG,GldH,GldI,GldJ,GldK,GldL,GldM,GldN,GldO,SecE,SecG,SecY,SprA,SprB,SprC,SprD,SprE,SprF,Spt,SulA,SulS	90	20
 basis	Context / auxiliary HMMs	Context	Unclassified/context	false	AadD,Ant9,CcrA,CcrB,CstA,CstB,CstR,ErmA,MecA,MecI,MecR1,Pre,SA0034,SA0035,SA0036,TnpA,TnpB,TnpC,XylR	90	30
-HMSS2	Context / auxiliary HMMs	Context	Unclassified/context	false	sLplAB,YeeE	90	30	
+HMSS2	Context / auxiliary HMMs	Context	Unclassified/context	false	sLplAB,YeeE	90	30
 basis	Sulfobacin metabolism	Sulfobacin	Sulfobacin and sulfonolipid metabolism	true	Spt,CerR,bCerS,CapA,CapC,SulA,alfi1990,alfi1991,fjoh2422,fjoh2423,fjoh2424,fjoh2425,fjoh2426,fjoh2427	92	1

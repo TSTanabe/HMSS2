@@ -485,6 +485,30 @@ def rebuild_presence_tables(database: str) -> None:
         cur.execute("PRAGMA foreign_keys = ON")
         cur.execute("PRAGMA temp_store = MEMORY")
 
+        # ----------------------------------------------------------
+        # Check whether presence tables are already populated
+        # ----------------------------------------------------------
+
+        has_genome_presence = cur.execute("""
+            SELECT EXISTS(
+                SELECT 1
+                FROM GenomeDomains
+                LIMIT 1
+            )
+        """).fetchone()[0]
+
+        has_cluster_presence = cur.execute("""
+            SELECT EXISTS(
+                SELECT 1
+                FROM ClusterDomains
+                LIMIT 1
+            )
+        """).fetchone()[0]
+
+        if has_genome_presence and has_cluster_presence:
+            logger.info("Presence tables already populated; skipping rebuild.")
+            return
+
         cur.execute("DELETE FROM GenomeDomains")
         cur.execute("""
             INSERT INTO GenomeDomains(genome_pk, domain_pk, valid_present)
