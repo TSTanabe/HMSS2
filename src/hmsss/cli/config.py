@@ -30,6 +30,7 @@ class PathsCfg:
         bin:  Executables/tools directory.
         data: Top-level data directory.
         gpkg: Top-level gpkg directory.
+        placement: Shared phylogenetic reference packages directory.
         hmms: Directory containing HMM libraries.
         refseq: Directory with reference sequences.
         results: Default results directory.
@@ -40,6 +41,7 @@ class PathsCfg:
     bin: str
     data: str
     gpkg: str
+    placement: str
     hmms: str
     refseq: str
     results: str
@@ -296,6 +298,7 @@ class ProjectFields:
     fasta_initial_hit_directory: Optional[str] = None
     fasta_output_directory: Optional[str] = None
     cross_check_directory: Optional[str] = None
+    phylogenetic_placement_directory: Optional[str] = None
     csb_directory: Optional[str] = None
 
     # Dateien
@@ -308,6 +311,77 @@ class ProjectFields:
     metabolic_pathway_directory: Optional[str] = None
     pathway_file: Optional[str] = None
     pathway_report_file: Optional[str] = None
+
+
+# Single canonical table of run-directory conventions.
+# Legacy ProjectFields entries remain accepted as explicit overrides.
+RUN_DIRECTORY_NAMES = {
+    "fasta_initial_hit_directory": "hit_list",
+    "fasta_output_directory": "sequences",
+    "cross_check_directory": "filtered_hits",
+    "phylogenetic_placement_directory": "placement",
+    "csb_directory": "collinear_syntenic_blocks",
+    "metabolic_pathway_directory": "Metabolic_pathways",
+}
+
+
+class RunPaths:
+    """Lazy, writable view onto legacy project fields.
+
+    Computed paths follow the run root until explicitly overridden.
+    No state is shared between Config instances.
+    """
+
+    def __init__(self, project: ProjectFields):
+        object.__setattr__(self, "_project", project)
+
+    @property
+    def root(self) -> str | None:
+        return self._project.result_files_directory
+
+    @root.setter
+    def root(self, value: str | Path | None) -> None:
+        self._project.result_files_directory = str(value) if value is not None else None
+        # Old directory overrides cannot silently point to a previous run.
+        for key in RUN_DIRECTORY_NAMES:
+            setattr(self._project, key, None)
+
+    def __getattr__(self, name: str) -> str | None:
+        if name not in RUN_DIRECTORY_NAMES:
+            raise AttributeError(name)
+        override = getattr(self._project, name)
+        if override is not None:
+            return override
+        if self.root is None:
+            return None
+        return str(Path(self.root) / RUN_DIRECTORY_NAMES[name])
+
+    def __setattr__(self, name: str, value: str | Path | None) -> None:
+        if name == "root":
+            type(self).root.fset(self, value)
+            return
+        if name not in RUN_DIRECTORY_NAMES:
+            raise AttributeError(name)
+        setattr(self._project, name, str(value) if value is not None else None)
+
+    def create(self) -> None:
+        if self.root is None:
+            raise ValueError("Run root has not been initialized")
+        Path(self.root).mkdir(parents=True, exist_ok=True)
+        for name in RUN_DIRECTORY_NAMES:
+            Path(getattr(self, name)).mkdir(parents=True, exist_ok=True)
+
+
+def run_prop(name: str) -> property:
+    """Read/write compatible short config alias backed by RunPaths."""
+
+    def get(config):
+        return getattr(config.run_paths, name)
+
+    def set_(config, value):
+        setattr(config.run_paths, name, value)
+
+    return property(get, set_)
 
 
 # ======================
@@ -380,6 +454,10 @@ class Config:
     # Laufzeit-State & Projektfelder
     state: RuntimeState = field(default_factory=RuntimeState)
     project: ProjectFields = field(default_factory=ProjectFields)
+
+    @property
+    def run_paths(self) -> RunPaths:
+        return RunPaths(self.project)
 
     # Häufig genutzte CLI-Parameter (kurzer Zugriff)
     stage = prop("cli_params.stage")  # :contentReference[oaicite:1]{index=1}
@@ -534,32 +612,26 @@ class Config:
     gaps = prop("cli_process.gaps")  # :contentReference[oaicite:42]{index=42}
 
     # Projekt-Ausgaben (vom Project-Setup befüllt)
-    result_files_directory = prop(
-        "project.result_files_directory"
+    result_files_directory = property(
+        lambda self: self.run_paths.root,
+        lambda self, value: setattr(self.run_paths, "root", value),
     )  # :contentReference[oaicite:43]{index=43}
     database_directory = prop(
         "project.database_directory"
     )  # :contentReference[oaicite:44]{index=44}
     glob_report = prop("project.glob_report")  # :contentReference[oaicite:45]{index=45}
-    fasta_initial_hit_directory = prop(
-        "project.fasta_initial_hit_directory"
-    )  # :contentReference[oaicite:46]{index=46}
-    fasta_output_directory = prop(
-        "project.fasta_output_directory"
-    )  # :contentReference[oaicite:47]{index=47}
-    cross_check_directory = prop(
-        "project.cross_check_directory"
-    )  # :contentReference[oaicite:48]{index=48}
-    csb_directory = prop(
-        "project.csb_directory"
-    )  # :contentReference[oaicite:49]{index=49}
+    fasta_initial_hit_directory = run_prop("fasta_initial_hit_directory")
+    fasta_output_directory = run_prop("fasta_output_directory")
+    cross_check_directory = run_prop("cross_check_directory")
+    phylogenetic_placement_directory = run_prop("phylogenetic_placement_directory")
+    csb_directory = run_prop("csb_directory")
     csb_output_file = prop(
         "project.csb_output_file"
     )  # :contentReference[oaicite:50]{index=50}
     gene_clusters_file = prop(
         "project.gene_clusters_file"
     )  # :contentReference[oaicite:51]{index=51}
-    metabolic_pathway_directory = prop("project.metabolic_pathway_directory")
+    metabolic_pathway_directory = run_prop("metabolic_pathway_directory")
     pathway_file = prop("project.pathway_file")
     pathway_report_file = prop("project.pathway_report_file")
     glob_trusted_hitreport = prop("project.glob_trusted_hitreport")

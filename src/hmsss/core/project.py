@@ -1,12 +1,12 @@
 #!/usr/bin/python
 from __future__ import annotations
+
 import csv
 import os
-
+from dataclasses import asdict, is_dataclass
 from datetime import datetime
-from dataclasses import is_dataclass, asdict
 from pathlib import Path
-from typing import Any, Mapping, Iterable, Tuple, Optional
+from typing import Any, Iterable, Mapping, Optional, Tuple
 
 from hmsss.cli import paths
 from hmsss.core.logging import get_logger
@@ -71,46 +71,20 @@ def prepare_result_space(config, project: str = "project") -> None:
                 config.cli_result_dir_in, project
             )
 
-    # The project directory is now saved in config.result_files_directory
-    # Setup the project folders
-    config.database_directory = config.result_files_directory + "/database.db"
-    config.fasta_initial_hit_directory = config.result_files_directory + "/Hit_list"
-    config.fasta_output_directory = config.result_files_directory + "/Sequences"
-    config.csb_directory = config.result_files_directory + "/Collinear_syntenic_blocks"
-    config.cross_check_directory = config.result_files_directory + "/Filtered_hits"
-
-    # Output files
-    config.glob_report = os.path.join(
-        config.result_files_directory, "global_report.cat_hmmreport"
-    )
-    # config.glob_trusted_hitreport = (
-    #        config.result_files_directory + "/global_trusted_hits_summary.db"
-    # )
-    # config.glob_intermediate_hitreport = (
-    #        config.result_files_directory + "/global_intermediate_hits_summary.db"
-    # )
-    config.csb_output_file = config.csb_directory + "/Csb_output.txt"
-    config.gene_clusters_file = config.csb_directory + "/All_gene_clusters.txt"
-    config.metabolic_pathway_directory = os.path.join(
-        config.result_files_directory,
-        "Metabolic_pathways",
+    # All run directories are defined centrally in RUN_DIRECTORY_NAMES.
+    # Short config aliases remain writable via RunPaths.
+    config.run_paths.create()
+    run = Path(config.result_files_directory)
+    config.database_directory = str(run / "database.db")
+    config.glob_report = str(run / "global_report.cat_hmmreport")
+    config.csb_output_file = str(Path(config.csb_directory) / "Csb_output.txt")
+    config.gene_clusters_file = str(
+        Path(config.csb_directory) / "All_gene_clusters.txt"
     )
     config.pathway_file = str(paths.SRC_FILE_PRECOMPUTED_PATHWAYS)
-    config.pathway_report_file = os.path.join(
-        config.metabolic_pathway_directory,
-        "metabolic_pathway_report.tsv",
+    config.pathway_report_file = str(
+        Path(config.metabolic_pathway_directory) / "metabolic_pathway_report.tsv"
     )
-
-    # Create required directories
-    for path in [
-        config.fasta_initial_hit_directory,
-        config.fasta_output_directory,
-        config.cross_check_directory,
-        config.csb_directory,
-        config.metabolic_pathway_directory,
-    ]:
-        if not os.path.exists(path):
-            os.mkdir(path)
 
     # Write down setting
     write_config_to_tsv(config, config.result_files_directory)

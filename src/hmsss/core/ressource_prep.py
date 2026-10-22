@@ -162,7 +162,10 @@ def ressource_preparation(config) -> None:
 
     # Ergebnis-Unterordner
     reports_dir = _ensure_dir(Path(config.result_files_directory) / "reports")
-    cross_dir = _ensure_dir(Path(config.result_files_directory) / "cross_check")
+    cross_dir = _ensure_dir(
+        config.cross_check_directory
+        or (Path(config.result_files_directory) / "filtered_hits")
+    )
     config.paths.refseq = _ensure_dir(config.paths.refseq)
 
     library_generation.build_library(config)
@@ -214,12 +217,7 @@ def ressource_preparation(config) -> None:
     _require_path_exists(config.paths.refseq, "Reference sequences")
     # _require_path_exists(config.metabolic_information, "Metabolism information")
 
-    # ---- Ableitungen & Artefakte in options hinterlegen ----
-    config.cross_check_directory = cross_dir
-
-    config.csb_output_file = str(
-        Path(config.result_files_directory) / f"{config.name}_csb.tsv"
-    )
+    # Directory paths are owned by RunPaths; do not override them here.
 
     log.debug("Result dir: %s", config.result_files_directory)
     log.debug("Reports dir: %s", reports_dir)

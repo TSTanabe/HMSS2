@@ -22,6 +22,7 @@ __all__ = [
     "DATA_DIR",
     "GPKG_DIR",
     "HMMS_DIR",
+    "PLACEMENT_DIR",
     "REFSEQ_DIR",
     "RESULTS_DIR",
     "PACKAGE_DIR",
@@ -88,12 +89,13 @@ def _make_paths(root: Path) -> Dict[str, Path]:
         HMMS_DIR, REFSEQ_DIR, RESULTS_DIR, PACKAGE_DIR, and source resource files.
     """
     data = root / "data"
-    gpkg = data / "gpkg"
+
     return {
         "ROOT_DIR": root,
         "BIN_DIR": root / "bin",
         "DATA_DIR": data,
-        "GPKG_DIR": gpkg,
+        "GPKG_DIR": data / "gpkg",
+        "PLACEMENT_DIR": data / "placement",
         # Consistent with parse.py-Defaults: HMMlib
         "HMMS_DIR": data / "HMMs",
         "REFSEQ_DIR": data / "RefSeqs",
@@ -110,123 +112,36 @@ def _make_paths(root: Path) -> Dict[str, Path]:
         "SRC_FILE_EXCLUSION_SINGLETONS": data / "Exclusion_singletons",
         "SRC_FILE_METABOLISM_INFORMATION": data / "Metabolism_information",
         # gpkg resources
-        "SRC_FILE_GPKG_RAM_INFORMATION": gpkg / "RAM_profile.txt",
+        "SRC_FILE_GPKG_RAM_INFORMATION": data / "gpkg" / "RAM_profile.txt",
     }
 
 
-# Initialisierung bei Modulimport
-_paths = _make_paths(_detect_root())
-
-# Public constants
-ROOT_DIR: Path = _paths["ROOT_DIR"]
-BIN_DIR: Path = _paths["BIN_DIR"]
-DATA_DIR: Path = _paths["DATA_DIR"]
-GPKG_DIR: Path = _paths["GPKG_DIR"]
-HMMS_DIR: Path = _paths["HMMS_DIR"]
-REFSEQ_DIR: Path = _paths["REFSEQ_DIR"]
-RESULTS_DIR: Path = _paths["RESULTS_DIR"]
-PACKAGE_DIR: Path = _paths["PACKAGE_DIR"]
-
-SRC_FILE_RESOURCE_METADATA: Path = _paths["SRC_FILE_RESOURCE_METADATA"]
-SRC_FILE_HMM_LIBRARY: Path = _paths["SRC_FILE_HMM_LIBRARY"]
-SRC_FILE_COOCCURRENCE: Path = _paths["SRC_FILE_COOCCURRENCE"]
-SRC_FILE_THRESHOLDS: Path = _paths["SRC_FILE_THRESHOLDS"]
-SRC_FILE_PATTERNS: Path = _paths["SRC_FILE_PATTERNS"]
-SRC_FILE_PRECOMPUTED_PATHWAYS: Path = _paths["SRC_FILE_PRECOMPUTED_PATHWAYS"]
-SRC_FILE_PLAUSIBILITY_MODELS: Path = _paths["SRC_FILE_PLAUSIBILITY_MODELS"]
-SRC_FILE_EXCLUSION_SINGLETONS: Path = _paths["SRC_FILE_EXCLUSION_SINGLETONS"]
-SRC_FILE_METABOLISM_INFORMATION: Path = _paths["SRC_FILE_METABOLISM_INFORMATION"]
-SRC_FILE_GPKG_RAM_INFORMATION: Path = _paths["SRC_FILE_GPKG_RAM_INFORMATION"]
+# Legacy module-level constants are retained for existing import sites.
+# All values originate from _make_paths(), avoiding duplicate assignments.
+_paths: Dict[str, Path] = {}
 
 
 def refresh_paths(base: str | Path | None = None) -> None:
-    """Reinitialize exported path constants (useful for tests).
-
-    Args:
-        base: If provided, force the project root to this directory; otherwise
-              auto-detect as in `_detect_root()`.
-
-    Side Effects:
-        Updates module-level constants such as ROOT_DIR, DATA_DIR, RESULTS_DIR, etc.
-    """
-    global \
-        ROOT_DIR, \
-        BIN_DIR, \
-        DATA_DIR, \
-        GPKG_DIR, \
-        HMMS_DIR, \
-        REFSEQ_DIR, \
-        RESULTS_DIR, \
-        PACKAGE_DIR, \
-        SRC_FILE_RESOURCE_METADATA, \
-        SRC_FILE_HMM_LIBRARY, \
-        SRC_FILE_COOCCURRENCE, \
-        SRC_FILE_THRESHOLDS, \
-        SRC_FILE_PATTERNS, \
-        SRC_FILE_PRECOMPUTED_PATHWAYS, \
-        SRC_FILE_PLAUSIBILITY_MODELS, \
-        SRC_FILE_EXCLUSION_SINGLETONS, \
-        SRC_FILE_GPKG_RAM_INFORMATION, \
-        _paths
-
-    root = Path(base).resolve() if base else _detect_root()
-    _paths = _make_paths(root)
-
-    ROOT_DIR = _paths["ROOT_DIR"]
-    BIN_DIR = _paths["BIN_DIR"]
-    DATA_DIR = _paths["DATA_DIR"]
-    HMMS_DIR = _paths["HMMS_DIR"]
-    REFSEQ_DIR = _paths["REFSEQ_DIR"]
-    RESULTS_DIR = _paths["RESULTS_DIR"]
-    PACKAGE_DIR = _paths["PACKAGE_DIR"]
-
-    SRC_FILE_RESOURCE_METADATA = _paths["SRC_FILE_RESOURCE_METADATA"]
-    SRC_FILE_HMM_LIBRARY = _paths["SRC_FILE_HMM_LIBRARY"]
-    SRC_FILE_COOCCURRENCE = _paths["SRC_FILE_COOCCURRENCE"]
-    SRC_FILE_THRESHOLDS = _paths["SRC_FILE_THRESHOLDS"]
-    SRC_FILE_PATTERNS = _paths["SRC_FILE_PATTERNS"]
-    SRC_FILE_PLAUSIBILITY_MODELS = _paths["SRC_FILE_PLAUSIBILITY_MODELS"]
-    SRC_FILE_EXCLUSION_SINGLETONS = _paths["SRC_FILE_EXCLUSION_SINGLETONS"]
-    SRC_FILE_METABOLISM_INFORMATION = _paths["SRC_FILE_METABOLISM_INFORMATION"]
-
-    SRC_FILE_GPKG_RAM_INFORMATION = _paths["SRC_FILE_GPKG_RAM_INFORMATION"]
+    """Refresh canonical paths (including all exported SRC_FILE_* paths)."""
+    root = Path(base).resolve() if base is not None else _detect_root()
+    values = _make_paths(root)
+    _paths.clear()
+    _paths.update(values)
+    globals().update(values)
 
 
 def as_dict(
     str_paths: bool = True, include_sources: bool = False
 ) -> Dict[str, str | Path]:
-    """Return all core paths as a dictionary (for logs/debugging).
-
-    Args:
-        str_paths: If True, convert values to strings.
-        include_sources: If True, also include the SRC_FILE_* entries.
-
-    Returns:
-        Dictionary of path names to values.
-    """
-    d: Dict[str, Path] = {
-        "ROOT_DIR": ROOT_DIR,
-        "BIN_DIR": BIN_DIR,
-        "DATA_DIR": DATA_DIR,
-        "GPKG_DIR": GPKG_DIR,
-        "HMMS_DIR": HMMS_DIR,
-        "REFSEQ_DIR": REFSEQ_DIR,
-        "RESULTS_DIR": RESULTS_DIR,
-        "PACKAGE_DIR": PACKAGE_DIR,
+    """Return canonical paths. Defaults to the non-resource directory keys."""
+    values = {
+        key: value
+        for key, value in _paths.items()
+        if include_sources or not key.startswith("SRC_FILE_")
     }
-    if include_sources:
-        d.update(
-            {
-                "SRC_FILE_HMM_LIBRARY": SRC_FILE_HMM_LIBRARY,
-                "SRC_FILE_COOCCURRENCE": SRC_FILE_COOCCURRENCE,
-                "SRC_FILE_THRESHOLDS": SRC_FILE_THRESHOLDS,
-                "SRC_FILE_PATTERNS": SRC_FILE_PATTERNS,
-                "SRC_FILE_PRECOMPUTED_PATHWAYS": SRC_FILE_PRECOMPUTED_PATHWAYS,
-                "SRC_FILE_PLAUSIBILITY_MODELS": SRC_FILE_PLAUSIBILITY_MODELS,
-                "SRC_FILE_EXCLUSION_SINGLETONS": SRC_FILE_EXCLUSION_SINGLETONS,
-                "SRC_FILE_METABOLISM_INFORMATION": SRC_FILE_METABOLISM_INFORMATION,
-            }
-        )
     if str_paths:
-        return {k: str(v) for k, v in d.items()}
-    return d
+        return {key: str(value) for key, value in values.items()}
+    return values
+
+
+refresh_paths()

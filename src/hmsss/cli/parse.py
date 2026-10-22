@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from dataclasses import fields
 from pathlib import Path
 from typing import Any, List, Sequence
 
@@ -876,21 +877,12 @@ def _s(ns: Any, name: str) -> str | None:
 
 
 def _paths_cfg_from_paths_module() -> PathsCfg:
-    """Build a `PathsCfg` from `hmsss.cli.paths` constants.
-
-    Returns:
-        A `PathsCfg` instance that centralizes project directories resolved at import time.
-    """
-    d = paths.as_dict(str_paths=True)
+    """Map canonical paths into PathsCfg without repeating each path name."""
     return PathsCfg(
-        root=d["ROOT_DIR"],
-        bin=d["BIN_DIR"],
-        data=d["DATA_DIR"],
-        hmms=d["HMMS_DIR"],
-        refseq=d["REFSEQ_DIR"],
-        results=d["RESULTS_DIR"],
-        package=d["PACKAGE_DIR"],
-        gpkg=d["GPKG_DIR"],
+        **{
+            item.name: str(getattr(paths, f"{item.name.upper()}_DIR"))
+            for item in fields(PathsCfg)
+        }
     )
 
 
