@@ -55,10 +55,13 @@ def reference_sequence_check(config: Config) -> None:
         intermediate_dict[hmm_type] = inter_file
 
     log.info("Phylogenetic placement of selected hit sequences")
-    phylogenetic_placement.epa_ng_placement(config, intermediate_files)
-
+    phylogenetic_placement.epa_ng_placement(config, intermediate_dict)
+    return
+    # TODO add the cross check again to the pipeline
     log.info("Cross-check candidates with reference sequences")
-    search_cross_reference.cross_check_candidates_with_reference_seqs(config)
+    search_cross_reference.cross_check_candidates_with_reference_seqs(
+        config, intermediate_files
+    )
 
     log.info("Promoting cross-checked hits to trusted list")
     search_cross_reference.promote_crosschecked_hits_to_db(

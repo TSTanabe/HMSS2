@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import hashlib
 import os
 import re
 from dataclasses import dataclass, field
-from typing import Dict, Tuple, Iterator
+from typing import Dict, Iterator, Tuple
+
+from hmsss.db import database
 
 
 @dataclass
@@ -168,82 +169,6 @@ def load_alignments_into_reads(
             r.alignment = aln
 
 
-def _normalize_lineage(lineage: str) -> str:
-    parts = []
-    for part in lineage.split(";"):
-        part = part.strip()
-        if not part:
-            continue
-
-        if "__" in part:
-            rank, taxon = part.split("__", 1)
-            taxon = re.sub(r"_graftm_\d+$", "", taxon)
-            part = f"{rank}__{taxon}"
-        else:
-            part = re.sub(r"_graftm_\d+$", "", part)
-
-        parts.append(part)
-
-    return ";".join(parts)
-
-
-def _lineage_to_id(lineage: str, n_hex: int = 12) -> str:
-    canonical = ";".join(p.strip() for p in lineage.split(";") if p.strip())
-    return hashlib.blake2s(
-        canonical.encode("utf-8"), digest_size=n_hex // 2
-    ).hexdigest()
-
-
-def _parse_lineage_to_dict(lineage: str) -> Dict[str, str]:
-    """
-    Parse a lineage string into a dict mapping rank -> taxon.
-
-    Expected input examples:
-      "Root; k__Bacteria; p__Actinomycetota; c__Acidimicrobiia; o__UBA5794"
-      "k__Bacteria;p__Firmicutes"
-      "Root; Bacteria; Firmicutes"   (fallback mode)
-
-    Returns
-    -------
-    dict[str, str]
-        Example:
-        {
-          "root": "Root",
-          "k": "Bacteria",
-          "p": "Actinomycetota",
-          "c": "Acidimicrobiia",
-          "o": "UBA5794"
-        }
-    """
-    lineage = lineage.strip()
-    if not lineage:
-        return {}
-
-    parts = [p.strip() for p in lineage.split(";") if p.strip()]
-    out: Dict[str, str] = {}
-
-    for part in parts:
-        # Case 1: rank-prefixed taxonomy (k__Bacteria)
-        if "__" in part:
-            rank, taxon = part.split("__", 1)
-            rank = rank.strip()
-            taxon = taxon.strip()
-            if rank and taxon:
-                out[rank] = taxon
-
-        # Case 2: Root without prefix
-        elif part.lower() == "root":
-            out["root"] = "Root"
-
-        # Case 3: fallback (no rank info)
-        else:
-            # store unranked entries in order
-            key = f"lvl{len(out)}"
-            out[key] = part
-
-    return out
-
-
 def load_read_taxonomy_into_reads(
     taxonomy_tsv: str, reads: Dict[tuple, "Read"], gpkg_name: str
 ) -> None:
@@ -265,14 +190,14 @@ def load_read_taxonomy_into_reads(
 
             # rid = first token; lineage = rest of line
             rid, lineage = line.split(None, 1)
-            lineage = _normalize_lineage(lineage.strip())
+            lineage = database.normalize_lineage(lineage.strip())
 
             read = reads.get((rid, gpkg_name))  # Tuple key
             if read is None:
                 continue
 
-            read.lineageID = _lineage_to_id(lineage, n_hex=12)
-            read.lineage = _parse_lineage_to_dict(lineage)
+            read.lineageID = database.lineage_to_id(lineage, n_hex=12)
+            read.lineage = database.parse_lineage_to_dict(lineage)
 
 
 def finalize_reads(

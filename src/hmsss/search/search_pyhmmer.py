@@ -1,30 +1,28 @@
 from __future__ import annotations
+
 import time
+from multiprocessing import Pool
 from multiprocessing.queues import SimpleQueue
+from typing import Any, Dict, List, Optional, Union
 
 import pyhmmer
 
-from multiprocessing import Pool
-from typing import Dict, List, Union, Optional, Any
-
 from hmsss.cli.config import Config
+from hmsss.core.logging import get_logger
 from hmsss.cross_check import generate_cross_check_fasta
-
-from hmsss.fasta_preparation.materialize import materialize_pair_gz_next_to_input
-
+from hmsss.db import database
+from hmsss.fasta_preparation.materialize import (
+    materialize_pair_gz_next_to_input,
+    materialize_single_next_to_input,
+)
 from hmsss.parse_reports import (
+    csb_finder,
+    csb_trie_algorithm,
     parse_reports,
-    pattern_completion_synteny,
     pattern_completion_pathway,
+    pattern_completion_synteny,
     plausibility_filter,
 )
-from hmsss.parse_reports import csb_trie_algorithm
-from hmsss.parse_reports import csb_finder
-from hmsss.db import database
-
-# --- pyhmmer imports (wenn du wirklich pyhmmer nutzt) ---
-
-from hmsss.core.logging import get_logger
 from hmsss.parse_reports.csb_trie_algorithm import TrieIndex
 from hmsss.parse_reports.parse_reports import Protein
 
@@ -381,12 +379,11 @@ def add_pyhmmer_hits_to_protein_dict(
     *,
     genome_id: str,
     tophits_iter,
+    min_identity=20,
+    min_hmm_cov=0.3,
+    max_indel_frac=0.7,
 ) -> dict[str, Protein]:
     protein_dict = {}
-
-    min_identity = 20  # Prozent
-    min_hmm_cov = 0.3  # entspricht 1.0 - max_indel_frac bei 0.7
-    max_indel_frac = 0.7
 
     for tophits in tophits_iter:
         hmm_id = (
@@ -480,6 +477,49 @@ def add_pyhmmer_hits_to_protein_dict(
     return protein_dict
 
 
+def search_genome_without_gff(genome_id, faa_in):
+    """Search FAA without GFF; retain all hits for EPA-ng placement."""
+
+    with materialize_single_next_to_input(faa_in) as faa_file:
+        alphabet = pyhmmer.easel.Alphabet.amino()
+
+        with pyhmmer.easel.SequenceFile(
+            faa_file, "fasta", digital=True, alphabet=alphabet
+        ) as sf:
+            seqs = sf.read_block()
+
+        tophits_iter = pyhmmer.hmmer.hmmsearch(
+            _G_HMMS,
+            seqs,
+            cpus=2,
+            bit_cutoffs="noise",
+        )
+
+        protein_dict = add_pyhmmer_hits_to_protein_dict(
+            genome_id=genome_id,
+            tophits_iter=tophits_iter,
+            min_hmm_cov=0.0,
+            min_identity=0.0,
+            max_indel_frac=1.0,
+        )
+
+        parse_reports.define_best_score_hits_for_protein_dict(protein_dict)
+        parse_reports.get_protein_sequence(faa_file, protein_dict)
+        parse_reports.define_selection_comments_for_protein_dict(protein_dict)
+
+        # Without GFF, all hits require phylogenetic placement
+        for protein in protein_dict.values():
+            protein.valid_hit = False
+
+        logger.info(
+            "Genome %s: %d proteins detected without GFF",
+            genome_id,
+            len(protein_dict),
+        )
+
+        return protein_dict, {}
+
+
 # -----------------------------
 # Worker: verarbeitet ein Batch
 # -----------------------------
@@ -496,7 +536,10 @@ def search_n_process_genome(
 
     try:
         faa_in = _G_FAA_FILES[genome_id]
-        gff_in = _G_GFF_FILES[genome_id]
+        gff_in = _G_GFF_FILES.get(genome_id)
+
+        if gff_in is None:
+            return search_genome_without_gff(genome_id, faa_in)
 
         with materialize_pair_gz_next_to_input(faa_in, gff_in) as (faa_file, gff_file):
             # load genome with all sequences into RAM
@@ -546,9 +589,13 @@ def search_n_process_genome(
             )
 
             # --- 7.5) remove below cutoff hits that are not rescued by synteny or pattern
-            protein_dict, removed_protein_ids = parse_reports.remove_invalid_bc_only_proteins(protein_dict)
+            protein_dict, removed_protein_ids = (
+                parse_reports.remove_invalid_bc_only_proteins(protein_dict)
+            )
 
-            cluster_dict = parse_reports.remove_proteins_from_clusters(cluster_dict, removed_protein_ids)
+            cluster_dict = parse_reports.remove_proteins_from_clusters(
+                cluster_dict, removed_protein_ids
+            )
 
             # --- 7.4) to do calculate plausability for singleton non valid hits and add above threshold hits
             # Currently disabled as models add more noise than true values
@@ -776,14 +823,7 @@ def consecutive_hmm_search(config: Config, processes: int = 4) -> None:
     hmm_cpus = 2
     worker_processes = max(1, (processes - 1) // hmm_cpus)
     worker_processes = min(worker_processes, n_genomes)
-    # chunksize: int = 1 if n_genomes < 5 else 5
     chunksize = 1
-
-    # Writer process that gets the dictionaries
-    # ctx = multiprocessing.get_context()  # nutzt default start method (fork auf Linux)
-    # q = ctx.SimpleQueue()
-    # writer = Process(target=process_writer, args=(q, config), daemon=True)
-    # writer.start()
 
     # Batch buffers im Main
     protein_batch: dict[str, Protein] = {}

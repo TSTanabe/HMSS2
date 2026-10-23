@@ -95,7 +95,7 @@ def _make_paths(root: Path) -> Dict[str, Path]:
         "BIN_DIR": root / "bin",
         "DATA_DIR": data,
         "GPKG_DIR": data / "gpkg",
-        "PLACEMENT_DIR": data / "placement",
+        "PLACEMENT_DIR": data / "placements",
         # Consistent with parse.py-Defaults: HMMlib
         "HMMS_DIR": data / "HMMs",
         "REFSEQ_DIR": data / "RefSeqs",

@@ -1,6 +1,8 @@
 import os
 from collections import OrderedDict
+from hmsss.core.logging import get_logger
 
+logger = get_logger(__name__)
 
 class FastaHandleCache:
     """
@@ -45,38 +47,39 @@ def write_intermediate_hits_faa(
     *,
     suffix: str = ".intermediate_hits.faa",
     max_open_files: int = 32,
+    add_valid_hits: bool = True,
 ):
-    """
-    Write non-valid hits (protein.valid_hit == False) as FASTA files,
-    one file per domain/HMM.
+    """Write individual domain sequences to domain-specific FASTA files."""
 
-    Header format:
-        >genomeID-proteinID
-
-    Each protein is written to *all* domain FASTAs for which it has hits.
-    """
     cache = FastaHandleCache(
-        out_dir=out_dir,
-        suffix=suffix,
-        max_open=max_open_files,
+        out_dir=out_dir, suffix=suffix, max_open=max_open_files
     )
 
     try:
         for protein in protein_dict.values():
-            # Only intermediate (non-valid) hits
-            if getattr(protein, "valid_hit", False):
+            if not add_valid_hits and getattr(protein, "valid_hit", False):
                 continue
 
             seq = protein.get_sequence()
             if not seq:
                 continue
 
-            header = f"{protein.genomeID}-{protein.proteinID}"
+            protein_id = f"{protein.genomeID}-{protein.proteinID}"
 
             for dom in protein.get_domain_listing():
-                domain_id = dom.get_domain()
-                fh = cache.get(domain_id)
-                fh.write(f">{header}\n{seq}\n")
+                start, end = int(dom.start), int(dom.end)
+
+                # Coordinates are 1-based and inclusive
+                if not (1 <= start <= end <= len(seq)):
+                    logger.warning(
+                        f"Invalid domain coordinates: {protein_id}, {start}-{end}"
+                    )
+
+                header = f"{protein_id}___dom_{start}_{end}"
+                domain_seq = seq[start - 1:end]
+
+                fh = cache.get(dom.get_domain())
+                fh.write(f">{header}\n{domain_seq}\n")
 
     finally:
         cache.close_all()

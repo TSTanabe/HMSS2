@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import hashlib
 import os
 import sqlite3
 import sys
@@ -177,7 +178,6 @@ def create_database(database: str) -> None:
 
                 PRIMARY KEY (
                     protein_pk,
-                    domain_pk,
                     domStart,
                     domEnd
                 ),
@@ -380,6 +380,31 @@ def create_database(database: str) -> None:
             );
         """)
 
+        # Placements for the protein sequences not graftM results
+        cur.execute("""
+            CREATE TABLE DomainPlacements (
+                protein_pk      INTEGER NOT NULL,
+                domStart        INTEGER NOT NULL,
+                domEnd          INTEGER NOT NULL,
+
+                lineageID       TEXT DEFAULT NULL,
+                functional_lwr  REAL DEFAULT NULL,
+                taxonomic_lwr   REAL DEFAULT NULL,
+
+                PRIMARY KEY (protein_pk, domStart, domEnd),
+
+                FOREIGN KEY (protein_pk, domStart, domEnd)
+                    REFERENCES Domains(protein_pk, domStart, domEnd)
+                    ON DELETE CASCADE
+                    ON UPDATE CASCADE,
+
+                FOREIGN KEY (lineageID)
+                    REFERENCES Lineage(lineageID)
+                    ON DELETE SET NULL
+                    ON UPDATE CASCADE
+            ) WITHOUT ROWID;
+        """)
+
     logger.info("Created database")
 
 
@@ -451,6 +476,11 @@ def index_database(database: str) -> None:
         (
             "idx_placement_domain_meta_read",
             "CREATE INDEX IF NOT EXISTS idx_placement_domain_meta_read ON Placement(domain_type, metagenomeID, readID)",
+        ),
+        (
+            "idx_domainplacements_lineage",
+            """CREATE INDEX IF NOT EXISTS idx_domainplacements_lineage
+               ON DomainPlacements(lineageID)""",
         ),
     ]
 
@@ -970,7 +1000,6 @@ def insert_database_proteins(
 
                     ON CONFLICT(
                         protein_pk,
-                        domain_pk,
                         domStart,
                         domEnd
                     ) DO NOTHING
@@ -1385,6 +1414,13 @@ def insert_database_metagenomes(
     return
 
 
+def lineage_to_id(lineage: str, n_hex: int = 12) -> str:
+    canonical = ";".join(p.strip() for p in lineage.split(";") if p.strip())
+    return hashlib.blake2s(
+        canonical.encode("utf-8"), digest_size=n_hex // 2
+    ).hexdigest()
+
+
 def insert_database_lineages(database: str, reads: Dict[tuple, "Read"]) -> None:
     """
     Insert lineage information for all Read objects into the Lineage table.
@@ -1442,6 +1478,109 @@ def insert_database_lineages(database: str, reads: Dict[tuple, "Read"]) -> None:
         con.commit()
     con.close()
     return
+
+
+def parse_domain_header(header: str) -> tuple[str, int, int]:
+    """Extract proteinID, domStart and domEnd from a FASTA header."""
+
+    header = header.removeprefix(">").split()[0]
+
+    try:
+        protein_id, coordinates = header.rsplit("___dom_", 1)
+        start, end = map(int, coordinates.split("_"))
+    except ValueError as e:
+        raise ValueError(f"Invalid domain header: {header}") from e
+
+    if not protein_id or start < 1 or end < start:
+        raise ValueError(f"Invalid domain header: {header}")
+
+    return protein_id, start, end
+
+
+def insert_domain_placements(database: str, domain_lineages: dict[str, str]) -> int:
+    """Insert GAPPA taxonomic assignments into Lineage and DomainPlacements."""
+
+    if not domain_lineages:
+        return 0
+
+    lineages, placements = {}, []
+
+    for header, taxopath in domain_lineages.items():
+        if not taxopath:
+            continue
+
+        protein_id, start, end = parse_domain_header(header)
+
+        # GAPPA taxopath: d__Bacteria;p__...;c__...
+        lineage = ";".join(p.strip() for p in taxopath.split(";") if p.strip())
+        lineage_id = lineage_to_id(lineage)
+
+        ranks = dict(part.split("__", 1) for part in lineage.split(";") if "__" in part)
+
+        lineages[lineage_id] = (
+            lineage_id,
+            None,  # root
+            ranks.get("d"),  # kingdom (GTDB domain)
+            ranks.get("p"),
+            ranks.get("c"),
+            ranks.get("o"),
+            ranks.get("f"),
+            ranks.get("g"),
+            ranks.get("s"),
+            lineage,
+        )
+        placements.append((protein_id, start, end, lineage_id))
+
+    if not placements:
+        return 0
+
+    with sqlite3.connect(database) as con:
+        con.execute("PRAGMA foreign_keys = ON")
+        cur = con.cursor()
+
+        # Insert missing lineages
+        cur.executemany(
+            """
+            INSERT INTO Lineage (
+                lineageID, root, kingdom, phylum, class,
+                "order", family, genus, species, raw_lineage
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(lineageID) DO NOTHING
+        """,
+            lineages.values(),
+        )
+
+        # Resolve proteinID -> protein_pk
+        protein_pk_map = _lookup_pk_map(
+            cur,
+            {p[0] for p in placements},
+            temp_table="tmp_lookup_placement_proteins",
+            source_table="Proteins",
+            external_col="proteinID",
+            pk_col="protein_pk",
+        )
+
+        # Insert or update placements
+        cur.executemany(
+            """
+            INSERT INTO DomainPlacements (
+                protein_pk, domStart, domEnd, lineageID
+            )
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(protein_pk, domStart, domEnd)
+            DO UPDATE SET lineageID = excluded.lineageID
+        """,
+            [
+                (protein_pk_map[pid], start, end, lineage_id)
+                for pid, start, end, lineage_id in placements
+            ],
+        )
+
+        updated = cur.rowcount
+
+    logger.info("Inserted/updated %d domain placements", updated)
+    return updated
 
 
 def insert_database_stub_proteins_from_reads(
@@ -1587,89 +1726,86 @@ def insert_database_gpkg_lengths(
 ##############################################################
 
 
-def update_domain(
-    database: str, protein_diction: Dict[str, Any], old_tag: str, new_tag: str
-) -> None:
-    """Change one domain type to another for the selected proteins only."""
+def update_domains(
+    database: str,
+    domain_hits: set[tuple[str, int, int]],
+    new_domain: str,
+) -> int:
+    """
+    Update the domain type of specifically identified domain hits.
+    The domain hit dict has the proteinID, domain_start, domain_end to
+    identify the specific domain of a protein
 
-    if not protein_diction or old_tag == new_tag:
-        return
+    """
 
-    try:
-        with sqlite3.connect(database) as con:
-            cur = con.cursor()
-            cur.execute("PRAGMA foreign_keys = ON")
-            cur.execute("PRAGMA temp_store = MEMORY")
+    if not domain_hits:
+        return 0
 
-            old_row = cur.execute(
-                "SELECT domain_pk FROM DomainTypes WHERE domain = ?", (old_tag,)
-            ).fetchone()
+    with sqlite3.connect(database) as con:
+        con.execute("PRAGMA foreign_keys = ON")
+        cur = con.cursor()
 
-            if old_row is None:
-                logger.warning("Domain %s does not exist in DomainTypes", old_tag)
-                return
+        # Ensure the new domain type exists
+        domain_pk = _ensure_domain_types(cur, [new_domain])[new_domain]
 
-            old_domain_pk = int(old_row[0])
-            new_domain_pk = _ensure_domain_types(cur, [new_tag])[new_tag]
-
-            protein_pk_map = _lookup_pk_map(
-                cur,
-                protein_diction.keys(),
-                temp_table="tmp_lookup_update_domain_proteins",
-                source_table="Proteins",
-                external_col="proteinID",
-                pk_col="protein_pk",
-                strict=False,
+        # Update domain hits using proteinID and domain coordinates
+        cur.executemany(
+            """
+            UPDATE Domains
+            SET domain_pk = ?
+            WHERE protein_pk = (
+                SELECT protein_pk FROM Proteins WHERE proteinID = ?
             )
-
-            if not protein_pk_map:
-                return
-
-            cur.execute("""
-                CREATE TEMP TABLE IF NOT EXISTS tmp_update_domain_proteins (
-                    protein_pk INTEGER PRIMARY KEY
-                )
-            """)
-            cur.execute("DELETE FROM tmp_update_domain_proteins")
-            cur.executemany(
-                "INSERT OR IGNORE INTO tmp_update_domain_proteins(protein_pk) VALUES (?)",
-                ((pk,) for pk in protein_pk_map.values()),
-            )
-
-            # Copy old hits with the new domain_pk. INSERT OR IGNORE also handles
-            # the case where the corresponding new-tag hit already exists.
-            cur.execute(
-                """
-                INSERT OR IGNORE INTO Domains
-                    (protein_pk, domain_pk, domStart, domEnd, score, blast_score_ratio, identity)
-                SELECT d.protein_pk, ?, d.domStart, d.domEnd, d.score, d.blast_score_ratio, d.identity
-                FROM Domains d
-                JOIN tmp_update_domain_proteins t ON t.protein_pk = d.protein_pk
-                WHERE d.domain_pk = ?
+            AND domStart = ?
+            AND domEnd = ?
             """,
-                (new_domain_pk, old_domain_pk),
-            )
+            [
+                (domain_pk, protein_id, start, end)
+                for protein_id, start, end in domain_hits
+            ],
+        )
 
-            # Remove the corresponding old-tag hits.
-            cur.execute(
-                """
-                DELETE FROM Domains
-                WHERE domain_pk = ?
-                  AND EXISTS (
-                      SELECT 1 FROM tmp_update_domain_proteins t
-                      WHERE t.protein_pk = Domains.protein_pk
-                  )
-            """,
-                (old_domain_pk,),
-            )
+        updated = cur.execute("SELECT changes()").fetchone()[0]
 
-            changed = cur.rowcount
+    logger.debug(
+        "Updated domain types to %s for %d requested hits", new_domain, len(domain_hits)
+    )
 
-        logger.info("Updated %d domain hits from %s to %s", changed, old_tag, new_tag)
+    return updated
 
-    except Exception:
-        logger.exception("Error updating domains from %s to %s", old_tag, new_tag)
-        raise
+
+def update_selection_comments(
+    database: str,
+    domain_hits: set[tuple[str, int, int]],
+    comment: str,
+) -> int:
+    """Append a selection comment to proteins without overwriting existing comments."""
+
+    if not domain_hits:
+        return 0
+
+    protein_ids = {protein_id for protein_id, _, _ in domain_hits}
+
+    with sqlite3.connect(database) as con:
+        cur = con.cursor()
+
+        cur.executemany(
+            """
+            UPDATE Proteins
+            SET comment = CASE
+                WHEN comment IS NULL OR comment = '' THEN ?
+                ELSE comment || ',' || ?
+            END
+            WHERE proteinID = ?
+              AND (comment IS NULL OR instr(',' || comment || ',', ',' || ? || ',') = 0)
+        """,
+            [(comment, comment, pid, comment) for pid in protein_ids],
+        )
+
+        updated = cur.rowcount
+
+    logger.debug("Added selection comment '%s' to %d proteins", comment, updated)
+    return updated
 
 
 ##############################################################

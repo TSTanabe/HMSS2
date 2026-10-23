@@ -200,6 +200,8 @@ def build_hmm(
             "--amino",
             "--informat",
             "afa",
+            "--symfrac",
+            "0.0",
             "--cpu",
             str(threads),
             str(hmm_file),

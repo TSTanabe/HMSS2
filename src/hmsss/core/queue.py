@@ -1,14 +1,12 @@
 #!/usr/bin/python
+import glob
 import gzip
 import os
 import re
-
 import shutil
 import tempfile
-import glob
-
 from pathlib import Path
-from typing import List, Set, Dict, Optional
+from typing import Dict, List, Optional, Set
 
 from hmsss.core.logging import get_logger
 from hmsss.db import database
@@ -70,52 +68,54 @@ def queue_protein_annotation_inputs(config) -> None:
     """
     Collect FAA/GFF inputs for annotation (gz + plain), WITHOUT decompression.
 
-    Rule:
-      - If both plain and gz exist for the same genomeID → plain WINS
-      - Genome is queued only if BOTH FAA and GFF exist (gz or plain)
+    Rules:
+      - If both plain and gz exist, plain wins.
+      - All genomes with FAA are queued, even without GFF.
+      - GFF files are optional.
 
     Side effects:
       - sets config.queued_genomes
       - sets config.faa_files
       - sets config.gff_files
-      - sets config.hmmreport_files (legacy)
+      - sets config.hmmreport_files
     """
     root = config.fasta_file_directory
 
-    # --- collect files ---
+    # Collect files
     faa_plain = get_genome_id_files_dict(root, extension=".faa")
     faa_gz = get_genome_id_files_dict(root, extension=".faa.gz")
 
     gff_plain = get_genome_id_files_dict(root, extension=".gff")
     gff_gz = get_genome_id_files_dict(root, extension=".gff.gz")
 
-    # --- merge: gz first, then plain (plain wins) ---
-    faa_files = {}
-    faa_files.update(faa_gz)
-    faa_files.update(faa_plain)
+    # Merge: plain wins over gz
+    faa_files = {**faa_gz, **faa_plain}
+    gff_files = {**gff_gz, **gff_plain}
 
-    gff_files = {}
-    gff_files.update(gff_gz)
-    gff_files.update(gff_plain)
-
-    # legacy / optional
+    # Legacy / optional
     hmmreport_files = get_genome_id_files_dict(root, extension=".hmmreport")
 
-    # --- keep only genomeIDs that have BOTH faa and gff ---
-    common_ids = set(faa_files) & set(gff_files)
+    # Queue all genomes with FAA
+    genome_ids = set(faa_files)
 
-    faa_files = {gid: faa_files[gid] for gid in common_ids}
-    gff_files = {gid: gff_files[gid] for gid in common_ids}
+    # Keep only GFF files matching queued genomes
+    gff_files = {gid: path for gid, path in gff_files.items() if gid in genome_ids}
+
     hmmreport_files = {
-        gid: path for gid, path in hmmreport_files.items() if gid in common_ids
+        gid: path for gid, path in hmmreport_files.items() if gid in genome_ids
     }
 
-    config.queued_genomes = list(common_ids)
+    config.queued_genomes = sorted(genome_ids)
     config.faa_files = faa_files
     config.gff_files = gff_files
     config.hmmreport_files = hmmreport_files
 
-    log.info(f"Queued {len(common_ids)} genomes with FAA and GFF.")
+    log.info(
+        "Queued %d genomes (%d with GFF, %d without GFF).",
+        len(genome_ids),
+        len(gff_files),
+        len(genome_ids) - len(gff_files),
+    )
 
 
 def queue_faa_without_gff(config) -> dict[str, str]:
