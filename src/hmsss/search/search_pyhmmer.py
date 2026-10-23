@@ -22,8 +22,6 @@ from hmsss.parse_reports import csb_trie_algorithm
 from hmsss.parse_reports import csb_finder
 from hmsss.db import database
 
-# --- pyhmmer imports (wenn du wirklich pyhmmer nutzt) ---
-
 from hmsss.core.logging import get_logger
 from hmsss.parse_reports.csb_trie_algorithm import TrieIndex
 from hmsss.parse_reports.parse_reports import Protein
