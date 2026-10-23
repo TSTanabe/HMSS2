@@ -3,10 +3,9 @@ from __future__ import annotations
 
 import os
 import sqlite3
-import glob
 import subprocess
-
-from multiprocessing import Pool, Manager, Process
+from multiprocessing import Manager, Pool, Process
+from pathlib import Path
 from queue import Queue
 from typing import List, Set
 
@@ -62,114 +61,106 @@ def find_file_by_name_partial(root_dir: str, filename: str) -> list[str]:
     return matches
 
 
-def cross_check_candidates_with_reference_seqs(config) -> List[str]:
-    """Validate candidates via DIAMOND against reference sequences.
+def cross_check_candidates_with_reference_seqs(config, intermediate_dict) -> List[str]:
+    """Cross-check intermediate FASTA files against reference sequences using DIAMOND."""
 
-    For each `{hmm}.intermediate_hits_faa`, build or reuse a DIAMOND DB from
-    reference FASTA (`{hmm}.faa` or a fallback by suffix), run `blastp`, and
-    write `{hmm}.crosschecked.tsv` with the top hit (if any). Empty results
-    are removed. Returns a list of HMM IDs where reference sequences were
-    unavailable or the run failed.
+    logger.info("Cross-checking intermediate hits with reference sequences")
 
-    Args:
-        config: Configuration with `paths.refseq`, `refseq_identity`, `cores`,
-            and `cross_check_directory`.
+    refseq_dir = Path(config.paths.refseq)
+    data_dir = Path(config.paths.data)
+    cross_check_dir = Path(config.cross_check_directory)
+    cross_check_dir.mkdir(parents=True, exist_ok=True)
 
-    Returns:
-        List of HMM IDs that could not be cross-checked.
-    """
-    logger.info("Cross check hit sequences with reference sequences")
-
-    refseq_dir = config.paths.refseq
-    data_dir = config.paths.data
-    refseq_unavailable_list = []
-
-    cross_check_dir = config.cross_check_directory
-    intermediate_files = glob.glob(
-        os.path.join(cross_check_dir, "*.intermediate_hits_faa")
-    )
     diamond = find_executable("diamond")
+    failed = []
 
-    for inter_file in intermediate_files:
-        logger.debug(
-            f"Checking reference sequences for candidates sequences in {inter_file}"
-        )
-        hmm_id = os.path.splitext(os.path.basename(inter_file))[0].replace(
-            ".intermediate_hits_faa", ""
-        )
+    for hmm_id, files in intermediate_dict.items():
+        # Support single paths and lists of paths
+        if isinstance(files, (str, Path)):
+            files = [files]
+
         hmm_type = hmm_id.split("_")[-1]
+        db_path = refseq_dir / f"{hmm_id}.dmnd"
 
-        db_base = os.path.splitext(os.path.join(refseq_dir, hmm_id))[0]
-        db_path = db_base + ".dmnd"
-        output_file = os.path.join(cross_check_dir, f"{hmm_id}.crosschecked.tsv")
+        for inter_file in files:
+            inter_file = Path(inter_file)
 
-        if os.path.isfile(output_file):
-            logger.debug(f"Results already present for {hmm_id}")
-            continue
-        try:
-            # 1. Try exact match for .dmnd
-            if not os.path.isfile(db_path):
-                # 2. Try exact match for .faa
+            if not inter_file.is_file():
+                logger.warning("Intermediate FASTA missing: %s", inter_file)
+                failed.append(hmm_id)
+                continue
 
-                matches = find_file_by_name_partial(data_dir, f"{hmm_id}.faa")
-                if not matches:
-                    continue
+            output_file = (
+                cross_check_dir
+                / f"{inter_file.name.removesuffix('.intermediate_hits_faa')}.crosschecked.tsv"
+            )
 
-                exact_faa = matches[0] if len(matches) > 1 else matches[0]
+            if output_file.is_file():
+                logger.debug("Cross-check already present: %s", output_file)
+                continue
 
-                if os.path.isfile(exact_faa):
-                    faa_path = exact_faa
-                    logger.debug(f"Found exact match: {exact_faa}")
-                else:
-                    # 3. Fallback: any file ending with {hmm_type}.faa
-                    logger.warning(
-                        f"Skipping {hmm_id}: Reference sequence file not found."
+            try:
+                # Create DIAMOND database if necessary
+                if not db_path.is_file():
+                    matches = find_file_by_name_partial(str(data_dir), f"{hmm_id}.faa")
+
+                    if not matches:
+                        logger.warning(
+                            "No reference sequences available for %s", hmm_id
+                        )
+                        failed.append(hmm_id)
+                        continue
+
+                    faa_path = Path(matches[0])
+
+                    subprocess.run(
+                        [
+                            diamond,
+                            "makedb",
+                            "--in",
+                            str(faa_path),
+                            "-d",
+                            str(db_path),
+                            "--quiet",
+                        ],
+                        check=True,
                     )
-                    refseq_unavailable_list.append(hmm_id)
-                    continue
 
-                logger.debug(f"Creating Diamond DB from {faa_path} for {hmm_id}")
-                subprocess.run(
-                    [diamond, "makedb", "--in", faa_path, "-d", db_path, "--quiet"],
-                    check=True,
-                )
+                # Run DIAMOND
+                cmd = [
+                    diamond,
+                    "blastp",
+                    "--query",
+                    str(inter_file),
+                    "--db",
+                    str(db_path),
+                    "--out",
+                    str(output_file),
+                    "--outfmt",
+                    "6",
+                    "--max-target-seqs",
+                    "1",
+                    "--id",
+                    str(config.refseq_identity),
+                    "--threads",
+                    str(config.cores),
+                    "--quiet",
+                    f"--{config.diamond_speed_mode}",
+                ]
 
-            # Run DIAMOND
-            cmd = [
-                diamond,
-                "blastp",
-                "--query",
-                inter_file,
-                "--db",
-                db_path,
-                "--out",
-                output_file,
-                "--outfmt",
-                "6",
-                "--max-target-seqs",
-                "1",
-                "--id",
-                str(config.refseq_identity),
-                "--threads",
-                str(config.cores),
-                "--quiet",
-                "--"
-                + str(
-                    config.diamond_speed_mode
-                ),  # Fastest mode for DIAMOND, only suitable for > 80 % identity
-            ]
-            logger.debug(f"Verifying {hmm_id} hits with reference sequences")
-            subprocess.run(cmd)
+                logger.debug("Running DIAMOND for %s", hmm_id)
+                subprocess.run(cmd, check=True)
 
-            if os.path.getsize(output_file) == 0:
-                os.remove(output_file)
+                if output_file.stat().st_size == 0:
+                    output_file.unlink()
+                    logger.debug("No reference matches for %s", hmm_id)
 
-        except Exception as e:
-            logger.error(f"Failed to compare with diamond {hmm_id}\nError: {e}")
-            refseq_unavailable_list.append(hmm_id)
-            continue
+            except (OSError, subprocess.CalledProcessError) as e:
+                logger.warning("DIAMOND cross-check failed for %s: %s", hmm_id, e)
+                output_file.unlink(missing_ok=True)
+                failed.append(hmm_id)
 
-    return refseq_unavailable_list
+    return list(dict.fromkeys(failed))
 
 
 #############################################################################
