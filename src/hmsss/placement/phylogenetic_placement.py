@@ -281,7 +281,6 @@ def align_queries_pyhmmer(
                 batch,
                 trim=False,
                 all_consensus_cols=True,
-                cpus=threads,
             )
 
             # A2M marks insertion residues with lowercase letters
