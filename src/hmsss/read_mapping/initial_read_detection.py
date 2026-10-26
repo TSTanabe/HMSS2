@@ -443,7 +443,7 @@ def search_fastq_with_orfm(
     # Return statistics
     # --------------------------------------------------------
 
-    logger.info(
+    logger.debug(
         "[%s] Completed: %d ORFs translated, %d detected, %d inserted/updated",
         metagenome_id,
         total_orfs,

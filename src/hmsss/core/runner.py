@@ -126,7 +126,7 @@ def run_pipeline(config) -> None:
             config,
             min_orf_length=96,
             translation_table=11,
-            batch_size=10000,
+            batch_size=1000000,
             evalue=1e-5,
         )
         config.stage = 32
