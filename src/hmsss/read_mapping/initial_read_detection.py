@@ -13,6 +13,7 @@ from typing import Iterator, List, Optional, Tuple
 import pyhmmer
 
 from hmsss.cli import config
+from hmsss.core import queue
 from hmsss.db import database
 
 logger = logging.getLogger(__name__)
@@ -521,7 +522,7 @@ def initial_read_detection(
     """
 
     results = {}
-    print(config.fastq_files)
+    queue.queue_read_mapping_fastq_inputs(config)
     for metagenome_id, fastq_file in config.fastq_files.items():
         result = search_fastq_with_orfm(
             fastq_file=fastq_file,
