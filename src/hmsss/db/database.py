@@ -1243,6 +1243,332 @@ def insert_database_clusters(
     return
 
 
+def insert_metagenome_orf_batch(
+    database: str,
+    metagenome_id: str,
+    detections: list[tuple],
+) -> int:
+    """
+    Insert OrfM-derived protein detections into HMSS3.
+
+    Each detection:
+        (
+            orfm_id,
+            protein_type,
+            sequence,
+            bitscore,
+            dom_start,
+            dom_end
+        )
+
+    Rules:
+        - Metagenome is registered as genomeID.
+        - Every OrfM ORF is treated as a separate protein.
+        - Protein ID = metagenomeID + "-" + OrfM ID.
+        - Only the highest-scoring HMM assignment is retained.
+        - Existing ORFs are updated only if the new score is higher.
+
+    Returns:
+        Number of inserted or updated proteins.
+    """
+
+    if not detections:
+        return 0
+
+    records = {}
+
+    # Retain the highest-scoring detection within this batch.
+    for (
+        orfm_id,
+        protein_type,
+        sequence,
+        score,
+        dom_start,
+        dom_end,
+    ) in detections:
+        protein_id = f"{metagenome_id}-{orfm_id}"
+
+        record = (
+            protein_id,
+            protein_type,
+            sequence,
+            float(score),
+            int(dom_start),
+            int(dom_end),
+        )
+
+        previous = records.get(protein_id)
+
+        if previous is None or record[3] > previous[3]:
+            records[protein_id] = record
+
+    with sqlite3.connect(database) as con:
+        con.execute("PRAGMA foreign_keys = ON")
+
+        # -----------------------------------------------------
+        # 1. Register metagenome as genome
+        # -----------------------------------------------------
+
+        con.execute(
+            """
+            INSERT OR IGNORE INTO Genomes (genomeID)
+            VALUES (?)
+            """,
+            (metagenome_id,),
+        )
+
+        genome_pk = con.execute(
+            """
+            SELECT genome_pk
+            FROM Genomes
+            WHERE genomeID = ?
+            """,
+            (metagenome_id,),
+        ).fetchone()[0]
+
+        # -----------------------------------------------------
+        # 2. Register domain types
+        # -----------------------------------------------------
+
+        protein_types = {record[1] for record in records.values()}
+
+        con.executemany(
+            """
+            INSERT OR IGNORE INTO DomainTypes (domain)
+            VALUES (?)
+            """,
+            [(name,) for name in sorted(protein_types)],
+        )
+
+        domain_pks = dict(
+            con.execute(
+                """
+                SELECT domain, domain_pk
+                FROM DomainTypes
+                """
+            )
+        )
+
+        # -----------------------------------------------------
+        # 3. Prepare temporary candidate table
+        # -----------------------------------------------------
+
+        con.execute("""
+            CREATE TEMP TABLE IF NOT EXISTS stage30_candidates (
+                proteinID TEXT PRIMARY KEY,
+                domain_type TEXT NOT NULL,
+                sequence TEXT NOT NULL,
+                score REAL NOT NULL,
+                dom_start INTEGER NOT NULL,
+                dom_end INTEGER NOT NULL
+            )
+        """)
+
+        con.execute("DELETE FROM stage30_candidates")
+
+        con.executemany(
+            """
+            INSERT INTO stage30_candidates
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            records.values(),
+        )
+
+        # -----------------------------------------------------
+        # 4. Find new or improved ORFs
+        # -----------------------------------------------------
+
+        candidates = con.execute(
+            """
+            SELECT
+                c.proteinID,
+                c.domain_type,
+                c.sequence,
+                c.score,
+                c.dom_start,
+                c.dom_end,
+                p.protein_pk,
+                p.genome_pk,
+                MAX(d.score) AS previous_score
+
+            FROM stage30_candidates c
+
+            LEFT JOIN Proteins p
+                ON p.proteinID = c.proteinID
+
+            LEFT JOIN Domains d
+                ON d.protein_pk = p.protein_pk
+
+            GROUP BY c.proteinID
+            """
+        ).fetchall()
+
+        accepted = []
+
+        for row in candidates:
+            (
+                protein_id,
+                protein_type,
+                sequence,
+                score,
+                start,
+                end,
+                protein_pk,
+                existing_genome_pk,
+                previous_score,
+            ) = row
+
+            if protein_pk is not None and existing_genome_pk != genome_pk:
+                raise ValueError(
+                    f"Protein ID collision: {protein_id} belongs to another genome"
+                )
+
+            # Existing higher/equal scores are retained.
+            if previous_score is not None and score <= previous_score:
+                continue
+
+            accepted.append(
+                (
+                    protein_id,
+                    protein_type,
+                    sequence,
+                    score,
+                    start,
+                    end,
+                )
+            )
+
+        if not accepted:
+            return 0
+
+        # -----------------------------------------------------
+        # 5. Insert new proteins
+        # -----------------------------------------------------
+
+        con.executemany(
+            """
+            INSERT OR IGNORE INTO Proteins (
+                proteinID,
+                genome_pk,
+                valid_hit,
+                dom_count
+            )
+            VALUES (?, ?, 1, 1)
+            """,
+            [(protein_id, genome_pk) for protein_id, *_ in accepted],
+        )
+
+        # -----------------------------------------------------
+        # 6. Retrieve protein primary keys
+        # -----------------------------------------------------
+
+        protein_pks = dict(
+            con.execute(
+                """
+                SELECT p.proteinID, p.protein_pk
+                FROM Proteins p
+                JOIN stage30_candidates c
+                    ON c.proteinID = p.proteinID
+                """
+            )
+        )
+
+        # -----------------------------------------------------
+        # 7. Update protein metadata
+        # -----------------------------------------------------
+
+        con.executemany(
+            """
+            UPDATE Proteins
+            SET
+                valid_hit = 1,
+                dom_count = 1
+            WHERE protein_pk = ?
+            """,
+            [(protein_pks[protein_id],) for protein_id, *_ in accepted],
+        )
+
+        # -----------------------------------------------------
+        # 8. Save amino acid sequences
+        # -----------------------------------------------------
+
+        con.executemany(
+            """
+            INSERT INTO ProteinSequences (
+                protein_pk,
+                sequence
+            )
+            VALUES (?, ?)
+
+            ON CONFLICT(protein_pk)
+            DO UPDATE SET
+                sequence = excluded.sequence
+            """,
+            [
+                (
+                    protein_pks[protein_id],
+                    sequence,
+                )
+                for (
+                    protein_id,
+                    _,
+                    sequence,
+                    _,
+                    _,
+                    _,
+                ) in accepted
+            ],
+        )
+
+        # -----------------------------------------------------
+        # 9. Remove previous domain assignments
+        # -----------------------------------------------------
+
+        con.executemany(
+            """
+            DELETE FROM Domains
+            WHERE protein_pk = ?
+            """,
+            [(protein_pks[protein_id],) for protein_id, *_ in accepted],
+        )
+
+        # -----------------------------------------------------
+        # 10. Insert best domain assignment
+        # -----------------------------------------------------
+
+        con.executemany(
+            """
+            INSERT INTO Domains (
+                protein_pk,
+                domain_pk,
+                domStart,
+                domEnd,
+                score
+            )
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    protein_pks[protein_id],
+                    domain_pks[protein_type],
+                    start,
+                    end,
+                    score,
+                )
+                for (
+                    protein_id,
+                    protein_type,
+                    _,
+                    score,
+                    start,
+                    end,
+                ) in accepted
+            ],
+        )
+
+        return len(accepted)
+
+
 def insert_taxonomy_data(database: str, taxonomy_file: str) -> None:
     """
     Insert taxonomy data from a file into the Genomes table of the database.

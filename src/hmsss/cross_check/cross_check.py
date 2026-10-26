@@ -42,8 +42,6 @@ def reference_sequence_check(config: Config) -> None:
         Creates FAA, crosscheck, trusted, and intermediate hit files;
         updates SQLite with summarized reports.
     """
-    print_header("Reference sequence cross-check & cutoff promotion", logger=log)
-
     # Get the list of intermediate hits to be processed
     intermediate_files = glob.glob(
         os.path.join(config.cross_check_directory, "*.intermediate_hits_faa")

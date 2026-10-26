@@ -18,6 +18,7 @@ from hmsss.io import (
     output_dataset,
     print_command_args,
 )
+from hmsss.read_mapping import initial_read_detection, prepare_libraries
 from hmsss.search import initial_search
 from hmsss.stages import (
     process_seqfiles,  # import process_operator
@@ -75,7 +76,7 @@ def run_pipeline(config) -> None:
     log_file = os.path.join(config.result_files_directory, "execution_logfile.txt")
     setup_logging(getattr(config, "verbose", 1), log_file)
 
-    if config.stage < 6:
+    if config.stage < 6 or 40 >= config.stage >= 30:
         print_header("Initializing resources")
         ressource_prep.ressource_preparation(config)
 
@@ -111,8 +112,40 @@ def run_pipeline(config) -> None:
         print_header("Creating metabolic pathway plots")
         metabolic_pathway_sankey.create_metabolic_pathway_plots(config)
 
+    # The 30 steps are for read mapping with the custom implementation from here
+
+    if config.stage == 30:
+        print_header("Library preparation for metagenome search")
+        result = prepare_libraries.collect_placement_search_hmms(config)
+        prepare_libraries.create_placement_search_hmm_library(config, result)
+        config.stage = 31
+
+    if config.stage <= 31 <= config.exit:
+        print_header("Initial read detection in metagenomes")
+        initial_read_detection.initial_read_detection(
+            config,
+            min_orf_length=96,
+            translation_table=11,
+            batch_size=10000,
+            evalue=1e-5,
+        )
+        config.stage = 32
+
+    if config.stage <= 32 <= config.exit:
+        print_header("Phylogenetic placement of detected reads")
+        cross_check.reference_sequence_check(config)
+        # TODO Es ist nochunklar ob das platzieren so funktioniert gemessen am ressourcen verbrauch, code auch noch ungetestet
+        # die weitere folge ist das alle hits noch nicht als valid gelten, bzw könnte man auch alle einfach als valid annehmen,
+        # da die platzierung ja filtert
+        config.stage = 33
+
+    if config.stage <= 33 <= config.exit:
+        print_header("Writing summary reports")
+        config.stage = 34
+
+    # The 50 steps are implementation of GraftM python module
     if config.stage == 50:
-        print_header("Mapping reads to protein and nucleotide fasta files")
+        print_header("Mapping reads with GraftM")
         ressource_prep.ressource_preparation(config)
         initial_read_mapping.initial_read_mapping(config)
         # TODO Ungetestet ist bisher das parsing des outputs. Das muss noch erstellt werden

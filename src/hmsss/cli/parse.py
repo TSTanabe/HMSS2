@@ -272,7 +272,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="stage",
         type=int,
         default=0,
-        choices=[0, 1, 2, 3, 4, 5, 6, 7, 8],
+        choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 30, 31, 32],
         help="Start at step" if never_show else argparse.SUPPRESS,
     )
     parameters.add_argument(
@@ -280,7 +280,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="exit",
         type=int,
         default=10,
-        choices=[0, 1, 2, 3, 4, 5, 6, 7, 8],
+        choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 30, 31, 32],
         help="Exit at step" if never_show else argparse.SUPPRESS,
     )
 
@@ -1068,6 +1068,21 @@ def build_config_from_namespace(ns) -> Config:
     return cfg
 
 
+def _needs_stage_30(ns: argparse.Namespace) -> bool:
+    """Detect FASTQ input for automatic Stage 30 selection."""
+
+    input_dir = getattr(ns, "fasta_file_directory", None)
+
+    if not input_dir:
+        return False
+
+    root = Path(input_dir)
+
+    return any(
+        p.name.endswith((".fastq", ".fastq.gz")) for p in root.rglob("*") if p.is_file()
+    )
+
+
 def _needs_stage_50(ns: argparse.Namespace) -> bool:
     """Determine whether stage 50 (read mapping redo) must be forced.
 
@@ -1171,8 +1186,8 @@ def _apply_runtime_defaults(ns: argparse.Namespace) -> argparse.Namespace:
     # clamp 0..5
     if normalized_stage < 0:
         normalized_stage = 0
-    if normalized_stage > 5:
-        normalized_stage = 5
+    if normalized_stage > 50:
+        normalized_stage = 50
 
     if _needs_stage_100(ns):
         # Required for redo taxonomy command
@@ -1181,8 +1196,11 @@ def _apply_runtime_defaults(ns: argparse.Namespace) -> argparse.Namespace:
         # Required for all dataset, output and processing commands
         setattr(ns, "stage", 101)
     elif _needs_stage_50(ns):
-        # Required for read-mapping workflow
+        # Required for read-mapping workflow with graftM
         setattr(ns, "stage", 50)
+    elif normalized_stage == 0 and _needs_stage_30(ns):
+        # Required for read-mapping workflow without graftM
+        setattr(ns, "stage", 30)
     else:
         setattr(ns, "stage", normalized_stage)
 
