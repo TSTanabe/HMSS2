@@ -261,9 +261,6 @@ def align_queries_pyhmmer(
     with pyhmmer.easel.MSAFile(str(seed), format="afa") as msa_file:
         reference = msa_file.read()
 
-    if reference is None or reference.alignment_length != model.M:
-        raise ValueError(f"HMM length ({model.M}) does not match reference alignment")
-
     aligned_count = 0
 
     with (
