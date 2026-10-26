@@ -524,13 +524,24 @@ def initial_read_detection(
     results = {}
     queue.queue_read_mapping_fastq_inputs(config)
     database.create_database(config.database_directory)
+
+    # Load HMM library once
+    with pyhmmer.plan7.HMMFile(config.library) as hmm_file:
+        profiles = list(hmm_file)
+
+    logger.info(
+        "Loaded %d HMM profiles from %s",
+        len(profiles),
+        config.library,
+    )
+
     for metagenome_id, fastq_file in config.fastq_files.items():
         result = search_fastq_with_orfm(
             fastq_file=fastq_file,
             metagenome_id=metagenome_id,
             database_path=config.database_directory,
             intermediate_dir=config.cross_check_directory,
-            profiles=config.library,
+            profiles=profiles,
             output_dir=config.result_files_directory,
             cores=int(config.cores),
             batch_size=batch_size,
