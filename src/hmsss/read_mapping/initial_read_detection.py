@@ -530,7 +530,7 @@ def initial_read_detection(
             database_path=config.database_directory,
             intermediate_dir=config.cross_check_directory,
             profiles=config.library,
-            output_dir=config.results_directory,
+            output_dir=config.result_files_directory,
             cores=int(config.cores),
             batch_size=batch_size,
             min_orf_length=min_orf_length,
