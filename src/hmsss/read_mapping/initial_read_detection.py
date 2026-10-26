@@ -295,6 +295,7 @@ def search_fastq_with_orfm(
     # --------------------------------------------------------
     # Prepare OrfM command
     # --------------------------------------------------------
+    logger.debug(f"Detection of ORFs with orfM for {fastq_file}")
     command = _build_orfm_command(
         fastq_file=fastq_file,
         min_orf_length=min_orf_length,

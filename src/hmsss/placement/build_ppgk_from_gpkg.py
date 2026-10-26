@@ -25,9 +25,9 @@ LOGGER = logging.getLogger("gpkg_package_builder")
 PROTEIN_GROUPS: dict[str, list[str]] = {
     # "MarD_MorD_NflD": ["MarD", "MorD", "NflD-like"],
     # "AsrC_DsrAB": ["AsrC", "oxDsrA", "oxDsrB", "redDsrA", "redDsrB"],
-    "DsrM_QmoC_TmcC_HmcE": ["QmoC", "redDsrM", "oxDsrM"],
-    # "DsrK_TmcB": ["TmcB", "redDsrK", "oxDsrK"],
-    # "Other_family": ["ProteinA", "ProteinB"],
+    # "DsrM_QmoC_TmcC_HmcE": ["QmoC", "redDsrM", "oxDsrM"],
+    # "DsrK": ["redDsrK", "oxDsrK"],
+    "DsrJ": ["redDsrJ", "oxDsrJ"],
     # "Other_family": ["ProteinA", "ProteinB"],
     # "Other_family": ["ProteinA", "ProteinB"],
     # "Other_family": ["ProteinA", "ProteinB"],
