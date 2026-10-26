@@ -523,6 +523,7 @@ def initial_read_detection(
 
     results = {}
     queue.queue_read_mapping_fastq_inputs(config)
+    database.create_database(config.database_directory)
     for metagenome_id, fastq_file in config.fastq_files.items():
         result = search_fastq_with_orfm(
             fastq_file=fastq_file,
