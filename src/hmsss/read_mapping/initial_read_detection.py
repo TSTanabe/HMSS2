@@ -521,7 +521,7 @@ def initial_read_detection(
     """
 
     results = {}
-
+    print(config.fastq_files)
     for metagenome_id, fastq_file in config.fastq_files.items():
         result = search_fastq_with_orfm(
             fastq_file=fastq_file,
