@@ -97,7 +97,7 @@ class CliSearchParams:
     refseq_identity: int = 90
     name: str = "project"
     stage: int = 0
-    exit: int = 10
+    exit: int = 99
 
 
 @dataclass(slots=True)

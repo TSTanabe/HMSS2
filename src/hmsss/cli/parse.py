@@ -279,7 +279,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         "-x",
         dest="exit",
         type=int,
-        default=10,
+        default=99,
         choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 30, 31, 32],
         help="Exit at step" if never_show else argparse.SUPPRESS,
     )
