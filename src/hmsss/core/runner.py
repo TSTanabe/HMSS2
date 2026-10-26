@@ -119,7 +119,7 @@ def run_pipeline(config) -> None:
         result = prepare_libraries.collect_placement_search_hmms(config)
         prepare_libraries.create_placement_search_hmm_library(config, result)
         config.stage = 31
-
+    print(config.stage)
     if config.stage <= 31 <= config.exit:
         print_header("Initial read detection in metagenomes")
         initial_read_detection.initial_read_detection(
