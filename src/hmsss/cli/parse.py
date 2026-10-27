@@ -17,6 +17,7 @@ from hmsss.cli.config import (
     CliInput,
     CliLimiter,
     CliOperators,
+    CliPlacement,
     CliReadMapping,
     CliResources,
     CliSearchParams,
@@ -473,8 +474,81 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         else argparse.SUPPRESS,
     )
 
+    # ============================================================
+    # Phylogenetic placement (EPA-ng) and metagenomic ORF detection
+    # ============================================================
+
+    placement = parser.add_argument_group("Phylogenetic placement of sequences")
+
+    placement.add_argument(
+        "--disable-placement",
+        dest="disable_placement",
+        action="store_true",
+        default=False,
+        help="Disable phylogenetic placement using EPA-ng",
+    )
+
+    placement.add_argument(
+        "--placements",
+        dest="placements",
+        nargs="*",
+        type=str,
+        default=None,
+        metavar="<PACKAGE>",
+        help="Placement package names to process (space separated)",
+    )
+
+    placement.add_argument(
+        "--placement-threshold",
+        dest="placement_threshold",
+        type=float,
+        default=0.75,
+        metavar="<float>",
+        help="Minimum likelihood weight ratio (LWR) for placement [0.0-1.0]",
+    )
+
+    orfm = parser.add_argument_group(
+        "Metagenomic ORF detection and classification (OrfM / PyHMMER / EPA-ng)"
+    )
+
+    orfm.add_argument(
+        "--orf-min-length",
+        dest="min_orf_length",
+        type=int,
+        default=96,
+        metavar="<int>",
+        help="Minimum ORF length in nucleotides (must be divisible by 3)",
+    )
+
+    orfm.add_argument(
+        "--orf-translation-table",
+        dest="translation_table",
+        type=int,
+        default=11,
+        metavar="<int>",
+        help="Translation table used by OrfM",
+    )
+
+    orfm.add_argument(
+        "--orf-batch-size",
+        dest="batch_size",
+        type=int,
+        default=10000000,
+        metavar="<int>",
+        help="Number of translated ORFs per PyHMMER batch",
+    )
+
+    orfm.add_argument(
+        "--orf-evalue",
+        dest="evalue",
+        type=float,
+        default=1e-5,
+        metavar="<float>",
+        help="E-value cutoff for initial PyHMMER detection",
+    )
+
     # Read mapping workflow algorithm
-    readmap = parser.add_argument_group("Read mapping (optional)")
+    readmap = parser.add_argument_group("Read mapping with GraftM")
 
     readmap.add_argument(
         "--read-mapping",
@@ -948,7 +1022,8 @@ def build_config_from_namespace(ns) -> Config:
         threshold_type=int(getattr(ns, "threshold_type", 1)),
         thrs_score=float(getattr(ns, "thrs_score", 50)),
         threshold_factor=float(getattr(ns, "threshold_factor", 1.0)),
-        taxonomy_file=_s(ns, "taxonomy_file"),
+        taxonomy_file=_s(ns, "taxonomy_file")
+        or os.path.join(paths_cfg.data, "combined_globdb_232_taxonomy.tsv"),
         refseq_identity=int(getattr(ns, "refseq_identity", 90)),
         name=getattr(ns, "name", "project"),
         stage=int(getattr(ns, "stage", 0)),
@@ -1007,6 +1082,37 @@ def build_config_from_namespace(ns) -> Config:
         dataset_limit_keywords=getattr(ns, "dataset_limit_keywords", "0"),
         dataset_divide_sign=getattr(ns, "dataset_divide_sign", "."),
     )
+
+    # Default placement packages for different pipeline stages
+    GENOME_PLACEMENTS = [
+        "DsrO",
+        "DsrP",
+        "SoeA",
+        "AprA",
+        "AprB",
+    ]
+    METAGENOME_PLACEMENTS = []
+
+    # Detect whether --placements was explicitly provided
+    placements_provided = ns.placements is not None
+
+    if placements_provided:
+        # CLI always overrides stage-specific defaults
+        selected_placements = list(ns.placements)
+    elif 30 <= ns.stage <= 32:
+        selected_placements = METAGENOME_PLACEMENTS.copy()
+    else:
+        selected_placements = GENOME_PLACEMENTS.copy()
+    cli_placement = CliPlacement(
+        disable_placement=bool(getattr(ns, "disable_placement", False)),
+        placements=selected_placements,
+        placements_provided=placements_provided,
+        placement_threshold=float(getattr(ns, "placement_threshold", 0.75)),
+        min_orf_length=int(getattr(ns, "min_orf_length", 96)),
+        translation_table=int(getattr(ns, "translation_table", 11)),
+        batch_size=int(getattr(ns, "batch_size", 10000000)),
+        evalue=float(getattr(ns, "evalue", 1e-5)),
+    )
     cli_readmap = CliReadMapping(
         use_read_mapping=bool(getattr(ns, "use_read_mapping", False)),
         gpkg_sets=list(getattr(ns, "gpkg_sets", [])),
@@ -1060,6 +1166,7 @@ def build_config_from_namespace(ns) -> Config:
         cli_info=cli_info,
         cli_csb=cli_csb,
         cli_readmap=cli_readmap,
+        cli_placement=cli_placement,
         cli_flow=cli_flow,
         cli_ops=cli_ops,
         cli_limiter=cli_limiter,

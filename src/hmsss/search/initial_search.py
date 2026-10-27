@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import os
 
-from hmsss.core.logging import get_logger, print_header
 from hmsss.core import queue
-from hmsss.search import search_pyhmmer
+from hmsss.core.logging import get_logger, print_header
 from hmsss.db.database import create_database
-
+from hmsss.search import search_pyhmmer
 
 logger = get_logger(__name__)
 
@@ -27,7 +26,7 @@ def initial_search(config) -> None:
     without writing extra external files
     """
 
-    print_header("Initial search (hmmsearch)", logger=logger)
+    # print_header("Initial search (hmmsearch)", logger=logger)
     if os.path.isfile(config.database_directory):
         queue.queue_protein_annotation_inputs(config)
         removed = queue.remove_genomes_already_in_db_from_queue(config)

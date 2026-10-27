@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import glob
 import os
+import shutil
 
 from hmsss.cli.config import Config
 from hmsss.core.logging import get_logger, print_header
@@ -53,7 +54,8 @@ def reference_sequence_check(config: Config) -> None:
         intermediate_dict[hmm_type] = inter_file
 
     log.info("Phylogenetic placement of selected hit sequences")
-    phylogenetic_placement.epa_ng_placement(config, intermediate_dict)
+    if shutil.which("epa-ng") and not config.disable_placement:
+        phylogenetic_placement.epa_ng_placement(config, intermediate_dict)
 
     log.info("Cross-check candidates with reference sequences")
     search_cross_reference.cross_check_candidates_with_reference_seqs(

@@ -25,14 +25,113 @@ LOGGER = logging.getLogger("gpkg_package_builder")
 PROTEIN_GROUPS: dict[str, list[str]] = {
     # "MarD_MorD_NflD": ["MarD", "MorD", "NflD-like"],
     # "AsrC_DsrAB": ["AsrC", "oxDsrA", "oxDsrB", "redDsrA", "redDsrB"],
-    # "DsrM_QmoC_TmcC_HmcE": ["QmoC", "redDsrM", "oxDsrM"],
+    # "DsrM": ["QmoC", "redDsrM", "oxDsrM"],
     # "DsrK": ["redDsrK", "oxDsrK"],
-    "DsrJ": ["redDsrJ", "oxDsrJ"],
-    # "Other_family": ["ProteinA", "ProteinB"],
-    # "Other_family": ["ProteinA", "ProteinB"],
-    # "Other_family": ["ProteinA", "ProteinB"],
-    # "Other_family": ["ProteinA", "ProteinB"],
-    # "Other_family": ["ProteinA", "ProteinB"],
+    # "DsrJ": ["redDsrJ", "oxDsrJ"],
+    "DsrO": ["redDsrO", "oxDsrO", "TtrB", "SoeB", "PhsB", "DmsB", "DdhB"],
+    "DsrP": ["redDsrP", "oxDsrP", "TtrC", "SoeC", "PhsC", "DmsC", "DdhC"],
+    "SoeA": ["TtrA", "SoeA", "PhsA", "DmsA", "DdhA"],
+    "AprA": ["redAprA", "oxAprAI", "oxAprAII"],
+    "AprB": ["redAprB", "oxAprBI", "oxAprBII"],
+    "QmoA": ["QmoA"],
+    "QmoB": ["QmoB", "sHdrB3"],
+    "HdrA": ["sHdrA", "dHdrA"],
+    "HdrB": ["qHdrB", "sHdrB1", "sHdrB2"],
+    "HdrC": ["dHdrC", "qHdrC", "sHdrC1", "sHdrC2"],
+    "Lbp": ["LbpA1", "LbpA2"],
+    "LipS": ["LipS1", "LipS2"],
+    "Sat": ["redSat", "oxSat"],
+    "MccA": ["MccA"],
+    "AsrA": ["ShyB", "AsrA"],
+    "DsrC": ["redDsrC", "oxDsrC"],
+    "DsrE": ["DsrE", "DsrE3A", "DsrE3B", "DsrE3C"],
+    "SoxA": ["TsdA", "SoxA"],
+    "SoxB": ["SoxB"],
+    "SoxC": ["SoxC", "SorA"],
+    "SoxD": ["SoxD"],
+    "SoxX": ["SoxX"],
+    "SoxY": ["SoxY"],
+    "DoxD": ["DoxD"],
+    "DoxA": ["DoxA"],
+    "DddW": ["DddW", "DddK"],
+    "DddD": ["DddD"],
+    "DddA": ["DddA"],
+    "DddX": ["DddX"],
+    "DddL": ["DddL"],
+    "DddC": ["DddC"],
+    "DddP": ["DddP"],
+    "DddQ": ["DddQ"],
+    "DddT": ["DddT"],
+    "DddX": ["DddX"],
+    "DddX": ["DddY"],
+    "Ssu": ["SnfG", "DmoA", "SsuD", "MsuD"],
+    "MddA": ["MddA"],
+    "MddH": ["MddH"],
+    "DdhB": ["DdhB"],
+    "DdhC": ["DdhC"],
+    "DmdA": ["DmdA"],
+    "DmdB": ["DmdB"],
+    "DmdA": ["DmdA"],
+    "DorA": ["DorA"],
+    "DorC": ["DorC"],
+    "DorD": ["DorD"],
+    "DsoA": ["DsoA"],
+    "DsoB": ["DsoB"],
+    "DsoC": ["DsoC"],
+    "DsoD": ["DsoD"],
+    "YihQ": ["YihQ"],
+    "SftI": ["SftI"],
+    "YihS": ["YihS"],
+    "YihT": ["YihT"],
+    "YihU": ["YihU"],
+    "YihV": ["YihV"],
+    "SqwK": ["SqwK"],
+    "SqwL": ["SqwK"],
+    "SqwK": ["SqwL"],
+    "SqwI": ["SqwI"],
+    "SqwG": ["SqwG"],
+    "SqwH": ["SqwH"],
+    "SqwD": ["SqwD"],
+    "SqwF": ["SqwF"],
+    "SqvB": ["SqvB"],
+    "SqoD": ["SqoD"],
+    "SmoC": ["SmoC"],
+    "SqiK": ["SqiK"],
+    "SqiA": ["SqiA"],
+    "SqgA": ["SqgA"],
+    "Sqdh": ["Sqdh"],
+    "Sgdh": ["Sgdh"],
+    "Sgald": ["Sgald"],
+    "Sgl": ["Sgl"],
+    "SftD": ["SftD"],
+    "SftT": ["SftT"],
+    "Sgl": ["Sgl"],
+    "SuyA": ["SuyA"],
+    "SuyB": ["SuyB"],
+    "HpsG": ["HpsG"],
+    "HpsH": ["HpsH"],
+    "HpfG": ["HpfG"],
+    "HpfH": ["HpfH"],
+    "HpfD": ["HpfD"],
+    "HpsN": ["HpsN"],
+    "HpsP": ["HpsP"],
+    "HpfX": ["HpfX"],
+    "HpfY": ["HpfY"],
+    "HpfZ": ["HpfZ"],
+    "IseJ": ["IseJ"],
+    "IsfD": ["IsfD"],
+    "SarD": ["SarD"],
+    "SauS": ["SauS"],
+    "SauT": ["SauT"],
+    "SlcC": ["SlcC"],
+    "SlcD": ["SlcD"],
+    "TauX": ["TauX"],
+    "TauY": ["TauY"],
+    "Toa": ["Toa"],
+    "Tpa": ["Tpa"],
+    "ComC": ["ComC"],
+    "ComD": ["ComD"],
+    "ComE": ["ComE"],
     # "Other_family": ["ProteinA", "ProteinB"],
 }
 
@@ -162,6 +261,13 @@ def main() -> int:
         help="A: add then trim; B: add --keeplength then trim; "
         "D: trim ingroup then add --keeplength",
     )
+    parser.add_argument(
+        "--group-index",
+        type=int,
+        nargs="+",
+        metavar="N",
+        help="Run only the selected zero-based PROTEIN_GROUPS indices (e.g. 0 3 5); default: all groups.",
+    )
     parser.add_argument("--threads", type=int, default=8)
     parser.add_argument("--package-version", default="1.0.0")
     parser.add_argument(
@@ -203,12 +309,29 @@ def main() -> int:
     if not PROTEIN_GROUPS:
         parser.error("PROTEIN_GROUPS is empty; configure it at the top of this script")
 
+    # Python dictionaries preserve insertion order. Indices are zero-based.
+    groups = list(PROTEIN_GROUPS.items())
+    if args.group_index is not None:
+        invalid = [i for i in args.group_index if not 0 <= i < len(groups)]
+        if invalid:
+            parser.error(
+                f"Invalid group index(es): {invalid}; valid range is 0..{len(groups) - 1}"
+            )
+        selected_indices = list(dict.fromkeys(args.group_index))
+    else:
+        selected_indices = list(range(len(groups)))
+
+    LOGGER.info("Selected %d of %d groups", len(selected_indices), len(groups))
+    for idx in selected_indices:
+        LOGGER.info("Group %d: %s", idx, groups[idx][0])
+
     index = index_gpkg_directories(root)
     LOGGER.info("Indexed %d distinct protein packages from %s", len(index), root)
     failed = 0
     succeeded = 0
 
-    for group_name, proteins in PROTEIN_GROUPS.items():
+    for idx in selected_indices:
+        group_name, proteins = groups[idx]
         try:
             # Prevent traversal or directory collisions through editable group names.
             if group_name in {"", ".", ".."} or Path(group_name).name != group_name:

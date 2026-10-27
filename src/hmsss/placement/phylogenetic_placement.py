@@ -206,7 +206,7 @@ def load_placement_package(package_dir: str | Path) -> dict[str, Path]:
 
         package_files[argument] = path
 
-    logger.info(
+    logger.debug(
         "Reference package '%s': all SHA-256 checksums verified",
         package_dir.name,
     )
@@ -299,7 +299,7 @@ def align_queries_pyhmmer(
                 out.write(f">{query_id}\n{aligned}\n")
                 aligned_count += 1
 
-    logger.info("PyHMMER aligned %d query sequences", aligned_count)
+    logger.debug("PyHMMER aligned %d query sequences", aligned_count)
     return aligned_count
 
 
@@ -357,7 +357,7 @@ def run_epa_ng(
         str(output_dir),
     ]
 
-    logger.info("Running EPA-ng with %d queries", aligned_count)
+    logger.debug("Running EPA-ng with %d queries", aligned_count)
     subprocess.run(cmd, check=True)
 
     # 3. Validate JPLACE output
@@ -370,7 +370,7 @@ def run_epa_ng(
     if not {"tree", "fields", "placements"} <= data.keys():
         raise ValueError(f"Invalid JPLACE format: {jplace}")
 
-    logger.info(
+    logger.debug(
         "EPA-ng completed: %s (%d placement groups)",
         jplace,
         len(data["placements"]),
@@ -398,8 +398,14 @@ def assign_protein_clades(
         str(threshold),
     ]
 
-    logger.info("Assigning protein clades: %s", jplace)
-    subprocess.run(cmd, cwd=output_dir, check=True)
+    logger.debug("Assigning protein clades: %s", jplace)
+    subprocess.run(
+        cmd,
+        cwd=output_dir,
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
 
     return output_dir
 
@@ -488,8 +494,10 @@ def assign_taxonomy(
         str(output_dir.resolve()),
     ]
 
-    logger.info("Assigning taxonomy: %s", jplace)
-    subprocess.run(cmd, check=True)
+    logger.debug("Assigning taxonomy: %s", jplace)
+    subprocess.run(
+        cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    )
 
     return output_dir
 
@@ -533,11 +541,17 @@ def epa_ng_placement(config, intermediate_files):
     protein types match.
     """
 
+    # Select the placement packages for the intermediate files
     packages = find_matching_placement_packages(
         config.paths.placement, intermediate_files
     )
 
     for package_dir, faa_files in packages:
+        if (
+            config.placements and package_dir.name not in config.placements
+        ):  # Skip placements that are not selected
+            continue
+
         try:
             output_dir = (
                 Path(config.phylogenetic_placement_directory) / package_dir.name
@@ -572,7 +586,7 @@ def epa_ng_placement(config, intermediate_files):
                 jplace=jplace,
                 annotations=package_dir / "annotations.tsv",
                 output_dir=output_dir / "function",
-                threshold=0.75,
+                threshold=config.assignment_threshold,
             )
 
             parse_function_assignments(

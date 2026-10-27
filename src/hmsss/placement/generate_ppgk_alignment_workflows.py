@@ -259,7 +259,7 @@ def align_and_trim(
     def run_trimal(source: Path, destination: Path) -> None:
         subprocess.run(
             [
-                TRIMAL,
+                "trimal",
                 "-in",
                 str(source),
                 "-out",
@@ -378,7 +378,7 @@ def build_tree(
     tree_file = output_dir / "tree.nwk"
 
     command = [
-        executable,
+        "VeryFastTree",
         "-lg",
         "-gamma",
         "-double-precision",
@@ -638,9 +638,9 @@ def create_manifest(
         "outgroups": outgroup_files or [],
         "tools": {
             "mafft": tool_version(["mafft", "--version"]),
-            "trimal": tool_version([TRIMAL, "-version"]),
+            "trimal": tool_version(["trimal", "-version"]),
             "hmmbuild": tool_version(["hmmbuild", "-h"]),
-            "veryfasttree": tool_version([VERYFASTTREE, "-help"]),
+            "veryfasttree": tool_version(["VeryFastTree", "-help"]),
         },
         "sources": {
             "seed_fastas": [
@@ -798,10 +798,6 @@ def main():
         if path not in outgroup_types:
             outgroup_files.append(path)
             outgroup_types[path] = label
-
-    for executable in (TRIMAL, VERYFASTTREE):
-        if not Path(executable).is_file():
-            parser.error(f"Executable not found: {executable}")
 
     output_dir = args.output.resolve()
 

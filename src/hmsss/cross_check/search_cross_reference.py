@@ -61,6 +61,31 @@ def find_file_by_name_partial(root_dir: str, filename: str) -> list[str]:
     return matches
 
 
+def _find_crosscheck_reference(
+    hmm_id: str, gpkg_dir: Path, data_dir: Path
+) -> Path | None:
+    """Find reference FASTA, preferring existing GPKG reference sequences."""
+
+    # Prefer an exact protein GPKG package
+    for package in sorted(gpkg_dir.rglob(f"{hmm_id}.gpkg")):
+        if not package.is_dir() or package.name != f"{hmm_id}.gpkg":
+            continue
+
+        for filename in ("refseq_database.faa", f"{hmm_id}.faa"):
+            candidate = package / filename
+
+            if candidate.is_file():
+                return candidate
+
+    # Fallback: existing FASTA discovery
+    matches = find_file_by_name_partial(str(data_dir), f"{hmm_id}.faa")
+
+    if matches:
+        return Path(sorted(matches)[0])
+
+    return None
+
+
 def cross_check_candidates_with_reference_seqs(config, intermediate_dict) -> List[str]:
     """Cross-check intermediate FASTA files against reference sequences using DIAMOND."""
 
@@ -68,6 +93,7 @@ def cross_check_candidates_with_reference_seqs(config, intermediate_dict) -> Lis
 
     refseq_dir = Path(config.paths.refseq)
     data_dir = Path(config.paths.data)
+    gpkg_dir = Path(config.paths.gpkg)
     cross_check_dir = Path(config.cross_check_directory)
     cross_check_dir.mkdir(parents=True, exist_ok=True)
 
@@ -86,7 +112,7 @@ def cross_check_candidates_with_reference_seqs(config, intermediate_dict) -> Lis
             inter_file = Path(inter_file)
 
             if not inter_file.is_file():
-                logger.warning("Intermediate FASTA missing: %s", inter_file)
+                logger.debug("Intermediate FASTA missing: %s", inter_file)
                 failed.append(hmm_id)
                 continue
 
@@ -102,16 +128,16 @@ def cross_check_candidates_with_reference_seqs(config, intermediate_dict) -> Lis
             try:
                 # Create DIAMOND database if necessary
                 if not db_path.is_file():
-                    matches = find_file_by_name_partial(str(data_dir), f"{hmm_id}.faa")
+                    faa_path = _find_crosscheck_reference(
+                        hmm_id=hmm_type,
+                        gpkg_dir=gpkg_dir,
+                        data_dir=data_dir,
+                    )
 
-                    if not matches:
-                        logger.warning(
-                            "No reference sequences available for %s", hmm_id
-                        )
+                    if faa_path is None:
+                        logger.debug("No reference sequences available for %s", hmm_id)
                         failed.append(hmm_id)
                         continue
-
-                    faa_path = Path(matches[0])
 
                     subprocess.run(
                         [
@@ -267,7 +293,7 @@ def _crosscheck_worker(hmm_id: str, crosscheck_dir: str, queue) -> None:
         # send as a set to reduce queue traffic
         queue.put(promoted)
 
-    logger.info("%s: queued %d promoted IDs", hmm_id, len(promoted))
+    logger.debug("%s: queued %d promoted IDs", hmm_id, len(promoted))
 
 
 def promote_crosschecked_hits_to_db(

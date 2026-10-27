@@ -229,8 +229,7 @@ def _iter_hmms_in_package(package_dir):
         dirs[:] = [
             directory
             for directory in dirs
-            if directory != "gpkg"
-            and directory != "results"
+            if directory not in {"gpkg", "results", "placements"}
             and not directory.endswith(".gpkg")
         ]
 
@@ -289,9 +288,11 @@ def iter_hmm_files(paths):
         # Otherwise assume this is the resource root and direct children
         # are package directories.
         for package_dir in sorted(p for p in path.iterdir() if p.is_dir()):
-            if package_dir.name in {"gpkg", "results"} or package_dir.name.endswith(
-                ".gpkg"
-            ):
+            if package_dir.name in {
+                "gpkg",
+                "results",
+                "placements",
+            } or package_dir.name.endswith(".gpkg"):
                 continue
 
             package = package_dir.name.split("_", 1)[0]

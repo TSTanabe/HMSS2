@@ -205,6 +205,23 @@ class CliReadMapping:
 
 
 @dataclass(slots=True)
+class CliPlacement:
+    """EPA-ng placement and metagenomic ORF detection parameters."""
+
+    # EPA-ng
+    disable_placement: bool = False
+    placements: List[str] = field(default_factory=list)
+    placements_provided: bool = False
+    placement_threshold: float = 0.75
+
+    # OrfM / PyHMMER
+    min_orf_length: int = 96
+    translation_table: int = 11
+    batch_size: int = 10000000
+    evalue: float = 1e-5
+
+
+@dataclass(slots=True)
 class CliFlow:
     """Global flow modifiers (e.g., recompute taxonomy)."""
 
@@ -450,6 +467,7 @@ class Config:
     cli_limiter: CliLimiter = field(default_factory=CliLimiter)
     cli_ops: CliOperators = field(default_factory=CliOperators)
     cli_readmap: CliReadMapping = field(default_factory=CliReadMapping)
+    cli_placement: CliPlacement = field(default_factory=CliPlacement)
 
     # Laufzeit-State & Projektfelder
     state: RuntimeState = field(default_factory=RuntimeState)
@@ -588,6 +606,17 @@ class Config:
     rm_interleaved = prop("cli_readmap.interleaved")
     rm_ram_profile = prop("cli_readmap.ram_profile_file")
 
+    # EPA-ng phylogenetic placement
+    disable_placement = prop("cli_placement.disable_placement")
+    placements = prop("cli_placement.placements")
+    placement_threshold = prop("cli_placement.placement_threshold")
+
+    # Metagenomic ORF detection
+    min_orf_length = prop("cli_placement.min_orf_length")
+    translation_table = prop("cli_placement.translation_table")
+    batch_size = prop("cli_placement.batch_size")
+    evalue = prop("cli_placement.evalue")
+
     merge_fasta = prop(
         "cli_process.merge_fasta"
     )  # :contentReference[oaicite:35]{index=35}
@@ -691,6 +720,18 @@ class Config:
         ) and not self.cli_readmap.use_read_mapping:
             self.stage = 50
             self.cli_readmap.use_read_mapping = True
+
+        if self.min_orf_length < 3 or self.min_orf_length % 3 != 0:
+            raise ValueError("min_orf_length must be >= 3 and divisible by 3")
+
+        if self.translation_table < 1:
+            raise ValueError("translation_table must be >= 1")
+
+        if self.batch_size < 1:
+            raise ValueError("batch_size must be >= 1")
+
+        if self.evalue <= 0:
+            raise ValueError("evalue must be > 0")
 
         # Pfade der Basisstruktur prüfen
         missing: list[str] = []

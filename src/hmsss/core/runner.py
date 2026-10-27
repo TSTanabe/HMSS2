@@ -84,6 +84,7 @@ def run_pipeline(config) -> None:
     if config.stage <= 1 <= config.exit:
         print_header("Prokaryotic gene recognition and translation (prodigal)")
         fasta_preparation.fasta_preparation(config)
+        config.exit = 10
 
     # --- Stage 2: Hmmsearch ---
     # 2 und teile von 4 zusammen gelegt
@@ -114,20 +115,21 @@ def run_pipeline(config) -> None:
 
     # The 30 steps are for read mapping with the custom implementation from here
 
-    if config.stage == 30:
+    if config.stage <= 31 <= config.exit:
         print_header("Library preparation for metagenome search")
         result = prepare_libraries.collect_placement_search_hmms(config)
         prepare_libraries.create_placement_search_hmm_library(config, result)
         config.stage = 31
+        config.exit = 40
 
     if config.stage <= 31 <= config.exit:
         print_header("Initial read detection in metagenomes")
         initial_read_detection.initial_read_detection(
             config,
-            min_orf_length=96,
-            translation_table=11,
-            batch_size=1000000,
-            evalue=1e-5,
+            min_orf_length=config.min_orf_length,
+            translation_table=config.translation_table,
+            batch_size=config.batch_size,
+            evalue=config.evalue,
         )
         config.stage = 32
 
