@@ -23,6 +23,9 @@ LOGGER = logging.getLogger("gpkg_package_builder")
 # Values: protein names, ordered! The FIRST protein provides the outgroup.
 # These are illustrative names; replace or extend with your actual groups.
 PROTEIN_GROUPS: dict[str, list[str]] = {
+    "YihQ": ["YihQ"],
+}
+PROTEIN_GROUPS2: dict[str, list[str]] = {
     # "MarD_MorD_NflD": ["MarD", "MorD", "NflD-like"],
     # "AsrC_DsrAB": ["AsrC", "oxDsrA", "oxDsrB", "redDsrA", "redDsrB"],
     # "DsrM": ["QmoC", "redDsrM", "oxDsrM"],

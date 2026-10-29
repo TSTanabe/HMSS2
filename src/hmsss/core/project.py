@@ -71,6 +71,34 @@ def prepare_result_space(config, project: str = "project") -> None:
                 config.cli_result_dir_in, project
             )
 
+    # The project root contains ALL mutable runtime files.
+    # Installed data/HMMs/placements remain read-only.
+    run_root = Path(config.result_files_directory).resolve()
+    run_root.mkdir(parents=True, exist_ok=True)
+
+    # Never write the assembled HMM library to bundled data/HMMlib.
+    bundled_library = Path(paths.SRC_FILE_HMM_LIBRARY).resolve()
+    if config.library is None or Path(config.library).resolve() == bundled_library:
+        config.library = str(run_root / "resources" / "HMMlib")
+    # DIAMOND databases are generated in the run directory, not data/RefSeqs.
+    config.paths.refseq = str(run_root / "refseq")
+
+    # Existing bundled resource files are read-only. Missing ones are assembled
+    # inside the current run instead of writing into the installation.
+    for key, installed in (
+        ("score_threshold_file", paths.SRC_FILE_THRESHOLDS),
+        ("patterns_file", paths.SRC_FILE_PATTERNS),
+        ("cooccurrence_file", paths.SRC_FILE_COOCCURRENCE),
+        ("exclusion_singletons", paths.SRC_FILE_EXCLUSION_SINGLETONS),
+    ):
+        current = getattr(config, key)
+        if (
+            current
+            and Path(current).resolve() == Path(installed).resolve()
+            and not Path(installed).is_file()
+        ):
+            setattr(config, key, str(run_root / "resources" / Path(installed).name))
+
     # All run directories are defined centrally in RUN_DIRECTORY_NAMES.
     # Short config aliases remain writable via RunPaths.
     config.run_paths.create()
@@ -112,11 +140,7 @@ def create_project(directory, projectname="project") -> str:
     timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")  # z. B. "2025-04-16_14-53-21"
     directory = os.path.join(directory, f"{timestamp}_{projectname}")
 
-    try:
-        os.mkdir(directory)
-    except Exception:
-        logger.error("Creation of project directory failed, no writing rights")
-
+    Path(directory).mkdir(parents=True, exist_ok=False)
     return directory
 
 

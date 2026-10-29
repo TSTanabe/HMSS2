@@ -320,7 +320,7 @@ def get_genome_id_files_dict(directory: str, extension: str) -> Dict[str, str]:
     return genome_id_files
 
 
-def unpackgz(path: str) -> str:
+def unpackgz(path: str, output_directory: str | None = None) -> str:
     """Decompress a `.gz` file if not already extracted.
 
     Args:
@@ -331,13 +331,19 @@ def unpackgz(path: str) -> str:
     """
     if not path.endswith(".gz"):
         return path
-    file = path[:-3]
-    if os.path.exists(file):
-        return file
+    if output_directory is None:
+        raise ValueError(
+            "unpackgz requires output_directory to avoid writing beside input"
+        )
+    target = Path(output_directory).resolve()
+    target.mkdir(parents=True, exist_ok=True)
+    file = target / Path(path).name[:-3]
+    if file.exists():
+        return str(file)
     with gzip.open(path, "rb") as f_in:
-        with open(file, "wb") as f_out:
-            shutil.copyfileobj(f_in, f_out)  # type: ignore[arg-type]
-    return file
+        with file.open("wb") as f_out:
+            shutil.copyfileobj(f_in, f_out)
+    return str(file)
 
 
 def concatenate_selected_hmms(

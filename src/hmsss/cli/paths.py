@@ -99,7 +99,7 @@ def _make_paths(root: Path) -> Dict[str, Path]:
         # Consistent with parse.py-Defaults: HMMlib
         "HMMS_DIR": data / "HMMs",
         "REFSEQ_DIR": data / "RefSeqs",
-        "RESULTS_DIR": root / "results",
+        "RESULTS_DIR": Path.cwd().resolve() / "results",
         "PACKAGE_DIR": root / "src" / "hmsss",
         # Standard resources
         "SRC_FILE_RESOURCE_METADATA": data / "Resource_module_metadata",

@@ -292,13 +292,13 @@ def _init_worker(
     # Trie Index für pattern hierarchical tree
     _G_INDEX_TRIE = csb_trie_algorithm.build_trie_index(only_pattern_dict)
 
-    if plausibility_models_path:
-        _G_PLAUSIBILITY_MODELS = plausibility_filter.load_plausibility_models(
-            plausibility_models_path
-        )
-        logger.debug(f"Loaded {len(_G_PLAUSIBILITY_MODELS):,} plausibility models")
-    else:
-        _G_PLAUSIBILITY_MODELS = {}
+    # if plausibility_models_path:
+    #    _G_PLAUSIBILITY_MODELS = plausibility_filter.load_plausibility_models(
+    #        plausibility_models_path
+    #    )
+    #    logger.debug(f"Loaded {len(_G_PLAUSIBILITY_MODELS):,} plausibility models")
+    # else:
+    #    _G_PLAUSIBILITY_MODELS = {}
 
 
 #

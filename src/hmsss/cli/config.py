@@ -744,8 +744,8 @@ class Config:
         _req_dir(self.paths.bin, "BIN_DIR")
         _req_dir(self.paths.data, "DATA_DIR")
         # _req_dir(self.paths.hmms, "HMMS_DIR")
-        _req_dir(self.paths.refseq, "REFSEQ_DIR")
-        _req_dir(self.paths.results, "RESULTS_DIR")
+        # Output directories are created later by prepare_result_space().
+        # The installation resource tree itself may be read-only.
 
         if missing:
             details = "\n - ".join(missing)

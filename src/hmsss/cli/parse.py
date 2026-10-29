@@ -164,10 +164,10 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     inputdef.add_argument(
         "-r",
         dest="result_files_directory",
-        type=dir_path,
+        type=path_str,
         metavar="<directory>",
         default=None,
-        help="Directory for the result files",
+        help="Writable results parent directory (default: ./results)",
     )
     inputdef.add_argument(
         "-c",

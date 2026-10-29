@@ -166,7 +166,8 @@ def ressource_preparation(config) -> None:
         config.cross_check_directory
         or (Path(config.result_files_directory) / "filtered_hits")
     )
-    config.paths.refseq = _ensure_dir(config.paths.refseq)
+    # Writable DIAMOND databases are scoped to the current run.
+    config.paths.refseq = _ensure_dir(Path(config.result_files_directory) / "refseq")
 
     library_generation.build_library(config)
 
