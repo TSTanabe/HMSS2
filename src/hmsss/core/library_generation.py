@@ -222,16 +222,32 @@ def select_modules(metadata, add_modules=None, replace_modules=None):
     selected_keys = set(default_keys)
 
     for selector in _normalize_module_arguments(add_modules):
-        row = _resolve_module(selector, by_selector, by_module)
+        try:
+            row = _resolve_module(selector, by_selector, by_module)
+        except ValueError as exc:
+            log.warning(
+                "Ignoring invalid --add-module %r: %s",
+                selector,
+                exc,
+            )
+            continue
+
         selected_keys.add((row["module"], row["package"]))
 
     for selector in _normalize_module_arguments(replace_modules):
-        row = _resolve_module(selector, by_selector, by_module)
+        try:
+            row = _resolve_module(selector, by_selector, by_module)
+        except ValueError as exc:
+            log.warning(
+                "Ignoring invalid --replace-module %r: %s",
+                selector,
+                exc,
+            )
+            continue
 
         selected_keys = {key for key in selected_keys if key[0] != row["module"]}
 
         selected_keys.add((row["module"], row["package"]))
-
     selected = [
         row for row in metadata if (row["module"], row["package"]) in selected_keys
     ]
