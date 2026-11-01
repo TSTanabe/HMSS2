@@ -97,7 +97,17 @@ def run_pipeline(config) -> None:
     if config.stage <= 3 <= config.exit:
         print_header("Cross check with reference sequences / cutoff optimization")
         if config.bool_cross_check:
-            cross_check.reference_sequence_check(config)
+            cross_check.reference_sequence_check(
+                config,
+                epa_ng_selected_domains=[
+                    "IsrD",
+                    "AtrD",
+                    "MorD",
+                    "MarD",
+                    "MarD4",
+                    "MarD5",
+                ],
+            )
         database.rebuild_presence_tables(config.database_directory)
         database.index_database(config.database_directory)
         config.stage = 3

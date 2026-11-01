@@ -5,7 +5,7 @@ import os
 import shutil
 
 from hmsss.cli.config import Config
-from hmsss.core.logging import get_logger, print_header
+from hmsss.core.logging import get_logger
 from hmsss.cross_check import search_cross_reference as search_cross_reference
 from hmsss.placement import phylogenetic_placement
 
@@ -20,7 +20,7 @@ Finally, trusted and intermediate hit reports are summarized and stored.
 """
 
 
-def reference_sequence_check(config: Config) -> None:
+def reference_sequence_check(config: Config, epa_ng_selected_domains) -> None:
     """Perform reference sequence cross-check and cutoff promotion.
 
     Workflow:
@@ -44,23 +44,53 @@ def reference_sequence_check(config: Config) -> None:
         updates SQLite with summarized reports.
     """
     # Get the list of intermediate hits to be processed
+    # Collect intermediate hits
     intermediate_files = glob.glob(
-        os.path.join(config.cross_check_directory, "*.intermediate_hits_faa")
+        os.path.join(config.cross_check_directory, "*.intermediate_hits.faa")
     )
+
     intermediate_dict = {}
+
+    suffix = ".intermediate_hits.faa"
+
     for inter_file in intermediate_files:
-        hmm_id = os.path.basename(inter_file).removesuffix(".intermediate_hits_faa")
-        hmm_type = hmm_id.split("_")[-1]
-        intermediate_dict[hmm_type] = inter_file
+        hmm_id = os.path.basename(inter_file).removesuffix(suffix)
 
-    log.info("Phylogenetic placement of selected hit sequences")
-    if shutil.which("epa-ng") and not config.disable_placement:
-        phylogenetic_placement.epa_ng_placement(config, intermediate_dict)
+        # Keep complete HMM/domain identifier
+        intermediate_dict[hmm_id] = inter_file
 
-    log.info("Cross-check candidates with reference sequences")
-    search_cross_reference.cross_check_candidates_with_reference_seqs(
-        config, intermediate_dict
+    # Select domains for phylogenetic placement
+    selected_domains = epa_ng_selected_domains
+
+    if selected_domains is None:
+        # Default: all intermediate domains
+        placement_dict = intermediate_dict.copy()
+    else:
+        selected_domains = set(selected_domains)
+
+        placement_dict = {
+            domain: files
+            for domain, files in intermediate_dict.items()
+            if domain in selected_domains
+        }
+
+    log.debug(
+        "Phylogenetic placement selected for %d of %d domains",
+        len(placement_dict),
+        len(intermediate_dict),
     )
+
+    if placement_dict and shutil.which("epa-ng") and not config.disable_placement:
+        phylogenetic_placement.epa_ng_placement(
+            config,
+            placement_dict,
+        )
+
+    # Remove successfully processed files from the original dictionary
+    processed_domains = set(intermediate_dict) - set(placement_dict)
+
+    for domain in processed_domains:
+        del intermediate_dict[domain]
 
     log.info("Promoting cross-checked hits to trusted list")
     search_cross_reference.promote_crosschecked_hits_to_db(
