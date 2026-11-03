@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import gzip
 import logging
+import os
 import shlex
 import shutil
 import subprocess
-import threading
+import tempfile
 from collections import defaultdict
 from pathlib import Path
 from typing import Iterator, List, Optional, Tuple
@@ -23,12 +24,12 @@ logger = logging.getLogger(__name__)
 
 def _iter_fasta_stream(handle) -> Iterator[Tuple[str, str]]:
     """
-    Read FASTA records directly from a binary stream.
+    Read FASTA records from a binary file handle.
 
-    Designed for OrfM stdout.
-
-    Yields:
-        (orf_id, amino_acid_sequence)
+    Yields
+    ------
+    tuple[str, str]
+        (sequence_id, amino_acid_sequence)
 
     Only the current FASTA record is buffered.
     """
@@ -62,70 +63,78 @@ def _iter_fasta_stream(handle) -> Iterator[Tuple[str, str]]:
         yield sequence_id, "".join(sequence_parts)
 
 
-def _feed_fastq_to_orfm(
+def _prepare_orfm_input(
     fastq_file: Path,
-    stdin,
+    temp_dir: Path,
     metagenome_id: str,
-    total_reads: int,
-    progress_every: int = 1000000,
-) -> None:
+    progress_every: int = 1_000_000,
+) -> tuple[Path, int]:
     """
-    Stream FASTQ records into OrfM stdin and report read progress.
+    Prepare an OrfM-readable FASTQ input and determine its read count.
+
+    Plain FASTQ files are used directly. Gzipped FASTQ files are decompressed
+    once into the run-local temporary directory while reads are counted. This
+    avoids feeding OrfM through stdin and therefore removes the Python -> OrfM
+    pipe from the processing stage.
+
+    Returns
+    -------
+    tuple[Path, int]
+        (path passed to OrfM, total_reads)
     """
 
-    if str(fastq_file).endswith(".gz"):
-        opener = gzip.open
-    else:
-        opener = open
+    name = fastq_file.name.lower()
 
-    processed_reads = 0
+    if not name.endswith((".fastq.gz", ".fq.gz")):
+        total_reads = read_counter.safe_read_count(str(fastq_file))
+        return fastq_file, total_reads
 
-    try:
-        with opener(fastq_file, "rb") as handle:
-            while True:
-                header = handle.readline()
+    safe_id = metagenome_id.replace(os.sep, "_")
+    uncompressed_fastq = temp_dir / f"{safe_id}.fastq"
+    total_reads = 0
 
-                if not header:
-                    break
+    logger.info(
+        "[%s] Decompressing FASTQ to temporary storage: %s",
+        metagenome_id,
+        uncompressed_fastq,
+    )
 
-                sequence = handle.readline()
-                plus = handle.readline()
-                quality = handle.readline()
+    with gzip.open(fastq_file, "rb") as source, uncompressed_fastq.open("wb") as target:
+        while True:
+            header = source.readline()
 
-                if not sequence or not plus or not quality:
-                    raise ValueError(f"Incomplete FASTQ record in {fastq_file}")
+            if not header:
+                break
 
-                stdin.write(header)
-                stdin.write(sequence)
-                stdin.write(plus)
-                stdin.write(quality)
+            sequence = source.readline()
+            plus = source.readline()
+            quality = source.readline()
 
-                processed_reads += 1
+            if not sequence or not plus or not quality:
+                raise ValueError(f"Incomplete FASTQ record in {fastq_file}")
 
-                if (
-                    processed_reads % progress_every == 0
-                    or processed_reads == total_reads
-                ):
-                    remaining = max(
-                        total_reads - processed_reads,
-                        0,
-                    )
+            target.write(header)
+            target.write(sequence)
+            target.write(plus)
+            target.write(quality)
 
-                    percent = (
-                        100.0 * processed_reads / total_reads if total_reads else 0.0
-                    )
+            total_reads += 1
 
-                    logger.info(
-                        "[%s] OrfM input: %d / %d reads (%.2f%%) | remaining: %d",
-                        metagenome_id,
-                        processed_reads,
-                        total_reads,
-                        percent,
-                        remaining,
-                    )
+            if total_reads % progress_every == 0:
+                logger.info(
+                    "[%s] Decompressed %d reads",
+                    metagenome_id,
+                    total_reads,
+                )
 
-    finally:
-        stdin.close()
+    logger.info(
+        "[%s] Temporary FASTQ ready: %d reads | %.2f GiB",
+        metagenome_id,
+        total_reads,
+        uncompressed_fastq.stat().st_size / (1024**3),
+    )
+
+    return uncompressed_fastq, total_reads
 
 
 def _write_intermediate_orf_faa(
@@ -160,7 +169,6 @@ def _write_intermediate_orf_faa(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Group sequences by protein type
     grouped = defaultdict(list)
 
     for orfm_id, protein_type, sequence, *_ in detections:
@@ -169,7 +177,6 @@ def _write_intermediate_orf_faa(
 
     written = 0
 
-    # Write one FASTA file per protein type
     for protein_type, sequences in grouped.items():
         output_file = output_dir / f"{protein_type}.intermediate_hits.faa"
 
@@ -201,14 +208,9 @@ def _hmmscan_orf_batch(
 
     Every OrfM ORF is processed independently.
 
-    For each ORF:
-        1. Identify significant HMM hits.
-        2. Select the hit with the highest bit score.
-        3. Extract its protein type.
-        4. Preserve the original amino acid sequence.
-        5. Write the detection into HMSS3.
-
-    Returns:
+    Returns
+    -------
+    tuple[int, int]
         (detected_orfs, inserted_or_updated_proteins)
     """
 
@@ -216,10 +218,6 @@ def _hmmscan_orf_batch(
         return 0, 0
 
     detections = []
-
-    # --------------------------------------------------------
-    # Run hmmscan
-    # --------------------------------------------------------
 
     results = pyhmmer.hmmer.hmmscan(
         batch,
@@ -259,7 +257,8 @@ def _hmmscan_orf_batch(
         metagenome_id=metagenome_id,
         detections=detections,
     )
-    written = _write_intermediate_orf_faa(
+
+    _write_intermediate_orf_faa(
         detections=detections,
         metagenome_id=metagenome_id,
         output_dir=intermediate_dir,
@@ -274,14 +273,7 @@ def _build_orfm_command(
     translation_table: Optional[int] = 11,
     orfm_extra_args: Optional[List[str]] = None,
 ) -> list[str]:
-    """
-    Build the OrfM command and log the complete command.
-
-    Returns
-    -------
-    list[str]
-        Command suitable for subprocess.Popen().
-    """
+    """Build the OrfM command for direct file input."""
 
     orfm_executable = shutil.which("orfm")
 
@@ -300,7 +292,8 @@ def _build_orfm_command(
     if orfm_extra_args:
         command.extend(str(arg) for arg in orfm_extra_args)
 
-    # command.append(str(fastq_file)) # Reads from STDIN instead from file
+    # Direct file input: no stdin pipe.
+    command.append(str(fastq_file))
 
     logger.info("OrfM command: %s", shlex.join(command))
 
@@ -308,7 +301,7 @@ def _build_orfm_command(
 
 
 # ============================================================
-# 5. PROCESS ONE FASTQ WITH ORFM + PYHMMER
+# 5. PROCESS ONE FASTQ WITH ORFM + TEMPORARY FAA + PYHMMER
 # ============================================================
 
 
@@ -327,129 +320,150 @@ def search_fastq_with_orfm(
     orfm_extra_args: Optional[List[str]] = None,
 ) -> dict:
     """
-    Translate a FASTQ file with OrfM and stream the amino acid
-    sequences directly into PyHMMER hmmscan.
+    Translate one FASTQ with OrfM into a temporary FAA and then scan the
+    resulting ORFs batchwise with PyHMMER.
 
-    No intermediate complete FAA file is generated.
-    Only one ORF batch is held in memory.
+    The two CPU-heavy phases are deliberately separated:
 
-    Detections are inserted directly into:
-        Genomes
-        Proteins
-        ProteinSequences
-        DomainTypes
-        Domains
+        FASTQ -> OrfM -> $TMPDIR/*.orfm.faa
+        $TMPDIR/*.orfm.faa -> PyHMMER -> database/intermediate hits
 
-    Returns:
-        Statistics for the processed metagenome.
+    This removes the OrfM stdout -> Python pipe and prevents OrfM from being
+    repeatedly blocked while PyHMMER scans a batch.
     """
 
     fastq_file = Path(fastq_file)
     output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     if not fastq_file.is_file():
         raise FileNotFoundError(fastq_file)
 
-    # --------------------------------------------------------
-    # Count input reads before OrfM
-    # --------------------------------------------------------
-
-    total_reads = read_counter.safe_read_count(str(fastq_file))
-
-    logger.info(
-        "[%s] Input reads: %d",
-        metagenome_id,
-        total_reads,
-    )
-
-    database.insert_database_genome_ids(database_path, set(metagenome_id))
-
-    # --------------------------------------------------------
-    # Find OrfM executable
-    # --------------------------------------------------------
-
-    orfm_executable = shutil.which("orfm")
-
-    if orfm_executable is None:
+    if not shutil.which("orfm"):
         raise RuntimeError("OrfM executable not found in PATH")
 
-    # --------------------------------------------------------
-    # Prepare OrfM command
-    # --------------------------------------------------------
-    logger.debug(f"Detection of ORFs with orfM for {fastq_file}")
-    command = _build_orfm_command(
-        fastq_file=fastq_file,
-        min_orf_length=min_orf_length,
-        translation_table=translation_table,
-        orfm_extra_args=orfm_extra_args,
-    )
+    # A singleton set is required here; set(metagenome_id) would split the
+    # identifier into individual characters.
+    database.insert_database_genome_ids(database_path, {metagenome_id})
 
     alphabet = pyhmmer.easel.Alphabet.amino()
 
+    total_reads = 0
     total_orfs = 0
     detected_orfs = 0
     stored_proteins = 0
     batch_number = 0
 
-    # --------------------------------------------------------
-    # Start OrfM
-    # --------------------------------------------------------
+    tmp_root = Path(os.environ.get("TMPDIR", tempfile.gettempdir()))
+    tmp_root.mkdir(parents=True, exist_ok=True)
 
-    stderr_path = output_dir / "orfm.stderr.log"
+    safe_id = metagenome_id.replace(os.sep, "_")
+    stderr_path = output_dir / f"{safe_id}.orfm.stderr.log"
 
-    # Write stderr directly to disk to avoid filling
-    # an unconsumed stderr pipe.
+    logger.info(
+        "[%s] Temporary working directory root: %s",
+        metagenome_id,
+        tmp_root,
+    )
 
-    with stderr_path.open("wb") as stderr_handle:
-        process = subprocess.Popen(
-            command,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=stderr_handle,
-            bufsize=1024 * 1024,
+    with tempfile.TemporaryDirectory(
+        prefix=f"hmsss_{safe_id}_",
+        dir=tmp_root,
+    ) as temp_dir_name:
+        temp_dir = Path(temp_dir_name)
+
+        # ----------------------------------------------------
+        # 1. Prepare input for OrfM
+        # ----------------------------------------------------
+        orfm_input, total_reads = _prepare_orfm_input(
+            fastq_file=fastq_file,
+            temp_dir=temp_dir,
+            metagenome_id=metagenome_id,
         )
 
-        feed_thread = threading.Thread(
-            target=_feed_fastq_to_orfm,
-            args=(
-                fastq_file,
-                process.stdin,
+        logger.info(
+            "[%s] Input reads: %d",
+            metagenome_id,
+            total_reads,
+        )
+
+        # ----------------------------------------------------
+        # 2. Run OrfM and write ALL ORFs to local temporary FAA
+        # ----------------------------------------------------
+        orf_faa = temp_dir / f"{safe_id}.orfm.faa"
+
+        command = _build_orfm_command(
+            fastq_file=orfm_input,
+            min_orf_length=min_orf_length,
+            translation_table=translation_table,
+            orfm_extra_args=orfm_extra_args,
+        )
+
+        logger.info(
+            "[%s] Running OrfM -> %s",
+            metagenome_id,
+            orf_faa,
+        )
+
+        with (
+            orf_faa.open("wb") as orf_handle,
+            stderr_path.open("wb") as stderr_handle,
+        ):
+            completed = subprocess.run(
+                command,
+                stdout=orf_handle,
+                stderr=stderr_handle,
+                check=False,
+            )
+
+        if completed.returncode != 0:
+            raise RuntimeError(
+                f"OrfM failed for {metagenome_id} "
+                f"with exit code {completed.returncode}. "
+                f"See {stderr_path}"
+            )
+
+        if not orf_faa.is_file() or orf_faa.stat().st_size == 0:
+            logger.warning(
+                "[%s] OrfM produced no ORFs",
                 metagenome_id,
-                total_reads,
-            ),
-            daemon=True,
+            )
+            return {
+                "metagenome_id": metagenome_id,
+                "fastq_file": str(fastq_file),
+                "total_reads": total_reads,
+                "total_orfs": 0,
+                "detected_orfs": 0,
+                "stored_proteins": 0,
+                "batches": 0,
+            }
+
+        logger.info(
+            "[%s] OrfM finished | temporary FAA: %.2f GiB",
+            metagenome_id,
+            orf_faa.stat().st_size / (1024**3),
         )
 
-        feed_thread.start()
+        # ----------------------------------------------------
+        # 3. Read temporary FAA and scan ORFs with PyHMMER
+        # ----------------------------------------------------
+        batch = pyhmmer.easel.DigitalSequenceBlock(alphabet)
 
-        try:
-            batch = pyhmmer.easel.DigitalSequenceBlock(alphabet)
-
-            # ------------------------------------------------
-            # Consume OrfM output
-            # ------------------------------------------------
-
-            for orfm_id, amino_acids in _iter_fasta_stream(process.stdout):
+        with orf_faa.open("rb") as handle:
+            for orfm_id, amino_acids in _iter_fasta_stream(handle):
                 if not amino_acids:
                     continue
 
-                # Convert ORF to a PyHMMER digital sequence
                 digital_sequence = pyhmmer.easel.TextSequence(
                     name=orfm_id.encode("utf-8"),
                     sequence=amino_acids,
                 ).digitize(alphabet)
 
                 batch.append(digital_sequence)
-
                 total_orfs += 1
 
-                # Wait until the batch is full
                 if len(batch) < batch_size:
                     continue
-
-                # --------------------------------------------
-                # Scan complete batch
-                # --------------------------------------------
 
                 batch_number += 1
 
@@ -467,7 +481,8 @@ def search_fastq_with_orfm(
                 stored_proteins += stored
 
                 logger.info(
-                    "[%s] Batch %d | ORFs: %d | detected: %d | stored/updated: %d",
+                    "[%s] PyHMMER batch %d | ORFs processed: %d | "
+                    "detected: %d | stored/updated: %d",
                     metagenome_id,
                     batch_number,
                     total_orfs,
@@ -475,71 +490,37 @@ def search_fastq_with_orfm(
                     stored_proteins,
                 )
 
-                # Release current batch
                 batch = pyhmmer.easel.DigitalSequenceBlock(alphabet)
 
-            # ------------------------------------------------
-            # Process final incomplete batch
-            # ------------------------------------------------
+        # ----------------------------------------------------
+        # 4. Process final incomplete batch
+        # ----------------------------------------------------
+        if batch:
+            batch_number += 1
 
-            if batch:
-                batch_number += 1
+            detected, stored = _hmmscan_orf_batch(
+                batch=batch,
+                library=profiles,
+                database_path=database_path,
+                intermediate_dir=intermediate_dir,
+                metagenome_id=metagenome_id,
+                cores=cores,
+                evalue_cutoff=evalue,
+            )
 
-                detected, stored = _hmmscan_orf_batch(
-                    batch=batch,
-                    library=profiles,
-                    database_path=database_path,
-                    intermediate_dir=intermediate_dir,
-                    metagenome_id=metagenome_id,
-                    cores=cores,
-                    evalue_cutoff=evalue,
-                )
+            detected_orfs += detected
+            stored_proteins += stored
 
-                detected_orfs += detected
-                stored_proteins += stored
+        del batch
 
-            del batch
+        # TemporaryDirectory removes orf_faa and, for gzipped input, the
+        # decompressed temporary FASTQ automatically after this block.
 
-            # ------------------------------------------------
-            # Wait for OrfM
-            # ------------------------------------------------
-
-            process.stdout.close()
-            feed_thread.join()
-            returncode = process.wait()
-
-            if returncode != 0:
-                raise RuntimeError(
-                    f"OrfM failed for {metagenome_id} "
-                    f"with exit code {returncode}. "
-                    f"See {stderr_path}"
-                )
-
-        except BaseException:
-            # Stop OrfM if PyHMMER or database writing fails.
-            if process.poll() is None:
-                process.terminate()
-
-                try:
-                    process.wait(timeout=5)
-
-                except subprocess.TimeoutExpired:
-                    process.kill()
-                    process.wait()
-
-            raise
-
-        finally:
-            if process.stdout is not None:
-                process.stdout.close()
-
-    # --------------------------------------------------------
-    # Return statistics
-    # --------------------------------------------------------
-
-    logger.debug(
-        "[%s] Completed: %d ORFs translated, %d detected, %d inserted/updated",
+    logger.info(
+        "[%s] Completed: %d reads | %d ORFs translated | %d detected | "
+        "%d inserted/updated",
         metagenome_id,
+        total_reads,
         total_orfs,
         detected_orfs,
         stored_proteins,
@@ -571,56 +552,24 @@ def initial_read_detection(
     orfm_extra_args: Optional[List[str]] = None,
 ) -> dict:
     """
-    Stage 30: initial metagenomic read detection.
+    Stage 30: initial metagenomic read detection using a temporary OrfM FAA.
 
     Workflow:
-        1. Collect compatible search HMMs.
-        2. Create one combined search library.
-        3. Load optimized HMM profiles once.
-        4. Collect all FASTQ files from config.
-        5. Process each FASTQ with OrfM.
-        6. Stream translated ORFs into PyHMMER hmmscan.
-        7. Save best HMM detection for every ORF.
-        8. Write directly into the HMSS3 database.
-
-    Parameters
-    ----------
-    config:
-        HMSS3 configuration object.
-
-    min_orf_length:
-        Minimum ORF length passed to OrfM.
-
-    translation_table:
-        NCBI translation table passed to OrfM.
-
-    batch_size:
-        Number of translated ORFs per PyHMMER batch.
-
-    evalue:
-        Maximum HMMER E-value for accepted hits.
-
-    orfm_extra_args:
-        Additional OrfM command-line arguments.
-
-    Returns
-    -------
-    dict:
-        {
-            metagenome_id: {
-                "total_orfs": ...,
-                "detected_orfs": ...,
-                "stored_proteins": ...,
-                ...
-            }
-        }
+        1. Collect FASTQ files.
+        2. Load the HMM library once.
+        3. For each metagenome, prepare an OrfM-readable FASTQ in $TMPDIR if
+           decompression is necessary.
+        4. Run OrfM to completion and write all ORFs to $TMPDIR.
+        5. Read the temporary ORF FAA batchwise with PyHMMER.
+        6. Save best HMM detections to the database and intermediate FASTAs.
+        7. Remove temporary files automatically.
     """
 
     results = {}
     queue.queue_read_mapping_fastq_inputs(config)
     database.create_database(config.database_directory)
 
-    # Load HMM library once
+    # Load HMM library once.
     with pyhmmer.plan7.HMMFile(config.library) as hmm_file:
         profiles = list(hmm_file)
 
