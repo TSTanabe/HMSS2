@@ -533,7 +533,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         "--orf-batch-size",
         dest="batch_size",
         type=int,
-        default=10000000,
+        default=1000000,
         metavar="<int>",
         help="Number of translated ORFs per PyHMMER batch",
     )

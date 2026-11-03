@@ -255,7 +255,7 @@ def _count_orfm_orfs(
     stderr_path = Path(stderr_path)
     total_orfs = 0
 
-    logger.info(
+    logger.debug(
         "[%s] First OrfM pass: counting total ORFs",
         metagenome_id,
     )
@@ -277,7 +277,7 @@ def _count_orfm_orfs(
                     total_orfs += 1
 
                     if total_orfs % 1_000_000 == 0:
-                        logger.info(
+                        logger.debug(
                             "[%s] First OrfM pass: %d ORFs counted",
                             metagenome_id,
                             total_orfs,
@@ -308,7 +308,7 @@ def _count_orfm_orfs(
                 process.stdout.close()
 
     logger.info(
-        "[%s] First OrfM pass complete: %d total ORFs",
+        "[%s] OrfM prediction found %d total ORFs",
         metagenome_id,
         total_orfs,
     )
@@ -417,7 +417,7 @@ def search_fastq_with_orfm(
         metagenome_id=metagenome_id,
     )
 
-    logger.info(
+    logger.debug(
         "[%s] Second OrfM pass: streaming %d expected ORFs to PyHMMER",
         metagenome_id,
         total_orfs_expected,
@@ -462,11 +462,12 @@ def search_fastq_with_orfm(
                         else 0.0
                     )
                     logger.info(
-                        "[%s] Second OrfM/PyHMMER input: %d / %d ORFs (%.2f%%)",
+                        "[%s] OrfM/PyHMMER read detection: %d / %d ORFs (%.2f%%) | detected: %d",
                         metagenome_id,
                         total_orfs,
                         total_orfs_expected,
                         percent,
+                        detected_orfs,
                     )
 
                 # Wait until the batch is full
@@ -492,7 +493,7 @@ def search_fastq_with_orfm(
                 detected_orfs += detected
                 stored_proteins += stored
 
-                logger.info(
+                logger.debug(
                     "[%s] Batch %d | ORFs: %d | detected: %d | stored/updated: %d",
                     metagenome_id,
                     batch_number,
