@@ -8,7 +8,6 @@ import os
 import shlex
 import shutil
 import subprocess
-import tempfile
 from collections import defaultdict
 from pathlib import Path
 from typing import Iterator, List, Optional, Tuple
@@ -325,8 +324,8 @@ def search_fastq_with_orfm(
 
     The two CPU-heavy phases are deliberately separated:
 
-        FASTQ -> OrfM -> $TMPDIR/*.orfm.faa
-        $TMPDIR/*.orfm.faa -> PyHMMER -> database/intermediate hits
+        FASTQ -> OrfM -> <results>/tmp/<metagenome>/*.orfm.faa
+        temporary FAA -> PyHMMER -> database/intermediate hits
 
     This removes the OrfM stdout -> Python pipe and prevents OrfM from being
     repeatedly blocked while PyHMMER scans a batch.
@@ -360,23 +359,19 @@ def search_fastq_with_orfm(
     tmp_root.mkdir(parents=True, exist_ok=True)
 
     stderr_path = output_dir / f"{safe_id}.orfm.stderr.log"
+    temp_dir = tmp_root / safe_id
+    temp_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info(
-        "[%s] Temporary working directory root: %s",
+        "[%s] Temporary working directory: %s",
         metagenome_id,
-        tmp_root.resolve(),
+        temp_dir.resolve(),
     )
 
-    with tempfile.TemporaryDirectory(
-        prefix=f"{safe_id}_",
-        dir=tmp_root,
-    ) as tmp_dir:
-        tmp_dir = Path(tmp_dir)
+    orf_faa = temp_dir / f"{safe_id}.orfm.faa"
+    success = False
 
-        orf_faa = tmp_dir / f"{safe_id}.orfm.faa"
-
-        # weitere temporäre Dateien hier
-
+    try:
         # ----------------------------------------------------
         # 1. Prepare input for OrfM
         # ----------------------------------------------------
@@ -393,10 +388,8 @@ def search_fastq_with_orfm(
         )
 
         # ----------------------------------------------------
-        # 2. Run OrfM and write ALL ORFs to local temporary FAA
+        # 2. Run OrfM and write ALL ORFs to temporary FAA
         # ----------------------------------------------------
-        orf_faa = temp_dir / f"{safe_id}.orfm.faa"
-
         command = _build_orfm_command(
             fastq_file=orfm_input,
             min_orf_length=min_orf_length,
@@ -429,10 +422,8 @@ def search_fastq_with_orfm(
             )
 
         if not orf_faa.is_file() or orf_faa.stat().st_size == 0:
-            logger.warning(
-                "[%s] OrfM produced no ORFs",
-                metagenome_id,
-            )
+            logger.warning("[%s] OrfM produced no ORFs", metagenome_id)
+            success = True
             return {
                 "metagenome_id": metagenome_id,
                 "fastq_file": str(fastq_file),
@@ -517,9 +508,17 @@ def search_fastq_with_orfm(
             stored_proteins += stored
 
         del batch
+        success = True
 
-        # TemporaryDirectory removes orf_faa and, for gzipped input, the
-        # decompressed temporary FASTQ automatically after this block.
+    finally:
+        if success:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        else:
+            logger.warning(
+                "[%s] Processing failed or was interrupted; temporary files retained in %s",
+                metagenome_id,
+                temp_dir.resolve(),
+            )
 
     logger.info(
         "[%s] Completed: %d reads | %d ORFs translated | %d detected | "
@@ -562,12 +561,12 @@ def initial_read_detection(
     Workflow:
         1. Collect FASTQ files.
         2. Load the HMM library once.
-        3. For each metagenome, prepare an OrfM-readable FASTQ in $TMPDIR if
+        3. For each metagenome, prepare an OrfM-readable FASTQ in the run-local tmp directory if
            decompression is necessary.
-        4. Run OrfM to completion and write all ORFs to $TMPDIR.
+        4. Run OrfM to completion and write all ORFs to the run-local tmp directory.
         5. Read the temporary ORF FAA batchwise with PyHMMER.
         6. Save best HMM detections to the database and intermediate FASTAs.
-        7. Remove temporary files automatically.
+        7. Remove temporary files after successful processing; retain them on failure/interruption.
     """
 
     results = {}
