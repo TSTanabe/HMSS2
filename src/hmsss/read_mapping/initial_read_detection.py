@@ -232,11 +232,88 @@ def _build_orfm_command(
     if orfm_extra_args:
         command.extend(str(arg) for arg in orfm_extra_args)
 
-    command.append(str(fastq_file))  # Reads from STDIN instead from file?
+    command.append(str(fastq_file))
 
     logger.info("OrfM command: %s", shlex.join(command))
 
     return command
+
+
+def _count_orfm_orfs(
+    command: list[str],
+    stderr_path: str | Path,
+    metagenome_id: str,
+) -> int:
+    """
+    Run OrfM once and count the number of ORFs it emits.
+
+    Only FASTA header lines are counted; amino-acid sequences are discarded.
+    This gives the exact number of ORFs that the second OrfM pass will emit
+    with the same command-line parameters.
+    """
+
+    stderr_path = Path(stderr_path)
+    total_orfs = 0
+
+    logger.info(
+        "[%s] First OrfM pass: counting total ORFs",
+        metagenome_id,
+    )
+
+    with stderr_path.open("wb") as stderr_handle:
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=stderr_handle,
+            bufsize=1024 * 1024,
+        )
+
+        try:
+            if process.stdout is None:
+                raise RuntimeError("Failed to capture OrfM stdout")
+
+            for raw_line in process.stdout:
+                if raw_line.startswith(b">"):
+                    total_orfs += 1
+
+                    if total_orfs % 1_000_000 == 0:
+                        logger.info(
+                            "[%s] First OrfM pass: %d ORFs counted",
+                            metagenome_id,
+                            total_orfs,
+                        )
+
+            process.stdout.close()
+            returncode = process.wait()
+
+            if returncode != 0:
+                raise RuntimeError(
+                    f"First OrfM pass failed for {metagenome_id} "
+                    f"with exit code {returncode}. "
+                    f"See {stderr_path}"
+                )
+
+        except BaseException:
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
+            raise
+
+        finally:
+            if process.stdout is not None:
+                process.stdout.close()
+
+    logger.info(
+        "[%s] First OrfM pass complete: %d total ORFs",
+        metagenome_id,
+        total_orfs,
+    )
+
+    return total_orfs
 
 
 # ============================================================
@@ -259,8 +336,8 @@ def search_fastq_with_orfm(
     orfm_extra_args: Optional[List[str]] = None,
 ) -> dict:
     """
-    Translate a FASTQ file with OrfM and stream the amino acid
-    sequences directly into PyHMMER hmmscan.
+    Translate a FASTQ file with OrfM reading the FASTQ directly from disk
+    and stream the resulting amino acid sequences into PyHMMER hmmscan.
 
     No intermediate complete FAA file is generated.
     Only one ORF batch is held in memory.
@@ -319,6 +396,7 @@ def search_fastq_with_orfm(
     alphabet = pyhmmer.easel.Alphabet.amino()
 
     total_orfs = 0
+    total_orfs_expected = 0
     detected_orfs = 0
     stored_proteins = 0
     batch_number = 0
@@ -327,15 +405,30 @@ def search_fastq_with_orfm(
     # Start OrfM
     # --------------------------------------------------------
 
+    count_stderr_path = output_dir / "orfm_count.stderr.log"
     stderr_path = output_dir / "orfm.stderr.log"
 
-    # Write stderr directly to disk to avoid filling
-    # an unconsumed stderr pipe.
+    # --------------------------------------------------------
+    # First OrfM pass: determine the exact number of ORFs.
+    # --------------------------------------------------------
+    total_orfs_expected = _count_orfm_orfs(
+        command=command,
+        stderr_path=count_stderr_path,
+        metagenome_id=metagenome_id,
+    )
 
+    logger.info(
+        "[%s] Second OrfM pass: streaming %d expected ORFs to PyHMMER",
+        metagenome_id,
+        total_orfs_expected,
+    )
+
+    # --------------------------------------------------------
+    # Second OrfM pass: stream ORFs into PyHMMER.
+    # --------------------------------------------------------
     with stderr_path.open("wb") as stderr_handle:
         process = subprocess.Popen(
             command,
-            stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=stderr_handle,
             bufsize=1024 * 1024,
@@ -361,6 +454,20 @@ def search_fastq_with_orfm(
                 batch.append(digital_sequence)
 
                 total_orfs += 1
+
+                if total_orfs % 1_000_000 == 0 or total_orfs == total_orfs_expected:
+                    percent = (
+                        100.0 * total_orfs / total_orfs_expected
+                        if total_orfs_expected
+                        else 0.0
+                    )
+                    logger.info(
+                        "[%s] Second OrfM/PyHMMER input: %d / %d ORFs (%.2f%%)",
+                        metagenome_id,
+                        total_orfs,
+                        total_orfs_expected,
+                        percent,
+                    )
 
                 # Wait until the batch is full
                 if len(batch) < batch_size:
@@ -467,6 +574,7 @@ def search_fastq_with_orfm(
         "metagenome_id": metagenome_id,
         "fastq_file": str(fastq_file),
         "total_reads": total_reads,
+        "total_orfs_expected": total_orfs_expected,
         "total_orfs": total_orfs,
         "detected_orfs": detected_orfs,
         "stored_proteins": stored_proteins,
