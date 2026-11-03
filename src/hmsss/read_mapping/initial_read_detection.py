@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import gzip
 import logging
 import shlex
 import shutil
 import subprocess
-import threading
 from collections import defaultdict
 from pathlib import Path
 from typing import Iterator, List, Optional, Tuple
@@ -60,72 +58,6 @@ def _iter_fasta_stream(handle) -> Iterator[Tuple[str, str]]:
 
     if sequence_id is not None:
         yield sequence_id, "".join(sequence_parts)
-
-
-def _feed_fastq_to_orfm(
-    fastq_file: Path,
-    stdin,
-    metagenome_id: str,
-    total_reads: int,
-    progress_every: int = 1000000,
-) -> None:
-    """
-    Stream FASTQ records into OrfM stdin and report read progress.
-    """
-
-    if str(fastq_file).endswith(".gz"):
-        opener = gzip.open
-    else:
-        opener = open
-
-    processed_reads = 0
-
-    try:
-        with opener(fastq_file, "rb") as handle:
-            while True:
-                header = handle.readline()
-
-                if not header:
-                    break
-
-                sequence = handle.readline()
-                plus = handle.readline()
-                quality = handle.readline()
-
-                if not sequence or not plus or not quality:
-                    raise ValueError(f"Incomplete FASTQ record in {fastq_file}")
-
-                stdin.write(header)
-                stdin.write(sequence)
-                stdin.write(plus)
-                stdin.write(quality)
-
-                processed_reads += 1
-
-                if (
-                    processed_reads % progress_every == 0
-                    or processed_reads == total_reads
-                ):
-                    remaining = max(
-                        total_reads - processed_reads,
-                        0,
-                    )
-
-                    percent = (
-                        100.0 * processed_reads / total_reads if total_reads else 0.0
-                    )
-
-                    logger.info(
-                        "[%s] OrfM input: %d / %d reads (%.2f%%) | remaining: %d",
-                        metagenome_id,
-                        processed_reads,
-                        total_reads,
-                        percent,
-                        remaining,
-                    )
-
-    finally:
-        stdin.close()
 
 
 def _write_intermediate_orf_faa(
@@ -300,7 +232,7 @@ def _build_orfm_command(
     if orfm_extra_args:
         command.extend(str(arg) for arg in orfm_extra_args)
 
-    # command.append(str(fastq_file)) # Reads from STDIN instead from file
+    command.append(str(fastq_file))  # Reads from STDIN instead from file?
 
     logger.info("OrfM command: %s", shlex.join(command))
 
@@ -409,19 +341,6 @@ def search_fastq_with_orfm(
             bufsize=1024 * 1024,
         )
 
-        feed_thread = threading.Thread(
-            target=_feed_fastq_to_orfm,
-            args=(
-                fastq_file,
-                process.stdin,
-                metagenome_id,
-                total_reads,
-            ),
-            daemon=True,
-        )
-
-        feed_thread.start()
-
         try:
             batch = pyhmmer.easel.DigitalSequenceBlock(alphabet)
 
@@ -505,7 +424,6 @@ def search_fastq_with_orfm(
             # ------------------------------------------------
 
             process.stdout.close()
-            feed_thread.join()
             returncode = process.wait()
 
             if returncode != 0:
