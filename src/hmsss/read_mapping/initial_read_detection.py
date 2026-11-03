@@ -354,23 +354,28 @@ def search_fastq_with_orfm(
     stored_proteins = 0
     batch_number = 0
 
-    tmp_root = Path(os.environ.get("TMPDIR", tempfile.gettempdir()))
+    safe_id = metagenome_id.replace(os.sep, "_")
+
+    tmp_root = Path(output_dir) / "tmp"
     tmp_root.mkdir(parents=True, exist_ok=True)
 
-    safe_id = metagenome_id.replace(os.sep, "_")
     stderr_path = output_dir / f"{safe_id}.orfm.stderr.log"
 
     logger.info(
         "[%s] Temporary working directory root: %s",
         metagenome_id,
-        tmp_root,
+        tmp_root.resolve(),
     )
 
     with tempfile.TemporaryDirectory(
-        prefix=f"hmsss_{safe_id}_",
+        prefix=f"{safe_id}_",
         dir=tmp_root,
-    ) as temp_dir_name:
-        temp_dir = Path(temp_dir_name)
+    ) as tmp_dir:
+        tmp_dir = Path(tmp_dir)
+
+        orf_faa = tmp_dir / f"{safe_id}.orfm.faa"
+
+        # weitere temporäre Dateien hier
 
         # ----------------------------------------------------
         # 1. Prepare input for OrfM
