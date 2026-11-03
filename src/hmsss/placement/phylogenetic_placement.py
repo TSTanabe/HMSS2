@@ -553,9 +553,7 @@ def epa_ng_placement(config, intermediate_files):
             continue
 
         try:
-            output_dir = (
-                Path(config.phylogenetic_placement_directory) / package_dir.name
-            )
+            output_dir = Path(config.placement_results_directory) / package_dir.name
             output_dir.mkdir(parents=True, exist_ok=True)
 
             queries = merge_placement_fastas(
@@ -586,7 +584,7 @@ def epa_ng_placement(config, intermediate_files):
                 jplace=jplace,
                 annotations=package_dir / "annotations.tsv",
                 output_dir=output_dir / "function",
-                threshold=config.assignment_threshold,
+                threshold=config.placement_threshold,
             )
 
             parse_function_assignments(

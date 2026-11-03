@@ -2,19 +2,21 @@
 
 from __future__ import annotations
 
+import gzip
 import logging
 import shlex
 import shutil
 import subprocess
+import threading
 from collections import defaultdict
 from pathlib import Path
 from typing import Iterator, List, Optional, Tuple
 
 import pyhmmer
 
-from hmsss.cli import config
 from hmsss.core import queue
 from hmsss.db import database
+from hmsss.graft import read_counter
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +60,72 @@ def _iter_fasta_stream(handle) -> Iterator[Tuple[str, str]]:
 
     if sequence_id is not None:
         yield sequence_id, "".join(sequence_parts)
+
+
+def _feed_fastq_to_orfm(
+    fastq_file: Path,
+    stdin,
+    metagenome_id: str,
+    total_reads: int,
+    progress_every: int = 1000000,
+) -> None:
+    """
+    Stream FASTQ records into OrfM stdin and report read progress.
+    """
+
+    if str(fastq_file).endswith(".gz"):
+        opener = gzip.open
+    else:
+        opener = open
+
+    processed_reads = 0
+
+    try:
+        with opener(fastq_file, "rb") as handle:
+            while True:
+                header = handle.readline()
+
+                if not header:
+                    break
+
+                sequence = handle.readline()
+                plus = handle.readline()
+                quality = handle.readline()
+
+                if not sequence or not plus or not quality:
+                    raise ValueError(f"Incomplete FASTQ record in {fastq_file}")
+
+                stdin.write(header)
+                stdin.write(sequence)
+                stdin.write(plus)
+                stdin.write(quality)
+
+                processed_reads += 1
+
+                if (
+                    processed_reads % progress_every == 0
+                    or processed_reads == total_reads
+                ):
+                    remaining = max(
+                        total_reads - processed_reads,
+                        0,
+                    )
+
+                    percent = (
+                        100.0 * processed_reads / total_reads if total_reads else 0.0
+                    )
+
+                    logger.info(
+                        "[%s] OrfM input: %d / %d reads (%.2f%%) | remaining: %d",
+                        metagenome_id,
+                        processed_reads,
+                        total_reads,
+                        percent,
+                        remaining,
+                    )
+
+    finally:
+        stdin.close()
 
 
 def _write_intermediate_orf_faa(
@@ -232,7 +300,7 @@ def _build_orfm_command(
     if orfm_extra_args:
         command.extend(str(arg) for arg in orfm_extra_args)
 
-    command.append(str(fastq_file))
+    # command.append(str(fastq_file)) # Reads from STDIN instead from file
 
     logger.info("OrfM command: %s", shlex.join(command))
 
@@ -282,6 +350,18 @@ def search_fastq_with_orfm(
     if not fastq_file.is_file():
         raise FileNotFoundError(fastq_file)
 
+    # --------------------------------------------------------
+    # Count input reads before OrfM
+    # --------------------------------------------------------
+
+    total_reads = read_counter.safe_read_count(str(fastq_file))
+
+    logger.info(
+        "[%s] Input reads: %d",
+        metagenome_id,
+        total_reads,
+    )
+
     database.insert_database_genome_ids(database_path, set(metagenome_id))
 
     # --------------------------------------------------------
@@ -323,10 +403,24 @@ def search_fastq_with_orfm(
     with stderr_path.open("wb") as stderr_handle:
         process = subprocess.Popen(
             command,
+            stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=stderr_handle,
             bufsize=1024 * 1024,
         )
+
+        feed_thread = threading.Thread(
+            target=_feed_fastq_to_orfm,
+            args=(
+                fastq_file,
+                process.stdin,
+                metagenome_id,
+                total_reads,
+            ),
+            daemon=True,
+        )
+
+        feed_thread.start()
 
         try:
             batch = pyhmmer.easel.DigitalSequenceBlock(alphabet)
@@ -411,7 +505,7 @@ def search_fastq_with_orfm(
             # ------------------------------------------------
 
             process.stdout.close()
-
+            feed_thread.join()
             returncode = process.wait()
 
             if returncode != 0:
@@ -454,6 +548,7 @@ def search_fastq_with_orfm(
     return {
         "metagenome_id": metagenome_id,
         "fastq_file": str(fastq_file),
+        "total_reads": total_reads,
         "total_orfs": total_orfs,
         "detected_orfs": detected_orfs,
         "stored_proteins": stored_proteins,

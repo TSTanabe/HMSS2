@@ -315,7 +315,7 @@ class ProjectFields:
     fasta_initial_hit_directory: Optional[str] = None
     fasta_output_directory: Optional[str] = None
     cross_check_directory: Optional[str] = None
-    phylogenetic_placement_directory: Optional[str] = None
+    placement_results_directory: Optional[str] = None
     csb_directory: Optional[str] = None
 
     # Dateien
@@ -336,7 +336,7 @@ RUN_DIRECTORY_NAMES = {
     "fasta_initial_hit_directory": "hit_list",
     "fasta_output_directory": "sequences",
     "cross_check_directory": "filtered_hits",
-    "phylogenetic_placement_directory": "placement",
+    "placement_results_directory": "placement_results",
     "csb_directory": "collinear_syntenic_blocks",
     "metabolic_pathway_directory": "Metabolic_pathways",
 }
@@ -652,7 +652,7 @@ class Config:
     fasta_initial_hit_directory = run_prop("fasta_initial_hit_directory")
     fasta_output_directory = run_prop("fasta_output_directory")
     cross_check_directory = run_prop("cross_check_directory")
-    phylogenetic_placement_directory = run_prop("phylogenetic_placement_directory")
+    placement_results_directory = run_prop("placement_results_directory")
     csb_directory = run_prop("csb_directory")
     csb_output_file = prop(
         "project.csb_output_file"
