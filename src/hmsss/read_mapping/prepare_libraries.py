@@ -122,7 +122,7 @@ def collect_placement_search_hmms(config) -> dict:
         missing = protein_types - matched.keys()
 
         if missing:
-            logger.warning(
+            logger.debug(
                 "Placement package %s: no search HMMs for %s",
                 package.name,
                 ", ".join(sorted(missing)),
