@@ -30,7 +30,7 @@ def collect_placement_search_hmms(config) -> dict:
     placement_root = Path(config.paths.placement).resolve()
     data_root = Path(config.paths.data).resolve()
 
-    allowed_directories = {"basis", "disco", "disucy", "hmss2"}
+    allowed_directories = {"basis", "disucy"}
 
     # ---------------------------------------------------------
     # 1. Collect protein types from placement packages
