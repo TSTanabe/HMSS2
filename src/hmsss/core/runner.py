@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import os
 import sys
-from pathlib import Path
 
 from hmsss.core import project as project
 from hmsss.core import ressource_prep
@@ -18,6 +17,7 @@ from hmsss.io import (
     output_dataset,
     print_command_args,
 )
+from hmsss.placement import phylogenetic_placement
 from hmsss.read_mapping import initial_read_detection, prepare_libraries
 from hmsss.search import initial_search
 from hmsss.stages import (
@@ -93,24 +93,25 @@ def run_pipeline(config) -> None:
         initial_search.initial_search(config)
         config.stage = 2
 
-    # --- Stage 3: Cross-Check / Cutoffs ---
+    # --- Stage 3: Phylogenetic placement ---
     if config.stage <= 3 <= config.exit:
+        print_header("Phylogenetic placement")
+
+        phylogenetic_placement.run_placement_stage(config)
+
+        config.stage = 3
+
+    # --- Stage 4: Cross-check / cutoff promotion ---
+    if config.stage <= 4 <= config.exit:
         print_header("Cross check with reference sequences / cutoff optimization")
+
         if config.bool_cross_check:
-            cross_check.reference_sequence_check(
-                config,
-                epa_ng_selected_domains=[
-                    "IsrD",
-                    "AtrD",
-                    "MorD",
-                    "MarD",
-                    "MarD4",
-                    "MarD5",
-                ],
-            )
+            cross_check.reference_sequence_check(config)
+
         database.rebuild_presence_tables(config.database_directory)
         database.index_database(config.database_directory)
-        config.stage = 3
+
+        config.stage = 4
 
     # --- Stage 6: Taxonomy ---
     if config.stage <= 6 <= config.exit:

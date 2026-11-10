@@ -212,7 +212,10 @@ class CliPlacement:
     disable_placement: bool = False
     placements: List[str] = field(default_factory=list)
     placements_provided: bool = False
+    placement_domains: List[str] = field(default_factory=list)
     placement_threshold: float = 0.75
+    placement_lwr: float = 0.99999
+    taxonomy_lwr: float = 0.5
 
     # OrfM / PyHMMER
     min_orf_length: int = 96
@@ -608,8 +611,11 @@ class Config:
 
     # EPA-ng phylogenetic placement
     disable_placement = prop("cli_placement.disable_placement")
+    placement_domains = prop("cli_placement.placement_domains")
     placements = prop("cli_placement.placements")
     placement_threshold = prop("cli_placement.placement_threshold")
+    placement_lwr = prop("cli_placement.placement_lwr")
+    taxonomy_lwr = prop("cli_placement.taxonomy_lwr")
 
     # Metagenomic ORF detection
     min_orf_length = prop("cli_placement.min_orf_length")

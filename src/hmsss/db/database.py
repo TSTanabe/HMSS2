@@ -2,7 +2,6 @@
 import hashlib
 import os
 import sqlite3
-import sys
 import time
 import traceback
 from typing import Any, Dict, Iterable, List, Set, Tuple

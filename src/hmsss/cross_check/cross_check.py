@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import glob
 import os
-import shutil
 
 from hmsss.cli.config import Config
 from hmsss.core.logging import get_logger
 from hmsss.cross_check import search_cross_reference as search_cross_reference
-from hmsss.placement import phylogenetic_placement
 
 log = get_logger(__name__)
 
@@ -58,39 +56,6 @@ def reference_sequence_check(config: Config, epa_ng_selected_domains) -> None:
 
         # Keep complete HMM/domain identifier
         intermediate_dict[hmm_id] = inter_file
-
-    # Select domains for phylogenetic placement
-    selected_domains = epa_ng_selected_domains
-
-    if selected_domains is None:
-        # Default: all intermediate domains
-        placement_dict = intermediate_dict.copy()
-    else:
-        selected_domains = set(selected_domains)
-
-        placement_dict = {
-            domain: files
-            for domain, files in intermediate_dict.items()
-            if domain in selected_domains
-        }
-
-    log.debug(
-        "Phylogenetic placement selected for %d of %d domains",
-        len(placement_dict),
-        len(intermediate_dict),
-    )
-
-    if placement_dict and shutil.which("epa-ng") and not config.disable_placement:
-        phylogenetic_placement.epa_ng_placement(
-            config,
-            placement_dict,
-        )
-
-    # Remove successfully processed files from the original dictionary
-    processed_domains = set(intermediate_dict) - set(placement_dict)
-
-    for domain in processed_domains:
-        del intermediate_dict[domain]
 
     log.info("Promoting cross-checked hits to trusted list")
     search_cross_reference.promote_crosschecked_hits_to_db(

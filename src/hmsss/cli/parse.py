@@ -495,7 +495,21 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=str,
         default=None,
         metavar="<PACKAGE>",
-        help="Placement package names to process (space separated)",
+        help="Placement package names to process (space separated)"
+        if never_show
+        else argparse.SUPPRESS,
+    )
+    placement.add_argument(
+        "--placement-domains",
+        dest="placement_domains",
+        nargs="*",
+        type=str,
+        default=[],
+        metavar="<DOMAIN>",
+        help=(
+            "Restrict phylogenetic placement to these domain types. "
+            "If omitted or given as an empty list, all available domains are used."
+        ),
     )
 
     placement.add_argument(
@@ -505,6 +519,29 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         default=0.75,
         metavar="<float>",
         help="Minimum likelihood weight ratio (LWR) for placement [0.0-1.0]",
+    )
+    placement.add_argument(
+        "--placement-lwr",
+        dest="placement_lwr",
+        type=float,
+        default=0.99999,
+        metavar="<FLOAT>",
+        help=(
+            "EPA-ng dynamic heuristic cumulative LWR threshold "
+            "(default: 0.99999; valid range >0 to 1)"
+        ),
+    )
+
+    placement.add_argument(
+        "--taxonomy-lwr",
+        dest="taxonomy_lwr",
+        type=float,
+        default=0.7,
+        metavar="<FLOAT>",
+        help=(
+            "Minimum accumulated likelihood weight ratio (aLWR) "
+            "required for taxonomic assignment (default: 0.5)"
+        ),
     )
 
     orfm = parser.add_argument_group(
