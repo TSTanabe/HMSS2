@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import warnings
 from dataclasses import fields
 from pathlib import Path
 from typing import Any, List, Sequence
@@ -481,34 +482,26 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     placement = parser.add_argument_group("Phylogenetic placement of sequences")
 
     placement.add_argument(
-        "--disable-placement",
-        dest="disable_placement",
+        "--placement",
+        dest="use_placement",
         action="store_true",
         default=False,
-        help="Disable phylogenetic placement using EPA-ng",
+        help=(
+            "Enable phylogenetic placement using EPA-ng. "
+            "Without --placements, all available placement packages are used."
+        ),
     )
-
     placement.add_argument(
-        "--placements",
+        "--placement-packages",
         dest="placements",
         nargs="*",
         type=str,
-        default=None,
-        metavar="<PACKAGE>",
-        help="Placement package names to process (space separated)"
-        if never_show
-        else argparse.SUPPRESS,
-    )
-    placement.add_argument(
-        "--placement-domains",
-        dest="placement_domains",
-        nargs="*",
-        type=str,
         default=[],
-        metavar="<DOMAIN>",
+        metavar="<PACKAGE>",
         help=(
-            "Restrict phylogenetic placement to these domain types. "
-            "If omitted or given as an empty list, all available domains are used."
+            "Restrict placement to the listed packages. "
+            "Supplying one or more package names also enables placement. "
+            "If omitted or empty, --placement uses all available packages."
         ),
     )
 
@@ -524,12 +517,9 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         "--placement-lwr",
         dest="placement_lwr",
         type=float,
-        default=0.99999,
+        default=0.95,
         metavar="<FLOAT>",
-        help=(
-            "EPA-ng dynamic heuristic cumulative LWR threshold "
-            "(default: 0.99999; valid range >0 to 1)"
-        ),
+        help=("EPA-ng dynamic heuristic cumulative LWR threshold "),
     )
 
     placement.add_argument(
@@ -540,7 +530,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         metavar="<FLOAT>",
         help=(
             "Minimum accumulated likelihood weight ratio (aLWR) "
-            "required for taxonomic assignment (default: 0.5)"
+            "required for taxonomic assignment"
         ),
     )
 
@@ -1024,6 +1014,66 @@ def _discover_hmm_sets_from_data_dir(data_dir: str) -> list[str]:
     return sorted(hmm_sets)
 
 
+def _available_placement_packages(placement_dir: str) -> List[str]:
+    """Return placement package names available below the configured package root."""
+    root = Path(placement_dir)
+    if not root.is_dir():
+        return []
+    return sorted(path.name for path in root.iterdir() if path.is_dir())
+
+
+def _resolve_placement_selection(
+    ns: argparse.Namespace, placement_dir: str
+) -> tuple[bool, List[str]]:
+    """Resolve placement activation and optional package restriction.
+
+    Semantics:
+      --placement
+          Enable placement for all available packages.
+
+      --placement --placements A B
+          Enable placement and restrict it to valid packages A/B.
+
+      --placements A B
+          Also enables placement automatically.
+
+      no --placement and no package names
+          Placement remains disabled.
+
+    Invalid requested package names are ignored with a warning when at least
+    one requested package is valid. If a non-empty request contains no valid
+    package at all, configuration fails.
+    """
+    requested = list(dict.fromkeys(getattr(ns, "placements", []) or []))
+    use_placement = bool(getattr(ns, "use_placement", False) or requested)
+
+    if not requested:
+        return use_placement, []
+
+    available = set(_available_placement_packages(placement_dir))
+    valid = [name for name in requested if name in available]
+    invalid = [name for name in requested if name not in available]
+
+    if not valid:
+        available_text = ", ".join(sorted(available)) if available else "<none>"
+        raise ValueError(
+            "None of the requested placement packages are valid: "
+            f"{', '.join(requested)}. Available packages: {available_text}"
+        )
+
+    if invalid:
+        warnings.warn(
+            "Ignoring invalid placement package(s): "
+            + ", ".join(invalid)
+            + ". Continuing with: "
+            + ", ".join(valid),
+            RuntimeWarning,
+            stacklevel=2,
+        )
+
+    return True, valid
+
+
 def build_config_from_namespace(ns) -> Config:
     """Assemble the high-level `Config` object from parsed arguments.
 
@@ -1120,31 +1170,17 @@ def build_config_from_namespace(ns) -> Config:
         dataset_divide_sign=getattr(ns, "dataset_divide_sign", "."),
     )
 
-    # Default placement packages for different pipeline stages
-    GENOME_PLACEMENTS = [
-        "DsrO",
-        "DsrP",
-        "SoeA",
-        "AprA",
-        "AprB",
-    ]
-    METAGENOME_PLACEMENTS = []
+    use_placement, selected_placements = _resolve_placement_selection(
+        ns,
+        paths_cfg.placement,
+    )
 
-    # Detect whether --placements was explicitly provided
-    placements_provided = ns.placements is not None
-
-    if placements_provided:
-        # CLI always overrides stage-specific defaults
-        selected_placements = list(ns.placements)
-    elif 30 <= ns.stage <= 32:
-        selected_placements = METAGENOME_PLACEMENTS.copy()
-    else:
-        selected_placements = GENOME_PLACEMENTS.copy()
     cli_placement = CliPlacement(
-        disable_placement=bool(getattr(ns, "disable_placement", False)),
+        use_placement=use_placement,
         placements=selected_placements,
-        placements_provided=placements_provided,
         placement_threshold=float(getattr(ns, "placement_threshold", 0.75)),
+        placement_lwr=float(getattr(ns, "placement_lwr", 0.95)),
+        taxonomy_lwr=float(getattr(ns, "taxonomy_lwr", 0.7)),
         min_orf_length=int(getattr(ns, "min_orf_length", 96)),
         translation_table=int(getattr(ns, "translation_table", 11)),
         batch_size=int(getattr(ns, "batch_size", 10000000)),

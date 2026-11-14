@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import logging
 import shutil
-from pathlib import Path
 
 from hmsss.placement import epang_placement
+from hmsss.utils import myUtil
 
 logger = logging.getLogger("hmg.epa")
 
@@ -27,27 +27,7 @@ def run_placement_stage(config) -> None:
         logger.warning("EPA-ng executable not found; skipping placement stage")
         return
 
-    intermediate_files = sorted(
-        Path(config.cross_check_directory).glob("*.intermediate_hits.faa")
-    )
-
-    if not intermediate_files:
-        logger.info("No intermediate-hit FASTA files found for phylogenetic placement")
-        return
-
-    suffix = ".intermediate_hits.faa"
-
-    intermediate_dict = {}
-
-    for path in intermediate_files:
-        name = path.name
-
-        if not name.endswith(suffix):
-            continue
-
-        domain = name[: -len(suffix)]
-
-        intermediate_dict[domain] = path
+    intermediate_dict = myUtil.collect_intermediate_hits(config)
 
     if not intermediate_dict:
         logger.info("No intermediate domains available for placement")

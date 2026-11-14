@@ -1,14 +1,15 @@
+import glob
 import os
-import sys
 import shutil
-
+import sys
 from pathlib import Path
 
+from hmsss.cli.config import Config
 from hmsss.cli.paths import BIN_DIR  # nutzt HMSSS_BIN_DIR
 from hmsss.core.logging import get_logger
 
 log = get_logger(__name__)
-from typing import Union, List
+from typing import List, Union
 
 
 def get_all_files(directory: str, ending: Union[str, int] = 0) -> List[str]:
@@ -29,6 +30,47 @@ def get_all_files(directory: str, ending: Union[str, int] = 0) -> List[str]:
             if ending == 0 or file.endswith(ending):
                 matched.append(file)
     return matched
+
+
+def collect_intermediate_hits(config: Config) -> dict[str, str]:
+    """
+    Collect all intermediate HMM-hit FASTA files.
+
+    Expected filenames:
+        <domain_type>.intermediate_hits.faa
+
+    Returns
+    -------
+    dict[str, str]
+        Mapping:
+            domain_type -> intermediate FASTA path
+
+        Example:
+            {
+                "MorD": "/.../MorD.intermediate_hits.faa",
+                "AtrD": "/.../AtrD.intermediate_hits.faa",
+            }
+    """
+    suffix = ".intermediate_hits_faa"
+
+    intermediate_files = glob.glob(
+        os.path.join(
+            config.cross_check_directory,
+            f"*{suffix}",
+        )
+    )
+
+    intermediate_dict = {
+        os.path.basename(path).removesuffix(suffix): path for path in intermediate_files
+    }
+
+    log.debug(
+        "Collected %d intermediate hit FASTA files from %s",
+        len(intermediate_dict),
+        config.cross_check_directory,
+    )
+
+    return intermediate_dict
 
 
 def get_genome_id(path: str) -> str:

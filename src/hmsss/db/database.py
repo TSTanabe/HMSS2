@@ -387,10 +387,11 @@ def create_database(database: str) -> None:
                 domEnd          INTEGER NOT NULL,
 
                 lineageID       TEXT DEFAULT NULL,
+                method          TEXT NOT NULL,
                 functional_lwr  REAL DEFAULT NULL,
                 taxonomic_lwr   REAL DEFAULT NULL,
 
-                PRIMARY KEY (protein_pk, domStart, domEnd),
+                PRIMARY KEY (protein_pk, domStart, domEnd, method),
 
                 FOREIGN KEY (protein_pk, domStart, domEnd)
                     REFERENCES Domains(protein_pk, domStart, domEnd)
@@ -1822,7 +1823,11 @@ def parse_domain_header(header: str) -> tuple[str, int, int]:
     return protein_id, start, end
 
 
-def insert_domain_placements(database: str, domain_lineages: dict[str, str]) -> int:
+def insert_domain_placements(
+    database: str,
+    domain_lineages: dict[str, str],
+    method: str = "placement",
+) -> int:
     """Insert GAPPA taxonomic assignments into Lineage and DomainPlacements."""
 
     if not domain_lineages:
@@ -1890,15 +1895,32 @@ def insert_domain_placements(database: str, domain_lineages: dict[str, str]) -> 
         cur.executemany(
             """
             INSERT INTO DomainPlacements (
-                protein_pk, domStart, domEnd, lineageID
+                protein_pk,
+                domStart,
+                domEnd,
+                method,
+                lineageID
             )
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(protein_pk, domStart, domEnd)
-            DO UPDATE SET lineageID = excluded.lineageID
-        """,
+            VALUES (?, ?, ?, ?, ?)
+
+            ON CONFLICT(
+                protein_pk,
+                domStart,
+                domEnd,
+                method
+            )
+            DO UPDATE SET
+                lineageID = excluded.lineageID
+            """,
             [
-                (protein_pk_map[pid], start, end, lineage_id)
-                for pid, start, end, lineage_id in placements
+                (
+                    protein_pk_map[protein_id],
+                    start,
+                    end,
+                    method,
+                    lineage_id,
+                )
+                for protein_id, start, end, lineage_id in placements
             ],
         )
 

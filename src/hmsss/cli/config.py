@@ -206,16 +206,19 @@ class CliReadMapping:
 
 @dataclass(slots=True)
 class CliPlacement:
-    """EPA-ng placement and metagenomic ORF detection parameters."""
+    """EPA-ng placement and metagenomic ORF detection parameters.
+
+    ``use_placement`` controls whether placement is active.
+    ``placements`` optionally restricts processing to named packages;
+    an empty list means all available placement packages.
+    """
 
     # EPA-ng
-    disable_placement: bool = False
+    use_placement: bool = False
     placements: List[str] = field(default_factory=list)
-    placements_provided: bool = False
-    placement_domains: List[str] = field(default_factory=list)
     placement_threshold: float = 0.75
-    placement_lwr: float = 0.99999
-    taxonomy_lwr: float = 0.5
+    placement_lwr: float = 0.95
+    taxonomy_lwr: float = 0.7
 
     # OrfM / PyHMMER
     min_orf_length: int = 96
@@ -610,8 +613,7 @@ class Config:
     rm_ram_profile = prop("cli_readmap.ram_profile_file")
 
     # EPA-ng phylogenetic placement
-    disable_placement = prop("cli_placement.disable_placement")
-    placement_domains = prop("cli_placement.placement_domains")
+    use_placement = prop("cli_placement.use_placement")
     placements = prop("cli_placement.placements")
     placement_threshold = prop("cli_placement.placement_threshold")
     placement_lwr = prop("cli_placement.placement_lwr")

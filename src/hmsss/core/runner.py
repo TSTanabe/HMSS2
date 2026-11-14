@@ -17,8 +17,11 @@ from hmsss.io import (
     output_dataset,
     print_command_args,
 )
-from hmsss.placement import phylogenetic_placement
-from hmsss.read_mapping import initial_read_detection, prepare_libraries
+from hmsss.placement import (
+    initial_read_detection,
+    mmseqs_reference_assignment,
+    prepare_library,
+)
 from hmsss.search import initial_search
 from hmsss.stages import (
     process_seqfiles,  # import process_operator
@@ -89,24 +92,24 @@ def run_pipeline(config) -> None:
     # --- Stage 2: Hmmsearch ---
     # 2 und teile von 4 zusammen gelegt
     if config.stage <= 2 <= config.exit:
-        print_header("Searching for homologous sequences (hmmsearch)")
+        print_header("Searching for homologous sequences")
         initial_search.initial_search(config)
-        config.stage = 2
-
-    # --- Stage 3: Phylogenetic placement ---
-    if config.stage <= 3 <= config.exit:
-        print_header("Phylogenetic placement")
-
-        phylogenetic_placement.run_placement_stage(config)
-
         config.stage = 3
 
-    # --- Stage 4: Cross-check / cutoff promotion ---
-    if config.stage <= 4 <= config.exit:
-        print_header("Cross check with reference sequences / cutoff optimization")
+    # --- Stage 3: MMseqs2 competitive reference assignment ---
+    if config.stage <= 3 <= config.exit:
+        print_header("Comparison with Reference Sequences")
+        mmseqs_reference_assignment.mmseqs_placement_package_reference_assignment(
+            config=config
+        )
+        config.stage = 4
 
-        if config.bool_cross_check:
-            cross_check.reference_sequence_check(config)
+    # --- Stage 4: Database indexing ---
+    if config.stage <= 4 <= config.exit:
+        print_header("Database index generation")
+
+        # if config.bool_cross_check:
+        #    cross_check.reference_sequence_check(config)
 
         database.rebuild_presence_tables(config.database_directory)
         database.index_database(config.database_directory)
@@ -128,8 +131,8 @@ def run_pipeline(config) -> None:
 
     if config.stage <= 31 <= config.exit:
         print_header("Library preparation for metagenome search")
-        result = prepare_libraries.collect_placement_search_hmms(config)
-        prepare_libraries.create_placement_search_hmm_library(config, result)
+        placement_packages = prepare_library.collect_placement_search_hmms(config)
+        prepare_library.create_placement_search_hmm_library(config, placement_packages)
         config.stage = 31
         config.exit = 40
 
