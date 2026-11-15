@@ -27,6 +27,13 @@ def run_placement_stage(config) -> None:
         logger.warning("EPA-ng executable not found; skipping placement stage")
         return
 
+    if not shutil.which("gappa"):
+        logger.warning(
+            "GAPPA executable not found; skipping placement stage before "
+            "EPA-ng results can be produced without taxonomy assignments"
+        )
+        return
+
     intermediate_dict = myUtil.collect_intermediate_hits(config)
 
     if not intermediate_dict:
@@ -58,7 +65,7 @@ def run_placement_stage(config) -> None:
         return
 
     logger.info(
-        "Running phylogenetic placement for %d of %d intermediate domains",
+        "Running phylogenetic placement for %d of %d proteins",
         len(placement_dict),
         len(intermediate_dict),
     )
