@@ -124,7 +124,7 @@ def _write_intermediate_orf_faa(
     return written
 
 
-_G_HMM_LIBRARY: list = []
+_G_HMM_LIBRARY = None
 _G_HMMSCAN_CPUS = 1
 
 
@@ -180,6 +180,9 @@ def _hmmscan_orf_batch_worker(
     """
     if not batch_records:
         return []
+
+    if _G_HMM_LIBRARY is None:
+        raise RuntimeError("HMM worker library was not initialized")
 
     alphabet = pyhmmer.easel.Alphabet.amino()
     batch = pyhmmer.easel.DigitalSequenceBlock(alphabet)
@@ -282,7 +285,7 @@ def _build_orfm_command(
 
     command.append(str(fastq_file))
 
-    logger.info("OrfM command: %s", shlex.join(command))
+    logger.debug("OrfM command: %s", shlex.join(command))
 
     return command
 
@@ -438,6 +441,7 @@ def search_fastq_with_orfm(
     stored_proteins = 0
     batch_number = 0
     failed_batches = 0
+    processed_orfs = 0
 
     # --------------------------------------------------------
     # First OrfM pass: determine exact number of ORFs
@@ -461,19 +465,23 @@ def search_fastq_with_orfm(
     # Keep only a small number of outstanding batches in RAM.
     max_in_flight = max(2, hmmscan_workers * 2)
     in_flight = set()
+    future_info = {}
     batch_records: list[tuple[str, str]] = []
 
     def collect_finished(done_futures) -> None:
-        nonlocal detected_orfs, stored_proteins, failed_batches
+        nonlocal detected_orfs, stored_proteins, failed_batches, processed_orfs
 
         for future in done_futures:
+            batch_id, batch_orfs = future_info.pop(future)
+
             try:
                 detections = future.result()
             except Exception:
                 failed_batches += 1
                 logger.exception(
-                    "[%s] hmmscan batch failed; skipping batch",
+                    "[%s] hmmscan batch %d failed; skipping batch",
                     metagenome_id,
+                    batch_id,
                 )
                 continue
 
@@ -484,8 +492,25 @@ def search_fastq_with_orfm(
                 metagenome_id=metagenome_id,
             )
 
+            processed_orfs += batch_orfs
             detected_orfs += detected
             stored_proteins += stored
+
+            percent = (
+                100.0 * processed_orfs / total_orfs_expected
+                if total_orfs_expected
+                else 0.0
+            )
+
+            logger.info(
+                "[%s] %d/%d ORFs (%.2f%%) | detected batch: %d | detected total: %d",
+                metagenome_id,
+                processed_orfs,
+                total_orfs_expected,
+                percent,
+                detected,
+                detected_orfs,
+            )
 
     def submit_batch(records: list[tuple[str, str]]) -> None:
         nonlocal batch_number, in_flight
@@ -494,13 +519,18 @@ def search_fastq_with_orfm(
             return
 
         batch_number += 1
+        batch_id = batch_number
 
-        in_flight.add(
-            executor.submit(
-                _hmmscan_orf_batch_worker,
-                records,
-                evalue,
-            )
+        future = executor.submit(
+            _hmmscan_orf_batch_worker,
+            records,
+            evalue,
+        )
+
+        in_flight.add(future)
+        future_info[future] = (
+            batch_id,
+            len(records),
         )
 
         # Backpressure: do not let ORF batches accumulate indefinitely.
@@ -538,21 +568,6 @@ def search_fastq_with_orfm(
                 if len(batch_records) >= batch_size:
                     submit_batch(batch_records)
                     batch_records = []
-
-                if total_orfs % 1_000_000 == 0 or total_orfs == total_orfs_expected:
-                    percent = (
-                        100.0 * total_orfs / total_orfs_expected
-                        if total_orfs_expected
-                        else 0.0
-                    )
-                    logger.info(
-                        "[%s] OrfM/PyHMMER read detection: %d / %d ORFs (%.2f%%) | detected: %d",
-                        metagenome_id,
-                        total_orfs,
-                        total_orfs_expected,
-                        percent,
-                        detected_orfs,
-                    )
 
             # Process final incomplete batch.
             if batch_records:
@@ -618,6 +633,7 @@ def search_fastq_with_orfm(
         "total_reads": total_reads,
         "total_orfs_expected": total_orfs_expected,
         "total_orfs": total_orfs,
+        "processed_orfs": processed_orfs,
         "detected_orfs": detected_orfs,
         "stored_proteins": stored_proteins,
         "batches": batch_number,

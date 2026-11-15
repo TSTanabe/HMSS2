@@ -200,7 +200,7 @@ def _log_report_progress(
 
     percent = (written_reports / total_reports) * 100.0
     msg = (
-        f"Wrote {written_reports}/{total_reports} genome reports "
+        f"[Reports] wrote {written_reports}/{total_reports} genome reports "
         f"({percent:.2f}%); streamed {n_rows} domain rows"
     )
     logger.info(msg)
@@ -642,19 +642,17 @@ def write_individual_genome_reports(config) -> None:
     n_pathway_rows = 0
 
     if write_individual_reports:
-        start_msg = f"Streaming individual genome reports to {out_dir}"
+        start_msg = f"[Reports] genome hit reports saved {out_dir}"
     else:
-        start_msg = "Individual genome reports disabled; streaming genomes for pathway report only"
+        start_msg = "[Reports] Individual genome reports disabled; streaming genomes for pathway report only"
     logger.info(start_msg)
     # print(start_msg, flush=True)
 
     if pathway_rows:  # Writes metabolic_pathway_report.tsv
-        msg1 = f"Loaded {len(pathway_rows)} precomputed pathway definitions from {pathway_file}"
-        msg2 = f"Writing genome pathway report to {pathway_report_file}"
-        logger.info(msg1)
-        logger.info(msg2)
-        # print(msg1, flush=True)
-        # print(msg2, flush=True)
+        logger.debug(
+            f"Loaded {len(pathway_rows)} precomputed pathway definitions from {pathway_file}"
+        )
+        logger.debug(f"Writing genome pathway report to {pathway_report_file}")
 
     pathway_handle = None
     try:
@@ -685,7 +683,7 @@ def write_individual_genome_reports(config) -> None:
                 expected_msg = f"Expected genome reports to write: {total_reports}"
             else:
                 expected_msg = f"Expected genomes with hits to stream for pathway report: {total_reports}"
-            logger.info(expected_msg)
+            logger.debug(expected_msg)
             # print(expected_msg, flush=True)
 
             for row in _stream_hit_rows(
@@ -810,7 +808,8 @@ def write_individual_genome_reports(config) -> None:
             f"{total_reports if 'total_reports' in locals() else len(written_genome_ids)} genomes with hits processed; "
             f"{n_rows} domain rows streamed"
         )
-    logger.info(final_msg)
+    logger.debug(final_msg)
+    logger.info("[Reports] Finished streaming genome reports")
     # print(final_msg, flush=True)
 
     if pathway_rows:

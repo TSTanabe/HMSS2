@@ -517,17 +517,17 @@ def build_library(config):
         write_library(config.library, selected_files)
         rebuilt = True
 
-        log.info(
+        log.debug(
             "Built HMM library with %d HMM files: %s",
             len(selected_files),
             config.library,
         )
 
     if is_default:
-        log.info("HMM library selection corresponds to metadata defaults")
+        log.info("Default HMM library selection")
     else:
         log.info(
-            "Using custom HMM module selection: %s",
+            "Custom HMM library selection: %s",
             ", ".join(selectors),
         )
 

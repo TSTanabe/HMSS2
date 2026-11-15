@@ -4,6 +4,7 @@ import os
 import sqlite3
 import time
 import traceback
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Set, Tuple
 
 from hmsss.core.logging import get_logger
@@ -30,7 +31,7 @@ def create_database(database: str) -> None:
     fast candidate selection during -fd and -fc database fetches.
     """
 
-    logger.info("Creating database %s", database)
+    logger.debug("Creating database %s", database)
 
     with sqlite3.connect(database) as con:
         cur = con.cursor()
@@ -405,7 +406,7 @@ def create_database(database: str) -> None:
             ) WITHOUT ROWID;
         """)
 
-    logger.info("Created database")
+    logger.info("Database generated")
 
 
 def index_database(database: str) -> None:
@@ -483,8 +484,8 @@ def index_database(database: str) -> None:
                ON DomainPlacements(lineageID)""",
         ),
     ]
-
-    logger.info("Indexing database %s", database)
+    logger.info("[Lookup tables] indexing database")
+    logger.debug("Indexing database %s", database)
 
     with sqlite3.connect(database) as con:
         cur = con.cursor()
@@ -494,11 +495,11 @@ def index_database(database: str) -> None:
             logger.debug("Creating index %s", name)
             cur.execute(sql)
 
-        logger.info("Updating SQLite query planner statistics")
+        logger.debug("Updating SQLite query planner statistics")
         cur.execute("ANALYZE")
         cur.execute("PRAGMA optimize")
 
-    logger.info("Finished indexing database %s", database)
+    logger.debug("Finished indexing database %s", database)
 
 
 def rebuild_presence_tables(database: str) -> None:
@@ -508,7 +509,7 @@ def rebuild_presence_tables(database: str) -> None:
     valid_present = 1 if at least one corresponding protein hit has valid_hit = 1.
     """
 
-    logger.info("Building domain presence tables")
+    logger.info("[Lookup tables] building lookup tables")
 
     with sqlite3.connect(database) as con:
         cur = con.cursor()
@@ -563,7 +564,7 @@ def rebuild_presence_tables(database: str) -> None:
         cluster_rows = cur.rowcount
 
     logger.info(
-        "Presence tables rebuilt: %d genome-domain and %d cluster-domain entries",
+        "[Lookup tables] %d genome-domain and %d cluster-domain entries",
         genome_rows,
         cluster_rows,
     )
@@ -1577,34 +1578,46 @@ def insert_taxonomy_data(database: str, taxonomy_file: str) -> None:
         database (str): Path to SQLite database.
         taxonomy_file (str): Path to the parsed taxonomy file (tab-separated).
     """
-    try:
-        # Check if the database file path is valid
-        if not os.path.exists(os.path.dirname(database)):
-            logger.error(
-                f"Directory for database does not exist: {os.path.dirname(database)}"
-            )
-            return
+    database_path = Path(database)
+    taxonomy_path = Path(taxonomy_file)
 
+    if not database_path.is_file():
+        logger.debug(
+            "Database file does not exist or is not a file: %s",
+            database_path,
+        )
+        return
+
+    if not taxonomy_path.is_file():
+        logger.debug(
+            "Taxonomy file does not exist or is not a file: %s",
+            taxonomy_path,
+        )
+        return
+
+    try:
         # Connect to the SQLite database
-        with sqlite3.connect(database) as con:
+        with sqlite3.connect(database_path) as con:
             cur = con.cursor()
 
             # Read the taxonomy file and insert data into the Genomes table
-            with open(taxonomy_file, "r") as file:
+            with taxonomy_path.open("r", encoding="utf-8") as file:
                 # Skip the header
                 next(file)
 
-                # Read each line in the file
                 for line in file:
                     fields = line.strip().split("\t")
 
                     if len(fields) < 8:
                         fields = parse_taxonomy_line(line, "NA")
+
                     if len(fields) < 8:
-                        logger.warning(f"Line has insufficient columns: {line}")
+                        logger.warning(
+                            "Line has insufficient columns: %s",
+                            line.rstrip(),
+                        )
                         continue
 
-                    # Prepare the data for insertion
                     genome_id = fields[0]
                     superkingdom = fields[1]
                     clade = ""
@@ -1615,21 +1628,30 @@ def insert_taxonomy_data(database: str, taxonomy_file: str) -> None:
                     genus = fields[6]
                     species = fields[7]
 
-                    # Insert the data into the Genomes table
                     cur.execute(
                         """
-                        INSERT INTO Genomes (genomeID, Superkingdom, Clade, Phylum, Class, Ordnung, Family, Genus, Species)
+                        INSERT INTO Genomes (
+                            genomeID,
+                            Superkingdom,
+                            Clade,
+                            Phylum,
+                            Class,
+                            Ordnung,
+                            Family,
+                            Genus,
+                            Species
+                        )
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT(genomeID) DO UPDATE SET
-                        Superkingdom=excluded.Superkingdom,
-                        Clade=excluded.Clade,
-                        Phylum=excluded.Phylum,
-                        Class=excluded.Class,
-                        Ordnung=excluded.Ordnung,
-                        Family=excluded.Family,
-                        Genus=excluded.Genus,
-                        Species=excluded.Species
-                    """,
+                            Superkingdom = excluded.Superkingdom,
+                            Clade = excluded.Clade,
+                            Phylum = excluded.Phylum,
+                            Class = excluded.Class,
+                            Ordnung = excluded.Ordnung,
+                            Family = excluded.Family,
+                            Genus = excluded.Genus,
+                            Species = excluded.Species
+                        """,
                         (
                             genome_id,
                             superkingdom,
@@ -1643,18 +1665,37 @@ def insert_taxonomy_data(database: str, taxonomy_file: str) -> None:
                         ),
                     )
 
-            # Commit the transaction
             con.commit()
 
-        logger.info("Inserted taxonomy data from %s", taxonomy_file)
+        logger.info(
+            "Inserted taxonomy data from %s",
+            taxonomy_path,
+        )
+
     except sqlite3.OperationalError as e:
-        logger.error(f"SQLite Operational Error: {e}\nDatabase path: {database}")
+        logger.error(
+            "SQLite Operational Error: %s\nDatabase path: %s",
+            e,
+            database_path,
+        )
+
     except sqlite3.Error as e:
-        logger.error(f"SQLite Error: {e}")
-    except FileNotFoundError as e:
-        logger.error(f"File Not Found Error: {e}")
+        logger.error(
+            "SQLite Error: %s",
+            e,
+        )
+
+    except OSError as e:
+        logger.error(
+            "File I/O error: %s",
+            e,
+        )
+
     except Exception as e:
-        logger.error(f"Unexpected error: {e}")
+        logger.error(
+            "Unexpected error: %s",
+            e,
+        )
 
 
 def parse_taxonomy_line(line: str, na: str = "") -> List[str]:
@@ -1926,7 +1967,7 @@ def insert_domain_placements(
 
         updated = cur.rowcount
 
-    logger.info("Inserted/updated %d domain placements", updated)
+    logger.debug("Inserted/updated %d domain placements", updated)
     return updated
 
 

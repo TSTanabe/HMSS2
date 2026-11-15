@@ -52,7 +52,11 @@ def collect_placement_search_hmms(config) -> dict:
             protein_types = {
                 row[1].strip()
                 for row in csv.reader(handle, delimiter="\t")
-                if len(row) >= 2 and row[1].strip()
+                if (
+                    len(row) >= 2
+                    and row[1].strip()
+                    and row[1].strip() != "protein_type"
+                )
             }
 
         if protein_types:
@@ -93,11 +97,18 @@ def collect_placement_search_hmms(config) -> dict:
         if hmm_name in all_types:
             hmm_index[hmm_name].add(hmm_file.resolve())
 
+    missing_types = sorted(all_types - set(hmm_index))
     logger.info(
         "Found search HMMs for %d of %d placement protein types",
         len(hmm_index),
         len(all_types),
     )
+    if missing_types:
+        logger.warning(
+            "No search HMM found for %d placement protein types: %s",
+            len(missing_types),
+            ", ".join(missing_types),
+        )
 
     # ---------------------------------------------------------
     # 3. Associate search HMMs with placement packages
@@ -130,7 +141,7 @@ def collect_placement_search_hmms(config) -> dict:
 
         result[package] = matched
 
-        logger.info(
+        logger.debug(
             "Placement %-25s | %d protein types | %d search HMMs",
             package.name,
             len(matched),
@@ -150,7 +161,7 @@ def collect_placement_search_hmms(config) -> dict:
     }
 
     logger.info(
-        "Stage 30 resources: %d placement packages, "
+        "Resources: %d placement packages, "
         "%d protein types, %d unique search HMM files",
         len(result),
         len(unique_types),

@@ -506,8 +506,8 @@ def search_genome_without_gff(genome_id, faa_in):
         parse_reports.get_protein_sequence(faa_file, protein_dict)
         parse_reports.define_selection_comments_for_protein_dict(protein_dict)
 
-        logger.info(
-            "Genome %s: %d proteins detected without GFF",
+        logger.debug(
+            "[%s]: %d proteins detected without GFF",
             genome_id,
             len(protein_dict),
         )

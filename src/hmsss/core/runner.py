@@ -122,7 +122,8 @@ def run_pipeline(config) -> None:
     # --- Stage 6: Taxonomy ---
     if config.stage <= 6 <= config.exit:
         print_header("Assigning taxonomy information")
-        taxonomy.collect_taxonomy_information(config)
+        # taxonomy.collect_taxonomy_information(config)
+        database.insert_taxonomy_data(config.database_directory, config.taxonomy_file)
 
     if config.stage <= 7 <= config.exit:
         print_header("Writing individual hit reports and metabolic pathway report")
@@ -159,14 +160,13 @@ def run_pipeline(config) -> None:
 
     # Stage 33: MMseqs reference classification / Outgroup filtering
     if config.stage <= 33 <= config.exit:
+        print_header("MMseqs2 reference classification and Outgroup filtering")
         if config.disable_mmseqs_reference_assignment:
-            print_header("Skipping MMseqs2 reference classification")
             logger.info(
                 "MMseqs2 reference classification disabled; "
                 "intermediate-hit FASTA files remain unfiltered"
             )
         else:
-            print_header("MMseqs2 reference classification and Outgroup filtering")
             mmseqs_reference_assignment.mmseqs_placement_package_reference_assignment(
                 config
             )
@@ -197,6 +197,7 @@ def run_pipeline(config) -> None:
     if config.stage == 100:
         print_header("Assigning taxonomy information")
         taxonomy.collect_taxonomy_information(config)
+        database.insert_taxonomy_data(config.database_directory, config.taxonomy_file)
 
     # --- Output-/Stats-/Processing-Operatoren ---
     if config.stage == 101:

@@ -6,7 +6,7 @@ import re
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Set
 
 from hmsss.core.logging import get_logger
 from hmsss.db import database
@@ -419,7 +419,7 @@ def concatenate_files_shell(
         os.system(cat_command)
         log.debug(f"Concatenated {len(matched_files)} files into {output_file_path}")
     else:
-        log.error(
+        log.debug(
             f"No matching files found for concatenation in {search_directory} with prefix '{allowed_prefix}' and suffix '{allowed_suffix}'."
         )
 

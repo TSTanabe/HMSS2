@@ -849,17 +849,17 @@ def create_metabolic_pathway_plots(config) -> None:
             ),
         )
     except ImportError as exc:
-        logger.warning(
+        logger.debug(
             "Could not create metabolic pathway Sankey plots because a dependency is missing: %s",
             exc,
         )
         return
     except Exception as exc:
-        logger.warning("Could not create metabolic pathway Sankey plots: %s", exc)
+        logger.debug("Could not create metabolic pathway Sankey plots: %s", exc)
         return
 
     for mode, out_file in outputs.items():
-        logger.info("Created metabolic pathway Sankey plot [%s]: %s", mode, out_file)
+        logger.info("[Reports] Created metabolic pathway Sankey plot")
 
 
 def main() -> None:

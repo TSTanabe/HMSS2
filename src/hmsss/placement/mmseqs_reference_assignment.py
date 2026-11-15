@@ -906,7 +906,7 @@ def filter_intermediate_fastas_by_assignments(
 
         kept_total += kept
         removed_total += removed
-        logger.info(
+        logger.debug(
             "%s: Outgroup filter kept=%d removed=%d",
             faa_file.name,
             kept,
@@ -1531,7 +1531,7 @@ def process_package(
         json.dump(summary, handle, indent=2)
 
     logger.info(
-        "%s: queries=%d filtered_outgroup=%d valid=%d domain_updates=%d taxonomy_updates=%d",
+        "[%s] queries=%d filtered_outgroup=%d valid=%d domain_updates=%d taxonomy_updates=%d",
         package_dir.name,
         len(query_hmm_type),
         intermediate_removed_outgroup,
