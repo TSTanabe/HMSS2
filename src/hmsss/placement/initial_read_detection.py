@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import logging
+import multiprocessing as mp
 import shlex
 import shutil
 import subprocess
 from collections import defaultdict
+from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from pathlib import Path
 from typing import Iterator, List, Optional, Tuple
 
@@ -122,79 +124,122 @@ def _write_intermediate_orf_faa(
     return written
 
 
-def _hmmscan_orf_batch(
-    batch,
-    library,
-    database_path: str,
-    intermediate_dir: str | Path,
-    metagenome_id: str,
-    cores: int = 20,
-    evalue_cutoff: float = 1e-5,
-) -> Tuple[int, int]:
+_G_HMM_LIBRARY: list = []
+_G_HMMSCAN_CPUS = 1
+
+
+def _allocate_hmmscan_cpus(
+    total_cores: int,
+    target_cpus_per_worker: int = 6,
+) -> list[int]:
     """
-    Scan one batch of translated ORFs using PyHMMER hmmscan.
-
-    Every OrfM ORF is processed independently.
-
-    For each ORF:
-        1. Identify significant HMM hits.
-        2. Select the hit with the highest bit score.
-        3. Extract its protein type.
-        4. Preserve the original amino acid sequence.
-        5. Write the detection into HMSS3.
-
-    Returns:
-        (detected_orfs, inserted_or_updated_proteins)
+    Reserve one CPU for OrfM/main and distribute the remaining CPUs
+    over hmmscan workers, targeting about 6 CPUs per worker.
     """
+    total_cores = max(1, int(total_cores))
 
-    if not batch:
-        return 0, 0
+    if total_cores <= 2:
+        return [1]
 
-    detections = []
+    hmmscan_cores = total_cores - 1
 
-    # --------------------------------------------------------
-    # Run hmmscan
-    # --------------------------------------------------------
+    worker_count = max(
+        1,
+        round(hmmscan_cores / target_cpus_per_worker),
+    )
+    worker_count = min(worker_count, hmmscan_cores)
+
+    base = hmmscan_cores // worker_count
+    remainder = hmmscan_cores % worker_count
+
+    return [base + (1 if i < remainder else 0) for i in range(worker_count)]
+
+
+def _init_hmmscan_worker(
+    library_path: str,
+    cpu_queue,
+) -> None:
+    """Load the HMM library once per worker."""
+    global _G_HMM_LIBRARY, _G_HMMSCAN_CPUS
+
+    _G_HMMSCAN_CPUS = max(1, int(cpu_queue.get()))
+
+    with pyhmmer.plan7.HMMFile(library_path) as hmm_file:
+        _G_HMM_LIBRARY = list(hmm_file)
+
+
+def _hmmscan_orf_batch_worker(
+    batch_records: list[tuple[str, str]],
+    evalue_cutoff: float,
+) -> list[tuple]:
+    """
+    Scan one ORF batch in a worker process.
+
+    Workers only perform hmmscan and return detections.
+    Database and intermediate FASTA writes stay in the main process.
+    """
+    if not batch_records:
+        return []
+
+    alphabet = pyhmmer.easel.Alphabet.amino()
+    batch = pyhmmer.easel.DigitalSequenceBlock(alphabet)
+
+    for orfm_id, amino_acids in batch_records:
+        batch.append(
+            pyhmmer.easel.TextSequence(
+                name=orfm_id.encode("utf-8"),
+                sequence=amino_acids,
+            ).digitize(alphabet)
+        )
 
     results = pyhmmer.hmmer.hmmscan(
         batch,
-        library,
-        cpus=cores,
+        _G_HMM_LIBRARY,
+        cpus=_G_HMMSCAN_CPUS,
         E=evalue_cutoff,
         domE=evalue_cutoff,
     )
+
+    detections = []
 
     for sequence, hits in zip(batch, results):
         if not hits:
             continue
 
         best_hit = hits[0]
-
-        hmm_id = best_hit.name.decode()
-        protein_type = hmm_id.split("_")[-1]
-
-        orfm_id = sequence.name.decode()
-        amino_acids = sequence.textize().sequence
-
         best_domain = best_hit.best_domain
 
         detections.append(
             (
-                orfm_id,
-                protein_type,
-                amino_acids,
+                sequence.name.decode(),
+                best_hit.name.decode().split("_")[-1],
+                sequence.textize().sequence,
                 float(best_hit.score),
                 int(best_domain.env_from),
                 int(best_domain.env_to),
             )
         )
 
+    return detections
+
+
+def _store_hmmscan_batch(
+    detections: list[tuple],
+    database_path: str,
+    intermediate_dir: str | Path,
+    metagenome_id: str,
+) -> Tuple[int, int]:
+    """Write one completed worker batch in the main process."""
+    if not detections:
+        return 0, 0
+
     inserted = database.insert_metagenome_orf_batch(
         database=database_path,
         metagenome_id=metagenome_id,
         detections=detections,
     )
-    written = _write_intermediate_orf_faa(
+
+    _write_intermediate_orf_faa(
         detections=detections,
         metagenome_id=metagenome_id,
         output_dir=intermediate_dir,
@@ -329,9 +374,9 @@ def search_fastq_with_orfm(
     metagenome_id: str,
     database_path: str,
     intermediate_dir: str | Path,
-    profiles: str | Path,
+    executor: ProcessPoolExecutor,
+    hmmscan_workers: int,
     output_dir: str | Path,
-    cores: int = 20,
     batch_size: int = 10000,
     min_orf_length: int = 96,
     translation_table: int = 11,
@@ -339,21 +384,11 @@ def search_fastq_with_orfm(
     orfm_extra_args: Optional[List[str]] = None,
 ) -> dict:
     """
-    Translate a FASTQ file with OrfM reading the FASTQ directly from disk
-    and stream the resulting amino acid sequences into PyHMMER hmmscan.
+    Translate one FASTQ with OrfM and stream ORF batches to parallel hmmscan workers.
 
-    No intermediate complete FAA file is generated.
-    Only one ORF batch is held in memory.
-
-    Detections are inserted directly into:
-        Genomes
-        Proteins
-        ProteinSequences
-        DomainTypes
-        Domains
-
-    Returns:
-        Statistics for the processed metagenome.
+    OrfM runs continuously in the main process. Worker processes perform only
+    hmmscan. Completed detections are written to SQLite and intermediate FASTA
+    files by the main process.
     """
 
     fastq_file = Path(fastq_file)
@@ -374,21 +409,22 @@ def search_fastq_with_orfm(
         total_reads,
     )
 
-    database.insert_database_genome_ids(database_path, set(metagenome_id))
-
-    # --------------------------------------------------------
-    # Find OrfM executable
-    # --------------------------------------------------------
-
-    orfm_executable = shutil.which("orfm")
-
-    if orfm_executable is None:
-        raise RuntimeError("OrfM executable not found in PATH")
+    database.insert_database_genome_ids(database_path, {metagenome_id})
+    database.insert_database_metagenomes(
+        database=database_path,
+        metagenome_dict={
+            metagenome_id: (
+                metagenome_id,
+                total_reads,
+                None,
+            )
+        },
+    )
 
     # --------------------------------------------------------
     # Prepare OrfM command
     # --------------------------------------------------------
-    logger.debug(f"Detection of ORFs with orfM for {fastq_file}")
+
     command = _build_orfm_command(
         fastq_file=fastq_file,
         min_orf_length=min_orf_length,
@@ -396,24 +432,20 @@ def search_fastq_with_orfm(
         orfm_extra_args=orfm_extra_args,
     )
 
-    alphabet = pyhmmer.easel.Alphabet.amino()
-
     total_orfs = 0
     total_orfs_expected = 0
     detected_orfs = 0
     stored_proteins = 0
     batch_number = 0
+    failed_batches = 0
 
     # --------------------------------------------------------
-    # Start OrfM
+    # First OrfM pass: determine exact number of ORFs
     # --------------------------------------------------------
 
     count_stderr_path = output_dir / "orfm_count.stderr.log"
     stderr_path = output_dir / "orfm.stderr.log"
 
-    # --------------------------------------------------------
-    # First OrfM pass: determine the exact number of ORFs.
-    # --------------------------------------------------------
     total_orfs_expected = _count_orfm_orfs(
         command=command,
         stderr_path=count_stderr_path,
@@ -426,9 +458,64 @@ def search_fastq_with_orfm(
         total_orfs_expected,
     )
 
+    # Keep only a small number of outstanding batches in RAM.
+    max_in_flight = max(2, hmmscan_workers * 2)
+    in_flight = set()
+    batch_records: list[tuple[str, str]] = []
+
+    def collect_finished(done_futures) -> None:
+        nonlocal detected_orfs, stored_proteins, failed_batches
+
+        for future in done_futures:
+            try:
+                detections = future.result()
+            except Exception:
+                failed_batches += 1
+                logger.exception(
+                    "[%s] hmmscan batch failed; skipping batch",
+                    metagenome_id,
+                )
+                continue
+
+            detected, stored = _store_hmmscan_batch(
+                detections=detections,
+                database_path=database_path,
+                intermediate_dir=intermediate_dir,
+                metagenome_id=metagenome_id,
+            )
+
+            detected_orfs += detected
+            stored_proteins += stored
+
+    def submit_batch(records: list[tuple[str, str]]) -> None:
+        nonlocal batch_number, in_flight
+
+        if not records:
+            return
+
+        batch_number += 1
+
+        in_flight.add(
+            executor.submit(
+                _hmmscan_orf_batch_worker,
+                records,
+                evalue,
+            )
+        )
+
+        # Backpressure: do not let ORF batches accumulate indefinitely.
+        if len(in_flight) >= max_in_flight:
+            done, pending = wait(
+                in_flight,
+                return_when=FIRST_COMPLETED,
+            )
+            in_flight = pending
+            collect_finished(done)
+
     # --------------------------------------------------------
-    # Second OrfM pass: stream ORFs into PyHMMER.
+    # Second OrfM pass: stream ORFs into parallel hmmscan
     # --------------------------------------------------------
+
     with stderr_path.open("wb") as stderr_handle:
         process = subprocess.Popen(
             command,
@@ -438,25 +525,19 @@ def search_fastq_with_orfm(
         )
 
         try:
-            batch = pyhmmer.easel.DigitalSequenceBlock(alphabet)
-
-            # ------------------------------------------------
-            # Consume OrfM output
-            # ------------------------------------------------
+            if process.stdout is None:
+                raise RuntimeError("Failed to capture OrfM stdout")
 
             for orfm_id, amino_acids in _iter_fasta_stream(process.stdout):
                 if not amino_acids:
                     continue
 
-                # Convert ORF to a PyHMMER digital sequence
-                digital_sequence = pyhmmer.easel.TextSequence(
-                    name=orfm_id.encode("utf-8"),
-                    sequence=amino_acids,
-                ).digitize(alphabet)
-
-                batch.append(digital_sequence)
-
+                batch_records.append((orfm_id, amino_acids))
                 total_orfs += 1
+
+                if len(batch_records) >= batch_size:
+                    submit_batch(batch_records)
+                    batch_records = []
 
                 if total_orfs % 1_000_000 == 0 or total_orfs == total_orfs_expected:
                     percent = (
@@ -473,66 +554,10 @@ def search_fastq_with_orfm(
                         detected_orfs,
                     )
 
-                # Wait until the batch is full
-                if len(batch) < batch_size:
-                    continue
-
-                # --------------------------------------------
-                # Scan complete batch
-                # --------------------------------------------
-
-                batch_number += 1
-
-                detected, stored = _hmmscan_orf_batch(
-                    batch=batch,
-                    library=profiles,
-                    database_path=database_path,
-                    intermediate_dir=intermediate_dir,
-                    metagenome_id=metagenome_id,
-                    cores=cores,
-                    evalue_cutoff=evalue,
-                )
-
-                detected_orfs += detected
-                stored_proteins += stored
-
-                logger.debug(
-                    "[%s] Batch %d | ORFs: %d | detected: %d | stored/updated: %d",
-                    metagenome_id,
-                    batch_number,
-                    total_orfs,
-                    detected_orfs,
-                    stored_proteins,
-                )
-
-                # Release current batch
-                batch = pyhmmer.easel.DigitalSequenceBlock(alphabet)
-
-            # ------------------------------------------------
-            # Process final incomplete batch
-            # ------------------------------------------------
-
-            if batch:
-                batch_number += 1
-
-                detected, stored = _hmmscan_orf_batch(
-                    batch=batch,
-                    library=profiles,
-                    database_path=database_path,
-                    intermediate_dir=intermediate_dir,
-                    metagenome_id=metagenome_id,
-                    cores=cores,
-                    evalue_cutoff=evalue,
-                )
-
-                detected_orfs += detected
-                stored_proteins += stored
-
-            del batch
-
-            # ------------------------------------------------
-            # Wait for OrfM
-            # ------------------------------------------------
+            # Process final incomplete batch.
+            if batch_records:
+                submit_batch(batch_records)
+                batch_records = []
 
             process.stdout.close()
             returncode = process.wait()
@@ -544,27 +569,33 @@ def search_fastq_with_orfm(
                     f"See {stderr_path}"
                 )
 
+            # Collect all outstanding hmmscan batches.
+            while in_flight:
+                done, pending = wait(
+                    in_flight,
+                    return_when=FIRST_COMPLETED,
+                )
+                in_flight = pending
+                collect_finished(done)
+
         except BaseException:
-            # Stop OrfM if PyHMMER or database writing fails.
             if process.poll() is None:
                 process.terminate()
 
                 try:
                     process.wait(timeout=5)
-
                 except subprocess.TimeoutExpired:
                     process.kill()
                     process.wait()
+
+            for future in in_flight:
+                future.cancel()
 
             raise
 
         finally:
             if process.stdout is not None:
                 process.stdout.close()
-
-    # --------------------------------------------------------
-    # Return statistics
-    # --------------------------------------------------------
 
     logger.debug(
         "[%s] Completed: %d ORFs translated, %d detected, %d inserted/updated",
@@ -573,6 +604,13 @@ def search_fastq_with_orfm(
         detected_orfs,
         stored_proteins,
     )
+
+    if failed_batches:
+        logger.warning(
+            "[%s] %d hmmscan batches failed",
+            metagenome_id,
+            failed_batches,
+        )
 
     return {
         "metagenome_id": metagenome_id,
@@ -583,6 +621,7 @@ def search_fastq_with_orfm(
         "detected_orfs": detected_orfs,
         "stored_proteins": stored_proteins,
         "batches": batch_number,
+        "failed_batches": failed_batches,
     }
 
 
@@ -650,32 +689,58 @@ def initial_read_detection(
     queue.queue_read_mapping_fastq_inputs(config)
     database.create_database(config.database_directory)
 
-    # Load HMM library once
-    with pyhmmer.plan7.HMMFile(config.library) as hmm_file:
-        profiles = list(hmm_file)
+    cpu_allocations = _allocate_hmmscan_cpus(
+        total_cores=int(config.cores),
+        target_cpus_per_worker=6,
+    )
+    worker_count = len(cpu_allocations)
 
     logger.info(
-        "Loaded %d HMM profiles from %s",
-        len(profiles),
-        config.library,
+        "Read detection: 1 OrfM/main process + %d hmmscan workers (%s CPUs)",
+        worker_count,
+        ", ".join(str(cpus) for cpus in cpu_allocations),
     )
 
-    for metagenome_id, fastq_file in config.fastq_files.items():
-        result = search_fastq_with_orfm(
-            fastq_file=fastq_file,
-            metagenome_id=metagenome_id,
-            database_path=config.database_directory,
-            intermediate_dir=config.cross_check_directory,
-            profiles=profiles,
-            output_dir=config.result_files_directory,
-            cores=int(config.cores),
-            batch_size=batch_size,
-            min_orf_length=min_orf_length,
-            translation_table=translation_table,
-            evalue=evalue,
-            orfm_extra_args=orfm_extra_args,
-        )
+    ctx = mp.get_context()
+    cpu_queue = ctx.Queue()
 
-        results[metagenome_id] = result
+    for worker_cpus in cpu_allocations:
+        cpu_queue.put(worker_cpus)
+
+    try:
+        with ProcessPoolExecutor(
+            max_workers=worker_count,
+            mp_context=ctx,
+            initializer=_init_hmmscan_worker,
+            initargs=(str(config.library), cpu_queue),
+        ) as executor:
+            for metagenome_id, fastq_file in config.fastq_files.items():
+                try:
+                    result = search_fastq_with_orfm(
+                        fastq_file=fastq_file,
+                        metagenome_id=metagenome_id,
+                        database_path=config.database_directory,
+                        intermediate_dir=config.cross_check_directory,
+                        executor=executor,
+                        hmmscan_workers=worker_count,
+                        output_dir=config.result_files_directory,
+                        batch_size=batch_size,
+                        min_orf_length=min_orf_length,
+                        translation_table=translation_table,
+                        evalue=evalue,
+                        orfm_extra_args=orfm_extra_args,
+                    )
+
+                    results[metagenome_id] = result
+
+                except Exception:
+                    logger.exception(
+                        "[%s] Read detection failed; continuing with next metagenome",
+                        metagenome_id,
+                    )
+
+    finally:
+        cpu_queue.close()
+        cpu_queue.join_thread()
 
     return results
