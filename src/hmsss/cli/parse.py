@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-import warnings
 from dataclasses import fields
 from pathlib import Path
 from typing import Any, List, Sequence
@@ -482,34 +481,26 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     placement = parser.add_argument_group("Phylogenetic placement of sequences")
 
     placement.add_argument(
-        "--disable-placement",
-        dest="disable_placement",
-        action="store_true",
-        default=False,
-        help="Disable phylogenetic placement using EPA-ng",
-    )
-    placement.add_argument(
         "--placements",
         dest="placements",
-        nargs="*",
-        type=str,
-        default=None,
-        metavar="<PACKAGE>",
+        action="store_true",
+        default=False,
         help=(
-            "Restrict placement to the listed packages. "
-            "If omitted, stage-specific defaults are used."
+            "Enable phylogenetic placement of intermediate hits using EPA-ng "
+            "followed by GAPPA classification."
         ),
     )
     placement.add_argument(
         "--placement-domains",
         dest="placement_domains",
-        nargs="*",
+        nargs="+",
         type=str,
         default=[],
         metavar="<DOMAIN>",
         help=(
-            "Restrict phylogenetic placement to these domain types. "
-            "If omitted or empty, all available domains are used."
+            "Restrict placement to these domain types. Supplying this option "
+            "automatically enables --placements. If --placements is used without "
+            "--placement-domains, all available intermediate-hit domains are placed."
         ),
     )
 
@@ -1033,61 +1024,6 @@ def _discover_hmm_sets_from_data_dir(data_dir: str) -> list[str]:
     return sorted(hmm_sets)
 
 
-def _available_placement_packages(placement_dir: str) -> List[str]:
-    """Return placement package names available below the configured package root."""
-    root = Path(placement_dir)
-    if not root.is_dir():
-        return []
-    return sorted(path.name for path in root.iterdir() if path.is_dir())
-
-
-def _resolve_placement_selection(
-    ns: argparse.Namespace,
-    placement_dir: str,
-) -> tuple[bool, List[str], bool]:
-    """Resolve placement package selection.
-
-    Returns
-    -------
-    disable_placement
-        True when EPA-ng placement should be skipped.
-    selected_placements
-        Explicitly requested valid packages, or an empty list meaning no
-        explicit restriction.
-    placements_provided
-        Whether --placements was explicitly supplied.
-    """
-    placements_provided = getattr(ns, "placements", None) is not None
-    requested = list(dict.fromkeys(getattr(ns, "placements", None) or []))
-    disable_placement = bool(getattr(ns, "disable_placement", False))
-
-    if not requested:
-        return disable_placement, [], placements_provided
-
-    available = set(_available_placement_packages(placement_dir))
-    valid = [name for name in requested if name in available]
-    invalid = [name for name in requested if name not in available]
-
-    if not valid:
-        available_text = ", ".join(sorted(available)) if available else "<none>"
-        raise ValueError(
-            "None of the requested placement packages are valid: "
-            f"{', '.join(requested)}. Available packages: {available_text}"
-        )
-
-    if invalid:
-        warnings.warn(
-            "Ignoring invalid placement package(s): "
-            + ", ".join(invalid)
-            + ". Continuing with: "
-            + ", ".join(valid),
-            RuntimeWarning,
-            stacklevel=2,
-        )
-
-    return disable_placement, valid, placements_provided
-
-
 def build_config_from_namespace(ns) -> Config:
     """Assemble the high-level `Config` object from parsed arguments.
 
@@ -1184,21 +1120,16 @@ def build_config_from_namespace(ns) -> Config:
         dataset_divide_sign=getattr(ns, "dataset_divide_sign", "."),
     )
 
-    disable_placement, selected_placements, placements_provided = (
-        _resolve_placement_selection(
-            ns,
-            paths_cfg.placement,
-        )
-    )
+    placement_domains = list(dict.fromkeys(getattr(ns, "placement_domains", []) or []))
+    placements = bool(getattr(ns, "placements", False) or placement_domains)
 
     cli_placement = CliPlacement(
-        disable_placement=disable_placement,
+        placements=placements,
+        disable_placement=not placements,
         disable_mmseqs_reference_assignment=bool(
             getattr(ns, "disable_mmseqs_reference_assignment", False)
         ),
-        placements=selected_placements,
-        placements_provided=placements_provided,
-        placement_domains=list(getattr(ns, "placement_domains", [])),
+        placement_domains=placement_domains,
         placement_threshold=float(getattr(ns, "placement_threshold", 0.75)),
         placement_lwr=float(getattr(ns, "placement_lwr", 0.99999)),
         taxonomy_lwr=float(getattr(ns, "taxonomy_lwr", 0.5)),

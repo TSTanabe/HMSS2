@@ -208,11 +208,14 @@ class CliReadMapping:
 class CliPlacement:
     """EPA-ng placement and metagenomic ORF detection parameters."""
 
-    disable_placement: bool = False
+    # Public placement switch. True means EPA-ng + GAPPA placement is requested.
+    placements: bool = False
+
+    # Internal/legacy inverse used by existing placement code.
+    disable_placement: bool = True
     disable_mmseqs_reference_assignment: bool = False
 
-    placements: List[str] = field(default_factory=list)
-    placements_provided: bool = False
+    # Empty means: place all available intermediate-hit domains.
     placement_domains: List[str] = field(default_factory=list)
 
     placement_threshold: float = 0.75

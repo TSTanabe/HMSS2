@@ -101,6 +101,10 @@ def run_pipeline(config) -> None:
         mmseqs_reference_assignment.mmseqs_placement_package_reference_assignment(
             config=config
         )
+        if config.placements:
+            print_header("Phylogenetic placement of genome hits")
+            phylogenetic_placement.run_placement_stage(config)
+
         config.stage = 4
 
     # --- Stage 4: Database indexing ---
