@@ -144,7 +144,7 @@ def parallel_transcription(faa_files: dict[str, str], cores: int) -> None:
         ]
         pool.map(transcripe_fasta, args_list)
 
-    logger.info(f"Generated corresponding gff files")
+    logger.debug(f"Generated corresponding gff files for appropriate faa files")
     return
 
 

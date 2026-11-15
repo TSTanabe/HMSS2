@@ -3,7 +3,7 @@ from __future__ import annotations
 import glob
 import os
 
-from hmsss.cli.config import Config
+from hmsss.cli.config import Config, INTERMEDIATE_HITS_SUFFIX
 from hmsss.core.logging import get_logger
 from hmsss.cross_check import search_cross_reference as search_cross_reference
 
@@ -44,15 +44,13 @@ def reference_sequence_check(config: Config, epa_ng_selected_domains) -> None:
     # Get the list of intermediate hits to be processed
     # Collect intermediate hits
     intermediate_files = glob.glob(
-        os.path.join(config.cross_check_directory, "*.intermediate_hits.faa")
+        os.path.join(config.cross_check_directory, f"*{INTERMEDIATE_HITS_SUFFIX}")
     )
 
     intermediate_dict = {}
 
-    suffix = ".intermediate_hits.faa"
-
     for inter_file in intermediate_files:
-        hmm_id = os.path.basename(inter_file).removesuffix(suffix)
+        hmm_id = os.path.basename(inter_file).removesuffix(INTERMEDIATE_HITS_SUFFIX)
 
         # Keep complete HMM/domain identifier
         intermediate_dict[hmm_id] = inter_file

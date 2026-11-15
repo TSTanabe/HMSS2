@@ -1,8 +1,11 @@
 import os
 from collections import OrderedDict
+
+from hmsss.cli.config import INTERMEDIATE_HITS_SUFFIX
 from hmsss.core.logging import get_logger
 
 logger = get_logger(__name__)
+
 
 class FastaHandleCache:
     """
@@ -45,7 +48,7 @@ def write_intermediate_hits_faa(
     protein_dict,
     out_dir: str,
     *,
-    suffix: str = ".intermediate_hits.faa",
+    suffix: str = INTERMEDIATE_HITS_SUFFIX,
     max_open_files: int = 32,
     add_valid_hits: bool = True,
 ):

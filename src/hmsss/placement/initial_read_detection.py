@@ -14,6 +14,7 @@ from typing import Iterator, List, Optional, Tuple
 
 import pyhmmer
 
+from hmsss.cli.config import INTERMEDIATE_HITS_SUFFIX
 from hmsss.core import queue
 from hmsss.db import database
 from hmsss.graft import read_counter
@@ -105,7 +106,7 @@ def _write_intermediate_orf_faa(
     written = 0
 
     for protein_type, sequences in grouped.items():
-        output_file = output_dir / f"{protein_type}.intermediate_hits.faa"
+        output_file = output_dir / f"{protein_type}{INTERMEDIATE_HITS_SUFFIX}"
 
         with output_file.open(
             "a",

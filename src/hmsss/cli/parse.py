@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import shutil
 import sys
 from dataclasses import fields
 from pathlib import Path
@@ -117,6 +118,31 @@ def _list_from_csv_or_repeat(values: List[str]) -> List[str]:
 # ---------------------------------------------------------------------------
 # Main function: parse_arguments
 # ---------------------------------------------------------------------------
+class HelpFormatter(argparse.HelpFormatter):
+    def __init__(self, prog):
+        terminal_width = shutil.get_terminal_size(fallback=(120, 24)).columns
+
+        super().__init__(
+            prog,
+            indent_increment=2,
+            max_help_position=44,
+            width=min(terminal_width, 140),
+        )
+
+    def _get_help_string(self, action):
+        help_text = action.help or ""
+
+        # Do not add defaults twice if already mentioned manually.
+        if "default:" in help_text.lower() or "%(default)" in help_text:
+            return help_text
+
+        default = action.default
+
+        # Hide uninformative defaults.
+        if default in (None, False, argparse.SUPPRESS) or default == []:
+            return help_text
+
+        return f"{help_text} (default: %(default)s)"
 
 
 def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
@@ -148,7 +174,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
             "and metagenome assemblies. Mol Ecol Resour. 2023;23(8):1930-1945. doi:10.1111/1755-0998.13848"
         ),
         usage="hmsss -f <genomes_dir> [options]\n       hmsss --help-all",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        formatter_class=HelpFormatter,
     )
 
     # Input definition
@@ -167,10 +193,12 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=path_str,
         metavar="<directory>",
         default=None,
-        help="Writable results parent directory (default: ./results)",
+        help="Writable results parent directory",
     )
     inputdef.add_argument(
         "-c",
+        "--cpus",
+        "--cores",
         dest="cores",
         type=int,
         default=4,
@@ -194,19 +222,25 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     # Search parameters
     parameters = parser.add_argument_group("Annotation parameters")
     parameters.add_argument(
+        "--help-proteins",
+        action=help_actions.ProteinAnnotationHelpAction,
+        nargs=0,
+        help="List available protein annotation modules, HMMs and package variants and exit",
+    )
+    parameters.add_argument(
         "-n",
         dest="name",
         type=str,
         default="project",
         metavar="<string>",
-        help="Name new project" if show_all else argparse.SUPPRESS,
+        help="Name new project" if never_show else argparse.SUPPRESS,
     )
     parameters.add_argument(
         "--add-module",
         dest="add_modules",
         action="append",
         default=[],
-        metavar="<MODULE@PACKAGE>",
+        metavar="MODULE@PACKAGE",
         help=(
             "Add an additional HMM module/package variant, e.g. "
             "--add-module redDsr@DiSuCy"
@@ -220,7 +254,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="replace_modules",
         action="append",
         default=[],
-        metavar="<MODULE@PACKAGE>",
+        metavar="MODULE@PACKAGE",
         help=(
             "Replace the selected/default variant of a module, e.g. "
             "--replace-module redDsr@DiSuCy"
@@ -254,7 +288,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         default=1.0,
         metavar="<float>",
         help=(
-            "Multiplicative factor applied to score thresholds (>= 0.0, default: 1.0)"
+            "Multiplicative factor applied to score thresholds"
             if show_all
             else argparse.SUPPRESS
         ),
@@ -265,7 +299,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="taxonomy_file",
         type=file_path,
         default=None,
-        metavar="<filepath>",
+        metavar="<file>",
         help="Add taxonomy from this tab separated taxonomy file",
     )
     parameters.add_argument(
@@ -323,12 +357,6 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help="Print taxonomy information from database"
         if never_show
         else argparse.SUPPRESS,
-    )
-    information.add_argument(
-        "--help-proteins",
-        action=help_actions.ProteinAnnotationHelpAction,
-        nargs=0,
-        help="List available protein annotation modules, HMMs and package variants and exit",
     )
 
     # Collinear syntenic block prediction
@@ -452,8 +480,15 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
             "very-sensitive",
             "ultra-sensitive",
         ],
+        metavar="<mode>",
         default="fast",
-        help="DIAMOND blastp speed mode" if show_all else argparse.SUPPRESS,
+        help=(
+            "DIAMOND blastp speed mode "
+            "[faster, fast, mid-sensitive, more-sensitive, "
+            "very-sensitive, ultra-sensitive]"
+        )
+        if show_all
+        else argparse.SUPPRESS,
     )
     cross_check.add_argument(
         "--refseq-ident",
@@ -478,8 +513,15 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     # Phylogenetic placement (EPA-ng) and metagenomic ORF detection
     # ============================================================
 
-    placement = parser.add_argument_group("Phylogenetic placement of sequences")
-
+    placement = parser.add_argument_group(
+        "EPA-ng phylogenetic placement of reads and protein sequences (recommended)"
+    )
+    placement.add_argument(
+        "--help-placement",
+        nargs=0,
+        action=help_actions.PlacementPackageHelpAction,
+        help="Show available phylogenetic placement packages and their protein types.",
+    )
     placement.add_argument(
         "--placements",
         dest="placements",
@@ -496,12 +538,14 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         nargs="+",
         type=str,
         default=[],
-        metavar="<DOMAIN>",
+        metavar="DOMAIN",
         help=(
             "Restrict placement to these domain types. Supplying this option "
             "automatically enables --placements. If --placements is used without "
             "--placement-domains, all available intermediate-hit domains are placed."
-        ),
+        )
+        if show_all
+        else argparse.SUPPRESS,
     )
 
     placement.add_argument(
@@ -510,15 +554,19 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=float,
         default=0.75,
         metavar="<float>",
-        help="Minimum likelihood weight ratio (LWR) for placement [0.0-1.0]",
+        help="Minimum likelihood weight ratio (LWR) for placement [0.0-1.0]"
+        if show_all
+        else argparse.SUPPRESS,
     )
     placement.add_argument(
         "--placement-lwr",
         dest="placement_lwr",
         type=float,
         default=0.95,
-        metavar="<FLOAT>",
-        help=("EPA-ng dynamic heuristic cumulative LWR threshold "),
+        metavar="<float>",
+        help=("EPA-ng dynamic heuristic cumulative LWR threshold ")
+        if show_all
+        else argparse.SUPPRESS,
     )
 
     placement.add_argument(
@@ -526,11 +574,13 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="taxonomy_lwr",
         type=float,
         default=0.7,
-        metavar="<FLOAT>",
+        metavar="<float>",
         help=(
             "Minimum accumulated likelihood weight ratio (aLWR) "
             "required for taxonomic assignment"
-        ),
+        )
+        if show_all
+        else argparse.SUPPRESS,
     )
 
     placement.add_argument(
@@ -541,7 +591,9 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help=(
             "Skip MMseqs2 Ingroup/Outgroup reference classification, "
             "functional reassignment and MMseqs taxonomy for metagenomic ORFs"
-        ),
+        )
+        if show_all
+        else argparse.SUPPRESS,
     )
 
     orfm = parser.add_argument_group(
@@ -554,7 +606,9 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=int,
         default=96,
         metavar="<int>",
-        help="Minimum ORF length in nucleotides (must be divisible by 3)",
+        help="Minimum ORF length in nucleotides (must be divisible by 3)"
+        if show_all
+        else argparse.SUPPRESS,
     )
 
     orfm.add_argument(
@@ -563,7 +617,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=int,
         default=11,
         metavar="<int>",
-        help="Translation table used by OrfM",
+        help="Translation table used by OrfM" if show_all else argparse.SUPPRESS,
     )
 
     orfm.add_argument(
@@ -572,7 +626,9 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=int,
         default=1000000,
         metavar="<int>",
-        help="Number of translated ORFs per PyHMMER batch",
+        help="Number of translated ORFs per PyHMMER batch"
+        if show_all
+        else argparse.SUPPRESS,
     )
 
     orfm.add_argument(
@@ -581,24 +637,25 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         type=float,
         default=1e-5,
         metavar="<float>",
-        help="E-value cutoff for initial PyHMMER detection",
+        help="E-value cutoff for initial PyHMMER detection"
+        if show_all
+        else argparse.SUPPRESS,
     )
 
     # Read mapping workflow algorithm
-    readmap = parser.add_argument_group("Read mapping with GraftM")
+    readmap = parser.add_argument_group("GraftM read detection and placement analysis")
+    readmap.add_argument(
+        "--help-graftM",
+        action=help_actions.ReadMappingHelpAction,
+        nargs=0,
+        help="Explain GraftM read-mapping workflow and list available GPKG packages",
+    )
 
     readmap.add_argument(
         "--read-mapping",
         dest="use_read_mapping",
         action="store_true",
         help="Enable read-mapping analysis for files located in the -f directory",
-    )
-
-    readmap.add_argument(
-        "--help-read-mapping",
-        action=help_actions.ReadMappingHelpAction,
-        nargs=0,
-        help="Explain read-mapping workflow and list available GPKG packages (set + estimated RAM) and exit",
     )
 
     readmap.add_argument(
@@ -632,7 +689,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
                 "SQR",
             ]
         ),
-        metavar="<SET>",
+        metavar="<set>",
         default=[],
         help=(
             "Select GPKG package sets (whitespace separated)"
@@ -928,7 +985,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="graph_tax_levels",
         nargs="+",
         type=str,
-        metavar="<taxlevel>",
+        metavar="level",
         choices=[
             "Superkingdom",
             "Phylum",

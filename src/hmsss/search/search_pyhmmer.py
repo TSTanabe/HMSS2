@@ -876,7 +876,6 @@ def consecutive_hmm_search(config: Config, processes: int = 4) -> None:
                 generate_cross_check_fasta.write_intermediate_hits_faa(
                     protein_batch,
                     config.cross_check_directory,
-                    suffix=".intermediate_hits_faa",
                     max_open_files=32,
                     add_valid_hits=True,
                 )
@@ -891,7 +890,6 @@ def consecutive_hmm_search(config: Config, processes: int = 4) -> None:
             generate_cross_check_fasta.write_intermediate_hits_faa(
                 protein_batch,
                 config.cross_check_directory,
-                suffix=".intermediate_hits_faa",
                 max_open_files=32,
                 add_valid_hits=True,
             )

@@ -30,7 +30,7 @@ import tempfile
 from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Dict, Iterator, Optional, Tuple
+from typing import Dict, Iterator, Optional
 
 from hmsss.core.logging import get_logger
 from hmsss.fasta_preparation import materialize
@@ -335,7 +335,7 @@ def parallel_pyrodigal_translation(
       - so: 1 CPU per worker; cap workers at min(cores, 16, n_genomes)
     """
     if not fna_files:
-        logger.info("No FNA inputs queued for pyrodigal translation.")
+        logger.debug("No FNA inputs queued for pyrodigal translation.")
         return
 
     items = list(fna_files.items())

@@ -3,13 +3,13 @@ import os
 import shutil
 import sys
 from pathlib import Path
+from typing import List, Union
 
-from hmsss.cli.config import Config
+from hmsss.cli.config import Config, INTERMEDIATE_HITS_SUFFIX
 from hmsss.cli.paths import BIN_DIR  # nutzt HMSSS_BIN_DIR
 from hmsss.core.logging import get_logger
 
 log = get_logger(__name__)
-from typing import List, Union
 
 
 def get_all_files(directory: str, ending: Union[str, int] = 0) -> List[str]:
@@ -37,7 +37,7 @@ def collect_intermediate_hits(config: Config) -> dict[str, str]:
     Collect all intermediate HMM-hit FASTA files.
 
     Expected filenames:
-        <domain_type>.intermediate_hits.faa
+        <domain_type>{INTERMEDIATE_HITS_SUFFIX}
 
     Returns
     -------
@@ -47,21 +47,20 @@ def collect_intermediate_hits(config: Config) -> dict[str, str]:
 
         Example:
             {
-                "MorD": "/.../MorD.intermediate_hits.faa",
-                "AtrD": "/.../AtrD.intermediate_hits.faa",
+                "MorD": "/.../MorD.intermediate_hits_faa",
+                "AtrD": "/.../AtrD.intermediate_hits_faa",
             }
     """
-    suffix = ".intermediate_hits_faa"
-
     intermediate_files = glob.glob(
         os.path.join(
             config.cross_check_directory,
-            f"*{suffix}",
+            f"*{INTERMEDIATE_HITS_SUFFIX}",
         )
     )
 
     intermediate_dict = {
-        os.path.basename(path).removesuffix(suffix): path for path in intermediate_files
+        os.path.basename(path).removesuffix(INTERMEDIATE_HITS_SUFFIX): path
+        for path in intermediate_files
     }
 
     log.debug(

@@ -9,6 +9,7 @@ from pathlib import Path
 from queue import Queue
 from typing import List, Set
 
+from hmsss.cli.config import INTERMEDIATE_HITS_SUFFIX
 from hmsss.core.logging import get_logger
 from hmsss.utils.myUtil import find_executable
 
@@ -118,7 +119,7 @@ def cross_check_candidates_with_reference_seqs(config, intermediate_dict) -> Lis
 
             output_file = (
                 cross_check_dir
-                / f"{inter_file.name.removesuffix('.intermediate_hits_faa')}.crosschecked.tsv"
+                / f"{inter_file.name.removesuffix(INTERMEDIATE_HITS_SUFFIX)}.crosschecked.tsv"
             )
 
             if output_file.is_file():

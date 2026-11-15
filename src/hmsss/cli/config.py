@@ -20,6 +20,8 @@ It also provides convenience properties that proxy into nested dataclasses
 for basic consistency checks.
 """
 
+INTERMEDIATE_HITS_SUFFIX = ".hits_faa"
+
 
 @dataclass(slots=True)
 class PathsCfg:

@@ -26,7 +26,7 @@ Expected placement package
 
 Intermediate hit files
 ----------------------
-<domain_type>.intermediate_hits.faa
+<domain_type>{INTERMEDIATE_HITS_SUFFIX}
 
 Intermediate sequence IDs are expected to follow:
     <proteinID>___dom_<start>_<end>
@@ -52,6 +52,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 
+from hmsss.cli.config import INTERMEDIATE_HITS_SUFFIX
 from hmsss.core.logging import get_logger
 from hmsss.cross_check.search_cross_reference import (
     set_valid_hit_true_for_protein_ids,
@@ -542,16 +543,13 @@ def ensure_taxonomy_db(
 
 def build_query_type_map(faa_files: Iterable[Path]) -> Dict[str, str]:
     """Map query ID -> original HMM type by scanning only FASTA headers."""
-    suffixes = (".intermediate_hits.faa", ".intermediate_hits_faa")
     query_hmm_type: Dict[str, str] = {}
 
     for faa_file in map(Path, faa_files):
         filename = faa_file.name
         hmm_type = filename
-        for suffix in suffixes:
-            if filename.endswith(suffix):
-                hmm_type = filename.removesuffix(suffix)
-                break
+        if filename.endswith(INTERMEDIATE_HITS_SUFFIX):
+            hmm_type = filename.removesuffix(INTERMEDIATE_HITS_SUFFIX)
         else:
             hmm_type = faa_file.stem
 

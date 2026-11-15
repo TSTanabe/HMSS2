@@ -4,7 +4,7 @@ import re
 import shutil
 import textwrap
 from collections import defaultdict
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 from hmsss.cli import paths
 
@@ -519,6 +519,175 @@ class ReadMappingHelpAction(argparse.Action):
         """)
 
 
+class PlacementPackageHelpAction(argparse.Action):
+    """
+    Show all available phylogenetic placement packages and the
+    protein types contained in their annotations.tsv files.
+    """
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        self.print_placement_package_help()
+        parser.exit(0)
+
+    @staticmethod
+    def _read_package_annotations(placement_root: Path) -> dict[str, list[str]]:
+        packages = {}
+
+        if not placement_root.is_dir():
+            raise FileNotFoundError(
+                f"Placement package directory not found: {placement_root}"
+            )
+
+        for package_dir in sorted(
+            placement_root.iterdir(),
+            key=lambda path: path.name.casefold(),
+        ):
+            if not package_dir.is_dir():
+                continue
+
+            annotations = package_dir / "annotations.tsv"
+
+            if not annotations.is_file():
+                continue
+
+            protein_types = set()
+
+            with annotations.open(
+                "r",
+                encoding="utf-8-sig",
+                newline="",
+            ) as handle:
+                reader = csv.reader(
+                    handle,
+                    delimiter="\t",
+                )
+
+                for row in reader:
+                    if len(row) < 2:
+                        continue
+
+                    protein_type = row[1].strip()
+
+                    if not protein_type or protein_type == "protein_type":
+                        continue
+
+                    protein_types.add(protein_type)
+
+            if protein_types:
+                packages[package_dir.name] = sorted(
+                    protein_types,
+                    key=lambda x: (
+                        x.casefold() == "outgroup",
+                        x.casefold(),
+                    ),
+                )
+
+        return packages
+
+    def print_placement_package_help(self) -> None:
+        placement_root = paths.PLACEMENT_DIR
+
+        packages = self._read_package_annotations(placement_root)
+
+        if not packages:
+            print(
+                f"No placement packages with annotations.tsv found in: {placement_root}"
+            )
+            return
+
+        print()
+        print("AVAILABLE PHYLOGENETIC PLACEMENT PACKAGES")
+        print("=========================================")
+        print()
+        print(
+            "These placement packages provide the recommended phylogenetic classification\n"
+            "workflow for HMSSS reads and protein sequences and are an alternative to the\n"
+            "GraftM workflow. The pipeline combines HMM-based candidate detection,\n"
+            "competitive MMseqs2 reference filtering, EPA-ng phylogenetic placement and\n"
+            "GAPPA-based functional and taxonomic classification.\n"
+        )
+
+        print(
+            "Genome workflow\n"
+            "---------------\n"
+            "Genome-derived proteins are first detected by the standard HMSSS HMM workflow.\n"
+            "Candidate proteins are written to protein-type-specific intermediate-hit FASTA\n"
+            "files and automatically matched to placement packages based on the protein\n"
+            "types listed in annotations.tsv.\n"
+            "\n"
+            "MMseqs2 then compares each candidate against the package ingroup and, where\n"
+            "available, outgroup reference sequences. Candidates are retained as ingroup\n"
+            "when they show sufficient similarity to the ingroup and are not matched at\n"
+            "least as well by the outgroup. High-confidence MMseqs2 matches can additionally\n"
+            "promote valid hits and refine functional protein-type assignments. MMseqs2 also\n"
+            "provides an independent taxonomic assignment based on the package references.\n"
+            "\n"
+            "If phylogenetic placement is enabled, the remaining intermediate hits are\n"
+            "aligned to the package reference coordinate system, placed into the reference\n"
+            "tree with EPA-ng and evaluated with GAPPA for functional and rank-aware\n"
+            "taxonomic assignment.\n"
+        )
+
+        print(
+            "Metagenome workflow\n"
+            "-------------------\n"
+            "Metagenomic FASTQ reads are first translated into protein ORFs with OrfM.\n"
+            "Translated ORFs are streamed in batches through PyHMMER hmmscan against the\n"
+            "combined search-HMM library derived from the available placement packages.\n"
+            "The best HMM hit provides the initial protein type and matching ORFs are written\n"
+            "to protein-type-specific intermediate-hit FASTA files.\n"
+            "\n"
+            "These candidate ORFs then undergo the same competitive MMseqs2 ingroup/outgroup\n"
+            "comparison used for genome hits. Outgroup-like ORFs are removed before\n"
+            "placement, while retained ingroup-like ORFs can be promoted to valid hits,\n"
+            "functionally reassigned when sufficiently similar to a reference sequence, and\n"
+            "taxonomically classified with MMseqs2.\n"
+            "\n"
+            "The remaining ORFs are then matched to the appropriate placement packages,\n"
+            "aligned to the package reference alignment, placed with EPA-ng and subsequently\n"
+            "classified with GAPPA. EPA-ng/GAPPA taxonomy is stored separately from MMseqs2\n"
+            "taxonomy so that both assignment approaches remain available.\n"
+        )
+
+        print(
+            "EPA-ng and MMseqs2 can use multiple CPU cores, and placement packages are\n"
+            "processed independently, making this workflow well suited for parallel\n"
+            "execution on large genome and metagenome datasets.\n"
+        )
+
+        print(
+            "Each package is listed below together with the protein types contained in its\n"
+            "annotations.tsv file."
+        )
+        print()
+
+        package_width = max(
+            len("Placement package"),
+            max(len(name) for name in packages),
+        )
+
+        print(f"{'Placement package':<{package_width}}  Protein types")
+        print(f"{'-' * package_width}  {'-' * 50}")
+
+        for package_name, protein_types in packages.items():
+            protein_text = ", ".join(protein_types)
+
+            print(f"{package_name:<{package_width}}  {protein_text}")
+
+        unique_types = {
+            protein_type
+            for protein_types in packages.values()
+            for protein_type in protein_types
+        }
+
+        print()
+        print(
+            f"{len(packages)} placement packages | "
+            f"{len(unique_types)} unique protein types"
+        )
+        print()
+
+
 class ProteinAnnotationHelpAction(argparse.Action):
     """
     Show all HMMs/modules available for protein annotation.
@@ -664,29 +833,98 @@ class ProteinAnnotationHelpAction(argparse.Action):
         print("AVAILABLE PROTEIN ANNOTATION MODULES")
         print("====================================")
         print()
-        print("Modules marked as Default are selected automatically.")
-        print()
-        print("Alternative package variants can be selected with:")
-        print()
-        print("  --add-module MODULE@PACKAGE")
-        print("      Add an additional package variant while retaining the default.")
-        print()
-        print("  --replace-module MODULE@PACKAGE")
-        print("      Replace the default variant of that module.")
-        print()
-        print("Example:")
-        print()
-        print("  --add-module redDsr@DiSCo")
-        print("      Adds the DiSCo redDsr models in addition to the default package.")
-        print()
-        print("  --replace-module redDsr@DiSCo")
-        print("      Uses DiSCo instead of the default redDsr package.")
-        print()
+
         print(
-            "The value in the 'Module' column is the MODULE name used "
-            "in these arguments."
+            "HMSSS uses a modular HMM-based annotation workflow for genome and protein\n"
+            "sequence analysis. Protein families are organized into functional modules,\n"
+            "and each module can be provided by one or more HMM packages. The module\n"
+            "definition determines which HMMs are included in the search library.\n"
         )
-        print()
+
+        print(
+            "Standard annotation workflow\n"
+            "----------------------------\n"
+            "For genome input, protein-coding genes are first predicted and translated.\n"
+            "The resulting protein sequences are searched with PyHMMER against the HMMs\n"
+            "selected from the annotation modules listed below. Each HMM has associated\n"
+            "score thresholds that are used to distinguish high-confidence hits from\n"
+            "intermediate and low-confidence candidates.\n"
+            "\n"
+            "The initial HMM search is deliberately sensitive and uses the noise cutoff.\n"
+            "Detected domains are subsequently evaluated using their HMM score, alignment\n"
+            "coverage and sequence identity. Hits reaching the trusted cutoff are directly\n"
+            "accepted as valid annotations. Lower-scoring candidates can subsequently be\n"
+            "supported by gene synteny, predefined collinear gene-cluster patterns and\n"
+            "pathway/co-occurrence information. Candidate sequences are also retained in\n"
+            "intermediate-hit FASTA files for downstream reference comparison and optional\n"
+            "phylogenetic placement.\n"
+        )
+
+        print(
+            "Annotation modules and HMM selection\n"
+            "------------------------------------\n"
+            "A module represents a biologically related annotation unit and may contain\n"
+            "one or several HMMs. For example, a pathway or protein complex can be defined\n"
+            "as one module while containing separate HMMs for its individual subunits.\n"
+            "\n"
+            "The Resource_module_metadata table defines which HMMs belong to each module,\n"
+            "which package provides them, and which package variant is used by default.\n"
+            "At startup, HMSSS selects every module/package combination marked as Default\n"
+            "and builds the HMM search library from the HMMs associated with those selected\n"
+            "module variants.\n"
+            "\n"
+            "Some modules are available in multiple packages. These package variants can\n"
+            "contain alternative HMM implementations for the same biological module, for\n"
+            "example models derived from different reference datasets or specialized\n"
+            "classification workflows. Only the variants explicitly selected for a module\n"
+            "are added to the search library.\n"
+        )
+
+        print(
+            "Module selection\n"
+            "----------------\n"
+            "Without additional arguments, all module/package combinations marked as\n"
+            "Default are selected automatically.\n"
+            "\n"
+            "  --add-module MODULE@PACKAGE\n"
+            "      Add another package variant in addition to the currently selected\n"
+            "      variant(s). The default variant remains active.\n"
+            "\n"
+            "  --replace-module MODULE@PACKAGE\n"
+            "      Remove all currently selected variants of that module and use the\n"
+            "      specified package variant instead.\n"
+            "\n"
+            "Examples:\n"
+            "\n"
+            "  --add-module redDsr@DiSCo\n"
+            "      Adds the DiSCo redDsr HMMs in addition to the default redDsr models.\n"
+            "\n"
+            "  --replace-module redDsr@DiSCo\n"
+            "      Removes the default redDsr package variant and uses the DiSCo variant.\n"
+            "\n"
+            "Multiple --add-module and --replace-module arguments can be supplied in the\n"
+            "same run. The value in the 'Module' column below is the MODULE identifier\n"
+            "used for these command-line arguments.\n"
+        )
+
+        print(
+            "Understanding the table\n"
+            "-----------------------\n"
+            "HMM\n"
+            "    Protein/domain HMM included by this module variant.\n"
+            "\n"
+            "Module\n"
+            "    Logical annotation module used with --add-module and --replace-module.\n"
+            "\n"
+            "Module name\n"
+            "    Human-readable description of the biological module.\n"
+            "\n"
+            "Default\n"
+            "    Package variant selected automatically by the standard workflow.\n"
+            "\n"
+            "Packages\n"
+            "    All packages that provide the corresponding HMM for this module.\n"
+        )
 
         # ---------------------------------------------------------
         # Determine fixed column widths globally
@@ -717,7 +955,6 @@ class ProteinAnnotationHelpAction(argparse.Action):
 
                     all_defaults.append(default)
 
-        # Prevent very long values from making the table unusable
         hmm_w = min(
             20,
             max(len("HMM"), *(len(x) for x in all_hmms)),
@@ -753,10 +990,6 @@ class ProteinAnnotationHelpAction(argparse.Action):
 
         terminal_width = shutil.get_terminal_size(fallback=(140, 24)).columns
 
-        # ---------------------------------------------------------
-        # Sort sets according to set_order
-        # ---------------------------------------------------------
-
         sorted_sets = sorted(
             data.items(),
             key=lambda item: (
@@ -788,7 +1021,6 @@ class ProteinAnnotationHelpAction(argparse.Action):
                 f"{'-' * 20}"
             )
 
-            # Sort primarily by module_order/module_name
             sorted_modules = sorted(
                 modules.items(),
                 key=lambda item: (
@@ -824,7 +1056,6 @@ class ProteinAnnotationHelpAction(argparse.Action):
                         or "-"
                     )
 
-                    # Avoid repeating identical module information
                     if first_hmm:
                         module_display = module
                         name_display = info["module_name"]
