@@ -1547,20 +1547,29 @@ def mmseqs_placement_package_reference_assignment(
 ) -> List[Dict[str, Union[int, str]]]:
     """Run MMseqs2 assignment for all matching placement packages.
 
-    The persistent reference cache is intentionally kept across interrupted or
-    failed runs so already built ingroup/outgroup/taxonomy databases can be
-    reused. It is removed only after a completely successful run.
+    MMseqs reference assignment is independent of whether EPA-ng placement
+    was requested. Matching packages are selected automatically from the
+    intermediate-hit domain files.
+
+    Failure of one package does not abort processing of the remaining
+    packages.
     """
+
     if shutil.which("mmseqs") is None:
         logger.warning("MMseqs2 is not available on PATH; skipping MMseqs assignment")
         return []
 
     intermediate_files = myUtil.collect_intermediate_hits(config)
 
+    if not intermediate_files:
+        logger.info("No intermediate hits available for MMseqs assignment")
+        return []
+
     output_root = (
         Path(config.cross_check_directory) / "mmseqs_reference_sequence_assignment"
     )
     cache_root = output_root / "_reference_cache"
+
     output_root.mkdir(parents=True, exist_ok=True)
     cache_root.mkdir(parents=True, exist_ok=True)
 
@@ -1571,14 +1580,17 @@ def mmseqs_placement_package_reference_assignment(
         )
     )
 
-    selected_packages = getattr(config, "placements", None)
+    if not packages:
+        logger.info(
+            "No matching placement packages found for MMseqs reference assignment"
+        )
+        return []
+
     summaries: List[Dict[str, Union[int, str]]] = []
     failed_packages: List[str] = []
 
     for package_dir, faa_files in packages:
         package_dir = Path(package_dir)
-        if selected_packages and package_dir.name not in selected_packages:
-            continue
 
         try:
             summaries.append(
@@ -1590,13 +1602,17 @@ def mmseqs_placement_package_reference_assignment(
                     cache_root=cache_root,
                 )
             )
+
         except Exception as exc:
             failed_packages.append(package_dir.name)
+
             logger.exception(
-                "MMseqs assignment failed for package %s; continuing with next package: %s",
+                "MMseqs assignment failed for package %s; "
+                "continuing with next package: %s",
                 package_dir.name,
                 exc,
             )
+            continue
 
     if failed_packages:
         logger.warning(
@@ -1605,9 +1621,13 @@ def mmseqs_placement_package_reference_assignment(
             ", ".join(failed_packages[:20]),
         )
     else:
-        shutil.rmtree(cache_root, ignore_errors=True)
-        logger.info(
-            "Removed MMseqs reference cache after successful completion: %s", cache_root
+        shutil.rmtree(
+            cache_root,
+            ignore_errors=True,
+        )
+        logger.debug(
+            "Removed MMseqs reference cache after successful completion: %s",
+            cache_root,
         )
 
     return summaries
