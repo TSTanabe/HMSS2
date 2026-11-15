@@ -21,7 +21,6 @@ from hmsss.parse_reports import (
     parse_reports,
     pattern_completion_pathway,
     pattern_completion_synteny,
-    plausibility_filter,
 )
 from hmsss.parse_reports.csb_trie_algorithm import TrieIndex
 from hmsss.parse_reports.parse_reports import Protein
@@ -507,10 +506,6 @@ def search_genome_without_gff(genome_id, faa_in):
         parse_reports.get_protein_sequence(faa_file, protein_dict)
         parse_reports.define_selection_comments_for_protein_dict(protein_dict)
 
-        # Without GFF, all hits require phylogenetic placement
-        for protein in protein_dict.values():
-            protein.valid_hit = False
-
         logger.info(
             "Genome %s: %d proteins detected without GFF",
             genome_id,
@@ -883,6 +878,7 @@ def consecutive_hmm_search(config: Config, processes: int = 4) -> None:
                     config.cross_check_directory,
                     suffix=".intermediate_hits_faa",
                     max_open_files=32,
+                    add_valid_hits=True,
                 )
                 protein_batch.clear()
                 cluster_batch.clear()
@@ -897,6 +893,7 @@ def consecutive_hmm_search(config: Config, processes: int = 4) -> None:
                 config.cross_check_directory,
                 suffix=".intermediate_hits_faa",
                 max_open_files=32,
+                add_valid_hits=True,
             )
 
     logger.info("Finished pyhmmer search + parsing + DB write.")
