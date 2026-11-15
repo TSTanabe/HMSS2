@@ -6,10 +6,14 @@ from typing import Dict
 
 from hmsss.cli.config import Config
 from hmsss.core.logging import get_logger, print_header
-from hmsss.io import print_reports, print_command_args, print_graphs, print_reads
-from hmsss.io import db_fetch_data_general
-from hmsss.io import db_fetch_context
 from hmsss.db import database as database
+from hmsss.io import (
+    db_fetch_data_general,
+    print_command_args,
+    print_graphs,
+    print_reads,
+    print_reports,
+)
 
 logger = get_logger(__name__)
 
@@ -133,6 +137,10 @@ def run_protein_fetch_output(config: Config, directory: str) -> None:
         db_fetch_data_general.fetch_fasta_and_hit_data(config)
     )
 
+    taxonomy_total_counts = db_fetch_data_general.fetch_taxonomy_total_counts(
+        config.database_directory
+    )
+
     metabolic_dict = _load_domain_annotations(config.metabolic_information)
     # metabolic_dict = {}
 
@@ -147,11 +155,11 @@ def run_protein_fetch_output(config: Config, directory: str) -> None:
 
     print_reports.print_hit_reports(
         directory=directory,
-        database=config.database_directory,
         protein_dict=protein_dict,
         cluster_dict=cluster_dict,
         combo_dict=combo_dict,
         taxon_dict=taxon_dict,
+        taxonomy_total_counts=taxonomy_total_counts,
         metabolic_dict=metabolic_dict,
         context_dict=cluster_context_dict,
         fetch_proteins=requests,

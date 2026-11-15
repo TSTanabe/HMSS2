@@ -13,19 +13,67 @@ Funktionen in diesem Modul:
     * Zusammenführen der Ergebnisse über alle Kombinationen
 """
 
+import os
 import re
 import sqlite3
-import sys
 from itertools import product
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, List, Tuple
 
 from hmsss.cli.config import Config
 from hmsss.core.logging import get_logger
 from hmsss.graft.read_models import Read
 from hmsss.io import db_fetch_protein, db_fetch_read, db_fetch_taxonomy
-from hmsss.parse_reports import parse_reports
 
 logger = get_logger(__name__)
+
+
+_TAXONOMY_COUNT_COLUMNS = [
+    ("Superkingdom", "Superkingdom"),
+    ("Phylum", "Phylum"),
+    ("Class", "Class"),
+    ("Order", "Ordnung"),
+    ("Family", "Family"),
+    ("Genus", "Genus"),
+    ("Species", "Species"),
+]
+
+
+def fetch_taxonomy_total_counts(
+    database: str,
+    unknown_label: str = "Unknown",
+) -> Dict[Tuple[str, str], int]:
+    """Fetch total genome counts per taxonomy rank/taxon for report rendering."""
+    db_uri = (
+        database
+        if str(database).startswith("file:")
+        else f"file:{os.path.abspath(database)}?mode=ro&immutable=1"
+    )
+    counts: Dict[Tuple[str, str], int] = {}
+
+    with sqlite3.connect(db_uri, uri=True) as con:
+        cur = con.cursor()
+
+        for level_label, db_col in _TAXONOMY_COUNT_COLUMNS:
+            cur.execute(
+                f"""
+                SELECT
+                    CASE
+                        WHEN {db_col} IS NULL THEN ?
+                        WHEN TRIM({db_col}) = '' THEN ?
+                        WHEN UPPER(TRIM({db_col})) IN ('NA', 'NULL') THEN ?
+                        ELSE TRIM({db_col})
+                    END AS taxon_name,
+                    COUNT(*) AS genome_count
+                FROM Genomes
+                GROUP BY taxon_name
+                """,
+                (unknown_label, unknown_label, unknown_label),
+            )
+
+            for taxon_name, genome_count in cur:
+                counts[(level_label, str(taxon_name))] = int(genome_count)
+
+    return counts
 
 
 def _split_or_token(token: str) -> List[str]:

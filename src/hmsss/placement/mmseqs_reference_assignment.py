@@ -407,13 +407,13 @@ def build_local_taxdump(
             writer.writerow([taxid, ";".join(taxid_to_path[taxid])])
 
     if missing:
-        logger.warning(
+        logger.debug(
             "%d/%d ingroup references have no usable taxonomy. Examples: %s",
             len(missing),
             total,
             ", ".join(missing[:10]),
         )
-    logger.info(
+    logger.debug(
         "Taxonomy mapping: %d/%d ingroup references mapped to local taxids",
         len(sequence_taxid),
         total,
@@ -835,6 +835,87 @@ def classify_queries(
     return assignments
 
 
+def filter_intermediate_fastas_by_assignments(
+    faa_files: Iterable[Path],
+    assignments: Dict[str, QueryAssignment],
+    hit_summaries: Dict[str, QueryHitSummary],
+) -> Tuple[int, int]:
+    """Remove Outgroup-like queries from intermediate FASTA files in one linear pass.
+
+    No additional MMseqs search, database, sort step, or global reject set is
+    created. The already existing classification result is reused directly.
+
+    Removed:
+      - status == "rejected_outgroup_closer"
+      - no Ingroup hit but an Outgroup hit exists
+
+    Kept:
+      - accepted Ingroup queries
+      - low-Ingroup-identity queries without evidence that Outgroup is closer
+      - queries without either Ingroup or Outgroup MMseqs alignment
+
+    The 90% valid-hit rule is unchanged and independent of this FASTA filter.
+    """
+    kept_total = 0
+    removed_total = 0
+
+    for faa_file in map(Path, faa_files):
+        tmp_file = faa_file.with_name(faa_file.name + ".tmp_outgroup_filter")
+        kept = 0
+        removed = 0
+        write_record = False
+
+        try:
+            with (
+                faa_file.open("r", encoding="utf-8") as source,
+                tmp_file.open("w", encoding="utf-8") as target,
+            ):
+                for raw in source:
+                    if raw.startswith(">"):
+                        query_id = raw[1:].split()[0].strip()
+                        assignment = assignments.get(query_id)
+                        summary = hit_summaries.get(query_id)
+
+                        outgroup_only = (
+                            assignment is not None
+                            and assignment.status == "no_ingroup_hit"
+                            and summary is not None
+                            and summary.best_outgroup is not None
+                        )
+                        reject = assignment is not None and (
+                            assignment.status == "rejected_outgroup_closer"
+                            or outgroup_only
+                        )
+
+                        write_record = not reject
+                        if write_record:
+                            kept += 1
+                            target.write(raw)
+                        else:
+                            removed += 1
+                        continue
+
+                    if write_record:
+                        target.write(raw)
+
+            tmp_file.replace(faa_file)
+
+        except Exception:
+            tmp_file.unlink(missing_ok=True)
+            raise
+
+        kept_total += kept
+        removed_total += removed
+        logger.info(
+            "%s: Outgroup filter kept=%d removed=%d",
+            faa_file.name,
+            kept,
+            removed,
+        )
+
+    return kept_total, removed_total
+
+
 def update_database_functional_assignments(
     database_path: str,
     assignments: Dict[str, QueryAssignment],
@@ -942,21 +1023,56 @@ def parse_mmseqs_taxonomy(
     taxid_to_lineage: Dict[int, str],
     assignments: Dict[str, QueryAssignment],
 ) -> Tuple[Dict[str, str], Dict[str, Tuple[int, str, str]]]:
-    """Stream MMseqs taxonomy output and retain accepted ingroup queries."""
+    """
+    Parse MMseqs taxonomy output and convert assigned local taxids back to
+    HMSSS/GTDB lineages.
+
+    Expected MMseqs TSV columns:
+        query, taxid, rank, taxname[, lineage]
+
+    The package-local MMseqs taxonomy database uses synthetic taxids generated
+    from GTDB lineages. Therefore ``taxid_to_lineage`` is the authoritative
+    source for the lineage stored in HMSSS.
+
+    Example:
+        taxid 8446
+        -> d__Bacteria;p__Desulfobacterota;c__Desulfobacteria;...
+
+    The lineage emitted directly by MMseqs is used only as a fallback and is
+    normalized from e.g.
+
+        d_Bacteria;p_Desulfobacterota
+
+    to
+
+        d__Bacteria;p__Desulfobacterota
+
+    Only queries already accepted as ingroup assignments are considered. Queries assigned only to taxid 0 (unclassified) or taxid 1 (artificial root) are not stored as taxonomic assignments.
+    """
     domain_lineages: Dict[str, str] = {}
     details: Dict[str, Tuple[int, str, str]] = {}
 
+    valid_prefixes = {"d", "k", "p", "c", "o", "f", "g", "s"}
+
     with Path(taxonomy_tsv).open(encoding="utf-8") as handle:
         for line_no, raw in enumerate(handle, start=1):
-            fields = raw.rstrip("\n").split("\t")
-            if len(fields) < 4:
-                if raw.strip():
-                    logger.warning(
-                        "Malformed taxonomy row %d in %s", line_no, taxonomy_tsv
-                    )
+            line = raw.rstrip("\n")
+
+            if not line:
                 continue
 
-            query = fields[0]
+            fields = line.split("\t")
+
+            if len(fields) < 4:
+                logger.warning(
+                    "Malformed MMseqs taxonomy row %d in %s",
+                    line_no,
+                    taxonomy_tsv,
+                )
+                continue
+
+            query = fields[0].strip()
+
             assignment = assignments.get(query)
             if assignment is None or not assignment.ingroup_assignment:
                 continue
@@ -965,28 +1081,108 @@ def parse_mmseqs_taxonomy(
                 taxid = int(fields[1])
             except ValueError:
                 logger.warning(
-                    "Invalid MMseqs taxid on line %d: %s", line_no, fields[1]
+                    "Invalid MMseqs taxid on line %d: %s",
+                    line_no,
+                    fields[1],
                 )
                 continue
 
+            # 0 = unclassified
+            # 1 = artificial root of the package-local taxonomy
             if taxid in {0, 1}:
                 continue
 
-            lineage = fields[4].strip() if len(fields) >= 5 else ""
-            if not lineage or lineage.lower() in {
-                "unclassified",
-                "unknown",
-                "na",
-                "none",
-                "-",
-            }:
-                lineage = taxid_to_lineage.get(taxid, "")
+            rank = fields[2].strip()
+            tax_name = fields[3].strip()
+
+            # ---------------------------------------------------------
+            # Preferred source:
+            # package-local taxid -> original GTDB lineage
+            # ---------------------------------------------------------
+            lineage = (taxid_to_lineage.get(taxid) or "").strip()
+
+            # ---------------------------------------------------------
+            # Fallback:
+            # use lineage reported by MMseqs itself.
+            #
+            # MMseqs may emit:
+            #   d_Bacteria;p_Desulfobacterota;...
+            #
+            # HMSSS expects:
+            #   d__Bacteria;p__Desulfobacterota;...
+            # ---------------------------------------------------------
+            if not lineage and len(fields) >= 5:
+                raw_lineage = fields[4].strip()
+
+                if raw_lineage.lower() not in {
+                    "",
+                    "unclassified",
+                    "unknown",
+                    "na",
+                    "n/a",
+                    "none",
+                    "-",
+                }:
+                    lineage_parts = []
+
+                    for token in raw_lineage.split(";"):
+                        token = token.strip()
+
+                        if not token:
+                            continue
+
+                        # Already correct GTDB/HMSSS format.
+                        if "__" in token:
+                            prefix, name = token.split("__", 1)
+                            prefix = prefix.strip()
+                            name = name.strip()
+
+                            if prefix and name and prefix[0] in valid_prefixes:
+                                lineage_parts.append(f"{prefix[0]}__{name}")
+                            continue
+
+                        # MMseqs representation:
+                        # d_Bacteria -> d__Bacteria
+                        if (
+                            len(token) >= 3
+                            and token[0] in valid_prefixes
+                            and token[1] == "_"
+                        ):
+                            name = token[2:].strip()
+
+                            if name:
+                                lineage_parts.append(f"{token[0]}__{name}")
+
+                    lineage = ";".join(lineage_parts)
 
             if not lineage:
+                logger.warning(
+                    "No usable lineage available for MMseqs taxid %d, query %s",
+                    taxid,
+                    query,
+                )
+                continue
+
+            # Final safeguard: only store lineages can actually parse.
+            if not any(
+                token.strip().startswith(
+                    ("d__", "k__", "p__", "c__", "o__", "f__", "g__", "s__")
+                )
+                for token in lineage.split(";")
+            ):
+                logger.warning(
+                    "Ignoring malformed MMseqs lineage for query %s: %s",
+                    query,
+                    lineage,
+                )
                 continue
 
             domain_lineages[query] = lineage
-            details[query] = (taxid, fields[2], fields[3])
+            details[query] = (
+                taxid,
+                rank,
+                tax_name,
+            )
 
     return domain_lineages, details
 
@@ -1168,7 +1364,7 @@ def process_package(
 
     query_hmm_type = build_query_type_map(faa_files)
     if not query_hmm_type:
-        logger.info("%s: no intermediate queries", package_dir.name)
+        logger.debug("%s: no intermediate queries", package_dir.name)
         return {
             "package": package_dir.name,
             "queries": 0,
@@ -1247,6 +1443,17 @@ def process_package(
             functional_margin=functional_margin,
         )
 
+        # Reuse the existing competitive Ingroup/Outgroup classification.
+        # No second MMseqs run is needed. Outgroup-like sequences are removed
+        # from the intermediate FASTAs before downstream taxonomy/placement.
+        intermediate_kept, intermediate_removed_outgroup = (
+            filter_intermediate_fastas_by_assignments(
+                faa_files=faa_files,
+                assignments=assignments,
+                hit_summaries=hit_summaries,
+            )
+        )
+
         promoted, domain_updates = update_database_functional_assignments(
             database_path=config.database_directory,
             assignments=assignments,
@@ -1306,6 +1513,8 @@ def process_package(
     summary: Dict[str, Union[int, str]] = {
         "package": package_dir.name,
         "queries": len(query_hmm_type),
+        "intermediate_hits_kept": intermediate_kept,
+        "intermediate_hits_removed_outgroup": intermediate_removed_outgroup,
         "valid_hits": valid_hit_count,
         "ingroup_assignments": ingroup_assignment_count,
         "promoted_proteins": promoted,
@@ -1322,9 +1531,10 @@ def process_package(
         json.dump(summary, handle, indent=2)
 
     logger.info(
-        "%s: queries=%d valid=%d domain_updates=%d taxonomy_updates=%d",
+        "%s: queries=%d filtered_outgroup=%d valid=%d domain_updates=%d taxonomy_updates=%d",
         package_dir.name,
         len(query_hmm_type),
+        intermediate_removed_outgroup,
         valid_hit_count,
         domain_updates,
         taxonomy_updates,

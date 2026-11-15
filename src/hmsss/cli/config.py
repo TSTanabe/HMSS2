@@ -206,21 +206,19 @@ class CliReadMapping:
 
 @dataclass(slots=True)
 class CliPlacement:
-    """EPA-ng placement and metagenomic ORF detection parameters.
+    """EPA-ng placement and metagenomic ORF detection parameters."""
 
-    ``use_placement`` controls whether placement is active.
-    ``placements`` optionally restricts processing to named packages;
-    an empty list means all available placement packages.
-    """
+    disable_placement: bool = False
+    disable_mmseqs_reference_assignment: bool = False
 
-    # EPA-ng
-    use_placement: bool = False
     placements: List[str] = field(default_factory=list)
-    placement_threshold: float = 0.75
-    placement_lwr: float = 0.95
-    taxonomy_lwr: float = 0.7
+    placements_provided: bool = False
+    placement_domains: List[str] = field(default_factory=list)
 
-    # OrfM / PyHMMER
+    placement_threshold: float = 0.75
+    placement_lwr: float = 0.99999
+    taxonomy_lwr: float = 0.5
+
     min_orf_length: int = 96
     translation_table: int = 11
     batch_size: int = 10000000
@@ -612,9 +610,14 @@ class Config:
     rm_interleaved = prop("cli_readmap.interleaved")
     rm_ram_profile = prop("cli_readmap.ram_profile_file")
 
-    # EPA-ng phylogenetic placement
-    use_placement = prop("cli_placement.use_placement")
+    # EPA-ng phylogenetic placement / MMseqs reference assignment
+    disable_placement = prop("cli_placement.disable_placement")
+    disable_mmseqs_reference_assignment = prop(
+        "cli_placement.disable_mmseqs_reference_assignment"
+    )
     placements = prop("cli_placement.placements")
+    placements_provided = prop("cli_placement.placements_provided")
+    placement_domains = prop("cli_placement.placement_domains")
     placement_threshold = prop("cli_placement.placement_threshold")
     placement_lwr = prop("cli_placement.placement_lwr")
     taxonomy_lwr = prop("cli_placement.taxonomy_lwr")

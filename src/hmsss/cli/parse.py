@@ -274,7 +274,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="stage",
         type=int,
         default=0,
-        choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 30, 31, 32],
+        choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 30, 31, 32, 33, 34, 35],
         help="Start at step" if never_show else argparse.SUPPRESS,
     )
     parameters.add_argument(
@@ -282,7 +282,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="exit",
         type=int,
         default=99,
-        choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 30, 31, 32],
+        choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 30, 31, 32, 33, 34, 35],
         help="Exit at step" if never_show else argparse.SUPPRESS,
     )
 
@@ -482,26 +482,34 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
     placement = parser.add_argument_group("Phylogenetic placement of sequences")
 
     placement.add_argument(
-        "--placement",
-        dest="use_placement",
+        "--disable-placement",
+        dest="disable_placement",
         action="store_true",
         default=False,
-        help=(
-            "Enable phylogenetic placement using EPA-ng. "
-            "Without --placements, all available placement packages are used."
-        ),
+        help="Disable phylogenetic placement using EPA-ng",
     )
     placement.add_argument(
-        "--placement-packages",
+        "--placements",
         dest="placements",
         nargs="*",
         type=str,
-        default=[],
+        default=None,
         metavar="<PACKAGE>",
         help=(
             "Restrict placement to the listed packages. "
-            "Supplying one or more package names also enables placement. "
-            "If omitted or empty, --placement uses all available packages."
+            "If omitted, stage-specific defaults are used."
+        ),
+    )
+    placement.add_argument(
+        "--placement-domains",
+        dest="placement_domains",
+        nargs="*",
+        type=str,
+        default=[],
+        metavar="<DOMAIN>",
+        help=(
+            "Restrict phylogenetic placement to these domain types. "
+            "If omitted or empty, all available domains are used."
         ),
     )
 
@@ -531,6 +539,17 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         help=(
             "Minimum accumulated likelihood weight ratio (aLWR) "
             "required for taxonomic assignment"
+        ),
+    )
+
+    placement.add_argument(
+        "--disable-mmseqs-reference-assignment",
+        dest="disable_mmseqs_reference_assignment",
+        action="store_true",
+        default=False,
+        help=(
+            "Skip MMseqs2 Ingroup/Outgroup reference classification, "
+            "functional reassignment and MMseqs taxonomy for metagenomic ORFs"
         ),
     )
 
@@ -1023,32 +1042,27 @@ def _available_placement_packages(placement_dir: str) -> List[str]:
 
 
 def _resolve_placement_selection(
-    ns: argparse.Namespace, placement_dir: str
-) -> tuple[bool, List[str]]:
-    """Resolve placement activation and optional package restriction.
+    ns: argparse.Namespace,
+    placement_dir: str,
+) -> tuple[bool, List[str], bool]:
+    """Resolve placement package selection.
 
-    Semantics:
-      --placement
-          Enable placement for all available packages.
-
-      --placement --placements A B
-          Enable placement and restrict it to valid packages A/B.
-
-      --placements A B
-          Also enables placement automatically.
-
-      no --placement and no package names
-          Placement remains disabled.
-
-    Invalid requested package names are ignored with a warning when at least
-    one requested package is valid. If a non-empty request contains no valid
-    package at all, configuration fails.
+    Returns
+    -------
+    disable_placement
+        True when EPA-ng placement should be skipped.
+    selected_placements
+        Explicitly requested valid packages, or an empty list meaning no
+        explicit restriction.
+    placements_provided
+        Whether --placements was explicitly supplied.
     """
-    requested = list(dict.fromkeys(getattr(ns, "placements", []) or []))
-    use_placement = bool(getattr(ns, "use_placement", False) or requested)
+    placements_provided = getattr(ns, "placements", None) is not None
+    requested = list(dict.fromkeys(getattr(ns, "placements", None) or []))
+    disable_placement = bool(getattr(ns, "disable_placement", False))
 
     if not requested:
-        return use_placement, []
+        return disable_placement, [], placements_provided
 
     available = set(_available_placement_packages(placement_dir))
     valid = [name for name in requested if name in available]
@@ -1071,7 +1085,7 @@ def _resolve_placement_selection(
             stacklevel=2,
         )
 
-    return True, valid
+    return disable_placement, valid, placements_provided
 
 
 def build_config_from_namespace(ns) -> Config:
@@ -1170,17 +1184,24 @@ def build_config_from_namespace(ns) -> Config:
         dataset_divide_sign=getattr(ns, "dataset_divide_sign", "."),
     )
 
-    use_placement, selected_placements = _resolve_placement_selection(
-        ns,
-        paths_cfg.placement,
+    disable_placement, selected_placements, placements_provided = (
+        _resolve_placement_selection(
+            ns,
+            paths_cfg.placement,
+        )
     )
 
     cli_placement = CliPlacement(
-        use_placement=use_placement,
+        disable_placement=disable_placement,
+        disable_mmseqs_reference_assignment=bool(
+            getattr(ns, "disable_mmseqs_reference_assignment", False)
+        ),
         placements=selected_placements,
+        placements_provided=placements_provided,
+        placement_domains=list(getattr(ns, "placement_domains", [])),
         placement_threshold=float(getattr(ns, "placement_threshold", 0.75)),
-        placement_lwr=float(getattr(ns, "placement_lwr", 0.95)),
-        taxonomy_lwr=float(getattr(ns, "taxonomy_lwr", 0.7)),
+        placement_lwr=float(getattr(ns, "placement_lwr", 0.99999)),
+        taxonomy_lwr=float(getattr(ns, "taxonomy_lwr", 0.5)),
         min_orf_length=int(getattr(ns, "min_orf_length", 96)),
         translation_table=int(getattr(ns, "translation_table", 11)),
         batch_size=int(getattr(ns, "batch_size", 10000000)),

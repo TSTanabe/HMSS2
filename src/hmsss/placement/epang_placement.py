@@ -1,49 +1,39 @@
 #!/usr/bin/env python3
-"""Phylogenetic placement of protein-domain candidates using EPA-ng and GAPPA.
+"""EPA-ng placement followed by GAPPA functional and rank-aware taxonomy assignment.
 
-Workflow:
-    query proteins
-        -> PyHMMER alignment against package HMM
-        -> EPA-ng placement
-        -> GAPPA functional/domain assignment
-        -> GAPPA taxonomic assignment
+Workflow
+--------
+1. Match intermediate FASTA files to selected placement packages.
+2. Run EPA-ng for ALL matching packages first.
+3. Persist one package-specific JPLACE file in:
+       config.placement_results_directory/<package>/<package>.epa_result.jplace
+4. Only after placement has finished for all packages:
+       a. run GAPPA functional/clade assignment and update domain types;
+       b. run GAPPA taxonomy assignment without --best-hit;
+       c. apply rank-aware accumulated-support classification using ``afract``;
+       d. write taxonomy to DomainPlacements with method="epa_ng".
 
-Functional and taxonomic GAPPA workflows are independent.
-Failures affect only the current operation/package and do not terminate
-the complete pipeline.
-
-Required config attributes:
-    config.paths.placement
-    config.placement_results_directory
-    config.database_directory
-    config.cores
-
-    config.placements
-        Optional package restriction. Empty list = all matching packages.
-
-    config.placement_threshold
-        GAPPA functional clade threshold.
-
-    config.placement_lwr
-        EPA-ng dynamic heuristic cumulative LWR threshold.
-        Recommended default: 0.99999.
-
-    config.taxonomy_lwr
-        Minimum accumulated LWR (aLWR) for taxonomic assignment.
-        Recommended default: 0.5.
+The implementation is intentionally disk-oriented for large metagenomic datasets:
+- intermediate FASTA files are streamed;
+- aligned queries are processed in bounded PyHMMER batches;
+- package HMM and reference MSA share the same alignment coordinate system;
+- every query uses the canonical header ``proteinID___dom_START_END``;
+- no global query-ID or taxonomy dictionaries are retained;
+- GAPPA JPLACE and TSV outputs are consumed directly in bounded batches;
+- no temporary SQLite databases are created.
 """
 
 from __future__ import annotations
 
 import csv
-import hashlib
+import gzip
 import io
 import json
 import logging
-import shutil
+import re
 import subprocess
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple, Union
 
 import pyhmmer
 
@@ -51,231 +41,168 @@ from hmsss.db import database
 
 logger = logging.getLogger("hmg.epa")
 
-
-# ======================================================================
-# Placement package discovery
-# ======================================================================
-
-
-def find_matching_placement_packages(placement_root, intermediate_files):
-    """Yield placement packages matching domains present in intermediate files."""
-
-    placement_root = Path(placement_root)
-
-    if not placement_root.is_dir():
-        logger.error("Placement package directory does not exist: %s", placement_root)
-        return
-
-    try:
-        package_dirs = sorted(placement_root.iterdir())
-    except OSError as exc:
-        logger.error(
-            "Cannot read placement package directory %s: %s", placement_root, exc
-        )
-        return
-
-    for package_dir in package_dirs:
-        annotations = package_dir / "annotations.tsv"
-
-        if not package_dir.is_dir() or not annotations.is_file():
-            continue
-
-        try:
-            with annotations.open(encoding="utf-8") as handle:
-                protein_types = {
-                    row[1]
-                    for row in csv.reader(handle, delimiter="\t")
-                    if len(row) >= 2
-                }
-        except (OSError, UnicodeError, csv.Error) as exc:
-            logger.warning("Skipping placement package %s: %s", package_dir.name, exc)
-            continue
-
-        matched_types = protein_types & intermediate_files.keys()
-
-        if not matched_types:
-            continue
-
-        faa_files = []
-
-        for protein_type in sorted(matched_types):
-            files = intermediate_files[protein_type]
-            faa_files.extend([files] if isinstance(files, (str, Path)) else files)
-
-        yield package_dir, list(dict.fromkeys(map(Path, faa_files)))
+RANKS = ("domain", "phylum", "class", "order", "family", "genus", "species")
+DB_BATCH_SIZE = 5000
+ALIGN_BATCH_SIZE = 2048
 
 
-# ======================================================================
-# FASTA handling
-# ======================================================================
+# ============================================================================
+# Basic FASTA / package handling
+# ============================================================================
 
 
-def fasta_records(path: Path):
-    """Stream FASTA records as (first-word identifier, sequence)."""
+def fasta_records(path: Union[str, Path]) -> Iterator[Tuple[str, str]]:
+    """Stream FASTA records as ``(identifier, sequence)``."""
+    name = None
+    parts: List[str] = []
 
-    name, parts = None, []
-
-    with path.open(encoding="utf-8") as handle:
+    with Path(path).open(encoding="utf-8") as handle:
         for raw in handle:
             line = raw.strip()
-
             if not line:
                 continue
-
             if line.startswith(">"):
                 if name is not None:
                     yield name, "".join(parts)
-
                 name = line[1:].split()[0]
-
-                if not name:
-                    raise ValueError(f"Empty FASTA identifier in {path}")
-
                 parts = []
-                continue
-
-            if name is None:
-                raise ValueError(f"Sequence before FASTA header in {path}")
-
-            parts.append(line)
+            else:
+                parts.append(line)
 
     if name is not None:
         yield name, "".join(parts)
 
 
-def merge_placement_fastas(faa_files, output_file):
-    """Merge FASTA files while preserving identifiers and removing duplicates."""
+def find_matching_placement_packages(
+    placement_root: Union[str, Path],
+    intermediate_files,
+    selected_packages: Optional[Sequence[str]] = None,
+):
+    """Yield selected packages that share protein types with intermediate files."""
+    selected = set(selected_packages or [])
+    intermediate_types = set(intermediate_files)
 
-    output_file = Path(output_file)
-    seen_ids = set()
-
-    with output_file.open("w", encoding="utf-8") as out:
-        for faa_file in faa_files:
-            faa_file = Path(faa_file)
-
-            try:
-                for seq_id, sequence in fasta_records(faa_file):
-                    if seq_id in seen_ids:
-                        continue
-
-                    if not sequence:
-                        logger.warning(
-                            "Skipping empty sequence %s in %s", seq_id, faa_file
-                        )
-                        continue
-
-                    seen_ids.add(seq_id)
-                    out.write(f">{seq_id}\n{sequence}\n")
-
-            except (OSError, ValueError, UnicodeError) as exc:
-                logger.warning("Skipping faulty FASTA file %s: %s", faa_file, exc)
-
-    return output_file
-
-
-def _fasta_records_from_handle(handle):
-    """Yield FASTA records from a binary or text handle."""
-
-    name, parts = None, []
-
-    for line in handle:
-        if isinstance(line, bytes):
-            line = line.decode("utf-8")
-
-        line = line.strip()
-
-        if not line:
+    for package_dir in sorted(Path(placement_root).iterdir()):
+        if not package_dir.is_dir():
+            continue
+        if selected and package_dir.name not in selected:
             continue
 
-        if line.startswith(">"):
-            if name is not None:
-                yield name, "".join(parts)
+        annotations = package_dir / "annotations.tsv"
+        if not annotations.is_file():
+            continue
 
-            name = line[1:].split()[0]
-            parts = []
-        else:
-            parts.append(line)
+        protein_types = set()
+        with annotations.open(newline="", encoding="utf-8-sig") as handle:
+            reader = csv.reader(handle, delimiter="\t")
+            for row in reader:
+                if len(row) >= 2 and row[1] and row[1] != "protein_type":
+                    protein_types.add(row[1].strip())
 
-    if name is not None:
-        yield name, "".join(parts)
+        matched = sorted(protein_types & intermediate_types)
+        if not matched:
+            continue
+
+        faa_files: List[Path] = []
+        for protein_type in matched:
+            value = intermediate_files[protein_type]
+            if isinstance(value, (str, Path)):
+                faa_files.append(Path(value))
+            else:
+                faa_files.extend(Path(path) for path in value)
+
+        yield package_dir, faa_files
 
 
-# ======================================================================
-# Placement package loading
-# ======================================================================
+def load_placement_package(package_dir: Union[str, Path]) -> Dict[str, Path]:
+    """Resolve the three files required by EPA-ng from the package manifest."""
+    package_dir = Path(package_dir)
+    manifest = json.loads((package_dir / "manifest.json").read_text(encoding="utf-8"))
+    roles = manifest["roles"]
 
-
-def load_placement_package(
-    package_dir: Union[str, Path],
-) -> Dict[str, Path]:
-    """Load and validate EPA-ng reference files using SHA-256 checksums."""
-
-    package_dir = Path(package_dir).resolve()
-    manifest_file = package_dir / "manifest.json"
-
-    with manifest_file.open(encoding="utf-8") as handle:
-        manifest = json.load(handle)
-
-    required = {
-        "tree": "tree",
-        "seed": "trimmed_alignment",
-        "hmm": "hmm",
+    files = {
+        "tree": package_dir / roles["tree"],
+        "seed": package_dir / roles["trimmed_alignment"],
+        "hmm": package_dir / roles["hmm"],
     }
 
-    package_files = {}
+    missing = [str(path) for path in files.values() if not path.is_file()]
+    if missing:
+        raise FileNotFoundError(
+            "Missing placement-package file(s): " + ", ".join(missing)
+        )
 
-    for argument, role in required.items():
-        filename = manifest["roles"][role]
-        path = (package_dir / filename).resolve()
-
-        if not path.is_relative_to(package_dir):
-            raise ValueError(f"Invalid package path: {filename}")
-
-        if not path.is_file():
-            raise FileNotFoundError(path)
-
-        expected_sha256 = manifest["files"][filename]["sha256"]
-
-        digest = hashlib.sha256()
-
-        with path.open("rb") as handle:
-            while chunk := handle.read(1024 * 1024):
-                digest.update(chunk)
-
-        actual_sha256 = digest.hexdigest()
-
-        if actual_sha256.lower() != expected_sha256.lower():
-            raise ValueError(
-                f"SHA-256 checksum mismatch for {path}\n"
-                f"Expected: {expected_sha256}\n"
-                f"Actual:   {actual_sha256}"
-            )
-
-        package_files[argument] = path
-
-    logger.debug(
-        "Reference package '%s': SHA-256 checksums verified",
-        package_dir.name,
-    )
-
-    return package_files
+    return files
 
 
-# ======================================================================
-# PyHMMER alignment
-# ======================================================================
+def merge_placement_fastas(faa_files: Iterable[Path], output_file: Path) -> int:
+    """Stream-concatenate intermediate FASTAs and return the query count.
+
+    Intermediate read detection assigns each ORF to one best HMM type, so query
+    identifiers are expected to be unique across these files. No global ID set
+    is retained in RAM.
+    """
+    count = 0
+    with output_file.open("w", encoding="utf-8") as out:
+        for faa_file in faa_files:
+            for seq_id, sequence in fasta_records(faa_file):
+                if not sequence:
+                    continue
+                out.write(f">{seq_id}\n{sequence}\n")
+                count += 1
+    return count
+
+
+def _reference_alignment_width(path: Path) -> int:
+    """Return the column count of the reference alignment."""
+    width = None
+
+    for _, sequence in fasta_records(path):
+        if width is None:
+            width = len(sequence)
+        elif len(sequence) != width:
+            raise ValueError(f"Inconsistent reference alignment width in {path}")
+
+    if width is None:
+        raise ValueError(f"Empty reference alignment: {path}")
+
+    return width
+
+
+# ============================================================================
+# Query alignment
+# ============================================================================
 
 
 def _sequence_name(sequence) -> str:
-    """Return a PyHMMER sequence identifier as str."""
-
     name = sequence.name
     return name.decode("utf-8") if isinstance(name, bytes) else str(name)
 
 
-def _align_block(model, block, output_handle):
-    """Align one PyHMMER sequence block and retain HMM match-state columns."""
+def _fasta_records_from_handle(handle):
+    name = None
+    parts = []
+    for raw in handle:
+        line = raw.decode("utf-8").strip() if isinstance(raw, bytes) else raw.strip()
+        if not line:
+            continue
+        if line.startswith(">"):
+            if name is not None:
+                yield name, "".join(parts)
+            name = line[1:].split()[0]
+            parts = []
+        else:
+            parts.append(line)
+    if name is not None:
+        yield name, "".join(parts)
 
+
+def _align_block(
+    model,
+    block,
+    output_handle,
+) -> Tuple[int, set]:
+    """Align one bounded query block and retain HMM match-state columns."""
     block_ids = {_sequence_name(sequence) for sequence in block}
 
     try:
@@ -285,210 +212,160 @@ def _align_block(model, block, output_handle):
             trim=False,
             all_consensus_cols=True,
         )
-    except Exception as exc:
-        logger.warning(
-            "hmmalign failed for batch of %d queries: %s",
-            len(block_ids),
-            exc,
-        )
-        return set(), block_ids
+    except Exception:
+        return 0, block_ids
 
     buffer = io.BytesIO()
     msa.write(buffer, "a2m")
     buffer.seek(0)
 
-    valid_ids = set()
-    failed_ids = set()
+    written = 0
+    returned = set()
+    failed = set()
 
     for query_id, sequence in _fasta_records_from_handle(buffer):
-        # A2M:
-        # uppercase = HMM match state
-        # lowercase = insertion state
-        # "-"       = gap
+        returned.add(query_id)
+
         aligned = "".join(char for char in sequence if char.isupper() or char == "-")
 
-        if len(aligned) != model.M:
-            logger.warning(
-                "Invalid masked alignment length for %s: %d != %d",
-                query_id,
-                len(aligned),
-                model.M,
-            )
-            failed_ids.add(query_id)
-            continue
-
-        if not aligned.strip("-"):
-            failed_ids.add(query_id)
+        if len(aligned) != model.M or not aligned.strip("-"):
+            failed.add(query_id)
             continue
 
         output_handle.write(f">{query_id}\n{aligned}\n")
-        valid_ids.add(query_id)
+        written += 1
 
-    failed_ids.update(block_ids - valid_ids - failed_ids)
-
-    return valid_ids, failed_ids
+    failed.update(block_ids - returned)
+    return written, failed
 
 
 def align_queries_pyhmmer(
     hmm: Path,
+    seed: Path,
     queries: Path,
     output: Path,
-    batch_size: int = 2056,
-) -> int:
-    """
-    Align queries to the package HMM.
+    unplaceable: Path,
+    batch_size: int = ALIGN_BATCH_SIZE,
+) -> Tuple[int, int]:
+    """Align queries with PyHMMER in the package reference coordinate system.
 
-    Failed batch members are retried individually. Queries without
-    residues in HMM match-state columns are excluded from EPA-ng.
+    HMSS3 placement packages guarantee that the HMM has one match state per
+    column of ``trimmed.fasta_aln``. The HMM can still be trained only from
+    ingroup sequences; the coordinate system remains identical to the full
+    Ingroup+Outgroup reference alignment used by EPA-ng.
     """
-
     alphabet = pyhmmer.easel.Alphabet.amino()
 
     with pyhmmer.plan7.HMMFile(str(hmm)) as hmm_file:
         model = hmm_file.read()
 
     if model is None:
-        raise ValueError(f"No HMM found: {hmm}")
+        raise ValueError(f"No HMM found in {hmm}")
 
-    output.parent.mkdir(parents=True, exist_ok=True)
+    reference_width = _reference_alignment_width(seed)
 
-    aligned_ids = set()
-    failed_ids = set()
+    if model.M != reference_width:
+        raise ValueError(
+            "Placement package coordinate mismatch: "
+            f"HMM match states={model.M}, "
+            f"reference alignment width={reference_width}"
+        )
 
-    # First pass: process queries in batches.
+    aligned_count = 0
+    unplaceable_count = 0
+
     with (
         pyhmmer.easel.SequenceFile(
             str(queries),
             digital=True,
             alphabet=alphabet,
         ) as seq_file,
-        output.open("w", encoding="utf-8") as out,
+        output.open("w", encoding="utf-8") as aligned_out,
+        unplaceable.open("w", encoding="utf-8") as failed_out,
     ):
         while True:
             block = seq_file.read_block(sequences=batch_size)
-
             if not block:
                 break
 
-            valid, failed = _align_block(model, block, out)
-            aligned_ids.update(valid)
-            failed_ids.update(failed)
+            written, failed_ids = _align_block(
+                model,
+                block,
+                aligned_out,
+            )
+            aligned_count += written
 
-    failed_ids -= aligned_ids
-    rescued_ids = set()
+            if not failed_ids:
+                continue
 
-    # Retry failed batch members individually.
-    if failed_ids:
-        rescue_input = output.with_name("alignment_rescue_queries.faa")
+            for sequence in block:
+                query_id = _sequence_name(sequence)
+                if query_id not in failed_ids:
+                    continue
 
-        with rescue_input.open("w", encoding="utf-8") as handle:
-            for query_id, sequence in fasta_records(queries):
-                if query_id in failed_ids and sequence:
-                    handle.write(f">{query_id}\n{sequence}\n")
+                rescue = pyhmmer.easel.DigitalSequenceBlock(alphabet)
+                rescue.append(sequence)
 
-        if rescue_input.stat().st_size:
-            with (
-                pyhmmer.easel.SequenceFile(
-                    str(rescue_input),
-                    digital=True,
-                    alphabet=alphabet,
-                ) as seq_file,
-                output.open("a", encoding="utf-8") as out,
-            ):
-                while True:
-                    block = seq_file.read_block(sequences=1)
+                rescued, still_failed = _align_block(
+                    model,
+                    rescue,
+                    aligned_out,
+                )
 
-                    if not block:
-                        break
+                if rescued:
+                    aligned_count += rescued
+                elif query_id in still_failed:
+                    failed_out.write(f">{query_id}\n{sequence.textize().sequence}\n")
+                    unplaceable_count += 1
 
-                    valid, _ = _align_block(model, block, out)
-                    rescued_ids.update(valid)
+    if unplaceable_count == 0:
+        unplaceable.unlink(missing_ok=True)
 
-        rescue_input.unlink(missing_ok=True)
-
-    aligned_ids.update(rescued_ids)
-    unresolved_ids = failed_ids - rescued_ids
-
-    unplaceable_file = output.with_name("unplaceable_queries.faa")
-
-    if unresolved_ids:
-        with unplaceable_file.open("w", encoding="utf-8") as handle:
-            for query_id, sequence in fasta_records(queries):
-                if query_id in unresolved_ids:
-                    handle.write(f">{query_id}\n{sequence}\n")
-
-        logger.warning(
-            "%d queries could not be aligned to HMM match-state columns "
-            "and were written to %s",
-            len(unresolved_ids),
-            unplaceable_file,
-        )
-    else:
-        unplaceable_file.unlink(missing_ok=True)
-
-    logger.info(
-        "PyHMMER alignment: %d usable, %d rescued, %d unplaceable",
-        len(aligned_ids),
-        len(rescued_ids),
-        len(unresolved_ids),
-    )
-
-    return len(aligned_ids)
+    return aligned_count, unplaceable_count
 
 
-# ======================================================================
+# ============================================================================
 # EPA-ng
-# ======================================================================
+# ============================================================================
 
 
 def run_epa_ng(
+    package_name: str,
     tree: Path,
     seed: Path,
     hmm: Path,
     queries: Path,
-    model: str,
     output_dir: Path,
     threads: int,
-    placement_lwr: float = 0.99999,
+    placement_lwr: float,
 ) -> Optional[Path]:
-    """
-    Align queries and run EPA-ng.
+    """Run one EPA-ng package and persist a package-specific JPLACE file."""
+    aligned_queries = output_dir / f"{package_name}.aligned_queries.fasta"
+    unplaceable = output_dir / f"{package_name}.unplaceable_queries.faa"
+    default_jplace = output_dir / "epa_result.jplace"
+    final_jplace = output_dir / f"{package_name}.epa_result.jplace"
 
-    placement_lwr controls EPA-ng's dynamic preplacement heuristic.
-    It is the cumulative LWR that candidate branches must cover.
-    """
+    default_jplace.unlink(missing_ok=True)
 
-    if not 0.0 < placement_lwr <= 1.0:
-        logger.error(
-            "Invalid EPA-ng placement LWR %.6f; expected 0 < LWR <= 1",
-            placement_lwr,
-        )
+    aligned_count, failed_count = align_queries_pyhmmer(
+        hmm=hmm,
+        seed=seed,
+        queries=queries,
+        output=aligned_queries,
+        unplaceable=unplaceable,
+    )
+
+    if aligned_count == 0:
+        logger.warning("%s: no alignable queries", package_name)
+        aligned_queries.unlink(missing_ok=True)
         return None
 
-    if not shutil.which("epa-ng"):
-        logger.warning("EPA-ng executable not found")
-        return None
-
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    aligned_queries = output_dir / "aligned_queries.fasta"
-    jplace = output_dir / "epa_result.jplace"
-
-    jplace.unlink(missing_ok=True)
-
-    try:
-        aligned_count = align_queries_pyhmmer(
-            hmm=hmm,
-            queries=queries,
-            output=aligned_queries,
-        )
-    except Exception:
-        logger.exception("Query alignment failed for EPA-ng package")
-        return None
-
-    if not aligned_count:
-        logger.warning("No alignable queries available for EPA-ng")
-        return None
+    logger.info(
+        "%s: EPA-ng placement of %d queries (%d unplaceable)",
+        package_name,
+        aligned_count,
+        failed_count,
+    )
 
     cmd = [
         "epa-ng",
@@ -499,7 +376,7 @@ def run_epa_ng(
         "--query",
         str(aligned_queries),
         "--model",
-        model,
+        "LG",
         "--threads",
         str(threads),
         "--dyn-heur",
@@ -508,305 +385,257 @@ def run_epa_ng(
         str(output_dir),
     ]
 
-    logger.info(
-        "Running EPA-ng with %d queries; dynamic LWR threshold %.5f",
-        aligned_count,
-        placement_lwr,
+    result = subprocess.run(
+        cmd,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+        check=False,
     )
 
-    try:
-        result = subprocess.run(
-            cmd,
-            check=False,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-    except OSError as exc:
-        logger.error("Could not execute EPA-ng: %s", exc)
-        return None
+    aligned_queries.unlink(missing_ok=True)
 
     if result.returncode != 0:
-        logger.error(
-            "EPA-ng failed with exit code %d\n%s",
-            result.returncode,
-            result.stderr.strip(),
-        )
+        logger.error("%s: EPA-ng failed: %s", package_name, result.stderr.strip())
+        default_jplace.unlink(missing_ok=True)
         return None
 
-    if not jplace.is_file() or jplace.stat().st_size == 0:
-        logger.error("EPA-ng produced no valid JPLACE file: %s", jplace)
+    if not default_jplace.is_file() or default_jplace.stat().st_size == 0:
+        logger.error("%s: EPA-ng produced no JPLACE output", package_name)
         return None
 
-    try:
-        with jplace.open(encoding="utf-8") as handle:
-            data = json.load(handle)
-    except (OSError, json.JSONDecodeError) as exc:
-        logger.error("Could not parse EPA-ng output %s: %s", jplace, exc)
-        return None
-
-    if not {"tree", "fields", "placements"} <= data.keys():
-        logger.error("Invalid JPLACE structure: %s", jplace)
-        return None
-
-    if not data["placements"]:
-        logger.warning("EPA-ng returned an empty placement set: %s", jplace)
-        return None
-
-    logger.info(
-        "EPA-ng completed: %d placement groups",
-        len(data["placements"]),
-    )
-
-    return jplace
+    # One explicit filename per package. Package result directories remain
+    # unchanged, but JPLACE files cannot collide with generic EPA-ng names.
+    default_jplace.replace(final_jplace)
+    return final_jplace
 
 
-# ======================================================================
-# GAPPA functional/domain assignment
-# ======================================================================
+# ============================================================================
+# Canonical domain headers
+# ============================================================================
+
+
+def _parse_domain_hits(query_ids: Sequence[str]) -> set:
+    """Parse canonical ``proteinID___dom_START_END`` query identifiers."""
+    hits = set()
+
+    for query_id in query_ids:
+        try:
+            hits.add(database.parse_domain_header(query_id))
+        except ValueError:
+            logger.warning("Ignoring invalid placement query header: %s", query_id)
+
+    return hits
+
+
+def _domain_lineages(
+    assignments: Sequence[Tuple[str, str]],
+) -> Dict[str, str]:
+    """Return canonical GAPPA query headers mapped to assigned taxonomy."""
+    result = {}
+
+    for query_id, taxopath in assignments:
+        if not taxopath:
+            continue
+
+        try:
+            database.parse_domain_header(query_id)
+        except ValueError:
+            logger.warning("Ignoring invalid taxonomy query header: %s", query_id)
+            continue
+
+        result[query_id] = taxopath
+
+    return result
+
+
+# ============================================================================
+# GAPPA functional assignment
+# ============================================================================
+
+
+def _annotation_types_and_clade_file(
+    annotations: Path,
+    output_file: Path,
+) -> set:
+    """Write GAPPA's headerless clade list and return the small type set."""
+    protein_types = set()
+
+    with (
+        annotations.open(newline="", encoding="utf-8-sig") as source,
+        output_file.open("w", encoding="utf-8") as target,
+    ):
+        reader = csv.reader(source, delimiter="\t")
+        for row in reader:
+            if len(row) < 2:
+                continue
+            sequence_id = row[0].strip()
+            protein_type = row[1].strip()
+            if not sequence_id or not protein_type:
+                continue
+            if sequence_id == "sequence_id" and protein_type == "protein_type":
+                continue
+            target.write(f"{sequence_id}\t{protein_type}\n")
+            protein_types.add(protein_type)
+
+    return protein_types
 
 
 def assign_protein_clades(
     jplace: Path,
     annotations: Path,
     output_dir: Path,
-    threshold: float = 0.75,
-) -> Optional[Path]:
-    """
-    Assign placements to functional protein clades.
-
-    If GAPPA fails, progressively less strict thresholds are tried.
-    """
-
-    if not shutil.which("gappa"):
-        logger.warning("GAPPA executable not found; functional assignment skipped")
-        return None
-
-    if not jplace.is_file():
-        logger.warning(
-            "JPLACE file missing for functional assignment: %s",
-            jplace,
-        )
-        return None
-
-    if not annotations.is_file():
-        logger.warning(
-            "Functional annotation file missing: %s",
-            annotations,
-        )
-        return None
-
+    threshold: float,
+) -> Tuple[Optional[Path], set]:
+    """Run one fixed-threshold GAPPA functional assignment."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    thresholds = [
-        threshold,
-        threshold * 0.8,
-        threshold * 0.6,
-        threshold * 0.4,
-        threshold * 0.2,
-        0.0,
-    ]
-    thresholds = list(dict.fromkeys(max(0.0, value) for value in thresholds))
+    for old in output_dir.glob("*.jplace*"):
+        old.unlink()
 
-    for current_threshold in thresholds:
-        for old_file in output_dir.glob("*.jplace"):
-            old_file.unlink()
+    clade_file = output_dir / "gappa_clades.tsv"
+    expected_types = _annotation_types_and_clade_file(annotations, clade_file)
 
-        cmd = [
+    result = subprocess.run(
+        [
             "gappa",
             "edit",
             "extract",
             "--jplace-path",
             str(jplace.resolve()),
             "--clade-list-file",
-            str(annotations.resolve()),
+            str(clade_file.resolve()),
             "--threshold",
-            str(current_threshold),
-        ]
+            str(threshold),
+        ],
+        cwd=output_dir,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+        check=False,
+    )
 
-        logger.info(
-            "Running GAPPA functional assignment with threshold %.3f",
-            current_threshold,
+    if result.returncode != 0:
+        logger.error("GAPPA functional assignment failed: %s", result.stderr.strip())
+        return None, expected_types
+
+    return output_dir, expected_types
+
+
+def _protein_type_from_filename(path: Path, expected_types: set) -> Optional[str]:
+    name = path.name
+    if name.endswith(".gz"):
+        name = name[:-3]
+    if name.endswith(".jplace"):
+        name = name[:-7]
+
+    lowered = name.lower()
+    if re.search(r"(^|[._-])(basal|uncertain)($|[._-])", lowered):
+        return None
+
+    if name in expected_types:
+        return name
+
+    matches = [
+        protein_type
+        for protein_type in expected_types
+        if re.search(
+            r"(^|[._-])" + re.escape(protein_type) + r"($|[._-])",
+            name,
         )
+    ]
 
-        try:
-            result = subprocess.run(
-                cmd,
-                cwd=output_dir,
-                check=False,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-        except OSError as exc:
-            logger.error(
-                "Could not execute GAPPA functional assignment: %s",
-                exc,
-            )
-            return None
-
-        if result.returncode != 0:
-            logger.warning(
-                "GAPPA functional assignment failed at threshold %.3f: %s",
-                current_threshold,
-                result.stderr.strip(),
-            )
-            continue
-
-        if not list(output_dir.glob("*.jplace")):
-            logger.warning(
-                "GAPPA functional assignment at threshold %.3f "
-                "produced no JPLACE files",
-                current_threshold,
-            )
-            continue
-
-        if current_threshold != threshold:
-            logger.warning(
-                "Functional placement required relaxed threshold %.3f -> %.3f",
-                threshold,
-                current_threshold,
-            )
-
-        return output_dir
-
-    logger.error("GAPPA functional assignment failed at all tested thresholds")
-
-    return None
+    return matches[0] if len(matches) == 1 else None
 
 
-def parse_function_assignments(
-    function_dir: Union[str, Path],
+def _iter_jplace_query_ids(path: Path) -> Iterator[str]:
+    opener = gzip.open if path.name.endswith(".gz") else open
+    with opener(path, "rt", encoding="utf-8") as handle:
+        data = json.load(handle)
+
+    for placement in data.get("placements", []):
+        for entry in placement.get("n", []):
+            if isinstance(entry, str):
+                yield entry
+            elif isinstance(entry, (list, tuple)) and entry:
+                yield entry[0]
+
+        for entry in placement.get("nm", []):
+            if isinstance(entry, (list, tuple)) and entry:
+                yield entry[0]
+
+
+def store_function_assignments(
+    function_dir: Path,
+    expected_types: set,
     database_path: str,
+    batch_size: int = DB_BATCH_SIZE,
 ) -> int:
-    """Store functional GAPPA assignments in the existing database."""
-
-    function_dir = Path(function_dir)
-
-    if not function_dir.is_dir():
-        return 0
-
-    assignments = {}
-
-    for file in sorted(function_dir.glob("*.jplace")):
-        domain_type = file.stem
-
-        try:
-            with file.open(encoding="utf-8") as handle:
-                data = json.load(handle)
-        except (OSError, json.JSONDecodeError) as exc:
-            logger.warning(
-                "Cannot parse functional GAPPA output %s: %s",
-                file,
-                exc,
-            )
-            continue
-
-        for placement in data.get("placements", []):
-            names = list(placement.get("n", []))
-            names.extend(entry[0] for entry in placement.get("nm", []) if entry)
-
-            for name in names:
-                try:
-                    domain_hit = database.parse_domain_header(name)
-                except ValueError as exc:
-                    logger.warning(
-                        "Cannot map placement query '%s' to database hit: %s",
-                        name,
-                        exc,
-                    )
-                    continue
-
-                previous = assignments.get(domain_hit)
-
-                if previous is not None and previous != domain_type:
-                    logger.warning(
-                        "Conflicting placement assignments for %s: "
-                        "%s versus %s; keeping first",
-                        domain_hit,
-                        previous,
-                        domain_type,
-                    )
-                    continue
-
-                assignments[domain_hit] = domain_type
-
-    if not assignments:
-        logger.info("No functional placement assignments found")
-        return 0
-
-    grouped = {}
-
-    for domain_hit, domain_type in assignments.items():
-        grouped.setdefault(domain_type, set()).add(domain_hit)
+    """Read GAPPA clade JPLACE files directly and update matching domain hits."""
+    paths = sorted(function_dir.glob("*.jplace"))
+    paths.extend(sorted(function_dir.glob("*.jplace.gz")))
 
     updated = 0
 
-    for domain_type, domain_hits in grouped.items():
-        if domain_type.lower() in {"basal", "uncertain"}:
+    for path in paths:
+        protein_type = _protein_type_from_filename(path, expected_types)
+        if protein_type is None:
             continue
 
-        updated += database.update_domains(
-            database=database_path,
-            domain_hits=domain_hits,
-            new_domain=domain_type,
-        )
+        query_batch: List[str] = []
 
-        database.update_selection_comments(
-            database=database_path,
-            domain_hits=domain_hits,
-            comment="pp",
-        )
+        for query_id in _iter_jplace_query_ids(path):
+            query_batch.append(query_id)
 
-    logger.info(
-        "Placement changed %d functional domain assignments",
-        updated,
-    )
+            if len(query_batch) >= batch_size:
+                hits = _parse_domain_hits(query_batch)
+                if hits:
+                    updated += database.update_domains(
+                        database=database_path,
+                        domain_hits=hits,
+                        new_domain=protein_type,
+                    )
+                    database.update_selection_comments(
+                        database=database_path,
+                        domain_hits=hits,
+                        comment="pp",
+                    )
+                query_batch.clear()
+
+        if query_batch:
+            hits = _parse_domain_hits(query_batch)
+            if hits:
+                updated += database.update_domains(
+                    database=database_path,
+                    domain_hits=hits,
+                    new_domain=protein_type,
+                )
+                database.update_selection_comments(
+                    database=database_path,
+                    domain_hits=hits,
+                    comment="pp",
+                )
 
     return updated
 
 
-# ======================================================================
-# GAPPA taxonomic assignment
-# ======================================================================
+# ============================================================================
+# GAPPA rank-aware taxonomy
+# ============================================================================
 
 
 def assign_taxonomy(
     jplace: Path,
     taxonomy_file: Path,
     output_dir: Path,
-    threads: int = 1,
+    threads: int,
+    consensus_threshold: Optional[float] = None,
 ) -> Optional[Path]:
-    """
-    Calculate per-query taxonomic LWR profiles using GAPPA.
-
-    --best-hit is deliberately NOT used. The complete per-query profile is
-    retained so the deepest sufficiently supported taxonomic path can later
-    be selected using accumulated LWR.
-    """
-
-    if not shutil.which("gappa"):
-        logger.warning("GAPPA executable not found; taxonomic assignment skipped")
-        return None
-
-    if not jplace.is_file():
-        logger.warning(
-            "JPLACE file missing for taxonomic assignment: %s",
-            jplace,
-        )
-        return None
-
-    if not taxonomy_file.is_file():
-        logger.warning(
-            "Reference taxonomy file missing: %s",
-            taxonomy_file,
-        )
-        return None
-
+    """Generate complete per-query GAPPA taxonomy profiles (no --best-hit)."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    for old_file in output_dir.glob("*per_query.tsv"):
-        old_file.unlink()
+    for old in output_dir.glob("*per_query*.tsv"):
+        old.unlink()
 
     cmd = [
         "gappa",
@@ -823,344 +652,315 @@ def assign_taxonomy(
         str(output_dir.resolve()),
     ]
 
-    logger.info("Running GAPPA taxonomic assignment")
+    if consensus_threshold is not None:
+        cmd.extend(["--consensus-thresh", str(consensus_threshold)])
 
-    try:
-        result = subprocess.run(
-            cmd,
-            check=False,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-    except OSError as exc:
-        logger.error(
-            "Could not execute GAPPA taxonomic assignment: %s",
-            exc,
-        )
-        return None
+    result = subprocess.run(
+        cmd,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+        check=False,
+    )
 
     if result.returncode != 0:
-        logger.error(
-            "GAPPA taxonomic assignment failed: %s",
-            result.stderr.strip(),
-        )
-        return None
-
-    if not list(output_dir.glob("*per_query.tsv")):
-        logger.error("GAPPA taxonomic assignment produced no per-query result file")
+        logger.error("GAPPA taxonomy assignment failed: %s", result.stderr.strip())
         return None
 
     return output_dir
 
 
-def parse_taxonomy_assignments(
-    taxonomy_dir: Union[str, Path],
-    minimum_lwr: float = 0.5,
-) -> Dict[str, str]:
+def _split_taxopath(taxopath: str) -> Tuple[str, ...]:
+    return tuple(token.strip() for token in taxopath.split(";") if token.strip())
+
+
+def rank_aware_classification(
+    candidates: Sequence[Tuple[int, str, float]],
+    support_threshold: float,
+) -> str:
+    """Exact rank-wise logic used by the validation benchmark.
+
+    At every successive rank, choose the best-supported taxopath consistent
+    with the already accepted parent path. Support is GAPPA ``afract``.
+    Classification stops at the first rank below ``support_threshold``.
     """
-    Select the deepest sufficiently supported taxonomic assignment.
+    accepted: Tuple[str, ...] = ()
 
-    GAPPA per-query output contains:
+    for depth in range(1, len(RANKS) + 1):
+        best_path = None
+        best_support = -1.0
 
-        name
-        LWR
-        fract
-        aLWR
-        afract
-        taxopath
+        for row_depth, taxopath, support in candidates:
+            if row_depth != depth:
+                continue
+            tokens = _split_taxopath(taxopath)
+            if accepted and tokens[: len(accepted)] != accepted:
+                continue
+            if support > best_support or (
+                support == best_support and taxopath > (best_path or "")
+            ):
+                best_path = taxopath
+                best_support = support
 
-    For each query, the deepest taxopath with:
+        if best_path is None or best_support < support_threshold:
+            break
 
-        aLWR >= minimum_lwr
+        accepted = _split_taxopath(best_path)
 
-    is selected.
+    return ";".join(accepted)
 
-    Using accumulated LWR rather than a single-placement best hit allows
-    uncertain placements to be retained at a higher, better-supported
-    taxonomic rank instead of being discarded completely or assigned
-    spuriously to a weakly supported species.
+
+def _iter_rank_aware_taxonomy(
+    path: Path,
+    support_threshold: float,
+) -> Iterator[Tuple[str, str]]:
+    """Stream rank-aware assignments from one GAPPA per-query TSV.
+
+    GAPPA writes the rows belonging to a query together. Only the current
+    query's taxonomic candidates are retained in memory.
     """
+    current_query: Optional[str] = None
+    candidates: List[Tuple[int, str, float]] = []
 
-    if not 0.0 <= minimum_lwr <= 1.0:
-        raise ValueError(f"taxonomy_lwr must be between 0 and 1, got {minimum_lwr}")
+    with path.open(newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle, delimiter="\t")
 
-    candidates = {}
+        for row in reader:
+            query_id = (row.get("name") or row.get("query") or "").strip()
+            taxopath = (row.get("taxopath") or "").strip()
+            support_raw = (row.get("afract") or "").strip()
 
-    for file in Path(taxonomy_dir).glob("*per_query.tsv"):
-        try:
-            with file.open(
-                newline="",
-                encoding="utf-8",
-            ) as handle:
-                reader = csv.DictReader(
-                    handle,
-                    delimiter="\t",
+            if not query_id or not taxopath or not support_raw:
+                continue
+
+            try:
+                support = float(support_raw)
+            except ValueError:
+                continue
+
+            depth = len(_split_taxopath(taxopath))
+            if depth == 0:
+                continue
+
+            if current_query is not None and query_id != current_query:
+                taxonomy = rank_aware_classification(
+                    candidates,
+                    support_threshold=support_threshold,
                 )
+                if taxonomy:
+                    yield current_query, taxonomy
+                candidates = []
 
-                required = {
-                    "name",
-                    "aLWR",
-                    "taxopath",
-                }
+            current_query = query_id
+            candidates.append((depth, taxopath, support))
 
-                if not reader.fieldnames or not required <= set(reader.fieldnames):
-                    logger.warning(
-                        "Invalid GAPPA taxonomy table: %s",
-                        file,
+    if current_query is not None:
+        taxonomy = rank_aware_classification(
+            candidates,
+            support_threshold=support_threshold,
+        )
+        if taxonomy:
+            yield current_query, taxonomy
+
+
+def store_rank_aware_taxonomy(
+    taxonomy_dir: Path,
+    database_path: str,
+    support_threshold: float,
+    batch_size: int = DB_BATCH_SIZE,
+) -> int:
+    """Read GAPPA TSV files directly and store rank-aware domain taxonomy."""
+    taxonomy_files = sorted(taxonomy_dir.glob("*per_query*.tsv"))
+
+    if not taxonomy_files:
+        logger.warning("No GAPPA per-query taxonomy table found in %s", taxonomy_dir)
+        return 0
+
+    total_written = 0
+    assignment_batch: List[Tuple[str, str]] = []
+
+    for path in taxonomy_files:
+        for query_id, taxonomy in _iter_rank_aware_taxonomy(
+            path,
+            support_threshold=support_threshold,
+        ):
+            assignment_batch.append((query_id, taxonomy))
+
+            if len(assignment_batch) >= batch_size:
+                domain_lineages = _domain_lineages(assignment_batch)
+
+                if domain_lineages:
+                    total_written += database.insert_domain_placements(
+                        database=database_path,
+                        domain_lineages=domain_lineages,
+                        method="epa_ng",
                     )
-                    continue
 
-                for row in reader:
-                    name = (row.get("name") or "").strip()
-                    taxopath = (row.get("taxopath") or "").strip()
-                    alwr_raw = (row.get("aLWR") or "").strip()
+                assignment_batch.clear()
 
-                    if not name or not taxopath or not alwr_raw:
-                        continue
+    if assignment_batch:
+        domain_lineages = _domain_lineages(assignment_batch)
 
-                    try:
-                        alwr = float(alwr_raw)
-                    except ValueError:
-                        continue
-
-                    if alwr < minimum_lwr:
-                        continue
-
-                    # Number of taxonomic levels in this path.
-                    depth = sum(1 for part in taxopath.split(";") if part.strip())
-
-                    previous = candidates.get(name)
-
-                    # Prefer the deepest supported taxonomic path.
-                    # If depth is equal, prefer the one with higher aLWR.
-                    if (
-                        previous is None
-                        or depth > previous[0]
-                        or (depth == previous[0] and alwr > previous[1])
-                    ):
-                        candidates[name] = (
-                            depth,
-                            alwr,
-                            taxopath,
-                        )
-
-        except (OSError, UnicodeError, csv.Error) as exc:
-            logger.warning(
-                "Could not parse GAPPA taxonomy file %s: %s",
-                file,
-                exc,
+        if domain_lineages:
+            total_written += database.insert_domain_placements(
+                database=database_path,
+                domain_lineages=domain_lineages,
+                method="epa_ng",
             )
 
-    assignments = {name: values[2] for name, values in candidates.items()}
-
-    logger.info(
-        "Taxonomic placement: %d queries assigned at minimum aLWR %.3f",
-        len(assignments),
-        minimum_lwr,
-    )
-
-    return assignments
+    return total_written
 
 
-# ======================================================================
-# Complete placement workflow
-# ======================================================================
+# ============================================================================
+# Complete two-phase workflow
+# ============================================================================
 
 
 def epa_ng_placement(config, intermediate_files) -> None:
-    """
-    Run phylogenetic placement for all matching packages.
+    """Place all packages first, then run GAPPA and update the database."""
+    selected = list(getattr(config, "placements", []) or [])
+    placement_lwr = float(getattr(config, "placement_lwr", 0.99999))
+    function_threshold = float(getattr(config, "placement_threshold", 0.75))
+    taxonomy_lwr = float(getattr(config, "taxonomy_lwr", 0.80))
+    consensus_threshold = getattr(config, "taxonomy_consensus_threshold", None)
 
-    Errors are isolated:
-        package failure -> skip package
-        functional GAPPA failure -> still run taxonomy
-        taxonomy failure -> retain functional result
-        database failure -> skip only affected result
-    """
+    if not 0.0 < placement_lwr <= 1.0:
+        raise ValueError("placement_lwr must satisfy 0 < value <= 1")
+    if not 0.0 <= function_threshold <= 1.0:
+        raise ValueError("placement_threshold must be between 0 and 1")
+    if not 0.0 <= taxonomy_lwr <= 1.0:
+        raise ValueError("taxonomy_lwr must be between 0 and 1")
 
-    processed_packages = 0
-    failed_packages = 0
+    placement_results = []
 
-    try:
-        packages = find_matching_placement_packages(
-            config.paths.placement,
-            intermediate_files,
-        )
+    # ------------------------------------------------------------------
+    # PHASE 1: all EPA-ng placements
+    # ------------------------------------------------------------------
+    for package_dir, faa_files in find_matching_placement_packages(
+        config.paths.placement,
+        intermediate_files,
+        selected_packages=selected,
+    ):
+        output_dir = Path(config.placement_results_directory) / package_dir.name
+        output_dir.mkdir(parents=True, exist_ok=True)
+        query_file = output_dir / f"{package_dir.name}.placement_candidates.faa"
+        final_jplace = output_dir / f"{package_dir.name}.epa_result.jplace"
 
-        if packages is None:
-            return
+        # Resume support: a completed EPA-ng placement is reused instead of
+        # being recalculated. It is still passed to the later GAPPA phase.
+        if final_jplace.is_file() and final_jplace.stat().st_size > 0:
+            logger.info(
+                "%s: existing EPA-ng placement found; skipping EPA-ng",
+                package_dir.name,
+            )
+            placement_results.append((package_dir, output_dir, final_jplace))
+            continue
 
-        for package_dir, faa_files in packages:
-            try:
-                # Empty list = all matching packages.
-                if config.placements and package_dir.name not in config.placements:
-                    continue
-
-                output_dir = Path(config.placement_results_directory) / package_dir.name
-
-                output_dir.mkdir(
-                    parents=True,
-                    exist_ok=True,
-                )
-
-                # --------------------------------------------------
-                # Load package
-                # --------------------------------------------------
-
-                try:
-                    package = load_placement_package(package_dir)
-                except Exception:
-                    logger.exception(
-                        "Skipping package %s: package loading failed",
-                        package_dir.name,
-                    )
-                    failed_packages += 1
-                    continue
-
-                # --------------------------------------------------
-                # Prepare queries
-                # --------------------------------------------------
-
-                try:
-                    queries = merge_placement_fastas(
-                        faa_files,
-                        output_dir / "placement_candidates.faa",
-                    )
-                except Exception:
-                    logger.exception(
-                        "Skipping package %s: query preparation failed",
-                        package_dir.name,
-                    )
-                    failed_packages += 1
-                    continue
-
-                if not queries.is_file() or queries.stat().st_size == 0:
-                    logger.warning(
-                        "Skipping package %s: no placement candidates",
-                        package_dir.name,
-                    )
-                    continue
-
-                logger.info(
-                    "Running placement package %s",
-                    package_dir.name,
-                )
-
-                # --------------------------------------------------
-                # EPA-ng
-                # --------------------------------------------------
-
-                try:
-                    jplace = run_epa_ng(
-                        tree=package["tree"],
-                        seed=package["seed"],
-                        hmm=package["hmm"],
-                        queries=queries,
-                        model="LG",
-                        output_dir=output_dir,
-                        threads=config.cores,
-                        placement_lwr=config.placement_lwr,
-                    )
-                except Exception:
-                    logger.exception(
-                        "Skipping package %s: EPA-ng failed unexpectedly",
-                        package_dir.name,
-                    )
-                    failed_packages += 1
-                    continue
-
-                if jplace is None:
-                    logger.warning(
-                        "Skipping package %s: no usable EPA-ng placement",
-                        package_dir.name,
-                    )
-                    failed_packages += 1
-                    continue
-
-                # ==================================================
-                # GAPPA workflow 1:
-                # functional/domain assignment
-                # ==================================================
-
-                try:
-                    function_dir = assign_protein_clades(
-                        jplace=jplace,
-                        annotations=package_dir / "annotations.tsv",
-                        output_dir=output_dir / "function",
-                        threshold=config.placement_threshold,
-                    )
-
-                    if function_dir is not None:
-                        try:
-                            parse_function_assignments(
-                                function_dir=function_dir,
-                                database_path=config.database_directory,
-                            )
-                        except Exception:
-                            logger.exception(
-                                "Functional assignments for package %s "
-                                "could not be stored; skipping them",
-                                package_dir.name,
-                            )
-
-                except Exception:
-                    logger.exception(
-                        "Functional GAPPA failed for package %s; "
-                        "continuing with taxonomy",
-                        package_dir.name,
-                    )
-
-                # ==================================================
-                # GAPPA workflow 2:
-                # taxonomic assignment
-                # ==================================================
-
-                try:
-                    taxonomy_dir = assign_taxonomy(
-                        jplace=jplace,
-                        taxonomy_file=(package_dir / "reference_taxonomy.tsv"),
-                        output_dir=output_dir / "taxonomy",
-                        threads=config.cores,
-                    )
-
-                    if taxonomy_dir is not None:
-                        domain_lineages = parse_taxonomy_assignments(
-                            taxonomy_dir,
-                            minimum_lwr=config.taxonomy_lwr,
-                        )
-
-                        if domain_lineages:
-                            database.insert_domain_placements(
-                                database=config.database_directory,
-                                domain_lineages=domain_lineages,
-                            )
-
-                except Exception:
-                    logger.exception(
-                        "Taxonomic GAPPA failed for package %s; "
-                        "continuing with next package",
-                        package_dir.name,
-                    )
-
-                processed_packages += 1
-
-            except Exception:
-                logger.exception(
-                    "Unexpected error while processing package %s; skipping package",
-                    package_dir.name,
-                )
-                failed_packages += 1
+        try:
+            query_count = merge_placement_fastas(faa_files, query_file)
+            if query_count == 0:
+                query_file.unlink(missing_ok=True)
                 continue
 
-    except Exception:
-        logger.exception(
-            "Unexpected error in placement stage; "
-            "remaining placement processing skipped"
-        )
+            package = load_placement_package(package_dir)
+
+            logger.info(
+                "%s: starting EPA-ng placement for %d intermediate sequences",
+                package_dir.name,
+                query_count,
+            )
+
+            jplace = run_epa_ng(
+                package_name=package_dir.name,
+                tree=package["tree"],
+                seed=package["seed"],
+                hmm=package["hmm"],
+                queries=query_file,
+                output_dir=output_dir,
+                threads=int(config.cores),
+                placement_lwr=placement_lwr,
+            )
+
+            if jplace is not None:
+                placement_results.append((package_dir, output_dir, jplace))
+
+        except Exception:
+            logger.exception(
+                "%s: placement failed; continuing with remaining packages",
+                package_dir.name,
+            )
+        finally:
+            # Source intermediate files remain untouched; the merged copy is
+            # unnecessary once EPA-ng has finished.
+            query_file.unlink(missing_ok=True)
 
     logger.info(
-        "Placement stage finished: %d packages processed, %d packages failed",
-        processed_packages,
-        failed_packages,
+        "EPA-ng phase completed: %d package JPLACE files ready for GAPPA",
+        len(placement_results),
+    )
+
+    # ------------------------------------------------------------------
+    # PHASE 2: GAPPA functional + rank-aware taxonomy
+    # ------------------------------------------------------------------
+    for package_dir, output_dir, jplace in placement_results:
+        logger.info("%s: starting GAPPA assignments", package_dir.name)
+
+        # Functional/domain assignment.
+        try:
+            function_dir, expected_types = assign_protein_clades(
+                jplace=jplace,
+                annotations=package_dir / "annotations.tsv",
+                output_dir=output_dir / "function",
+                threshold=function_threshold,
+            )
+
+            if function_dir is not None:
+                updated = store_function_assignments(
+                    function_dir=function_dir,
+                    expected_types=expected_types,
+                    database_path=config.database_directory,
+                )
+                logger.info(
+                    "%s: GAPPA updated %d functional domain assignments",
+                    package_dir.name,
+                    updated,
+                )
+        except Exception:
+            logger.exception(
+                "%s: functional GAPPA failed; taxonomy will still be attempted",
+                package_dir.name,
+            )
+
+        # Rank-aware taxonomy assignment.
+        try:
+            taxonomy_dir = assign_taxonomy(
+                jplace=jplace,
+                taxonomy_file=package_dir / "reference_taxonomy.tsv",
+                output_dir=output_dir / "taxonomy",
+                threads=int(config.cores),
+                consensus_threshold=consensus_threshold,
+            )
+
+            if taxonomy_dir is not None:
+                stored = store_rank_aware_taxonomy(
+                    taxonomy_dir=taxonomy_dir,
+                    database_path=config.database_directory,
+                    support_threshold=taxonomy_lwr,
+                )
+                logger.info(
+                    "%s: stored %d rank-aware EPA-ng taxonomy assignments "
+                    "(minimum afract %.3f)",
+                    package_dir.name,
+                    stored,
+                    taxonomy_lwr,
+                )
+        except Exception:
+            logger.exception(
+                "%s: taxonomic GAPPA failed; continuing with remaining packages",
+                package_dir.name,
+            )
+
+    logger.info(
+        "EPA-ng/GAPPA stage finished: %d packages placed and evaluated",
+        len(placement_results),
     )

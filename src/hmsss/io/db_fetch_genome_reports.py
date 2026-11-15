@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Set, TextIO
 
 from hmsss.core.logging import get_logger
+from hmsss.io import print_reports
 from hmsss.parse_reports import parse_reports
 
 logger = get_logger(__name__)
@@ -24,6 +25,119 @@ TAXON_COLS = [
     "Genus",
     "Species",
 ]
+
+
+PLACEMENT_METHOD_EPA = "epa_ng"
+PLACEMENT_METHOD_MMSEQS = "mmseqs"
+PLACEMENT_RANKS = [
+    ("kingdom", "k__"),
+    ("phylum", "p__"),
+    ("class", "c__"),
+    ("order", "o__"),
+    ("family", "f__"),
+    ("genus", "g__"),
+    ("species", "s__"),
+]
+
+
+def _clean_placement_taxon(value: Any) -> str:
+    """Normalize one stored lineage rank."""
+    if value is None:
+        return ""
+    value = str(value).strip()
+    if not value or value.upper() in {"NA", "N/A", "NULL", "NONE"}:
+        return ""
+    return value
+
+
+def _placement_lineage_from_row(row: sqlite3.Row) -> str:
+    """Format one placement lineage.
+
+    A lineage without a kingdom/domain assignment is not informative and is
+    therefore represented by an empty string. Once kingdom is assigned,
+    missing lower ranks are retained as explicit rank-specific NA values.
+    """
+    kingdom = _clean_placement_taxon(row["kingdom"])
+    if not kingdom:
+        return ""
+
+    parts = [f"k__{kingdom}"]
+    for rank, prefix in PLACEMENT_RANKS[1:]:
+        value = _clean_placement_taxon(row[rank])
+        parts.append(f"{prefix}{value if value else 'NA'}")
+    return "; ".join(parts)
+
+
+def _hydrate_genome_placements(
+    cur: sqlite3.Cursor,
+    genome_pk: int,
+    protein_dict: Dict[str, parse_reports.Protein],
+    use_non_valid_hits: bool,
+) -> int:
+    """Hydrate EPA-ng and MMseqs taxonomy for proteins of one streamed genome.
+
+    The query is restricted by genome_pk and uses DomainPlacements' primary-key
+    prefix protein_pk. Only two placement methods are fetched. No external
+    protein-ID lookup table is needed.
+    """
+    if not protein_dict:
+        return 0
+
+    # Empty is the canonical representation for "no informative placement".
+    for protein in protein_dict.values():
+        protein.phylogenetic_placement = ""
+        protein.mmseqs_placement = ""
+
+    valid_where = "" if use_non_valid_hits else "AND p.valid_hit = 1"
+
+    cur.execute(
+        f"""
+        SELECT
+            p.proteinID AS proteinID,
+            dp.method AS method,
+            dp.domStart AS domStart,
+            dp.domEnd AS domEnd,
+            l.kingdom AS kingdom,
+            l.phylum AS phylum,
+            l.class AS class,
+            l."order" AS "order",
+            l.family AS family,
+            l.genus AS genus,
+            l.species AS species
+        FROM Proteins p
+        JOIN DomainPlacements dp
+          ON dp.protein_pk = p.protein_pk
+        LEFT JOIN Lineage l
+          ON l.lineageID = dp.lineageID
+        WHERE p.genome_pk = ?
+          {valid_where}
+          AND dp.method IN (?, ?)
+        ORDER BY p.protein_pk, dp.method, dp.domStart, dp.domEnd
+        """,
+        (genome_pk, PLACEMENT_METHOD_EPA, PLACEMENT_METHOD_MMSEQS),
+    )
+
+    values: Dict[tuple[str, str], Set[str]] = {}
+    for row in cur:
+        lineage = _placement_lineage_from_row(row)
+        if not lineage:
+            continue
+        key = (row["proteinID"], row["method"])
+        values.setdefault(key, set()).add(lineage)
+
+    hydrated = 0
+    for (protein_id, method), lineages in values.items():
+        protein = protein_dict.get(protein_id)
+        if protein is None:
+            continue
+        value = " | ".join(sorted(lineages))
+        if method == PLACEMENT_METHOD_EPA:
+            protein.phylogenetic_placement = value
+        elif method == PLACEMENT_METHOD_MMSEQS:
+            protein.mmseqs_placement = value
+        hydrated += 1
+
+    return hydrated
 
 
 def _db_uri_ro_immutable(db_file: str) -> str:
@@ -341,7 +455,7 @@ def _write_one_report(
 
     if write_individual_report:
         out_file = out_dir / f"{genome_id}.tsv"
-        parse_reports.output_genome_report(
+        print_reports._output_genome_report(
             output_filepath=str(out_file),
             protein_dict=protein_dict,
             cluster_dict={},
@@ -593,6 +707,9 @@ def write_individual_genome_reports(config) -> None:
                     _hydrate_genome_sequences(
                         sequence_cur, current_genome_pk, current_proteins, use_non_valid
                     )
+                    _hydrate_genome_placements(
+                        sequence_cur, current_genome_pk, current_proteins, use_non_valid
+                    )
 
                     n_pathway_rows += _write_one_report(
                         out_dir=out_dir,
@@ -634,6 +751,9 @@ def write_individual_genome_reports(config) -> None:
             # Flush final genome with hits.
             if current_gid is not None:
                 _hydrate_genome_sequences(
+                    sequence_cur, current_genome_pk, current_proteins, use_non_valid
+                )
+                _hydrate_genome_placements(
                     sequence_cur, current_genome_pk, current_proteins, use_non_valid
                 )
 

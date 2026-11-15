@@ -7,7 +7,6 @@ import sys
 from hmsss.core import project as project
 from hmsss.core import ressource_prep
 from hmsss.core.logging import get_logger, print_header, setup_logging
-from hmsss.cross_check import cross_check
 from hmsss.db import database
 from hmsss.fasta_preparation import fasta_preparation
 from hmsss.graft import initial_read_mapping
@@ -20,6 +19,7 @@ from hmsss.io import (
 from hmsss.placement import (
     initial_read_detection,
     mmseqs_reference_assignment,
+    phylogenetic_placement,
     prepare_library,
 )
 from hmsss.search import initial_search
@@ -90,7 +90,6 @@ def run_pipeline(config) -> None:
         config.exit = 10
 
     # --- Stage 2: Hmmsearch ---
-    # 2 und teile von 4 zusammen gelegt
     if config.stage <= 2 <= config.exit:
         print_header("Searching for homologous sequences")
         initial_search.initial_search(config)
@@ -127,16 +126,23 @@ def run_pipeline(config) -> None:
         print_header("Creating metabolic pathway plots")
         metabolic_pathway_sankey.create_metabolic_pathway_plots(config)
 
-    # The 30 steps are for read mapping with the custom implementation from here
+    # ============================================================
+    # METAGENOME ORF / PLACEMENT WORKFLOW
+    # ============================================================
 
+    # Stage 31: Build HMM search library
     if config.stage <= 31 <= config.exit:
         print_header("Library preparation for metagenome search")
         placement_packages = prepare_library.collect_placement_search_hmms(config)
-        prepare_library.create_placement_search_hmm_library(config, placement_packages)
+        prepare_library.create_placement_search_hmm_library(
+            config,
+            placement_packages,
+        )
         config.stage = 31
         config.exit = 40
 
-    if config.stage <= 31 <= config.exit:
+    # Stage 32: Detect metagenomic ORFs and HMM candidates
+    if config.stage <= 32 <= config.exit:
         print_header("Initial read detection in metagenomes")
         initial_read_detection.initial_read_detection(
             config,
@@ -147,24 +153,40 @@ def run_pipeline(config) -> None:
         )
         config.stage = 32
 
-    if config.stage <= 32 <= config.exit:
-        print_header("Phylogenetic placement of detected reads")
-        cross_check.reference_sequence_check(config)
-        # TODO Es ist nochunklar ob das platzieren so funktioniert gemessen am ressourcen verbrauch, code auch noch ungetestet
-        # die weitere folge ist das alle hits noch nicht als valid gelten, bzw könnte man auch alle einfach als valid annehmen,
-        # da die platzierung ja filtert
+    # Stage 33: MMseqs reference classification / Outgroup filtering
+    if config.stage <= 33 <= config.exit:
+        if config.disable_mmseqs_reference_assignment:
+            print_header("Skipping MMseqs2 reference classification")
+            logger.info(
+                "MMseqs2 reference classification disabled; "
+                "intermediate-hit FASTA files remain unfiltered"
+            )
+        else:
+            print_header("MMseqs2 reference classification and Outgroup filtering")
+            mmseqs_reference_assignment.mmseqs_placement_package_reference_assignment(
+                config
+            )
+
         config.stage = 33
 
-    if config.stage <= 33 <= config.exit:
-        print_header("Writing summary reports")
+    # Stage 34: EPA-ng phylogenetic placement
+    if config.stage <= 34 <= config.exit:
+        print_header("Phylogenetic placement of detected reads")
+        phylogenetic_placement.run_placement_stage(config)
         config.stage = 34
+
+    # Stage 35: Standard per-genome/metagenome reports
+    if config.stage <= 35 <= config.exit:
+        print_header("Writing metagenome hit reports")
+        db_fetch_genome_reports.write_individual_genome_reports(config)
+        config.stage = 35
 
     # The 50 steps are implementation of GraftM python module
     if config.stage == 50:
         print_header("Mapping reads with GraftM")
         ressource_prep.ressource_preparation(config)
         initial_read_mapping.initial_read_mapping(config)
-        # TODO Ungetestet ist bisher das parsing des outputs. Das muss noch erstellt werden
+        # Output bleibt der graftM output
         #
         sys.exit()
 

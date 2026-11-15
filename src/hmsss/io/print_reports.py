@@ -1,12 +1,24 @@
 #!/usr/bin/python
 import os
-import sqlite3
+from collections import Counter, defaultdict
 from itertools import combinations
-from collections import defaultdict, Counter
-from typing import Any, Dict, List, Optional, Set, Tuple, Iterable
+from typing import Any, Dict, List, Optional, Set, Tuple
+
 from hmsss.core.logging import get_logger
 
 logger = get_logger(__name__)
+
+
+PLACEMENT_REPORT_COLUMNS = ["phylogenetic_placement", "mmseqs_placement"]
+PLACEMENT_RANKS = [
+    ("kingdom", "k__"),
+    ("phylum", "p__"),
+    ("class", "c__"),
+    ("order", "o__"),
+    ("family", "f__"),
+    ("genus", "g__"),
+    ("species", "s__"),
+]
 
 
 def _get_cluster_info(clusterID, cluster_dict):
@@ -39,15 +51,22 @@ def _output_genome_report(
     taxon_divider: str = ".",
 ) -> None:
     """
-    Writes the main genome hit table (TSV).
+    Write the main genome/hit report.
 
-    Columns:
-      genomeID, proteinID, domains, dom_scores, dom_coords, contig, gene_start, gene_end,
-      gene_strand, locustag, clusterID, csb,
-      Superkingdom, Phylum, Class, Order, Family, Genus, Species
+    Placement taxonomy is expected to have been fetched already by the
+    database-fetch routines and stored on each Protein object as:
+
+        protein.phylogenetic_placement   # EPA-ng
+        protein.mmseqs_placement         # MMseqs2
+
+    No database access is performed here.
+
+    If no informative placement exists, the corresponding output cell is empty.
     """
+
+    del taxon_divider
+
     taxon_cols = [
-        "genomeID",
         "Superkingdom",
         "Phylum",
         "Class",
@@ -56,6 +75,7 @@ def _output_genome_report(
         "Genus",
         "Species",
     ]
+
     header_cols = [
         "genomeID",
         "proteinID",
@@ -70,11 +90,12 @@ def _output_genome_report(
         "selection_comment",
         "alternative hit",
         "clusterID",
+        "csb",
         *taxon_cols,
+        "epa_ng_taxonomy",
+        "mmseqs_taxonomy",
     ]
-    header = "\t".join(header_cols)
 
-    # sortiert nach genomeID, contig, start
     proteinID_list = sorted(
         protein_dict,
         key=lambda x: (
@@ -85,56 +106,81 @@ def _output_genome_report(
     )
 
     with open(output_filepath, writemode) as writer:
-        writer.write(header + "\n")
+        writer.write("\t".join(header_cols) + "\n")
 
         for proteinID in proteinID_list:
             protein = protein_dict[proteinID]
-            # protein.get_protein_list() erwartete Reihenfolge laut Docstring:
-            # [proteinID, get_domains(), get_domain_scores(), get_domain_coordinates(),
-            #  gene_contig, gene_start, gene_end, gene_strand, gene_locustag]
 
-            # Skip proteins that are from other genomes
             if genomeID and protein.genomeID != genomeID:
                 continue
 
-            pl = protein.get_protein_list()
+            protein_values = protein.get_protein_list()
 
-            # clusterID + csb (ohne keyword/completeness), needed for parse report routine
+            out_cluster_id, csb_val = _get_cluster_info(
+                protein.clusterID,
+                cluster_dict,
+            )
 
-            cluster_id = protein.clusterID
-            out_cluster_id, csb_val = _get_cluster_info(cluster_id, cluster_dict)
-
-            gid = protein.genomeID
-            rec = taxon_dict.get(gid, {})  # falls Genome nicht im Dict: leeres Dict
+            taxon_record = (
+                taxon_dict.get(
+                    protein.genomeID,
+                    {},
+                )
+                or {}
+            )
 
             taxon_levels = [
-                rec.get("Superkingdom"),
-                rec.get("Phylum"),
-                rec.get("Class"),
-                rec.get("Order"),
-                rec.get("Family"),
-                rec.get("Genus"),
-                rec.get("Species"),
+                taxon_record.get("Superkingdom"),
+                taxon_record.get("Phylum"),
+                taxon_record.get("Class"),
+                taxon_record.get("Order"),
+                taxon_record.get("Family"),
+                taxon_record.get("Genus"),
+                taxon_record.get("Species"),
             ]
 
+            epa_ng_taxonomy = (
+                getattr(
+                    protein,
+                    "phylogenetic_placement",
+                    "",
+                )
+                or ""
+            )
+
+            mmseqs_taxonomy = (
+                getattr(
+                    protein,
+                    "mmseqs_placement",
+                    "",
+                )
+                or ""
+            )
+
             row = [
-                protein.genomeID,  # genomeID
-                pl[0],  # proteinID
-                pl[1],  # domains
-                pl[2],  # dom_scores
-                pl[3],  # dom_coords
-                pl[4],  # contig
-                pl[5],  # gene_start
-                pl[6],  # gene_end
-                pl[7],  # gene_strand
-                pl[8],  # locustag
+                protein.genomeID,
+                protein_values[0],
+                protein_values[1],
+                protein_values[2],
+                protein_values[3],
+                protein_values[4],
+                protein_values[5],
+                protein_values[6],
+                protein_values[7],
+                protein_values[8],
                 protein.get_selection_comment_csv(),
                 protein.alternative_hit,
                 out_cluster_id,
                 csb_val,
                 *taxon_levels,
+                epa_ng_taxonomy,
+                mmseqs_taxonomy,
             ]
-            writer.write("\t".join(map(str, row)) + "\n")
+
+            writer.write(
+                "\t".join("" if value is None else str(value) for value in row) + "\n"
+            )
+
     return
 
 
@@ -540,7 +586,7 @@ def _output_strain_variability_by_species_deprecated(
 
 def _output_strain_variability_by_species(
     directory: str,
-    database: str,
+    taxonomy_total_counts: Dict[Tuple[str, str], int],
     combo_dict: Dict[Tuple[str, ...], Set[str]],
     taxon_dict: Dict[str, Dict[str, str]],
     *,
@@ -763,47 +809,40 @@ def _output_strain_variability_by_species(
     with open(outpath, "w", encoding="utf-8", newline="") as out:
         out.write("\t".join(header) + "\n")
 
-        with sqlite3.connect(database) as con:
-            cur = con.cursor()
+        for level_label, _db_col, _taxon_key in tax_levels:
+            level_counts = sorted(
+                (
+                    (taxon_name, total_db_count)
+                    for (
+                        level,
+                        taxon_name,
+                    ), total_db_count in taxonomy_total_counts.items()
+                    if level == level_label
+                ),
+                key=lambda item: item[0].casefold(),
+            )
 
-            for level_label, db_col, _taxon_key in tax_levels:
-                query = f"""
-                    SELECT
-                        CASE
-                            WHEN {db_col} IS NULL THEN ?
-                            WHEN TRIM({db_col}) = '' THEN ?
-                            WHEN UPPER(TRIM({db_col})) IN ('NA', 'NULL') THEN ?
-                            ELSE TRIM({db_col})
-                        END AS taxon_name,
-                        COUNT(*) AS genome_count
-                    FROM Genomes
-                    GROUP BY taxon_name
-                    ORDER BY taxon_name
-                """
-                cur.execute(query, (unknown_label, unknown_label, unknown_label))
+            for taxon_name, total_db_count in level_counts:
+                subset_genomes = subset_taxon_to_genomes.get(
+                    (level_label, str(taxon_name)),
+                    set(),
+                )
 
-                for taxon_name, total_db_count in cur:
-                    subset_genomes = subset_taxon_to_genomes.get(
-                        (level_label, str(taxon_name)),
-                        set(),
-                    )
+                counts_int = [
+                    len(subset_genomes & assigned_genomes)
+                    for assigned_genomes in assigned_category_to_genomes
+                ]
 
-                    counts_int = [
-                        len(subset_genomes & assigned_genomes)
-                        for assigned_genomes in assigned_category_to_genomes
-                    ]
+                if not any(counts_int):
+                    continue
 
-                    # Zeilen ohne irgendein Auftreten nicht schreiben
-                    if not any(counts_int):
-                        continue
-
-                    row = [
-                        level_label,
-                        str(taxon_name),
-                        str(total_db_count),
-                        *map(str, counts_int),
-                    ]
-                    out.write("\t".join(row) + "\n")
+                row = [
+                    level_label,
+                    str(taxon_name),
+                    str(total_db_count),
+                    *map(str, counts_int),
+                ]
+                out.write("\t".join(row) + "\n")
 
     return outpath
 
@@ -1282,10 +1321,10 @@ def _output_domain_function_report(
 
 def print_hit_reports(
     directory: str,
-    database: str,
     protein_dict: Dict[str, Any],
     cluster_dict: Dict[str, Any],
     taxon_dict: Dict[str, Dict[str, str]],
+    taxonomy_total_counts: Dict[Tuple[str, str], int],
     combo_dict: Dict[Tuple[str, ...], Set[str]],
     metabolic_dict: Dict[str, Any],
     context_dict: Dict[str, Any] | None,
@@ -1347,7 +1386,7 @@ def print_hit_reports(
     # Output strain variability summary
     _output_strain_variability_by_species(
         directory=directory,
-        database=database,
+        taxonomy_total_counts=taxonomy_total_counts,
         combo_dict=combo_dict,
         taxon_dict=taxon_dict,
         intersection_level=2,  # ← dein gewünschtes Verhalten

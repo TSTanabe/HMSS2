@@ -12,6 +12,124 @@ from hmsss.parse_reports import parse_reports
 logger = get_logger(__name__)
 
 
+PLACEMENT_METHOD_EPA = "epa_ng"
+PLACEMENT_METHOD_MMSEQS = "mmseqs"
+PLACEMENT_RANKS = [
+    ("kingdom", "k__"),
+    ("phylum", "p__"),
+    ("class", "c__"),
+    ("order", "o__"),
+    ("family", "f__"),
+    ("genus", "g__"),
+    ("species", "s__"),
+]
+
+
+def _normalise_placement_taxon(value: Any) -> str:
+    """Return a clean taxon value, or an empty string for missing/NA values."""
+    if value is None:
+        return ""
+    value = str(value).strip()
+    if not value or value.upper() in {"NA", "N/A", "NULL", "NONE"}:
+        return ""
+    return value
+
+
+def _placement_lineage_from_row(row: sqlite3.Row) -> str:
+    """Format one prefetched placement lineage.
+
+    If kingdom/domain is missing, the whole assignment is considered
+    uninformative and the report field stays empty. Missing lower ranks are
+    retained as explicit rank-specific NA values.
+    """
+    kingdom = _normalise_placement_taxon(row["kingdom"])
+    if not kingdom:
+        return ""
+
+    parts = [f"k__{kingdom}"]
+    for rank, prefix in PLACEMENT_RANKS[1:]:
+        value = _normalise_placement_taxon(row[rank])
+        parts.append(f"{prefix}{value if value else 'NA'}")
+    return "; ".join(parts)
+
+
+def hydrate_protein_placements(
+    cur: sqlite3.Cursor,
+    protein_dict: Dict[str, Any],
+) -> int:
+    """Hydrate EPA-ng and MMseqs taxonomy for already selected proteins.
+
+    Reuses ``tmp_sequence_protein_ids`` created by ``hydrate_protein_sequences``.
+    Therefore no second external-ID lookup table and no additional database
+    connection are required. DomainPlacements is accessed through its primary
+    key prefix ``protein_pk`` and only for the already fetched proteins.
+    """
+    if not protein_dict:
+        return 0
+
+    for protein in protein_dict.values():
+        protein.phylogenetic_placement = ""
+        protein.mmseqs_placement = ""
+
+    cur.execute(
+        """
+        SELECT
+            p.proteinID AS proteinID,
+            dp.method AS method,
+            l.kingdom AS kingdom,
+            l.phylum AS phylum,
+            l.class AS class,
+            l."order" AS "order",
+            l.family AS family,
+            l.genus AS genus,
+            l.species AS species
+        FROM tmp_sequence_protein_ids t
+        JOIN Proteins p
+          ON p.proteinID = t.proteinID
+        JOIN DomainPlacements dp
+          ON dp.protein_pk = p.protein_pk
+        LEFT JOIN Lineage l
+          ON l.lineageID = dp.lineageID
+        WHERE dp.method IN (?, ?)
+        ORDER BY p.protein_pk, dp.method, dp.domStart, dp.domEnd
+    """,
+        (PLACEMENT_METHOD_EPA, PLACEMENT_METHOD_MMSEQS),
+    )
+
+    current_key = None
+    current_values = set()
+    hydrated = 0
+
+    def flush(key, values):
+        nonlocal hydrated
+        if key is None or not values:
+            return
+        protein_id, method = key
+        protein = protein_dict.get(protein_id)
+        if protein is None:
+            return
+        value = " | ".join(sorted(values))
+        if method == PLACEMENT_METHOD_EPA:
+            protein.phylogenetic_placement = value
+        elif method == PLACEMENT_METHOD_MMSEQS:
+            protein.mmseqs_placement = value
+        hydrated += 1
+
+    for row in cur:
+        key = (row["proteinID"], row["method"])
+        if current_key is not None and key != current_key:
+            flush(current_key, current_values)
+            current_values = set()
+        current_key = key
+        lineage = _placement_lineage_from_row(row)
+        if lineage:
+            current_values.add(lineage)
+
+    flush(current_key, current_values)
+    logger.debug("Hydrated %d protein/method placement assignments.", hydrated)
+    return hydrated
+
+
 def _db_uri(database: str) -> str:
     """Return a read-only immutable SQLite URI."""
     if database.startswith("file:"):
@@ -564,6 +682,7 @@ def fetch_bulk_data(
             )
 
         hydrate_protein_sequences(cur, protein_dict)
+        hydrate_protein_placements(cur, protein_dict)
 
     taxon_dict = db_fetch_taxonomy.fetch_taxonomy_dict(
         db_path, genome_ids=genome_id_set
@@ -937,6 +1056,7 @@ def fetch_bulk_data_for_combinations(
                 )
 
         hydrate_protein_sequences(cur, protein_dict)
+        hydrate_protein_placements(cur, protein_dict)
 
     taxon_dict = db_fetch_taxonomy.fetch_taxonomy_dict(
         db_path, genome_ids=genome_id_set
