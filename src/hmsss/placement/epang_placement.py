@@ -76,40 +76,63 @@ def fasta_records(path: Union[str, Path]) -> Iterator[Tuple[str, str]]:
 def find_matching_placement_packages(
     placement_root: Union[str, Path],
     intermediate_files,
-    selected_packages: Optional[Sequence[str]] = None,
 ):
-    """Yield selected packages that share protein types with intermediate files."""
-    selected = set(selected_packages or [])
+    """Yield placement packages that share protein types with intermediate files."""
+    root = Path(placement_root)
+    if not root.is_dir():
+        logger.warning("Placement package directory not found: %s", root)
+        return
+
     intermediate_types = set(intermediate_files)
 
-    for package_dir in sorted(Path(placement_root).iterdir()):
+    try:
+        package_dirs = sorted(root.iterdir())
+    except OSError as exc:
+        logger.error("Cannot read placement package directory %s: %s", root, exc)
+        return
+
+    for package_dir in package_dirs:
         if not package_dir.is_dir():
-            continue
-        if selected and package_dir.name not in selected:
             continue
 
         annotations = package_dir / "annotations.tsv"
         if not annotations.is_file():
             continue
 
-        protein_types = set()
-        with annotations.open(newline="", encoding="utf-8-sig") as handle:
-            reader = csv.reader(handle, delimiter="\t")
-            for row in reader:
-                if len(row) >= 2 and row[1] and row[1] != "protein_type":
-                    protein_types.add(row[1].strip())
+        try:
+            protein_types = set()
+            with annotations.open(newline="", encoding="utf-8-sig") as handle:
+                reader = csv.reader(handle, delimiter="\t")
+                for row in reader:
+                    if len(row) >= 2 and row[1] and row[1] != "protein_type":
+                        protein_types.add(row[1].strip())
+        except Exception as exc:
+            logger.exception(
+                "Skipping placement package %s: cannot read annotations.tsv: %s",
+                package_dir.name,
+                exc,
+            )
+            continue
 
         matched = sorted(protein_types & intermediate_types)
         if not matched:
             continue
 
         faa_files: List[Path] = []
-        for protein_type in matched:
-            value = intermediate_files[protein_type]
-            if isinstance(value, (str, Path)):
-                faa_files.append(Path(value))
-            else:
-                faa_files.extend(Path(path) for path in value)
+        try:
+            for protein_type in matched:
+                value = intermediate_files[protein_type]
+                if isinstance(value, (str, Path)):
+                    faa_files.append(Path(value))
+                else:
+                    faa_files.extend(Path(path) for path in value)
+        except Exception as exc:
+            logger.exception(
+                "Skipping placement package %s: invalid intermediate file mapping: %s",
+                package_dir.name,
+                exc,
+            )
+            continue
 
         yield package_dir, faa_files
 
@@ -818,7 +841,6 @@ def store_rank_aware_taxonomy(
 
 def epa_ng_placement(config, intermediate_files) -> None:
     """Place all packages first, then run GAPPA and update the database."""
-    selected = list(getattr(config, "placements", []) or [])
     placement_lwr = float(getattr(config, "placement_lwr", 0.99999))
     function_threshold = float(getattr(config, "placement_threshold", 0.75))
     taxonomy_lwr = float(getattr(config, "taxonomy_lwr", 0.80))
@@ -839,7 +861,6 @@ def epa_ng_placement(config, intermediate_files) -> None:
     for package_dir, faa_files in find_matching_placement_packages(
         config.paths.placement,
         intermediate_files,
-        selected_packages=selected,
     ):
         output_dir = Path(config.placement_results_directory) / package_dir.name
         output_dir.mkdir(parents=True, exist_ok=True)
