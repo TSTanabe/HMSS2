@@ -28,6 +28,9 @@ dependencies:
   - mfqe
   - pplacer
   - fasttree
+  - mmseqs2
+  - epa-ng
+  - gappa
 
   # --- Python packages via pip
   - pip
