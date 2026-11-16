@@ -1,7 +1,7 @@
 from pathlib import Path
 
 # Passe den Importpfad ggf. an dein Projekt an
-from hmsss.cross_check.search_cross_reference import process_optimized_cutoff
+from unisul.cross_check.search_cross_reference import process_optimized_cutoff
 
 
 def _write_intermediate(dirpath: Path, hmm_id: str) -> Path:

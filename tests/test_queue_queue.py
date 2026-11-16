@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, Set, Optional
 import gzip
 import pytest
-from hmsss.core.queue import get_genome_id_files_dict, _parallel_decompress
+from unisul.core.queue import get_genome_id_files_dict, _parallel_decompress
 # -----------------------------------------------------------
 # Hilfen für den Test
 # -----------------------------------------------------------

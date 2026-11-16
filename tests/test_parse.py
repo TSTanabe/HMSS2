@@ -1,15 +1,15 @@
 # tests/test_parse_arguments.py
 """
-Ausführlich kommentierter pytest für hmsss/cli/parse.py (HMSS2, Branch hades_diamond_v9).
+Ausführlich kommentierter pytest für unisul/cli/parse.py (UNISUL, Branch hades_diamond_v9).
 
 Dieser Test:
-- importiert hmsss.cli.parse direkt aus dem Repo (ohne Installation),
-- emuliert die HMSS2-Projektstruktur im Temp-Verzeichnis,
+- importiert unisul.cli.parse direkt aus dem Repo (ohne Installation),
+- emuliert die UNISUL-Projektstruktur im Temp-Verzeichnis,
 - patched _project_root_from_this_file() und DATA_ROOT, damit Defaults auf die Teststruktur zeigen,
 - testet unterschiedliche Argument-Kombinationen unabhängig voneinander.
 
 Voraussetzungen:
-- Projektlayout wie im Repo (src/hmsss/...) ist vorhanden.
+- Projektlayout wie im Repo (src/unisul/...) ist vorhanden.
 - pytest wird aus dem Repo-Root ausgeführt (wo auch /src und /tests liegen).
 """
 
@@ -30,7 +30,7 @@ import pytest
 
 def _add_src_to_syspath():
     """
-    Sorgt dafür, dass 'from hmsss.cli import parse' funktioniert, ohne Paket zu installieren.
+    Sorgt dafür, dass 'from unisul.cli import parse' funktioniert, ohne Paket zu installieren.
     Erwartung: Diese Testdatei liegt unter <REPO>/tests/, also ist <REPO>/src die Import-Root.
     """
     repo_root = Path(__file__).resolve().parents[1]
@@ -42,10 +42,10 @@ def _add_src_to_syspath():
 @pytest.fixture(scope="session")
 def parse_module():
     """
-    Importiert das zu testende Modul hmsss.cli.parse einmal pro Test-Session.
+    Importiert das zu testende Modul unisul.cli.parse einmal pro Test-Session.
     """
     _add_src_to_syspath()
-    from hmsss.cli import parse  # type: ignore
+    from unisul.cli import parse  # type: ignore
 
     return parse
 
@@ -53,10 +53,10 @@ def parse_module():
 @pytest.fixture
 def fake_project(tmp_path: Path) -> Dict[str, Path]:
     """
-    Baut eine minimale HMSS2-Projektstruktur im temporären Verzeichnis.
+    Baut eine minimale UNISUL-Projektstruktur im temporären Verzeichnis.
 
     Struktur (nur das, was parse.py als Defaults nutzt):
-    HMSS2/
+    UNISUL/
       ├─ data/
       │   ├─ HMMlib/
       │   ├─ RefSeqs/
@@ -70,7 +70,7 @@ def fake_project(tmp_path: Path) -> Dict[str, Path]:
     Zusätzlich werden ein paar Dummy-Dateien erzeugt, falls bestimmte Argumente
     (z. B. -taxonomy_info) einen existierenden Pfad verlangen.
     """
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     data = root / "data"
     results = root / "results"
     genomes = root / "genomes"
@@ -106,8 +106,8 @@ def patched_defaults(parse_module, fake_project, monkeypatch):
     """
     Robust:
     - Falls parse._project_root_from_this_file existiert -> patchen.
-    - Andernfalls hmsss.cli.paths.refresh_paths(fake_root) aufrufen.
-    - DATA_ROOT in parse (falls vorhanden) und hmsss.utils.paths patchen.
+    - Andernfalls unisul.cli.paths.refresh_paths(fake_root) aufrufen.
+    - DATA_ROOT in parse (falls vorhanden) und unisul.utils.paths patchen.
     """
     root = fake_project["root"]
     data = fake_project["data"]
@@ -119,7 +119,7 @@ def patched_defaults(parse_module, fake_project, monkeypatch):
 
     # 2) Neue Pfad-API verwenden, falls vorhanden
     try:
-        from hmsss.cli import paths as paths_mod  # neue Struktur
+        from unisul.cli import paths as paths_mod  # neue Struktur
     except Exception:
         paths_mod = None
 
@@ -131,9 +131,9 @@ def patched_defaults(parse_module, fake_project, monkeypatch):
     #    a) direkt im parse-Modul (nur wenn dort vorhanden)
     monkeypatch.setattr(parse_module, "DATA_ROOT", data, raising=False)
 
-    #    b) im alten utils.paths-Modul (falls parse "from hmsss.utils.paths import DATA_ROOT" verwendet)
+    #    b) im alten utils.paths-Modul (falls parse "from unisul.utils.paths import DATA_ROOT" verwendet)
     try:
-        from hmsss.utils import paths as utils_paths_mod
+        from unisul.utils import paths as utils_paths_mod
 
         monkeypatch.setattr(utils_paths_mod, "DATA_ROOT", data, raising=False)
     except Exception:
@@ -165,7 +165,7 @@ def _call_parse(parse_module, args):
     # 2) parse_arguments – Signatur prüfen
     if not hasattr(parse_module, "parse_arguments"):
         raise AttributeError(
-            "Neither parse_to_config nor parse_arguments found in hmsss.cli.parse"
+            "Neither parse_to_config nor parse_arguments found in unisul.cli.parse"
         )
 
     fn = parse_module.parse_arguments
@@ -173,7 +173,7 @@ def _call_parse(parse_module, args):
     if len(sig.parameters) == 0:
         old_argv = sys.argv[:]
         try:
-            sys.argv = ["hmsss", *args]
+            sys.argv = ["unisul", *args]
             return fn()  # keine Args
         finally:
             sys.argv = old_argv

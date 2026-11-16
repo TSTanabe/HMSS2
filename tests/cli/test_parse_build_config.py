@@ -1,11 +1,11 @@
 # test/test_build_config_from_namespace.py
 """
-Ausführlicher pytest für hmsss/cli/parse.build_config_from_namespace.
+Ausführlicher pytest für unisul/cli/parse.build_config_from_namespace.
 
 Was der Test tut:
-- Baut eine minimale HMSS2-Struktur im Temp-Ordner, die mit Config.validate() kompatibel ist
+- Baut eine minimale UNISUL-Struktur im Temp-Ordner, die mit Config.validate() kompatibel ist
   (bin/, data/HMMs, data/RefSeqs, results/).
-- Lenkt hmsss.cli.paths auf diese Struktur (falls verfügbar via refresh_paths).
+- Lenkt unisul.cli.paths auf diese Struktur (falls verfügbar via refresh_paths).
 - Konstruiert argparse.Namespace-Objekte mit verschiedenen Argument-Kombinationen.
 - Ruft ausschließlich build_config_from_namespace(ns) auf und prüft Felder im resultierenden Config.
 
@@ -28,7 +28,7 @@ import pytest
 # ---------------------------
 def _add_src_to_syspath() -> None:
     """
-    Import von 'hmsss...' ermöglichen, ohne Installation:
+    Import von 'unisul...' ermöglichen, ohne Installation:
     Wir fügen <repo>/src vorne in sys.path hinzu.
     """
     repo_root = Path(__file__).resolve().parents[1]
@@ -40,10 +40,10 @@ def _add_src_to_syspath() -> None:
 @pytest.fixture(scope="session")
 def parse_mod():
     """
-    Testobjekt importieren: hmsss.cli.parse
+    Testobjekt importieren: unisul.cli.parse
     """
     _add_src_to_syspath()
-    from hmsss.cli import parse  # type: ignore
+    from unisul.cli import parse  # type: ignore
 
     return parse
 
@@ -54,22 +54,22 @@ def parse_mod():
 @pytest.fixture
 def fake_project(tmp_path: Path) -> dict[str, Path]:
     """
-    Erzeugt einen minimalen HMSS2-Baum, der mit Config.validate() kompatibel ist:
+    Erzeugt einen minimalen UNISUL-Baum, der mit Config.validate() kompatibel ist:
       <root>/
         bin/
         data/HMMs/
         data/RefSeqs/
         results/
-        src/hmsss/        (für PACKAGE_DIR)
+        src/unisul/        (für PACKAGE_DIR)
     Dazu noch gängige Daten-Ordner (Thresholds/Patterns/Cooccurrence/Exclusion_singletons),
     damit Defaults in build_config_from_namespace auf sinnvolle Pfade zeigen.              # :contentReference[oaicite:3]{index=3}
     """
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     (root / "bin").mkdir(parents=True, exist_ok=True)
     (root / "data" / "HMMs").mkdir(parents=True, exist_ok=True)
     (root / "data" / "RefSeqs").mkdir(parents=True, exist_ok=True)
     (root / "results").mkdir(parents=True, exist_ok=True)
-    (root / "src" / "hmsss").mkdir(parents=True, exist_ok=True)
+    (root / "src" / "unisul").mkdir(parents=True, exist_ok=True)
 
     # optionale, aber sinnvolle Datenverzeichnisse für Default-Zuweisungen
     for sub in ("Thresholds", "Patterns", "Cooccurrence", "Exclusion_singletons"):
@@ -86,7 +86,7 @@ def fake_project(tmp_path: Path) -> dict[str, Path]:
         "hmms": root / "data" / "HMMs",
         "refseq": root / "data" / "RefSeqs",
         "results": root / "results",
-        "package": root / "src" / "hmsss",
+        "package": root / "src" / "unisul",
         "genomes": genomes,
     }
 
@@ -94,10 +94,10 @@ def fake_project(tmp_path: Path) -> dict[str, Path]:
 @pytest.fixture
 def set_paths(fake_project):
     """
-    Richtet hmsss.cli.paths auf unser Fake-Projekt aus, damit build_config_from_namespace
+    Richtet unisul.cli.paths auf unser Fake-Projekt aus, damit build_config_from_namespace
     in _paths_cfg_from_paths_module() die richtigen Basispfade bekommt.                      # :contentReference[oaicite:4]{index=4}
     """
-    from hmsss.cli import paths as paths_mod  # type: ignore
+    from unisul.cli import paths as paths_mod  # type: ignore
 
     # Wenn vorhanden: zentrale Re-Init-Funktion nutzen
     if hasattr(paths_mod, "refresh_paths"):
@@ -140,7 +140,7 @@ def test_defaults_are_filled_from_paths(parse_mod, set_paths):
         N
     )  # ruft cfg.validate() → Basisdirs müssen existieren  # :contentReference[oaicite:6]{index=6}
 
-    # PathsCfg stammt aus hmsss.cli.paths.as_dict()
+    # PathsCfg stammt aus unisul.cli.paths.as_dict()
     assert Path(cfg.paths.root) == set_paths["root"]
     assert Path(cfg.paths.bin) == set_paths["bin"]
     assert Path(cfg.paths.data) == set_paths["data"]

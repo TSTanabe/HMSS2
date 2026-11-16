@@ -3,11 +3,11 @@ from typing import Any, Dict, List, Tuple
 import pytest
 
 # import the function under test (FIX THIS PATH to your module!)
-from hmsss.parse_reports.pattern_completion_synteny import _set_possible_transitions
+from unisul.parse_reports.pattern_completion_synteny import _set_possible_transitions
 
 # bring in the mask type from your transition_mask module
-from hmsss.algorithms.transition_mask import TransitionMasks
-from hmsss.algorithms import transition_mask
+from unisul.algorithms.transition_mask import TransitionMasks
+from unisul.algorithms import transition_mask
 
 
 class KeywordStub:

@@ -2,21 +2,21 @@
 from pathlib import Path
 import pytest
 
-from hmsss.cli.config import Config, PathsCfg  # basiert auf deiner config.py
+from unisul.cli.config import Config, PathsCfg  # basiert auf deiner config.py
 
 
 @pytest.fixture
 def cfg(tmp_path) -> Config:
     """
-    Baut eine minimale HMSS2-Verzeichnisstruktur im Temp-Verzeichnis und
+    Baut eine minimale UNISUL-Verzeichnisstruktur im Temp-Verzeichnis und
     erzeugt daraus ein valides Config-Objekt.
     """
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     (root / "bin").mkdir(parents=True)
     (root / "data" / "HMMlib").mkdir(parents=True)
     (root / "data" / "RefSeqs").mkdir(parents=True)
     (root / "results").mkdir(parents=True)
-    (root / "src" / "hmsss").mkdir(parents=True)
+    (root / "src" / "unisul").mkdir(parents=True)
 
     paths = PathsCfg(
         root=str(root),
@@ -25,7 +25,7 @@ def cfg(tmp_path) -> Config:
         hmms=str(root / "data" / "HMMlib"),
         refseq=str(root / "data" / "RefSeqs"),
         results=str(root / "results"),
-        package=str(root / "src" / "hmsss"),
+        package=str(root / "src" / "unisul"),
     )
     c = Config(paths=paths)
     # validiert u. a. die Basisverzeichnisse

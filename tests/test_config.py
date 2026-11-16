@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import Any, Dict
 
 # Module importieren
-from hmsss.cli import paths as p
-from hmsss.cli import parse as cli_parse
-from hmsss.cli.config import (
+from unisul.cli import paths as p
+from unisul.cli import parse as cli_parse
+from unisul.cli.config import (
     Config,
     PathsCfg,
     CliInput,
@@ -24,12 +24,12 @@ from hmsss.cli.config import (
 
 
 def _mk_fake_tree(root: Path) -> None:
-    """Erzeuge die erwartete HMSS2-Struktur unter 'root'."""
+    """Erzeuge die erwartete UNISUL-Struktur unter 'root'."""
     (root / "bin").mkdir(parents=True, exist_ok=True)
     (root / "data" / "HMMs").mkdir(parents=True, exist_ok=True)
     (root / "data" / "RefSeqs").mkdir(parents=True, exist_ok=True)
     (root / "results").mkdir(parents=True, exist_ok=True)
-    (root / "src" / "hmsss").mkdir(parents=True, exist_ok=True)
+    (root / "src" / "unisul").mkdir(parents=True, exist_ok=True)
     # ein minimaler Eingabeordner für -f
     (root / "inputs").mkdir(parents=True, exist_ok=True)
 
@@ -200,7 +200,7 @@ def test_build_config_with_defaults_and_print(tmp_path, capsys):
     Nutzt paths.py (refresh_paths) und parse.py (parse_cli) und baut config.Config.
     Prüft einige Defaults und gibt am Ende eine gut lesbare Übersicht aus.
     """
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     _mk_fake_tree(root)
 
     # Pfade auf unseren Fake-Baum setzen
@@ -233,7 +233,7 @@ def test_build_config_with_custom_values_and_print(tmp_path, capsys):
     """
     Setzt benutzerdefinierte -r und weitere Optionen und prüft Mapping + Printout.
     """
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     _mk_fake_tree(root)
     p.refresh_paths(root)
 

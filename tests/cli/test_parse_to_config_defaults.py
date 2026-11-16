@@ -3,23 +3,23 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from hmsss.cli import paths as p
-from hmsss.cli.parse import parse_to_config
+from unisul.cli import paths as p
+from unisul.cli.parse import parse_to_config
 
 
 def _mk_fake_tree(root: Path) -> None:
-    """Erzeuge minimalen HMSS2-Baum (nur Verzeichnisse; Dateien sind für Defaults nicht nötig)."""
+    """Erzeuge minimalen UNISUL-Baum (nur Verzeichnisse; Dateien sind für Defaults nicht nötig)."""
     (root / "bin").mkdir(parents=True, exist_ok=True)
     (root / "data" / "HMMs").mkdir(parents=True, exist_ok=True)
     (root / "data" / "RefSeqs").mkdir(parents=True, exist_ok=True)
     (root / "results").mkdir(parents=True, exist_ok=True)
-    (root / "src" / "hmsss").mkdir(parents=True, exist_ok=True)
+    (root / "src" / "unisul").mkdir(parents=True, exist_ok=True)
     (root / "inputs").mkdir(parents=True, exist_ok=True)
 
 
 def test_parse_to_config_sets_all_expected_defaults(tmp_path: Path):
     # Arrange: Projektstruktur simulieren & Pfade auf tmp setzen
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     _mk_fake_tree(root)
     p.refresh_paths(root)
 
@@ -34,7 +34,7 @@ def test_parse_to_config_sets_all_expected_defaults(tmp_path: Path):
     assert cfg.paths.hmms == str(root / "data" / "HMMs")
     assert cfg.paths.refseq == str(root / "data" / "RefSeqs")
     assert cfg.paths.results == str(root / "results")
-    assert cfg.paths.package == str(root / "src" / "hmsss")
+    assert cfg.paths.package == str(root / "src" / "unisul")
 
     # Assert: CLI-Defaults nach _apply_runtime_defaults (weil nicht übergeben)
     assert cfg.cli_input.score_threshold_file == str(root / "data" / "Thresholds")

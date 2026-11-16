@@ -4,17 +4,17 @@ from __future__ import annotations
 from pathlib import Path
 import pytest
 
-from hmsss.cli import paths as p
-from hmsss.cli.parse import parse_to_config
+from unisul.cli import paths as p
+from unisul.cli.parse import parse_to_config
 
 
 def _mk_fake_tree(root: Path) -> None:
-    """Erzeuge minimalen HMSS2-Baum plus Default-Dateien, damit file_path/dir_path-Checks nicht scheitern."""
+    """Erzeuge minimalen UNISUL-Baum plus Default-Dateien, damit file_path/dir_path-Checks nicht scheitern."""
     (root / "bin").mkdir(parents=True, exist_ok=True)
     (root / "data" / "HMMs").mkdir(parents=True, exist_ok=True)
     (root / "data" / "RefSeqs").mkdir(parents=True, exist_ok=True)
     (root / "results").mkdir(parents=True, exist_ok=True)
-    (root / "src" / "hmsss").mkdir(parents=True, exist_ok=True)
+    (root / "src" / "unisul").mkdir(parents=True, exist_ok=True)
     (root / "inputs").mkdir(parents=True, exist_ok=True)
     # Defaults, falls dein Parser sie als file_path prüft
     (root / "data" / "Thresholds").write_text("", encoding="utf-8")
@@ -37,7 +37,7 @@ def _cfg_for(root: Path, extra: list[str]) -> "Config":
 # Kontrolltest ohne Prozess
 # -------------------------
 def test_stage_remains_when_no_processing(tmp_path: Path):
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     _mk_fake_tree(root)
     p.refresh_paths(root)
 
@@ -49,7 +49,7 @@ def test_stage_remains_when_no_processing(tmp_path: Path):
 # Einzeltests: jedes Prozess-Argument für sich
 # -------------------------------------------
 def test_stage_100_on_merge_fasta(tmp_path: Path):
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     _mk_fake_tree(root)
     p.refresh_paths(root)
 
@@ -61,7 +61,7 @@ def test_stage_100_on_merge_fasta(tmp_path: Path):
 
 
 def test_stage_100_on_filter_fasta(tmp_path: Path):
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     _mk_fake_tree(root)
     p.refresh_paths(root)
 
@@ -71,7 +71,7 @@ def test_stage_100_on_filter_fasta(tmp_path: Path):
 
 
 def test_stage_100_on_concat_alignment(tmp_path: Path):
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     _mk_fake_tree(root)
     p.refresh_paths(root)
 
@@ -83,7 +83,7 @@ def test_stage_100_on_concat_alignment(tmp_path: Path):
 
 
 def test_stage_100_on_add_taxonomy_to_alignment(tmp_path: Path):
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     _mk_fake_tree(root)
     p.refresh_paths(root)
 
@@ -95,7 +95,7 @@ def test_stage_100_on_add_taxonomy_to_alignment(tmp_path: Path):
 
 
 def test_stage_100_on_add_genomic_context(tmp_path: Path):
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     _mk_fake_tree(root)
     p.refresh_paths(root)
 
@@ -107,7 +107,7 @@ def test_stage_100_on_add_genomic_context(tmp_path: Path):
 
 
 def test_stage_100_on_create_type_range_dataset(tmp_path: Path):
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     _mk_fake_tree(root)
     p.refresh_paths(root)
 
@@ -117,7 +117,7 @@ def test_stage_100_on_create_type_range_dataset(tmp_path: Path):
 
 
 def test_stage_100_on_create_gene_cluster_dataset(tmp_path: Path):
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     _mk_fake_tree(root)
     p.refresh_paths(root)
 
@@ -132,7 +132,7 @@ def test_stage_100_on_create_gene_cluster_dataset(tmp_path: Path):
 # - redo_taxonomy
 # ------------------------------------
 def test_stage_100_on_db_fetch_keywords(tmp_path: Path):
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     _mk_fake_tree(root)
     p.refresh_paths(root)
 
@@ -141,7 +141,7 @@ def test_stage_100_on_db_fetch_keywords(tmp_path: Path):
 
 
 def test_stage_100_on_db_fetch_lineage_taxon(tmp_path: Path):
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     _mk_fake_tree(root)
     p.refresh_paths(root)
 
@@ -150,7 +150,7 @@ def test_stage_100_on_db_fetch_lineage_taxon(tmp_path: Path):
 
 
 def test_stage_100_on_redo_taxonomy(tmp_path: Path):
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     _mk_fake_tree(root)
     p.refresh_paths(root)
 

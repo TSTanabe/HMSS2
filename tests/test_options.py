@@ -1,8 +1,8 @@
 import types
 
 
-def test_hmsss_defaults():
-    from hmsss.core.options import Hmsss, __location__
+def test_unisul_defaults():
+    from unisul.core.options import Hmsss, __location__
 
     o = Hmsss()
 
@@ -106,8 +106,8 @@ def test_hmsss_defaults():
     assert hasattr(o, "csb_output_file")
 
 
-def test_hmsss_overrides_and_types(tmp_path):
-    from hmsss.core.options import Hmsss
+def test_unisul_overrides_and_types(tmp_path):
+    from unisul.core.options import Hmsss
 
     out_dir = tmp_path / "results"
     db_file = out_dir / "db.sqlite"
@@ -135,7 +135,7 @@ def test_hmsss_overrides_and_types(tmp_path):
 
 
 def test_mutable_defaults_are_not_shared():
-    from hmsss.core.options import Hmsss
+    from unisul.core.options import Hmsss
 
     a = Hmsss()
     b = Hmsss()
@@ -149,7 +149,7 @@ def test_mutable_defaults_are_not_shared():
 
 
 def test_kwargs_passthrough():
-    from hmsss.core.options import Hmsss
+    from unisul.core.options import Hmsss
 
     o = Hmsss(custom_field_foo=123, another="bar")
     assert getattr(o, "custom_field_foo") == 123

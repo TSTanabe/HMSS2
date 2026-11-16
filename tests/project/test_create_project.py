@@ -20,7 +20,7 @@ def _add_src_to_syspath() -> None:
 @pytest.fixture(scope="session")
 def parse_mod():
     _add_src_to_syspath()
-    from hmsss.cli import parse  # type: ignore
+    from unisul.cli import parse  # type: ignore
 
     return parse
 
@@ -28,7 +28,7 @@ def parse_mod():
 @pytest.fixture(scope="session")
 def project_mod():
     _add_src_to_syspath()
-    from hmsss.core import project
+    from unisul.core import project
 
     return project
 
@@ -36,14 +36,14 @@ def project_mod():
 @pytest.fixture
 def fake_project(tmp_path: Path) -> dict[str, Path]:
     """
-    Minimaler HMSS2-Basisbaum, der von deiner Config.validate() akzeptiert wird.
+    Minimaler UNISUL-Basisbaum, der von deiner Config.validate() akzeptiert wird.
     """
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     (root / "bin").mkdir(parents=True, exist_ok=True)
     (root / "data" / "HMMs").mkdir(parents=True, exist_ok=True)
     (root / "data" / "RefSeqs").mkdir(parents=True, exist_ok=True)
     (root / "results").mkdir(parents=True, exist_ok=True)
-    (root / "src" / "hmsss").mkdir(parents=True, exist_ok=True)
+    (root / "src" / "unisul").mkdir(parents=True, exist_ok=True)
     genomes = root / "genomes"
     genomes.mkdir(parents=True, exist_ok=True)
     # optionale Ordner, die parse/build_config ggf. als Defaults setzt:
@@ -56,7 +56,7 @@ def fake_project(tmp_path: Path) -> dict[str, Path]:
         "hmms": root / "data" / "HMMs",
         "refseq": root / "data" / "RefSeqs",
         "results": root / "results",
-        "package": root / "src" / "hmsss",
+        "package": root / "src" / "unisul",
         "genomes": genomes,
     }
 
@@ -64,10 +64,10 @@ def fake_project(tmp_path: Path) -> dict[str, Path]:
 @pytest.fixture
 def set_paths(fake_project):
     """
-    Lenkt hmsss.cli.paths auf den Fake-Baum.
+    Lenkt unisul.cli.paths auf den Fake-Baum.
     """
     try:
-        from hmsss.cli import paths as paths_mod  # type: ignore
+        from unisul.cli import paths as paths_mod  # type: ignore
     except Exception:
         paths_mod = None
     if paths_mod is not None and hasattr(paths_mod, "refresh_paths"):
@@ -111,7 +111,7 @@ def _mk_existing_project_tree(base: Path) -> dict[str, Path]:
     Erzeuge eine Beispielstruktur eines bestehenden Projekts unter `base`.
     """
     base.mkdir(parents=True, exist_ok=True)
-    db = base / "database.db"  # passe Name ggf. an (z.B. hmsss.sqlite)
+    db = base / "database.db"  # passe Name ggf. an (z.B. unisul.sqlite)
     db.write_text("", encoding="utf-8")
     csb_dir = base / "CSB"
     csb_dir.mkdir(parents=True, exist_ok=True)
@@ -215,7 +215,7 @@ def test_prepare_results_with_db_in_subdirectory(
     assert db.exists()
     # die DB liegt in einem Unterordner von -r:
     assert str(db).startswith(str(root))
-    assert db.name in ("database.db", "hmsss.sqlite", "hmsss.db")  # zur Not anpassen
+    assert db.name in ("database.db", "unisul.sqlite", "unisul.db")  # zur Not anpassen
 
 
 def test_prepare_results_points_to_existing_project(

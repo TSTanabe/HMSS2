@@ -7,19 +7,19 @@ from pathlib import Path
 
 import pytest
 
-from hmsss.cli import paths as paths_mod
+from unisul.cli import paths as paths_mod
 
 
 def _mk_fake_tree(root: Path) -> None:
     """
     Erzeuge die erwartete Ordnerstruktur unter root:
-    bin, data/HMMs, data/RefSeqs, results, src/hmsss
+    bin, data/HMMs, data/RefSeqs, results, src/unisul
     """
     (root / "bin").mkdir(parents=True, exist_ok=True)
     (root / "data" / "HMMs").mkdir(parents=True, exist_ok=True)
     (root / "data" / "RefSeqs").mkdir(parents=True, exist_ok=True)
     (root / "results").mkdir(parents=True, exist_ok=True)
-    (root / "src" / "hmsss").mkdir(parents=True, exist_ok=True)
+    (root / "src" / "unisul").mkdir(parents=True, exist_ok=True)
 
 
 def format_paths_human_readable(d: dict[str, str | Path]) -> str:
@@ -34,7 +34,7 @@ def format_paths_human_readable(d: dict[str, str | Path]) -> str:
 
 
 def test_refresh_paths_with_base_sets_expected_constants(tmp_path: Path):
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     _mk_fake_tree(root)
 
     # explizit setzen (keine Autodetektion), damit Test deterministisch ist
@@ -45,13 +45,13 @@ def test_refresh_paths_with_base_sets_expected_constants(tmp_path: Path):
     assert paths_mod.DATA_DIR == root / "data"
     assert paths_mod.HMMS_DIR == root / "data" / "HMMs"
     assert paths_mod.REFSEQ_DIR == root / "data" / "RefSeqs"
-    assert paths_mod.RESULTS_DIR == root / "results"
-    assert paths_mod.PACKAGE_DIR == root / "src" / "hmsss"
+    assert paths_mod.RESULTS_DIR == Path.cwd().resolve() / "results"
+    assert paths_mod.PACKAGE_DIR == root / "src" / "unisul"
 
     # as_dict → Strings
     d_str = paths_mod.as_dict(str_paths=True)
     assert isinstance(d_str["ROOT_DIR"], str)
-    assert d_str["ROOT_DIR"].endswith("HMSS2")
+    assert d_str["ROOT_DIR"].endswith("UNISUL")
 
     # as_dict → Paths
     d_path = paths_mod.as_dict(str_paths=False)
@@ -60,7 +60,7 @@ def test_refresh_paths_with_base_sets_expected_constants(tmp_path: Path):
 
 
 def test_human_readable_printout(tmp_path: Path, capsys):
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     _mk_fake_tree(root)
     paths_mod.refresh_paths(root)
 
@@ -76,7 +76,7 @@ def test_human_readable_printout(tmp_path: Path, capsys):
 
 
 def test_as_dict_returns_expected_keys(tmp_path: Path):
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     _mk_fake_tree(root)
     paths_mod.refresh_paths(root)
 
@@ -85,6 +85,8 @@ def test_as_dict_returns_expected_keys(tmp_path: Path):
         "ROOT_DIR",
         "BIN_DIR",
         "DATA_DIR",
+        "GPKG_DIR",
+        "PLACEMENT_DIR",
         "HMMS_DIR",
         "REFSEQ_DIR",
         "RESULTS_DIR",
@@ -95,14 +97,14 @@ def test_as_dict_returns_expected_keys(tmp_path: Path):
 
 def test_compiled_binary_root_detection(monkeypatch, tmp_path: Path):
     """
-    Simuliere: kompilierte Version — Executable liegt direkt unter HMSS2/.
+    Simuliere: kompilierte Version — Executable liegt direkt unter UNISUL/.
     Erwartung: ROOT_DIR == Parent des Executables, restliche Struktur relativ dazu.
     """
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     _mk_fake_tree(root)
 
-    # Fake-Binary anlegen (Name egal; Annahme: liegt direkt in HMSS2/)
-    fake_exe = root / "HMSS2"
+    # Fake-Binary anlegen (Name egal; Annahme: liegt direkt in UNISUL/)
+    fake_exe = root / "UNISUL"
     fake_exe.write_bytes(b"\x00")  # Platzhalter
 
     # sys-Flags für „frozen“ Umgebung setzen
@@ -118,8 +120,8 @@ def test_compiled_binary_root_detection(monkeypatch, tmp_path: Path):
     assert reloaded.DATA_DIR == root / "data"
     assert reloaded.HMMS_DIR == root / "data" / "HMMs"
     assert reloaded.REFSEQ_DIR == root / "data" / "RefSeqs"
-    assert reloaded.RESULTS_DIR == root / "results"
-    assert reloaded.PACKAGE_DIR == root / "src" / "hmsss"
+    assert reloaded.RESULTS_DIR == Path.cwd().resolve() / "results"
+    assert reloaded.PACKAGE_DIR == root / "src" / "unisul"
 
     # Zur Sicherheit: Danach wieder auf einen definierten Zustand zurücksetzen,
     # damit andere Tests nicht vom Reload betroffen sind.

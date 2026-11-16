@@ -28,7 +28,7 @@ def _add_src_to_syspath() -> None:
 @pytest.fixture(scope="session")
 def parse_mod():
     _add_src_to_syspath()
-    from hmsss.cli import parse  # type: ignore
+    from unisul.cli import parse  # type: ignore
 
     return parse
 
@@ -43,15 +43,15 @@ def fake_project(tmp_path: Path) -> dict[str, Path]:
         data/RefSeqs/
         results/
         genomes/
-        src/hmsss/
+        src/unisul/
       plus: data/Thresholds, data/Patterns, data/Cooccurrence, data/Exclusion_singletons
     """
-    root = tmp_path / "HMSS2"
+    root = tmp_path / "UNISUL"
     (root / "bin").mkdir(parents=True, exist_ok=True)
     (root / "data" / "HMMs").mkdir(parents=True, exist_ok=True)
     (root / "data" / "RefSeqs").mkdir(parents=True, exist_ok=True)
     (root / "results").mkdir(parents=True, exist_ok=True)
-    (root / "src" / "hmsss").mkdir(parents=True, exist_ok=True)
+    (root / "src" / "unisul").mkdir(parents=True, exist_ok=True)
     for sub in ("Thresholds", "Patterns", "Cooccurrence", "Exclusion_singletons"):
         (root / "data" / sub).mkdir(parents=True, exist_ok=True)
 
@@ -68,7 +68,7 @@ def fake_project(tmp_path: Path) -> dict[str, Path]:
         "hmms": root / "data" / "HMMs",
         "refseq": root / "data" / "RefSeqs",
         "results": root / "results",
-        "package": root / "src" / "hmsss",
+        "package": root / "src" / "unisul",
         "genomes": genomes,
         "taxonomy": taxonomy_file,
     }
@@ -77,11 +77,11 @@ def fake_project(tmp_path: Path) -> dict[str, Path]:
 @pytest.fixture
 def set_paths(fake_project):
     """
-    Lenkt hmsss.cli.paths (falls vorhanden) auf unser Fake-Projekt,
+    Lenkt unisul.cli.paths (falls vorhanden) auf unser Fake-Projekt,
     damit build_config_from_namespace() die korrekten Basis-Pfade bekommt.
     """
     try:
-        from hmsss.cli import paths as paths_mod  # type: ignore
+        from unisul.cli import paths as paths_mod  # type: ignore
     except Exception:
         paths_mod = None
     if paths_mod is not None and hasattr(paths_mod, "refresh_paths"):
