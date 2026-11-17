@@ -461,7 +461,9 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         if never_show
         else argparse.SUPPRESS,
     )
-    cross_check = parser.add_argument_group("Cross-check parameters")
+    cross_check = parser.add_argument_group(
+        "MMseqs reference sequence set comparison parameters"
+    )
     cross_check.add_argument(
         "--max-seq-per-genome",
         dest="max_seqs_per_genome",
@@ -509,6 +511,36 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         dest="bool_cross_check",
         action="store_false",
         help="Use Diamond blastp cross check for hit selection from reference sequences"
+        if never_show
+        else argparse.SUPPRESS,
+    )
+    cross_check.add_argument(
+        "--disable-mmseqs-reference-assignment",
+        dest="disable_mmseqs_reference_assignment",
+        action="store_true",
+        default=False,
+        help=(
+            "Skip MMseqs2 Ingroup/Outgroup reference classification, "
+            "functional reassignment and MMseqs taxonomy for metagenomic ORFs"
+        )
+        if show_all
+        else argparse.SUPPRESS,
+    )
+    cross_check.add_argument(
+        "--disable-mmseqs-placement-reference",
+        dest="disable_mmseqs_placement_reference",
+        action="store_true",
+        default=False,
+        help="Do not use phylogenetic placement packages for MMseqs reference assignment"
+        if show_all
+        else argparse.SUPPRESS,
+    )
+    cross_check.add_argument(
+        "--enable-mmseqs-refseq-reference",
+        dest="enable_mmseqs_refseq_reference",
+        action="store_true",
+        default=False,
+        help="Use complete RefSeq packages for MMseqs reference assignment"
         if show_all
         else argparse.SUPPRESS,
     )
@@ -583,37 +615,6 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
             "Minimum accumulated likelihood weight ratio (aLWR) "
             "required for taxonomic assignment"
         )
-        if show_all
-        else argparse.SUPPRESS,
-    )
-
-    placement.add_argument(
-        "--disable-mmseqs-reference-assignment",
-        dest="disable_mmseqs_reference_assignment",
-        action="store_true",
-        default=False,
-        help=(
-            "Skip MMseqs2 Ingroup/Outgroup reference classification, "
-            "functional reassignment and MMseqs taxonomy for metagenomic ORFs"
-        )
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    placement.add_argument(
-        "--disable-mmseqs-placement-reference",
-        dest="disable_mmseqs_placement_reference",
-        action="store_true",
-        default=False,
-        help="Do not use phylogenetic placement packages for MMseqs reference assignment"
-        if show_all
-        else argparse.SUPPRESS,
-    )
-    placement.add_argument(
-        "--enable-mmseqs-refseq-reference",
-        dest="enable_mmseqs_refseq_reference",
-        action="store_true",
-        default=False,
-        help="Use complete RefSeq packages for MMseqs reference assignment"
         if show_all
         else argparse.SUPPRESS,
     )
