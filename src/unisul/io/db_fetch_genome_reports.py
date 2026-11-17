@@ -813,8 +813,6 @@ def write_individual_genome_reports(config) -> None:
     # print(final_msg, flush=True)
 
     if pathway_rows:
-        pathway_msg = (
-            f"Finished genome pathway report: {n_pathway_rows} pathway rows written"
-        )
+        pathway_msg = f"[Reports] Finished genome pathway report: {n_pathway_rows} pathway rows written"
         logger.info(pathway_msg)
         # print(pathway_msg, flush=True)

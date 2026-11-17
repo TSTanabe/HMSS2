@@ -1668,7 +1668,7 @@ def insert_taxonomy_data(database: str, taxonomy_file: str) -> None:
             con.commit()
 
         logger.info(
-            "Inserted taxonomy data from %s",
+            "[Taxonomy] Inserted taxonomy data from %s",
             taxonomy_path,
         )
 
