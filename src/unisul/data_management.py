@@ -363,7 +363,7 @@ def prepare_data_layout(root: Path) -> Path:
 
     gpkg_root = root / "gpkg"
     refseq_root = root / "RefSeqs"
-    taxonomy_source = root / "combined_globdb_232_taxonomy.tsv"
+    taxonomy_source = root / "combined_globdb_taxonomy.tsv"
     taxonomy_target = refseq_root / taxonomy_source.name
     package_sources = sorted(gpkg_root.rglob("refseq_database.faa"))
     if not package_sources:
@@ -434,8 +434,10 @@ def prepare_data_layout(root: Path) -> Path:
         planned_targets.add(target)
         if target.exists():
             try:
-                if source.is_file() and target.is_file() and os.path.samefile(
-                    source, target
+                if (
+                    source.is_file()
+                    and target.is_file()
+                    and os.path.samefile(source, target)
                 ):
                     continue
             except OSError:

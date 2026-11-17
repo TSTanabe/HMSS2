@@ -20,6 +20,6 @@
     "placements",
     "gpkg",
     "RefSeqs",
-    "RefSeqs/combined_globdb_232_taxonomy.tsv"
+    "RefSeqs/combined_globdb_taxonomy.tsv"
   ]
 }
