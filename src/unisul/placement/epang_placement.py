@@ -886,7 +886,7 @@ def epa_ng_placement(config, intermediate_files) -> None:
             package = load_placement_package(package_dir)
 
             logger.info(
-                "%s: starting EPA-ng placement for %d intermediate sequences",
+                "EPA-ng placement: package=%s | queries=%d",
                 package_dir.name,
                 query_count,
             )
