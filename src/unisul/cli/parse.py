@@ -609,11 +609,11 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         else argparse.SUPPRESS,
     )
     placement.add_argument(
-        "--disable-mmseqs-refseq-reference",
-        dest="disable_mmseqs_refseq_reference",
+        "--enable-mmseqs-refseq-reference",
+        dest="enable_mmseqs_refseq_reference",
         action="store_true",
         default=False,
-        help="Do not use complete RefSeq packages for MMseqs reference assignment"
+        help="Use complete RefSeq packages for MMseqs reference assignment"
         if show_all
         else argparse.SUPPRESS,
     )

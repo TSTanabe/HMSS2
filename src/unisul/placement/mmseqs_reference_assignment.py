@@ -1321,7 +1321,7 @@ def process_package(
         raise FileNotFoundError("Missing annotations: %s" % annotations_file)
 
     if not taxonomy_file.is_file() and is_refseq_package:
-        taxonomy_file = Path(config.paths.refseq) / "combined_globdb_232_taxonomy.tsv"
+        taxonomy_file = Path(config.paths.refseq) / "combined_globdb_taxonomy.tsv"
     if not taxonomy_file.is_file():
         raise FileNotFoundError("Missing reference taxonomy: %s" % taxonomy_file)
 
@@ -1613,7 +1613,7 @@ def mmseqs_placement_package_reference_assignment(
     use_placement = not bool(
         getattr(config, "disable_mmseqs_placement_reference", False)
     )
-    use_refseq = not bool(getattr(config, "disable_mmseqs_refseq_reference", False))
+    use_refseq = bool(getattr(config, "enable_mmseqs_refseq_reference", False))
 
     placement_packages = []
     refseq_packages = []
