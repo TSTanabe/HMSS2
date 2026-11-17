@@ -117,9 +117,10 @@ def test_compiled_binary_root_detection(monkeypatch, tmp_path: Path):
     # Assertions gegen das re-geladene Modul
     assert reloaded.ROOT_DIR == root
     assert reloaded.BIN_DIR == root / "bin"
-    assert reloaded.DATA_DIR == root / "data"
-    assert reloaded.HMMS_DIR == root / "data" / "HMMs"
-    assert reloaded.REFSEQ_DIR == root / "data" / "RefSeqs"
+    assert reloaded.DATA_ROOT == reloaded.resolve_data_root()
+    assert reloaded.DATA_DIR == reloaded.DATA_ROOT / "core"
+    assert reloaded.HMMS_DIR == reloaded.DATA_ROOT / "core" / "HMMs"
+    assert reloaded.REFSEQ_DIR == reloaded.DATA_ROOT / "RefSeqs"
     assert reloaded.RESULTS_DIR == Path.cwd().resolve() / "results"
     assert reloaded.PACKAGE_DIR == root / "src" / "unisul"
 

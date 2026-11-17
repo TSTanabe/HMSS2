@@ -17,24 +17,9 @@ Warum so?
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 import argparse
 import pytest
-
-
-# ---------------------------
-# Hilfs-Setup fürs Importing
-# ---------------------------
-def _add_src_to_syspath() -> None:
-    """
-    Import von 'unisul...' ermöglichen, ohne Installation:
-    Wir fügen <repo>/src vorne in sys.path hinzu.
-    """
-    repo_root = Path(__file__).resolve().parents[1]
-    src = repo_root / "src"
-    if str(src) not in sys.path:
-        sys.path.insert(0, str(src))
 
 
 @pytest.fixture(scope="session")
@@ -42,7 +27,6 @@ def parse_mod():
     """
     Testobjekt importieren: unisul.cli.parse
     """
-    _add_src_to_syspath()
     from unisul.cli import parse  # type: ignore
 
     return parse

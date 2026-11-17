@@ -5,7 +5,6 @@ import argparse
 import os
 import shutil
 import sys
-from dataclasses import fields
 from pathlib import Path
 from typing import Any, List, Sequence
 
@@ -161,10 +160,6 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
 
     never_show = False  # Always hide these arguments, because currently unused
 
-    # ---- Dynamic argument choices ---
-    paths_cfg = _paths_cfg_from_paths_module()
-    data_dir = Path(paths_cfg.data)
-
     # ---- Argument groups ----
     parser = argparse.ArgumentParser(
         description=(
@@ -215,6 +210,14 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         default=1,
         choices=[0, 1, 2],
         help="Set logging level: 0=WARNING, 1=INFO, 2=DEBUG",
+    )
+    parser.add_argument(
+        "--data-dir",
+        dest="data_dir",
+        type=path_str,
+        default=None,
+        metavar="PATH",
+        help="UNISUL reference-data root (overrides UNISUL_DATA and saved config)",
     )
     parser.add_argument(
         "--help-all",
@@ -1051,10 +1054,22 @@ def _s(ns: Any, name: str) -> str | None:
 
 def _paths_cfg_from_paths_module() -> PathsCfg:
     """Map canonical paths into PathsCfg without repeating each path name."""
+    path_fields = {
+        "root": "ROOT_DIR",
+        "bin": "BIN_DIR",
+        "data": "DATA_DIR",
+        "gpkg": "GPKG_DIR",
+        "placement": "PLACEMENT_DIR",
+        "hmms": "HMMS_DIR",
+        "refseq": "REFSEQ_DIR",
+        "results": "RESULTS_DIR",
+        "package": "PACKAGE_DIR",
+        "data_root": "DATA_ROOT",
+    }
     return PathsCfg(
         **{
-            item.name: str(getattr(paths, f"{item.name.upper()}_DIR"))
-            for item in fields(PathsCfg)
+            name: str(getattr(paths, path_name))
+            for name, path_name in path_fields.items()
         }
     )
 
@@ -1121,8 +1136,7 @@ def build_config_from_namespace(ns) -> Config:
         threshold_type=int(getattr(ns, "threshold_type", 1)),
         thrs_score=float(getattr(ns, "thrs_score", 50)),
         threshold_factor=float(getattr(ns, "threshold_factor", 1.0)),
-        taxonomy_file=_s(ns, "taxonomy_file")
-        or os.path.join(paths_cfg.data, "combined_globdb_232_taxonomy.tsv"),
+        taxonomy_file=_s(ns, "taxonomy_file") or str(paths.TAXONOMY_FILE),
         refseq_identity=int(getattr(ns, "refseq_identity", 90)),
         name=getattr(ns, "name", "project"),
         stage=int(getattr(ns, "stage", 0)),
@@ -1183,7 +1197,9 @@ def build_config_from_namespace(ns) -> Config:
     )
 
     placement_domains = list(dict.fromkeys(getattr(ns, "placement_domains", []) or []))
-    placements = bool(getattr(ns, "placements", False) or placement_domains)
+    placements = bool(
+        getattr(ns, "placements", False) or placement_domains or _needs_stage_30(ns)
+    )
 
     cli_placement = CliPlacement(
         placements=placements,
@@ -1193,11 +1209,11 @@ def build_config_from_namespace(ns) -> Config:
         ),
         placement_domains=placement_domains,
         placement_threshold=float(getattr(ns, "placement_threshold", 0.75)),
-        placement_lwr=float(getattr(ns, "placement_lwr", 0.99999)),
-        taxonomy_lwr=float(getattr(ns, "taxonomy_lwr", 0.5)),
+        placement_lwr=float(getattr(ns, "placement_lwr", 0.95)),
+        taxonomy_lwr=float(getattr(ns, "taxonomy_lwr", 0.7)),
         min_orf_length=int(getattr(ns, "min_orf_length", 96)),
         translation_table=int(getattr(ns, "translation_table", 11)),
-        batch_size=int(getattr(ns, "batch_size", 10000000)),
+        batch_size=int(getattr(ns, "batch_size", 1000000)),
         evalue=float(getattr(ns, "evalue", 1e-5)),
     )
     cli_readmap = CliReadMapping(
@@ -1411,6 +1427,11 @@ def parse_to_config(argv: list[str] | None = None) -> Config:
         A fully validated `Config` object.
     """
     namespace = parse_cli(argv)
+    if getattr(namespace, "data_dir", None) is not None:
+        paths.refresh_paths(
+            data_dir=namespace.data_dir,
+            preserve_root=True,
+        )
     namespace = _apply_runtime_defaults(namespace)
     config = build_config_from_namespace(namespace)
 

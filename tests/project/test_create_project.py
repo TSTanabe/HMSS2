@@ -1,7 +1,6 @@
 # tests/cli/test_prepare_result_space.py
 from __future__ import annotations
 
-import sys
 import argparse
 import pytest
 
@@ -9,17 +8,8 @@ import pytest
 from pathlib import Path
 
 
-# ---------------- Import/Fixtures wie in deinen anderen Tests ----------------
-def _add_src_to_syspath() -> None:
-    repo_root = Path(__file__).resolve().parents[2]  # .../tests/cli -> repo-root
-    src = repo_root / "src"
-    if str(src) not in sys.path:
-        sys.path.insert(0, str(src))
-
-
 @pytest.fixture(scope="session")
 def parse_mod():
-    _add_src_to_syspath()
     from unisul.cli import parse  # type: ignore
 
     return parse
@@ -27,7 +17,6 @@ def parse_mod():
 
 @pytest.fixture(scope="session")
 def project_mod():
-    _add_src_to_syspath()
     from unisul.core import project
 
     return project

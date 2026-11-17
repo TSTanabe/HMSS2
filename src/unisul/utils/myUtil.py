@@ -3,9 +3,9 @@ import os
 import shutil
 import sys
 from pathlib import Path
-from typing import List, Union
+from typing import List, Sequence, Union
 
-from unisul.cli.config import Config, INTERMEDIATE_HITS_SUFFIX
+from unisul.cli.config import INTERMEDIATE_HITS_SUFFIX, Config
 from unisul.cli.paths import BIN_DIR  # nutzt UNISUL_BIN_DIR
 from unisul.core.logging import get_logger
 
@@ -97,27 +97,26 @@ def get_executable_dir() -> str:
     return os.path.dirname(os.path.abspath(__file__))
 
 
-def find_executable(executable: str) -> str:
+def find_executable(executable: str | Sequence[str]) -> str:
     """
-    Locate an executable in PATH, then unisul BIN_ROOT, then <this>/bin.
+    Locate an executable in PATH, then the configured UNISUL bin directory.
     Raises FileNotFoundError if not found.
     """
-    # 1) PATH
-    path = shutil.which(executable)
-    if path:
-        log.debug("Found executable in PATH: %s", path)
-        return path
+    candidates = (executable,) if isinstance(executable, str) else tuple(executable)
+    for candidate in candidates:
+        path = shutil.which(candidate)
+        if path:
+            log.debug("Found executable in PATH: %s", path)
+            return path
 
-    # 2) unisul BIN_ROOT (ENV UNISUL_BIN_DIR → PROJECT_ROOT/bin)
-    bin_candidate = Path(BIN_DIR) / executable
-    if bin_candidate.is_file() and os.access(str(bin_candidate), os.X_OK):
-        log.debug("Found executable in BIN_ROOT: %s", bin_candidate)
-        return str(bin_candidate)
+        bin_candidate = Path(BIN_DIR) / candidate
+        if bin_candidate.is_file() and os.access(str(bin_candidate), os.X_OK):
+            log.debug("Found executable in BIN_ROOT: %s", bin_candidate)
+            return str(bin_candidate)
 
     log.error(
-        "Executable not found: %s. Searched PATH, BIN_ROOT=%s, and %s",
-        executable,
+        "Executable not found: %s. Searched PATH and BIN_ROOT=%s",
+        ", ".join(candidates),
         BIN_DIR,
-        Path(get_executable_dir()) / "bin",
     )
-    raise FileNotFoundError(f"{executable} executable not found.")
+    raise FileNotFoundError(f"{', '.join(candidates)} executable not found.")

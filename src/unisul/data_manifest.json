@@ -1,0 +1,21 @@
+{
+  "data_version": null,
+  "minimum_unisul_version": "0.1.0",
+  "archive": {
+    "url": "",
+    "sha256": null,
+    "filename": "unisul-data.zip",
+    "archive_format": "zip"
+  },
+  "required_paths": [
+    "Resource_module_metadata",
+    "basis",
+    "Thresholds",
+    "Patterns",
+    "Cooccurrence",
+    "HMMs",
+    "placements",
+    "gpkg",
+    "RefSeqs"
+  ]
+}

@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import os
 import re
-import sys
 import subprocess
 from pathlib import Path
 from typing import Dict
 
 from unisul.cli.config import Config
-from unisul.cli.paths import GPKG_DIR
+from unisul.cli import paths
 from unisul.core import queue as queue
 from unisul.core.logging import get_logger
 
@@ -128,7 +127,9 @@ def prepare_gpkg_packages(config: Config) -> None | dict[str, str]:
             if isinstance(config.gpkg_sets, list)
             else config.gpkg_sets.split()
         )
-        return collect_gpkg_from_selected_metabolism_packages(str(GPKG_DIR), allowed)
+        return collect_gpkg_from_selected_metabolism_packages(
+            str(paths.GPKG_DIR), allowed
+        )
     else:
         return {}
 
@@ -141,7 +142,7 @@ def prepare_gpkg_packs(config: Config) -> None | dict[str, str]:
             if isinstance(config.gpkg_packs, list)
             else config.gpkg_packs.split()
         )
-        return collect_gpkg_by_filename_tokens(str(GPKG_DIR), allowed)
+        return collect_gpkg_by_filename_tokens(str(paths.GPKG_DIR), allowed)
     else:
         return {}
 

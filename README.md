@@ -2,23 +2,52 @@
 
 **UNISUL: unified annotation of sulfur metabolism and taxonomic classification in genomes and metagenomes.** UNISUL identifies sulfur metabolism-related genes and analyzes operon structures in genome and metagenome assemblies. It searches FASTA files for sulfur metabolism-associated proteins using hidden Markov models and defined threshold scores. The genes of detected proteins are analyzed for their position in the genome, and detected gene clusters are named when they match a known pattern. UNISUL can also be extended with compatible HMMs.
 
-## Installing UNISUL on Linux
-You can install UNISUL by downloading it directly from GitHub in compiled or non-compiled form.
+## Installing and running UNISUL
 
-1. Download the latest release from github
-2. Install the conda environment from the conda_env.yml file
-3. You can now run UNISUL from the directory with `python3 UNISUL.py`.
-4. You can test the functionality with `python3 UNISUL.py -f Example_genomes`.
+Install the Python package from a checkout for development with:
+
+```bash
+pip install -e .
+unisul --help
+python -m unisul --help
+```
+
+The package contains code and a small data-download manifest only. Reference
+data, including HMMs, placement packages, GraftM packages and taxonomy, are
+installed separately and are never copied into `site-packages`. The packaged
+manifest currently has no release URLs or checksums; these must be supplied
+before `unisul data download` can fetch production datasets.
+
+Set the reference-data directory for a run with `--data-dir PATH`, or persist
+it for the user with `unisul data set-path PATH`. The `UNISUL_DATA` environment
+variable is useful on HPC systems and takes priority over the saved setting:
+
+```bash
+export UNISUL_DATA=/shared/software/unisul/data
+unisul data status
+```
+
+Once release URLs are configured, `unisul data download core`,
+`unisul data download placement`, `unisul data download gpkg`,
+`unisul data download taxonomy`, or `unisul data download all` installs the
+selected components. Downloads are explicit; normal analysis runs never
+download data automatically.
+
+Python dependencies are declared in `pyproject.toml` (and listed in
+`requirements.txt`). Bioinformatics executables such as HMMER, EPA-ng, GAPPA,
+MMseqs2, GraftM and Prodigal are separate runtime dependencies and may be
+provided by Conda or HPC modules; they are not installed as reference data or
+bundled with the Python package.
 
 ## Running UNISUL
 
 To run UNISUL on your own data type in the command line:
 
-    python3 UNISUL.py -f Directory
+    unisul -f Directory
 
 If an already existing database is to be extended, this can be specified by means of the `-db` command.
 
-    python3 UNISUL.py -f Directory -db /path/to/Database.db
+    unisul -f Directory -db /path/to/Database.db
 
 Replace "Directory" with the directory containing your input FASTA files, with one file per species. The names of the files should match the identifiers of the genomes, since the name of the files will later be used for identification. When using protein FASTA files with GFF files, the names of the related files should be the same except for the file extension. File names will be used as genome identifiers. UNISUL will look for input FASTA files with any of the following filename extensions:
 
@@ -56,11 +85,11 @@ Protein sequences detected by the hidden Markov Models can be retrieved with `-f
 
 If sequences of one or more proteins are to be output from the local database, the options `-db` and `-fd` are required. By default, the local database is located in the results folder of UNISUL. In addition, the corresponding path is also output during the initial search in the terminal. The desired protein types are written after the `-fd` option separated by blanks. Names can also be incomplete. An input of Dsr would therefore output all proteins that have Dsr in their designation (oxDsrA, redDsrA, oxDsrB ...).
 
-    python3 UNISUL.py -db /path/to/database.db -fd protein_1 protein_2 protein_3
+    unisul -db /path/to/database.db -fd protein_1 protein_2 protein_3
 
 Analogously, all proteins sequences of a certain named gene cluster type can be output. This is specified via `-fk`.
 
-    python3 UNISUL.py -db /path/to/database.db -fk cluster_type1 cluster_type2
+    unisul -db /path/to/database.db -fk cluster_type1 cluster_type2
 
 ## Result files
 The results of each search are stored in the local database located in separate project folders under `results`. For each search, the database location is output in the terminal. Output from a database specified by the `-db` option can be requested via the `-fd` or `-fk` option (see also command options). Each request generates a new folder with a unique timestamp that includes all generated files:
@@ -196,8 +225,6 @@ Alternativly, a custom tab separated file including the following column headers
     genomeID superkingdom clade phylum class order family genus species strain taxid biosample bioproject genbank refseq completeness contamination typestrain
 
 With the exception of the first column, not all columns must contain values. The type strain column must contain either the value 0 or 1 to be evaluable. The Contamination and Completeness columns should contain values between 0 and 100.
-
-
 
 
 

@@ -8,8 +8,7 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-TRIMAL = "/home/tomohisa/PycharmProjects/HMSS2/bin/trimal"
-VERYFASTTREE = "/home/tomohisa/PycharmProjects/HMSS2/bin/VeryFastTree-avx2"
+from unisul.utils.myUtil import find_executable
 
 
 def load_genome_taxonomy(taxonomy_file: str | Path) -> dict[str, str]:
@@ -155,7 +154,7 @@ def align_and_trim(
     # 2. Remove columns with >= 95% gaps
     subprocess.run(
         [
-            TRIMAL,
+            find_executable("trimal"),
             "-in",
             str(alignment),
             "-out",
@@ -238,10 +237,7 @@ def build_tree(
     if threads < 1:
         raise ValueError("threads must be >= 1")
 
-    executable = VERYFASTTREE
-
-    if executable is None:
-        raise RuntimeError("VeryFastTree not found in PATH")
+    executable = find_executable(("VeryFastTree-avx2", "VeryFastTree"))
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -496,9 +492,11 @@ def create_manifest(
         "parameters": {"threads": threads, "max_gap_fraction": 0.95},
         "tools": {
             "mafft": tool_version(["mafft", "--version"]),
-            "trimal": tool_version([TRIMAL, "-version"]),
+            "trimal": tool_version([find_executable("trimal"), "-version"]),
             "hmmbuild": tool_version(["hmmbuild", "-h"]),
-            "veryfasttree": tool_version([VERYFASTTREE, "-help"]),
+            "veryfasttree": tool_version(
+                [find_executable(("VeryFastTree-avx2", "VeryFastTree")), "-help"]
+            ),
         },
         "sources": {
             "seed_fastas": [
@@ -575,9 +573,11 @@ def main():
         if not seed_file.is_file():
             parser.error(f"Seed file not found: {seed_file}")
 
-    for executable in (TRIMAL, VERYFASTTREE):
-        if not Path(executable).is_file():
-            parser.error(f"Executable not found: {executable}")
+    try:
+        find_executable("trimal")
+        find_executable(("VeryFastTree-avx2", "VeryFastTree"))
+    except FileNotFoundError as exc:
+        parser.error(str(exc))
 
     output_dir = args.output.resolve()
 

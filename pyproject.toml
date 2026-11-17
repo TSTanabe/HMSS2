@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "unisul"
+version = "0.1.0"
+description = "UNISUL: unified annotation of sulfur metabolism and taxonomic classification"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "GPL-3.0-only"
+dependencies = [
+  "biopython>=1.84",
+  "matplotlib>=3.10",
+  "networkx>=2.8",
+  "numpy>=1.24",
+  "pyhmmer>=0.11",
+  "scikit-learn>=1.5",
+  "scipy>=1.14",
+]
+
+[project.scripts]
+unisul = "unisul.__main__:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = false
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["unisul*"]
+
+[tool.setuptools.package-data]
+unisul = ["data_manifest.json"]

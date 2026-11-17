@@ -1,40 +1,42 @@
-# src/unisul/__main__.py
 from __future__ import annotations
 
 import sys
 
-from unisul.cli.parse import parse_to_config
-from unisul.core.runner import run_pipeline
-from unisul.core.load_data import ensure_data_dir_with_marker
-from unisul.core.load_data import ensure_gpkg_dir_with_marker
+from unisul.data_management import DataManagementError, data_cli
 
-DATA_ZIP_URL = "https://zenodo.org/records/XXXX/files/hmss2_data_v1.zip?download=1"
-GPKG_ZIP_URL = "https://.../HMSS2_gpkg.zip"
 
-# optional, wenn du Hashes hast
-DATA_SHA256 = None
-GPKG_SHA256 = None
+def _split_global_data_dir(argv: list[str]) -> tuple[list[str], str | None]:
+    """Remove global --data-dir from argv so it can be used by data subcommands."""
+    remaining: list[str] = []
+    data_dir: str | None = None
+    i = 0
+    while i < len(argv):
+        arg = argv[i]
+        if arg == "--data-dir":
+            if i + 1 >= len(argv):
+                raise DataManagementError("--data-dir requires a path")
+            data_dir = argv[i + 1]
+            i += 2
+        elif arg.startswith("--data-dir="):
+            data_dir = arg.split("=", 1)[1]
+            i += 1
+        else:
+            remaining.append(arg)
+            i += 1
+    return remaining, data_dir
 
 
 def main(argv: list[str] | None = None) -> None:
-    argv = sys.argv[1:] if argv is None else argv
-    config = parse_to_config(argv)
-    """
-    ensure_data_dir_with_marker(
-        data_zip_url=DATA_ZIP_URL,
-        expected_sha256=DATA_SHA256,
-    )
+    arguments = list(sys.argv[1:] if argv is None else argv)
+    try:
+        stripped, data_dir = _split_global_data_dir(arguments)
+        if stripped and stripped[0] == "data":
+            data_cli(stripped[1:], cli_path=data_dir)
+            return
 
-    # GPKG data ca 8 GB. Load when required
-    if config.use_read_mapping:
-        #ensure_gpkg_dir_with_marker(
-            gpkg_zip_url=GPKG_ZIP_URL,
-            expected_sha256=GPKG_SHA256,
-        )
-    """
-    # This function organizes the whole pipeline
-    run_pipeline(config)
+        from unisul.cli.parse import parse_to_config
+        from unisul.core.runner import run_pipeline
 
-
-if __name__ == "__main__":
-    main()
+        run_pipeline(parse_to_config(arguments))
+    except DataManagementError as exc:
+        raise SystemExit(f"unisul: error: {exc}") from exc

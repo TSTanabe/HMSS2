@@ -42,12 +42,13 @@ class PathsCfg:
     root: str
     bin: str
     data: str
-    gpkg: str
-    placement: str
-    hmms: str
-    refseq: str
-    results: str
-    package: str
+    gpkg: str = ""
+    placement: str = ""
+    hmms: str = ""
+    refseq: str = ""
+    results: str = ""
+    package: str = ""
+    data_root: str | None = None
 
 
 # ==========================================
@@ -221,12 +222,12 @@ class CliPlacement:
     placement_domains: List[str] = field(default_factory=list)
 
     placement_threshold: float = 0.75
-    placement_lwr: float = 0.99999
-    taxonomy_lwr: float = 0.5
+    placement_lwr: float = 0.95
+    taxonomy_lwr: float = 0.7
 
     min_orf_length: int = 96
     translation_table: int = 11
-    batch_size: int = 10000000
+    batch_size: int = 1000000
     evalue: float = 1e-5
 
 
@@ -335,6 +336,7 @@ class ProjectFields:
     csb_output_file: Optional[str] = None
     gene_clusters_file: Optional[str] = None
     metabolic_pathway_directory: Optional[str] = None
+    refseq_work_directory: Optional[str] = None
     pathway_file: Optional[str] = None
     pathway_report_file: Optional[str] = None
 
@@ -348,6 +350,7 @@ RUN_DIRECTORY_NAMES = {
     "placement_results_directory": "placement_results",
     "csb_directory": "collinear_syntenic_blocks",
     "metabolic_pathway_directory": "Metabolic_pathways",
+    "refseq_work_directory": "refseq_work",
 }
 
 
@@ -621,7 +624,6 @@ class Config:
         "cli_placement.disable_mmseqs_reference_assignment"
     )
     placements = prop("cli_placement.placements")
-    placements_provided = prop("cli_placement.placements_provided")
     placement_domains = prop("cli_placement.placement_domains")
     placement_threshold = prop("cli_placement.placement_threshold")
     placement_lwr = prop("cli_placement.placement_lwr")
@@ -677,6 +679,7 @@ class Config:
         "project.gene_clusters_file"
     )  # :contentReference[oaicite:51]{index=51}
     metabolic_pathway_directory = run_prop("metabolic_pathway_directory")
+    refseq_work_directory = run_prop("refseq_work_directory")
     pathway_file = prop("project.pathway_file")
     pathway_report_file = prop("project.pathway_report_file")
     glob_trusted_hitreport = prop("project.glob_trusted_hitreport")
@@ -757,8 +760,6 @@ class Config:
                 missing.append(f"{label}: {path}")
 
         _req_dir(self.paths.root, "ROOT_DIR")
-        _req_dir(self.paths.bin, "BIN_DIR")
-        _req_dir(self.paths.data, "DATA_DIR")
         # _req_dir(self.paths.hmms, "HMMS_DIR")
         # Output directories are created later by prepare_result_space().
         # The installation resource tree itself may be read-only.

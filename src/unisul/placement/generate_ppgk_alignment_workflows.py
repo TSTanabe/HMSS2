@@ -9,8 +9,7 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-TRIMAL = "/home/tomohisa/PycharmProjects/HMSS2/bin/trimal"
-VERYFASTTREE = "/home/tomohisa/PycharmProjects/HMSS2/bin/VeryFastTree-avx2"
+from unisul.utils.myUtil import find_executable
 
 
 def load_genome_taxonomy(taxonomy_file: str | Path) -> dict[str, str]:
@@ -259,7 +258,7 @@ def align_and_trim(
     def run_trimal(source: Path, destination: Path) -> None:
         subprocess.run(
             [
-                "trimal",
+                find_executable("trimal"),
                 "-in",
                 str(source),
                 "-out",
@@ -368,17 +367,14 @@ def build_tree(
     if threads < 1:
         raise ValueError("threads must be >= 1")
 
-    executable = VERYFASTTREE
-
-    if executable is None:
-        raise RuntimeError("VeryFastTree not found in PATH")
+    executable = find_executable(("VeryFastTree-avx2", "VeryFastTree"))
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
     tree_file = output_dir / "tree.nwk"
 
     command = [
-        "VeryFastTree",
+        executable,
         "-lg",
         "-gamma",
         "-double-precision",
@@ -638,9 +634,11 @@ def create_manifest(
         "outgroups": outgroup_files or [],
         "tools": {
             "mafft": tool_version(["mafft", "--version"]),
-            "trimal": tool_version(["trimal", "-version"]),
+            "trimal": tool_version([find_executable("trimal"), "-version"]),
             "hmmbuild": tool_version(["hmmbuild", "-h"]),
-            "veryfasttree": tool_version(["VeryFastTree", "-help"]),
+            "veryfasttree": tool_version(
+                [find_executable(("VeryFastTree-avx2", "VeryFastTree")), "-help"]
+            ),
         },
         "sources": {
             "seed_fastas": [

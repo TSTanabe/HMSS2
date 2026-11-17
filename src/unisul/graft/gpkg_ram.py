@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 from typing import Dict
 
-from unisul.cli.paths import SRC_FILE_GPKG_RAM_INFORMATION
+from unisul.cli import paths
 from unisul.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -66,7 +66,7 @@ def collect_gpkg_ram(
     Returns:
         { gpkg_name : peak_rss_gb }
     """
-    profiles_by_id = parse_ram_profiles_file(SRC_FILE_GPKG_RAM_INFORMATION)
+    profiles_by_id = parse_ram_profiles_file(paths.SRC_FILE_GPKG_RAM_INFORMATION)
 
     # helper indices from profiler output
     by_basename = profiles_by_id  # "sqdg.gpkg" -> peak

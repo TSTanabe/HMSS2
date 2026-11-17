@@ -5,7 +5,7 @@ import re
 import shutil
 from pathlib import Path
 
-from unisul.cli.paths import DATA_DIR, GPKG_DIR
+from unisul.cli import paths
 from unisul.core import library_generation
 from unisul.core import queue as queue
 from unisul.core.logging import get_logger, print_header
@@ -162,27 +162,32 @@ def ressource_preparation(config) -> None:
 
     # Ergebnis-Unterordner
     reports_dir = _ensure_dir(Path(config.result_files_directory) / "reports")
-    cross_dir = _ensure_dir(
+    _ensure_dir(
         config.cross_check_directory
         or (Path(config.result_files_directory) / "filtered_hits")
     )
-    # Writable DIAMOND databases are scoped to the current run.
-    config.paths.refseq = _ensure_dir(Path(config.result_files_directory) / "refseq")
+    # Keep installed RefSeqs read-only; derived databases belong to this run.
+    _ensure_dir(
+        config.refseq_work_directory
+        or (Path(config.result_files_directory) / "refseq_work")
+    )
 
     library_generation.build_library(config)
 
     # ---- Library, Cutoffs, Cooccurrence, Patterns, Metabolism ggf. zusammenführen ----
     if not os.path.isfile(config.library):
-        queue.concatenate_files_shell(str(DATA_DIR), "grp", ".hmm", config.library)
+        queue.concatenate_files_shell(
+            str(paths.DATA_DIR), "grp", ".hmm", config.library
+        )
 
     if not os.path.isfile(config.score_threshold_file):
         queue.concatenate_files_shell(
-            str(DATA_DIR), "cutoffs", ".txt", config.score_threshold_file
+            str(paths.DATA_DIR), "cutoffs", ".txt", config.score_threshold_file
         )
 
     if not os.path.isfile(config.cooccurrence_file):
         queue.concatenate_files_shell(
-            str(DATA_DIR), "cooccurrence", ".txt", config.cooccurrence_file
+            str(paths.DATA_DIR), "cooccurrence", ".txt", config.cooccurrence_file
         )
         queue.format_pattern_files_inplace(
             config.cooccurrence_file, "cpb-", "_"
@@ -190,7 +195,7 @@ def ressource_preparation(config) -> None:
 
     if not os.path.isfile(config.patterns_file):
         queue.concatenate_files_shell(
-            str(DATA_DIR), "patterns", ".txt", config.patterns_file
+            str(paths.DATA_DIR), "patterns", ".txt", config.patterns_file
         )
         queue.format_pattern_files_inplace(
             config.patterns_file, "dsb-", "_"
@@ -198,16 +203,22 @@ def ressource_preparation(config) -> None:
 
     if not os.path.isfile(config.exclusion_singletons):
         queue.concatenate_files_shell(
-            str(DATA_DIR), "exclusion_singletons", ".txt", config.exclusion_singletons
+            str(paths.DATA_DIR),
+            "exclusion_singletons",
+            ".txt",
+            config.exclusion_singletons,
         )
 
     if not os.path.isfile(config.metabolic_information):
         queue.concatenate_files_shell(
-            str(DATA_DIR), "metabolic_information", ".txt", config.metabolic_information
+            str(paths.DATA_DIR),
+            "metabolic_information",
+            ".txt",
+            config.metabolic_information,
         )
     if not os.path.isfile(config.rm_ram_profile):
         queue.concatenate_files_shell(
-            str(GPKG_DIR), "ram_profile", ".txt", config.rm_ram_profile
+            str(paths.GPKG_DIR), "ram_profile", ".txt", config.rm_ram_profile
         )
     # ---- Existenz der Ressourcen sicherstellen ----
     _require_path_exists(config.library, "HMM library")

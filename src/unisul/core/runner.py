@@ -7,6 +7,7 @@ import sys
 from unisul.core import project as project
 from unisul.core import ressource_prep
 from unisul.core.logging import get_logger, print_header, setup_logging
+from unisul.data_management import require_pipeline_data
 from unisul.db import database
 from unisul.fasta_preparation import fasta_preparation
 from unisul.graft import initial_read_mapping
@@ -71,6 +72,8 @@ def run_pipeline(config) -> None:
     Raises:
         RuntimeError: If database is missing for fetch operations.
     """
+
+    require_pipeline_data(config)
 
     # Ergebnisraum anlegen (Unterordner, Projektpfade, etc.)
     project.prepare_result_space(config)

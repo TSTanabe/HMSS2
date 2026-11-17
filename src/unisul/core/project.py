@@ -42,8 +42,8 @@ def prepare_result_space(config, project: str = "project") -> None:
         Updates multiple attributes of options (see docstring).
 
     Example Input:
-        options.location = '/home/user/myproject'
-        options.result_files_directory = '/home/user/myproject/results'
+        options.location = 'myproject'
+        options.result_files_directory = 'myproject/results'
     """
 
     # Use standard result directory if -r was not used
@@ -80,8 +80,8 @@ def prepare_result_space(config, project: str = "project") -> None:
     bundled_library = Path(paths.SRC_FILE_HMM_LIBRARY).resolve()
     if config.library is None or Path(config.library).resolve() == bundled_library:
         config.library = str(run_root / "resources" / "HMMlib")
-    # DIAMOND databases are generated in the run directory, not data/RefSeqs.
-    config.paths.refseq = str(run_root / "refseq")
+    # Installed reference sequences remain read-only under config.paths.refseq.
+    # Writable derived databases use config.refseq_work_directory.
 
     # Existing bundled resource files are read-only. Missing ones are assembled
     # inside the current run instead of writing into the installation.

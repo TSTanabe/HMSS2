@@ -28,23 +28,11 @@ import pytest
 # ------------------------------------------------------------
 
 
-def _add_src_to_syspath():
-    """
-    Sorgt dafür, dass 'from unisul.cli import parse' funktioniert, ohne Paket zu installieren.
-    Erwartung: Diese Testdatei liegt unter <REPO>/tests/, also ist <REPO>/src die Import-Root.
-    """
-    repo_root = Path(__file__).resolve().parents[1]
-    src = repo_root / "src"
-    if str(src) not in sys.path:
-        sys.path.insert(0, str(src))
-
-
 @pytest.fixture(scope="session")
 def parse_module():
     """
     Importiert das zu testende Modul unisul.cli.parse einmal pro Test-Session.
     """
-    _add_src_to_syspath()
     from unisul.cli import parse  # type: ignore
 
     return parse
@@ -147,7 +135,6 @@ def patched_defaults(parse_module, fake_project, monkeypatch):
     }
 
 
-import sys
 import inspect
 
 
