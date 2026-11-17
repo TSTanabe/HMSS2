@@ -29,7 +29,6 @@ import csv
 import gzip
 import io
 import json
-import logging
 import re
 import subprocess
 from pathlib import Path
@@ -37,9 +36,10 @@ from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple, Un
 
 import pyhmmer
 
+from unisul.core.logging import get_logger
 from unisul.db import database
 
-logger = logging.getLogger("hmg.epa")
+logger = get_logger(__name__)
 
 RANKS = ("domain", "phylum", "class", "order", "family", "genus", "species")
 DB_BATCH_SIZE = 5000
@@ -352,6 +352,79 @@ def align_queries_pyhmmer(
 # ============================================================================
 
 
+def _is_valid_jplace(path: Path) -> bool:
+    """Return True when *path* is a readable, non-empty JPLACE document."""
+    if not path.is_file() or path.stat().st_size == 0:
+        return False
+
+    try:
+        with path.open(encoding="utf-8") as handle:
+            data = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return False
+
+    return (
+        isinstance(data, dict)
+        and isinstance(data.get("placements"), list)
+        and isinstance(data.get("tree"), str)
+        and bool(data.get("tree"))
+    )
+
+
+def _epa_run_state(
+    output_dir: Path,
+    package_name: str,
+) -> Tuple[str, bool, Optional[Path]]:
+    """Determine whether an EPA-ng package run is complete, incomplete, or fresh.
+
+    Returns
+    -------
+    state
+        ``"complete"``, ``"incomplete"`` or ``"fresh"``.
+    redo
+        True only when a previous incomplete EPA-ng run was detected.
+    jplace
+        Existing completed package-specific JPLACE file, otherwise None.
+
+    Notes
+    -----
+    EPA-ng writes a generic ``epa_result.jplace``. UNISUL renames this to
+    ``<package>.epa_result.jplace`` after successful completion. If a run was
+    interrupted after EPA-ng finished but before this rename, the valid generic
+    JPLACE file is adopted instead of recalculating the package.
+
+    Any remaining ``epa_*`` file without a valid JPLACE is treated as evidence
+    of an incomplete earlier run and causes EPA-ng to be restarted with
+    ``--redo``.
+    """
+    final_jplace = output_dir / f"{package_name}.epa_result.jplace"
+    default_jplace = output_dir / "epa_result.jplace"
+
+    if _is_valid_jplace(final_jplace):
+        return "complete", False, final_jplace
+
+    if _is_valid_jplace(default_jplace):
+        final_jplace.unlink(missing_ok=True)
+        default_jplace.replace(final_jplace)
+        logger.info(
+            "%s: completed generic EPA-ng JPLACE recovered and renamed",
+            package_name,
+        )
+        return "complete", False, final_jplace
+
+    # Invalid/empty JPLACE files and EPA-ng log/output files indicate that a
+    # previous attempt started but did not finish cleanly.
+    epa_artifacts = [path for path in output_dir.glob("epa_*") if path.is_file()]
+
+    if final_jplace.exists() and not _is_valid_jplace(final_jplace):
+        epa_artifacts.append(final_jplace)
+
+    if epa_artifacts:
+        return "incomplete", True, None
+
+    return "fresh", False, None
+
+
 def run_epa_ng(
     package_name: str,
     tree: Path,
@@ -361,14 +434,13 @@ def run_epa_ng(
     output_dir: Path,
     threads: int,
     placement_lwr: float,
+    redo: bool = False,
 ) -> Optional[Path]:
     """Run one EPA-ng package and persist a package-specific JPLACE file."""
     aligned_queries = output_dir / f"{package_name}.aligned_queries.fasta"
     unplaceable = output_dir / f"{package_name}.unplaceable_queries.faa"
     default_jplace = output_dir / "epa_result.jplace"
     final_jplace = output_dir / f"{package_name}.epa_result.jplace"
-
-    default_jplace.unlink(missing_ok=True)
 
     aligned_count, failed_count = align_queries_pyhmmer(
         hmm=hmm,
@@ -407,6 +479,19 @@ def run_epa_ng(
         "--outdir",
         str(output_dir),
     ]
+
+    if redo:
+        cmd.append("--redo")
+
+    logger.info(
+        "%s: launching EPA-ng | aligned queries=%d | unplaceable=%d | "
+        "threads=%d | redo=%s",
+        package_name,
+        aligned_count,
+        failed_count,
+        threads,
+        redo,
+    )
 
     result = subprocess.run(
         cmd,
@@ -865,17 +950,30 @@ def epa_ng_placement(config, intermediate_files) -> None:
         output_dir = Path(config.placement_results_directory) / package_dir.name
         output_dir.mkdir(parents=True, exist_ok=True)
         query_file = output_dir / f"{package_dir.name}.placement_candidates.faa"
-        final_jplace = output_dir / f"{package_dir.name}.epa_result.jplace"
 
-        # Resume support: a completed EPA-ng placement is reused instead of
-        # being recalculated. It is still passed to the later GAPPA phase.
-        if final_jplace.is_file() and final_jplace.stat().st_size > 0:
+        state, redo, existing_jplace = _epa_run_state(
+            output_dir=output_dir,
+            package_name=package_dir.name,
+        )
+
+        if state == "complete":
             logger.info(
-                "%s: existing EPA-ng placement found; skipping EPA-ng",
+                "%s: completed EPA-ng placement found; skipping EPA-ng",
                 package_dir.name,
             )
-            placement_results.append((package_dir, output_dir, final_jplace))
+            placement_results.append((package_dir, output_dir, existing_jplace))
             continue
+
+        if state == "incomplete":
+            logger.info(
+                "%s: incomplete previous EPA-ng run detected; restarting with --redo",
+                package_dir.name,
+            )
+        else:
+            logger.info(
+                "%s: no previous EPA-ng run found; starting new placement",
+                package_dir.name,
+            )
 
         try:
             query_count = merge_placement_fastas(faa_files, query_file)
@@ -886,9 +984,10 @@ def epa_ng_placement(config, intermediate_files) -> None:
             package = load_placement_package(package_dir)
 
             logger.info(
-                "EPA-ng placement: package=%s | queries=%d",
+                "EPA-ng placement: package=%s | candidate queries=%d | redo=%s",
                 package_dir.name,
                 query_count,
+                redo,
             )
 
             jplace = run_epa_ng(
@@ -900,6 +999,7 @@ def epa_ng_placement(config, intermediate_files) -> None:
                 output_dir=output_dir,
                 threads=int(config.cores),
                 placement_lwr=placement_lwr,
+                redo=redo,
             )
 
             if jplace is not None:
