@@ -97,7 +97,7 @@ def _make_paths(
             if legacy_flat_data or getattr(sys, "frozen", False)
             else _package_dir()
         ),
-        "TAXONOMY_FILE": data / "combined_globdb_232_taxonomy.tsv",
+        "TAXONOMY_FILE": data / "RefSeqs" / "combined_globdb_232_taxonomy.tsv",
         "SRC_FILE_RESOURCE_METADATA": data / "Resource_module_metadata",
         "SRC_FILE_HMM_LIBRARY": data / "HMMlib",
         "SRC_FILE_COOCCURRENCE": data / "Cooccurrence",

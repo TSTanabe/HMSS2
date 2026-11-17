@@ -100,10 +100,11 @@ def run_pipeline(config) -> None:
 
     # --- Stage 3: MMseqs2 competitive reference assignment ---
     if config.stage <= 3 <= config.exit:
-        print_header("Comparison with Reference Sequences")
-        mmseqs_reference_assignment.mmseqs_placement_package_reference_assignment(
-            config=config
-        )
+        if config.bool_cross_check:
+            print_header("Comparison with Reference Sequences")
+            mmseqs_reference_assignment.mmseqs_placement_package_reference_assignment(
+                config=config
+            )
         if config.placements:
             print_header("Phylogenetic placement of genome hits")
             phylogenetic_placement.run_placement_stage(config)

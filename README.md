@@ -27,6 +27,24 @@ export UNISUL_DATA=/shared/software/unisul/data
 unisul data status
 ```
 
+The data tree keeps search resources under `HMMs/{hmss2,basis,disucy,disco}`,
+placement packages under `placements`, GraftM packages under `gpkg`, and
+MMseqs reference packages plus the combined globDB232 taxonomy under `RefSeqs`.
+For an existing data tree with collections at its root, reorganize it with
+the standalone script:
+
+```bash
+python3 scripts/prepare_reference_data.py /path/to/data
+```
+
+This leaves `placements` and `gpkg` in place. All files and directories in
+the four resource collections (including cutoffs, thresholds, patterns, and
+co-occurrence files) move under their matching `HMMs` collection; directories
+whose names contain `RefSeq` move under `RefSeqs/legacy`. GraftM reference
+and decoy FASTAs are linked into per-protein-type directories under `RefSeqs`;
+copies are used if hard links are unavailable. The same operation is available as
+`unisul --data-dir /path/to/data data prepare`.
+
 Once release URLs are configured, `unisul data download core`,
 `unisul data download placement`, `unisul data download gpkg`,
 `unisul data download taxonomy`, or `unisul data download all` installs the
@@ -225,6 +243,3 @@ Alternativly, a custom tab separated file including the following column headers
     genomeID superkingdom clade phylum class order family genus species strain taxid biosample bioproject genbank refseq completeness contamination typestrain
 
 With the exception of the first column, not all columns must contain values. The type strain column must contain either the value 0 or 1 to be evaluable. The Contamination and Completeness columns should contain values between 0 and 100.
-
-
-

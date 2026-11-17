@@ -252,11 +252,31 @@ def _find_package_directories(data_dir):
     """
 
     directories = defaultdict(list)
+    data_root = Path(data_dir)
+    hmm_root = data_root / "HMMs"
 
-    for path in Path(data_dir).iterdir():
-        if path.is_dir():
-            package = path.name.split("_", 1)[0].lower()
-            directories[package].append(path)
+    if hmm_root.is_dir():
+        for collection in sorted(hmm_root.iterdir()):
+            if not collection.is_dir():
+                continue
+            package = "basis" if collection.name.lower() == "basic" else collection.name
+            directories[package.lower()].append(collection)
+        return directories
+    else:
+        # Compatibility with older data archives where collections lived at
+        # the data root.
+        package_roots = (
+            package
+            for collection_name in ("basis", "basic", "hmss2", "disucy", "disco")
+            for collection in (data_root / collection_name,)
+            if collection.is_dir()
+            for package in collection.iterdir()
+            if package.is_dir()
+        )
+
+    for path in package_roots:
+        package = path.name.split("_", 1)[0].lower()
+        directories[package].append(path)
 
     return directories
 

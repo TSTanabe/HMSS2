@@ -28,7 +28,7 @@ def collect_placement_search_hmms(config) -> dict:
     """
 
     placement_root = Path(config.paths.placement).resolve()
-    data_root = Path(config.paths.data).resolve()
+    hmm_root = Path(config.paths.hmms).resolve()
 
     allowed_directories = {"basis", "disucy"}
 
@@ -76,13 +76,13 @@ def collect_placement_search_hmms(config) -> dict:
 
     hmm_index = defaultdict(set)
 
-    for hmm_file in data_root.rglob("*.hmm"):
-        # Consider only selected resource directories
-        relative_parts = {
-            part.lower() for part in hmm_file.relative_to(data_root).parts[:-1]
-        }
+    if not hmm_root.is_dir():
+        logger.warning("HMM collection directory not found: %s", hmm_root)
+        return {}
 
-        if not relative_parts.intersection(allowed_directories):
+    for hmm_file in hmm_root.rglob("*.hmm"):
+        relative_parts = hmm_file.relative_to(hmm_root).parts
+        if not relative_parts or relative_parts[0].lower() not in allowed_directories:
             continue
 
         # Remove prefix before the first underscore

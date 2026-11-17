@@ -9,13 +9,17 @@
   },
   "required_paths": [
     "Resource_module_metadata",
-    "basis",
+    "HMMs/basis",
     "Thresholds",
     "Patterns",
     "Cooccurrence",
     "HMMs",
+    "HMMs/hmss2",
+    "HMMs/disucy",
+    "HMMs/disco",
     "placements",
     "gpkg",
-    "RefSeqs"
+    "RefSeqs",
+    "RefSeqs/combined_globdb_232_taxonomy.tsv"
   ]
 }

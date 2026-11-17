@@ -228,6 +228,10 @@ def load_taxonomy(path: Union[str, Path]) -> Dict[str, str]:
                 "genomeid",
             }:
                 continue
+            # The combined globDB annotation appends the genome ID after the
+            # lineage. Remove only that exact suffix to preserve species names
+            # containing spaces.
+            # lineage = lineage.removesuffix(f" {key}").rstrip()
             mapping.setdefault(key, lineage)
     return mapping
 
@@ -1300,8 +1304,25 @@ def process_package(
 
     if not ingroup_faa.is_file():
         raise FileNotFoundError("Missing ingroup FASTA: %s" % ingroup_faa)
-    if not annotations_file.is_file():
+
+    is_refseq_package = (
+        package_dir.parent.resolve() == Path(config.paths.refseq).resolve()
+    )
+    if annotations_file.is_file():
+        annotations = load_annotations(annotations_file)
+    elif is_refseq_package:
+        protein_type = package_dir.name
+        annotations = {
+            sequence_id: protein_type
+            for fasta in (ingroup_faa, outgroup_faa)
+            if fasta.is_file()
+            for sequence_id in fasta_ids(fasta)
+        }
+    else:
         raise FileNotFoundError("Missing annotations: %s" % annotations_file)
+
+    if not taxonomy_file.is_file() and is_refseq_package:
+        taxonomy_file = Path(config.paths.refseq) / "combined_globdb_232_taxonomy.tsv"
     if not taxonomy_file.is_file():
         raise FileNotFoundError("Missing reference taxonomy: %s" % taxonomy_file)
 
@@ -1330,7 +1351,6 @@ def process_package(
     if taxonomy_lca_mode not in {1, 2, 3, 4}:
         raise ValueError("mmseqs_lca_mode must be 1, 2, 3, or 4")
 
-    annotations = load_annotations(annotations_file)
     taxonomy = load_taxonomy(taxonomy_file)
 
     ingroup_db = ensure_sequence_db(
@@ -1540,14 +1560,34 @@ def process_package(
     return summary
 
 
+def _find_matching_refseq_packages(refseq_root: Union[str, Path], intermediate_files):
+    """Yield per-protein RefSeq packages matching intermediate hit types."""
+    root = Path(refseq_root)
+    if not root.is_dir():
+        return
+
+    for package_dir in sorted(root.iterdir()):
+        if not package_dir.is_dir() or package_dir.name not in intermediate_files:
+            continue
+        if not (package_dir / "ingroup.faa").is_file():
+            continue
+        value = intermediate_files[package_dir.name]
+        faa_files = (
+            [Path(value)]
+            if isinstance(value, (str, Path))
+            else [Path(path) for path in value]
+        )
+        yield package_dir, faa_files
+
+
 def mmseqs_placement_package_reference_assignment(
     config,
 ) -> List[Dict[str, Union[int, str]]]:
-    """Run MMseqs2 assignment for all matching placement packages.
+    """Run MMseqs assignment for placement and RefSeq-only protein types.
 
     MMseqs reference assignment is independent of whether EPA-ng placement
-    was requested. Matching packages are selected automatically from the
-    intermediate-hit domain files.
+    was requested. Placement packages take precedence; protein types without
+    a placement package use the corresponding package under RefSeqs.
 
     Failure of one package does not abort processing of the remaining
     packages.
@@ -1571,18 +1611,44 @@ def mmseqs_placement_package_reference_assignment(
     output_root.mkdir(parents=True, exist_ok=True)
     cache_root.mkdir(parents=True, exist_ok=True)
 
-    packages = list(
+    placement_packages = list(
         find_matching_placement_packages(
             config.paths.placement,
             intermediate_files,
         )
     )
 
+    placement_types = {
+        protein_type
+        for package_dir, _ in placement_packages
+        for protein_type in load_annotations(
+            Path(package_dir) / "annotations.tsv"
+        ).values()
+    }
+    refseq_intermediate_files = {
+        protein_type: files
+        for protein_type, files in intermediate_files.items()
+        if protein_type not in placement_types
+    }
+    refseq_packages = list(
+        _find_matching_refseq_packages(
+            config.paths.refseq,
+            refseq_intermediate_files,
+        )
+    )
+    packages = placement_packages + refseq_packages
+
     if not packages:
         logger.info(
-            "No matching placement packages found for MMseqs reference assignment"
+            "No matching placement or RefSeq packages found for MMseqs reference assignment"
         )
         return []
+
+    if refseq_packages:
+        logger.info(
+            "Using RefSeq packages for %d protein type(s) without placement packages",
+            len(refseq_packages),
+        )
 
     summaries: List[Dict[str, Union[int, str]]] = []
     failed_packages: List[str] = []

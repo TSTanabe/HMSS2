@@ -355,6 +355,192 @@ def download_data(root: Path, *, force: bool = False) -> Path:
             shutil.rmtree(temporary_root, ignore_errors=True)
 
 
+def prepare_data_layout(root: Path) -> Path:
+    """Organize legacy HMM and GraftM data into the current directory layout."""
+    root = Path(root).expanduser().resolve()
+    if not root.is_dir():
+        raise DataManagementError(f"Data directory does not exist: {root}")
+
+    gpkg_root = root / "gpkg"
+    refseq_root = root / "RefSeqs"
+    taxonomy_source = root / "combined_globdb_232_taxonomy.tsv"
+    taxonomy_target = refseq_root / taxonomy_source.name
+    package_sources = sorted(gpkg_root.rglob("refseq_database.faa"))
+    if not package_sources:
+        raise DataManagementError(f"No GraftM reference FASTAs found under {gpkg_root}")
+    if not taxonomy_source.is_file() and not taxonomy_target.is_file():
+        raise DataManagementError(
+            "Combined globDB232 taxonomy annotation is missing from the data directory"
+        )
+
+    collection_names = {
+        "basis": "basis",
+        "basic": "basis",
+        "hmss2": "hmss2",
+        "disucy": "disucy",
+        "disco": "disco",
+    }
+    hmm_root = root / "HMMs"
+    moves: list[tuple[Path, Path]] = []
+
+    def plan_collection(source: Path, collection: str) -> None:
+        target_root = hmm_root / collection
+
+        def visit(path: Path) -> None:
+            relative = path.relative_to(source)
+            if path.is_dir() and "refseq" in path.name.lower():
+                moves.append(
+                    (
+                        path,
+                        refseq_root / "legacy" / collection / relative,
+                    )
+                )
+                return
+            if path.is_dir():
+                for child in sorted(path.iterdir()):
+                    visit(child)
+            elif path.is_file():
+                moves.append((path, target_root / relative))
+
+        for child in sorted(source.iterdir()):
+            visit(child)
+
+    legacy_collections = []
+    for source_name, collection in collection_names.items():
+        source = root / source_name
+        if source.is_dir():
+            legacy_collections.append(source)
+            plan_collection(source, collection)
+
+    # Earlier versions of the preparation script put only HMM subdirectories
+    # under HMMs/basic. Merge that content into the canonical HMMs/basis tree.
+    old_basic = hmm_root / "basic"
+    if old_basic.is_dir():
+        legacy_collections.append(old_basic)
+        plan_collection(old_basic, "basis")
+
+    if not moves and not any(
+        (hmm_root / collection).is_dir()
+        for collection in set(collection_names.values())
+    ):
+        raise DataManagementError(
+            f"No legacy HMM collection directories found under {root}"
+        )
+
+    planned_targets = set()
+    for source, target in moves:
+        if target in planned_targets:
+            raise DataManagementError(f"Multiple resources map to {target}")
+        planned_targets.add(target)
+        if target.exists():
+            try:
+                if source.is_file() and target.is_file() and os.path.samefile(
+                    source, target
+                ):
+                    continue
+            except OSError:
+                pass
+            raise DataManagementError(
+                f"Cannot move {source} because destination already exists: {target}"
+            )
+
+    seen_packages = set()
+    for ingroup_source in package_sources:
+        package_source = ingroup_source.parent
+        if not package_source.name.endswith(".gpkg"):
+            continue
+        package_name = package_source.name.removesuffix(".gpkg")
+        if package_name in seen_packages:
+            raise DataManagementError(
+                f"Multiple GraftM reference packages are named {package_name!r}"
+            )
+        seen_packages.add(package_name)
+
+        outgroup_source = package_source / "decoy_database.faa"
+        if not outgroup_source.is_file():
+            raise DataManagementError(
+                f"Missing GraftM outgroup FASTA: {outgroup_source}"
+            )
+
+        package_target = refseq_root / package_name
+        for source, name in (
+            (ingroup_source, "ingroup.faa"),
+            (outgroup_source, "outgroup.faa"),
+        ):
+            target = package_target / name
+            if target.exists():
+                try:
+                    if os.path.samefile(source, target):
+                        continue
+                except OSError:
+                    pass
+                raise DataManagementError(
+                    f"Refusing to overwrite existing reference data: {target}"
+                )
+
+    if not seen_packages:
+        raise DataManagementError("No valid GraftM reference packages were found")
+
+    if taxonomy_source.is_file() and taxonomy_target.exists():
+        raise DataManagementError(
+            f"Cannot move taxonomy file because destination already exists: {taxonomy_target}"
+        )
+
+    for source, target in moves:
+        if source.is_file():
+            target.parent.mkdir(parents=True, exist_ok=True)
+            os.replace(source, target)
+        else:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            os.replace(source, target)
+
+    if taxonomy_source.is_file():
+        taxonomy_target.parent.mkdir(parents=True, exist_ok=True)
+        os.replace(taxonomy_source, taxonomy_target)
+
+    # Remove only empty source directories after moving their contents.
+    for source in sorted(
+        legacy_collections,
+        key=lambda path: len(path.parts),
+        reverse=True,
+    ):
+        if not source.is_dir():
+            continue
+        for directory in sorted(
+            (path for path in source.rglob("*") if path.is_dir()),
+            key=lambda path: len(path.parts),
+            reverse=True,
+        ):
+            try:
+                directory.rmdir()
+            except OSError:
+                pass
+        try:
+            source.rmdir()
+        except OSError:
+            pass
+
+    for ingroup_source in package_sources:
+        package_source = ingroup_source.parent
+        package_name = package_source.name.removesuffix(".gpkg")
+        outgroup_source = package_source / "decoy_database.faa"
+        package_target = refseq_root / package_name
+        package_target.mkdir(parents=True, exist_ok=True)
+        for source, name in (
+            (ingroup_source, "ingroup.faa"),
+            (outgroup_source, "outgroup.faa"),
+        ):
+            target = package_target / name
+            if target.exists():
+                continue
+            try:
+                os.link(source, target)
+            except OSError:
+                shutil.copy2(source, target)
+
+    return root
+
+
 def _print_status(root: Path, cli_path: str | None) -> None:
     installed = _installed_manifest(root)
     missing = missing_required_paths(root)
@@ -384,6 +570,10 @@ def data_cli(argv: list[str], cli_path: str | None = None) -> None:
     subparsers.add_parser(
         "status", help="Show selected reference-data directory and status"
     )
+    subparsers.add_parser(
+        "prepare",
+        help="Organize legacy HMM collections and prepare RefSeq packages",
+    )
     set_path = subparsers.add_parser(
         "set-path", help="Persist a reference-data directory"
     )
@@ -399,6 +589,9 @@ def data_cli(argv: list[str], cli_path: str | None = None) -> None:
             cfg = set_data_path(args.path)
             print(f"Saved reference-data path to {cfg}")
             print(f"Data directory: {Path(args.path).expanduser().resolve()}")
+        elif args.command == "prepare":
+            target = prepare_data_layout(root)
+            print(f"Prepared UNISUL reference-data layout in {target}")
         elif args.command == "download":
             target = download_data(root, force=args.force)
             print(f"Installed complete UNISUL reference data in {target}")

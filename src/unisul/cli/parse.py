@@ -471,7 +471,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         default=4,
         metavar="<int>",
         help="Max. number of paralogs per genome forwarded to cross check via Diamond"
-        if show_all
+        if never_show
         else argparse.SUPPRESS,
     )
     cross_check.add_argument(
@@ -493,7 +493,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
             "[faster, fast, mid-sensitive, more-sensitive, "
             "very-sensitive, ultra-sensitive]"
         )
-        if show_all
+        if never_show
         else argparse.SUPPRESS,
     )
     cross_check.add_argument(
@@ -503,7 +503,7 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
         default=90,
         metavar="<int>",
         help="Minimal percent identity to reference sequence set cross check"
-        if show_all
+        if never_show
         else argparse.SUPPRESS,
     )
     cross_check.add_argument(
