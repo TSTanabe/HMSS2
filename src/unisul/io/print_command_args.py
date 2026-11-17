@@ -1,5 +1,5 @@
-#!/usr/bin/python
 import sys
+
 from unisul.core.logging import get_logger
 
 logger = get_logger(__name__)

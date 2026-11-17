@@ -1,14 +1,12 @@
-#!/usr/bin/python
 
+import gzip
+import multiprocessing
 import os
 import re
-import multiprocessing
-import gzip
 import shutil
 import tempfile
 from pathlib import Path
-
-from typing import Tuple, Set
+from typing import Set, Tuple
 
 from unisul.core.logging import get_logger
 from unisul.utils import myUtil

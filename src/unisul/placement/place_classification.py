@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Classify JPLACE queries to protein types and conservative reference taxonomy.
 
 The reference tree is a PROTEIN tree. Protein types are loaded from sequence annotations, while organism

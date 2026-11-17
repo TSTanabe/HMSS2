@@ -1,12 +1,12 @@
-#!/usr/bin/python
 import os
-from typing import Dict, Any, Optional, Set, Tuple, List
+from typing import Any, Dict, List
 
-from unisul.graphics import graph_presence_absence
-from unisul.graphics import graph_occurence_network
-from unisul.graphics import graph_gene_cluster
-from unisul.graphics import graph_strain_variability
 from unisul.core.logging import get_logger
+from unisul.graphics import (
+    graph_occurence_network,
+    graph_presence_absence,
+    graph_strain_variability,
+)
 
 logger = get_logger(__name__)
 

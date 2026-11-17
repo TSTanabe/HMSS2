@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 
 from unisul.core import queue
-from unisul.core.logging import get_logger, print_header
+from unisul.core.logging import get_logger
 from unisul.db.database import create_database
 from unisul.search import search_pyhmmer
 

@@ -1,15 +1,12 @@
-#!/usr/bin/env python3
-import sys
 from typing import Any
 
 from graftm.external_program_suite import ExternalProgramSuite
 
 from unisul.core import queue
-from unisul.db import database
-from unisul.graft import read_counter, graft_mp
-from unisul.graft import generate_task
-from unisul.db.database import create_database
 from unisul.core.logging import get_logger
+from unisul.db import database
+from unisul.db.database import create_database
+from unisul.graft import generate_task, graft_mp, read_counter
 
 logger = get_logger(__name__)
 

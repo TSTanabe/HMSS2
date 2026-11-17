@@ -1,4 +1,3 @@
-#!/usr/bin/python
 from typing import Dict, List, Set
 
 from unisul.core.logging import get_logger

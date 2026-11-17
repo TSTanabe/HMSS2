@@ -1,11 +1,10 @@
-#!/usr/bin/python
+import math
+from typing import Any, Dict, List, Optional, Set, Tuple
+
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 from matplotlib.patches import Wedge
-from typing import Dict, Any, Optional, Set, Tuple, List
-
-import math
 
 
 def plot_taxonomy_cooccurrence_network(

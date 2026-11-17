@@ -1,15 +1,13 @@
-#!/usr/bin/env python3
-import os
-import sys
-import subprocess
-from ete4 import Tree
-from typing import Optional, Dict, Any, Set, Iterator, Tuple
-import shutil
-import random
-import csv
-from datetime import datetime
 import logging
+import os
+import random
+import shutil
+import subprocess
+import sys
 import tempfile
+from typing import Any, Dict, Iterator, Optional, Set, Tuple
+
+from ete4 import Tree
 
 # -------------------------------------------------------------------
 # Logger einrichten
@@ -237,7 +235,8 @@ def _diamond_collect_subject_ids_with_hi_ident_flag(
       candidate_ids    – alle getroffenen subject IDs
       too_similar_ids  – subject IDs mit mind. einem Hit >= hi_ident_threshold
     """
-    import tempfile, subprocess
+    import subprocess
+    import tempfile
 
     candidate_ids = set()
     too_similar_ids = set()

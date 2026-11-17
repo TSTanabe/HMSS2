@@ -1,7 +1,6 @@
-#!/usr/bin/env python3
+import argparse
 import sqlite3
 from pathlib import Path
-import argparse
 
 SCHEMA_SQL = """
 PRAGMA foreign_keys = ON;

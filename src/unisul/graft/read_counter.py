@@ -1,6 +1,5 @@
-import gzip
-import os
 import multiprocessing as mp
+import os
 import subprocess
 from typing import Any
 

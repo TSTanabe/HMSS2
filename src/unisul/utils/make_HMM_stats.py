@@ -1,13 +1,13 @@
 import argparse
-import sqlite3
-from collections import defaultdict
-from pathlib import Path
 import math
-import pandas as pd
+import sqlite3
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.stats import rankdata, norm
-from concurrent.futures import ProcessPoolExecutor, as_completed
+import pandas as pd
+from scipy.stats import norm, rankdata
 
 
 # ---------------------------------------------------------------------
@@ -279,9 +279,7 @@ def plot_f1_boxplots(tsv_path: str, out_prefix: str, alpha: float = 0.05):
     """
 
     import numpy as np
-    import pandas as pd
-    import matplotlib.pyplot as plt
-    from scipy.stats import kruskal, rankdata, norm
+    from scipy.stats import kruskal, norm, rankdata
 
     # ---- fixed column indices (0-based) ----
     CUTOFF_TYPE_COL = 1

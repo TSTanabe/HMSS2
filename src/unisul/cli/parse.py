@@ -1,4 +1,18 @@
 # src/unisul/cli/parse.py
+"""
+Argument parsing and configuration assembly for UNISUL.
+
+This module builds the command-line interface (CLI), parses arguments,
+and converts them into a structured `Config` object used by the pipeline.
+It also injects runtime defaults that depend on the inferred project paths
+(`unisul.cli.paths`).
+
+Typical usage:
+    ns = parse_cli(sys.argv[1:])
+    ns = _apply_runtime_defaults(ns)
+    cfg = build_config_from_namespace(ns)
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -8,8 +22,7 @@ import sys
 from pathlib import Path
 from typing import Any, List, Sequence
 
-from unisul.cli import help_actions
-from unisul.cli import paths as paths
+from unisul.cli import help_actions, paths
 from unisul.cli.config import (
     CliCsb,
     CliFlow,
@@ -25,21 +38,6 @@ from unisul.cli.config import (
     Config,
     PathsCfg,
 )
-
-"""
-Argument parsing and configuration assembly for UNISUL.
-
-This module builds the command-line interface (CLI), parses arguments,
-and converts them into a structured `Config` object used by the pipeline.
-It also injects runtime defaults that depend on the inferred project paths
-(`unisul.cli.paths`).
-
-Typical usage:
-    ns = parse_cli(sys.argv[1:])
-    ns = _apply_runtime_defaults(ns)
-    cfg = build_config_from_namespace(ns)
-"""
-
 
 # ---------------------------------------------------------------------------
 # Utility routines
@@ -598,6 +596,24 @@ def parse_arguments(*, show_all: bool = False) -> argparse.ArgumentParser:
             "Skip MMseqs2 Ingroup/Outgroup reference classification, "
             "functional reassignment and MMseqs taxonomy for metagenomic ORFs"
         )
+        if show_all
+        else argparse.SUPPRESS,
+    )
+    placement.add_argument(
+        "--disable-mmseqs-placement-reference",
+        dest="disable_mmseqs_placement_reference",
+        action="store_true",
+        default=False,
+        help="Do not use phylogenetic placement packages for MMseqs reference assignment"
+        if show_all
+        else argparse.SUPPRESS,
+    )
+    placement.add_argument(
+        "--disable-mmseqs-refseq-reference",
+        dest="disable_mmseqs_refseq_reference",
+        action="store_true",
+        default=False,
+        help="Do not use complete RefSeq packages for MMseqs reference assignment"
         if show_all
         else argparse.SUPPRESS,
     )
@@ -1206,6 +1222,12 @@ def build_config_from_namespace(ns) -> Config:
         disable_placement=not placements,
         disable_mmseqs_reference_assignment=bool(
             getattr(ns, "disable_mmseqs_reference_assignment", False)
+        ),
+        disable_mmseqs_placement_reference=bool(
+            getattr(ns, "disable_mmseqs_placement_reference", False)
+        ),
+        disable_mmseqs_refseq_reference=bool(
+            getattr(ns, "disable_mmseqs_refseq_reference", False)
         ),
         placement_domains=placement_domains,
         placement_threshold=float(getattr(ns, "placement_threshold", 0.75)),

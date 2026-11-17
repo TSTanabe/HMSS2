@@ -1,15 +1,14 @@
-#!/usr/bin/env python3
 from __future__ import annotations
 
-import numpy as np
 import argparse
+import math
 import os
 import sys
-import math
-import matplotlib.pyplot as plt
-
-from typing import Any, Dict, List, Optional, Tuple
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 DEFAULT_FILENAME = "evaluation_stats.txt"
 RANKS = ["kingdom", "phylum", "class", "order", "family", "genus", "species"]
@@ -1193,8 +1192,7 @@ def plot_rank_fraction_boxplots(
 #
 # FPR FNR Rates plotting
 #
-import math
-import matplotlib.pyplot as plt
+
 
 
 def _rates(tp, fp, fn, tn):

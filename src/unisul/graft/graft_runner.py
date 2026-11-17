@@ -1,33 +1,33 @@
-#!/usr/bin/env python3
 
 import os
-import tempfile
 import shutil
+import tempfile
 import time
 
-from graftm.sequence_search_results import SequenceSearchResult
-from graftm.graftm_output_paths import GraftMFiles
-from graftm.search_table import SearchTableWriter
-from graftm.sequence_searcher import SequenceSearcher
-from graftm.hmmsearcher import NoInputSequencesException
-from graftm.housekeeping import HouseKeeping
-from graftm.summarise import Stats_And_Summary
-from graftm.pplacer import Pplacer
-
-# from graftm.update import Update
-from graftm.unpack_sequences import UnpackRawReads
-from graftm.graftm_package import GraftMPackage
-from graftm.expand_searcher import ExpandSearcher
-from graftm.diamond import Diamond
-from graftm.getaxnseq import Getaxnseq
-from graftm.sequence_io import SequenceIO
-from graftm.timeit import Timer
 from graftm.clusterer import Clusterer
 
 # from graftm.decorator import Decorator
 # from graftm.external_program_suite import ExternalProgramSuite
 # from graftm.archive import Archive
 from graftm.decoy_filter import DecoyFilter
+from graftm.diamond import Diamond
+from graftm.expand_searcher import ExpandSearcher
+from graftm.getaxnseq import Getaxnseq
+from graftm.graftm_output_paths import GraftMFiles
+from graftm.graftm_package import GraftMPackage
+from graftm.hmmsearcher import NoInputSequencesException
+from graftm.housekeeping import HouseKeeping
+from graftm.pplacer import Pplacer
+from graftm.search_table import SearchTableWriter
+from graftm.sequence_io import SequenceIO
+from graftm.sequence_search_results import SequenceSearchResult
+from graftm.sequence_searcher import SequenceSearcher
+from graftm.summarise import Stats_And_Summary
+from graftm.timeit import Timer
+
+# from graftm.update import Update
+from graftm.unpack_sequences import UnpackRawReads
+
 from unisul.core.logging import get_logger
 
 logging = get_logger(__name__)

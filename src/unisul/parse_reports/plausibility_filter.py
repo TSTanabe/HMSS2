@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Iterable
+from typing import Any, Iterable
 
 
 def load_plausibility_models(

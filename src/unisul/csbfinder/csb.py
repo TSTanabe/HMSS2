@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from unisul.cli.config import Config
-from unisul.db import database as database
-from unisul.csbfinder import csb_cluster as csb_cluster
 from unisul.core.logging import get_logger, print_header
+from unisul.csbfinder import csb_cluster as csb_cluster
+from unisul.db import database as database
 
 logger = get_logger(__name__)
 

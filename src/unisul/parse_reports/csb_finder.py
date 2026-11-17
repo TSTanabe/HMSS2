@@ -1,9 +1,8 @@
-#!/usr/bin/python
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+from unisul.parse_reports import csb_trie_algorithm
 from unisul.parse_reports.csb_trie_algorithm import TrieIndex
 from unisul.utils import myUtil
-from unisul.parse_reports import csb_trie_algorithm
 
 logger = myUtil.log
 
@@ -428,9 +427,6 @@ def name_syntenic_blocks(
             #    print(pattern_set)
             #    print(missing_domains)
     return cluster_id_dict
-
-
-from typing import Dict, Any, List
 
 
 def name_syntenic_blocks_trie(

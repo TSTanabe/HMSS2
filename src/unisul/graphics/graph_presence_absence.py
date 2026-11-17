@@ -1,4 +1,3 @@
-#!/usr/bin/python
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import matplotlib.pyplot as plt

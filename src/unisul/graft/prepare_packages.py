@@ -6,8 +6,8 @@ import subprocess
 from pathlib import Path
 from typing import Dict
 
-from unisul.cli.config import Config
 from unisul.cli import paths
+from unisul.cli.config import Config
 from unisul.core import queue as queue
 from unisul.core.logging import get_logger
 

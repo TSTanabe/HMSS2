@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from __future__ import annotations
 
 import argparse
@@ -10,7 +9,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import Iterator, Tuple, List, Optional
+from typing import Iterator, List, Optional, Tuple
 
 
 def iter_fasta(path: Path) -> Iterator[Tuple[str, str]]:

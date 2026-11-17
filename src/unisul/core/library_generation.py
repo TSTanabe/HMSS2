@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 
 """
 Metadata-driven HMM library construction for HMSS3.

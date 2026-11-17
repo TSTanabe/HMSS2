@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 HMSS3 metabolic pathway Sankey plotting module.
 

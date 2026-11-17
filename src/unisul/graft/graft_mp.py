@@ -1,5 +1,10 @@
-#!/usr/bin/env python3
 import os
+import resource
+import time
+import traceback
+from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
+from multiprocessing import get_context
+from typing import Callable
 
 # --- hard cap for nested threading libraries (critical under spawn + ProcessPoolExecutor) ---
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
@@ -8,16 +13,10 @@ os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
 os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
 
-import resource
-import traceback
-from concurrent.futures import ProcessPoolExecutor, wait, FIRST_COMPLETED
-from multiprocessing import get_context
-
-from typing import Callable, Any
 from unisul.cli.config import Config
+from unisul.core.logging import get_logger
 from unisul.db import database
 from unisul.graft import generate_task, graft_runner, read_models
-from unisul.core.logging import get_logger
 from unisul.graft.read_models import Read
 
 logger = get_logger(__name__)
@@ -317,10 +316,6 @@ def _start_bestfit_tasks(
         did_progress = True
 
     return available_tokens_gb, did_progress
-
-
-import time
-from typing import Callable
 
 
 def _start_bestfit_tasks_debug(

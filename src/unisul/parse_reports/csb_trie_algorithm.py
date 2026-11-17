@@ -1,9 +1,9 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from collections import Counter, defaultdict
-from pathlib import Path
-from typing import Dict, List, Tuple, Iterable, Optional, DefaultDict
 
+from collections import Counter, defaultdict
+from dataclasses import dataclass
+from pathlib import Path
+from typing import DefaultDict, Dict, Iterable, List, Tuple
 
 # =========================
 # Eingabe-Interface
@@ -329,7 +329,10 @@ def iter_candidates_anywhere_start(
 
 def save_trie_index(index: TrieIndex, outdir: Path) -> None:
     """Speichert Index in einfachem, robustem Format (Pickle + NumPy)."""
-    import pickle, json, numpy as np
+    import json
+    import pickle
+
+    import numpy as np
 
     outdir.mkdir(parents=True, exist_ok=True)
 
@@ -365,7 +368,10 @@ def save_trie_index(index: TrieIndex, outdir: Path) -> None:
 
 def load_trie_index(indir: Path) -> TrieIndex:
     """Lädt den gespeicherten Index."""
-    import pickle, json, numpy as np
+    import json
+    import pickle
+
+    import numpy as np
 
     with open(indir / "trie.pkl", "rb") as f:
         root = pickle.load(f)

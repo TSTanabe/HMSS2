@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
 
 import argparse
-import os
 import sqlite3
 import tempfile
 from multiprocessing import Pool

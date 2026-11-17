@@ -1,15 +1,16 @@
-#!/usr/bin/python
-from collections import defaultdict
 import os
+import random
 import sqlite3
-
 from collections import defaultdict
-from Bio import SeqIO
-from operator import add
 from itertools import combinations
 from math import floor
-from unisul.utils import myUtil
+from operator import add
+
+from Bio import SeqIO
+
 from unisul.core.logging import get_logger
+from unisul.parse_reports.parse_reports import Protein
+from unisul.utils import myUtil
 
 logger = get_logger(__name__)
 
@@ -705,7 +706,7 @@ def iTol_domain_dataset(directory, database, filepath, trennzeichen="_"):
                     protein = protein_dict[row[0]]
                     protein.add_domain(row[8], row[9], row[10], row[11])
                 else:
-                    protein = ParseReports.Protein(
+                    protein = Protein(
                         row[0], row[8], row[9], row[10], row[11]
                     )
                     protein.set_genomeID(row[1])

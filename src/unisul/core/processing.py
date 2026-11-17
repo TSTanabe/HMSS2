@@ -1,14 +1,11 @@
-#!/usr/bin/python
-import os  # For file and directory operations
-import subprocess  # For running external commands (e.g., MAFFT, trimAl)
 import csv  # For reading and writing CSV (TSV) files
+import os  # For file and directory operations
 import sqlite3  # For interacting with SQLite databases
+import subprocess  # For running external commands (e.g., MAFFT, trimAl)
 
 from Bio import SeqIO  # For reading and writing sequence files (FASTA format)
 
-from unisul.cli.config import Config
 from unisul.utils import myUtil
-
 
 #########################################################################
 ####################### MAIN OUTPUT ROUTINE #############################

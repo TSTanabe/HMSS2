@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """EPA-ng placement followed by GAPPA functional and rank-aware taxonomy assignment.
 
 Workflow

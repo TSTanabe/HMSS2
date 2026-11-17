@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import os
 import math
+import os
 import sys
+from collections import defaultdict
 from dataclasses import dataclass
 from types import SimpleNamespace
-from collections import defaultdict
-from typing import Iterable, Tuple, Dict
+from typing import Dict, Tuple
 
-from unisul.core import queue
 from unisul.core.logging import get_logger
-from unisul.graft import prepare_packages, gpkg_length, gpkg_ram
+from unisul.graft import gpkg_length, gpkg_ram, prepare_packages
 from unisul.utils import myUtil
 
 logger = get_logger(__name__)

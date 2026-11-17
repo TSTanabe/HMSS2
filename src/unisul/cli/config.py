@@ -1,10 +1,4 @@
 # src/unisul/cli/config.py
-from __future__ import annotations
-
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
-
 """
 Typed configuration model (dataclasses) for UNISUL.
 
@@ -19,6 +13,12 @@ It also provides convenience properties that proxy into nested dataclasses
 (e.g., `config.stage`, `config.patterns_file`) and a `validate()` method
 for basic consistency checks.
 """
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set
 
 INTERMEDIATE_HITS_SUFFIX = ".hits_faa"
 
@@ -217,6 +217,8 @@ class CliPlacement:
     # Internal/legacy inverse used by existing placement code.
     disable_placement: bool = True
     disable_mmseqs_reference_assignment: bool = False
+    disable_mmseqs_placement_reference: bool = False
+    disable_mmseqs_refseq_reference: bool = False
 
     # Empty means: place all available intermediate-hit domains.
     placement_domains: List[str] = field(default_factory=list)
@@ -622,6 +624,12 @@ class Config:
     disable_placement = prop("cli_placement.disable_placement")
     disable_mmseqs_reference_assignment = prop(
         "cli_placement.disable_mmseqs_reference_assignment"
+    )
+    disable_mmseqs_placement_reference = prop(
+        "cli_placement.disable_mmseqs_placement_reference"
+    )
+    disable_mmseqs_refseq_reference = prop(
+        "cli_placement.disable_mmseqs_refseq_reference"
     )
     placements = prop("cli_placement.placements")
     placement_domains = prop("cli_placement.placement_domains")

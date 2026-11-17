@@ -1,17 +1,16 @@
-#!/usr/bin/python
 
 
-import os
 import heapq
-from collections import defaultdict, Counter
-from typing import Dict, List, Set, Tuple, Any
-
-from unisul.cli.config import Config
-from unisul.csbfinder import csb_mp_algorithm
+import os
+from collections import Counter, defaultdict
+from typing import Any, Dict, List, Set, Tuple
 
 from scipy.spatial import distance
 from sklearn.cluster import AgglomerativeClustering
+
+from unisul.cli.config import Config
 from unisul.core.logging import get_logger
+from unisul.csbfinder import csb_mp_algorithm
 
 logger = get_logger(__name__)
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 
 import argparse
 import csv
@@ -7,7 +6,6 @@ import math
 import os
 import random
 import sqlite3
-import statistics
 import time
 from collections import defaultdict
 from multiprocessing import Pool

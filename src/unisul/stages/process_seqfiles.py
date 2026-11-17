@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import os
 
-from unisul.core.logging import get_logger, print_header
+from unisul.cli.config import Config
 from unisul.core import processing as processing
+from unisul.core.logging import get_logger, print_header
 from unisul.io import datasets as datasets
-
 
 log = get_logger(__name__)
 

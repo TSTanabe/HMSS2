@@ -100,7 +100,13 @@ def run_pipeline(config) -> None:
 
     # --- Stage 3: MMseqs2 competitive reference assignment ---
     if config.stage <= 3 <= config.exit:
-        if config.bool_cross_check:
+        if config.disable_mmseqs_reference_assignment:
+            print_header("Comparison with Reference Sequences")
+            logger.info(
+                "MMseqs2 reference classification disabled; "
+                "intermediate-hit FASTA files remain unfiltered"
+            )
+        else:
             print_header("Comparison with Reference Sequences")
             mmseqs_reference_assignment.mmseqs_placement_package_reference_assignment(
                 config=config
@@ -172,7 +178,7 @@ def run_pipeline(config) -> None:
             )
         else:
             mmseqs_reference_assignment.mmseqs_placement_package_reference_assignment(
-                config
+                config=config
             )
 
         config.stage = 33

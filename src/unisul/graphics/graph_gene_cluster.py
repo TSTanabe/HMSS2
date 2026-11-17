@@ -1,12 +1,11 @@
-#!/usr/bin/python
-import matplotlib.pyplot as plt
-import matplotlib.transforms as mtransforms
-
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set, Tuple
-from matplotlib.patches import FancyArrowPatch
+
+import matplotlib.pyplot as plt
+import matplotlib.transforms as mtransforms
 from matplotlib.gridspec import GridSpec
+from matplotlib.patches import FancyArrowPatch
 
 # ===================== Datenstrukturen =====================
 

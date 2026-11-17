@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """MMseqs2-based competitive reference and taxonomy assignment for UNISUL.
 
 Design goals
@@ -1611,31 +1610,54 @@ def mmseqs_placement_package_reference_assignment(
     output_root.mkdir(parents=True, exist_ok=True)
     cache_root.mkdir(parents=True, exist_ok=True)
 
-    placement_packages = list(
-        find_matching_placement_packages(
-            config.paths.placement,
-            intermediate_files,
+    use_placement = not bool(
+        getattr(config, "disable_mmseqs_placement_reference", False)
+    )
+    use_refseq = not bool(getattr(config, "disable_mmseqs_refseq_reference", False))
+
+    placement_packages = []
+    refseq_packages = []
+
+    if use_placement:
+        placement_packages = list(
+            find_matching_placement_packages(
+                config.paths.placement,
+                intermediate_files,
+            )
         )
+
+    if use_refseq:
+        if use_placement:
+            placement_types = {
+                protein_type
+                for package_dir, _ in placement_packages
+                for protein_type in load_annotations(
+                    Path(package_dir) / "annotations.tsv"
+                ).values()
+            }
+            refseq_intermediate_files = {
+                protein_type: files
+                for protein_type, files in intermediate_files.items()
+                if protein_type not in placement_types
+            }
+        else:
+            refseq_intermediate_files = intermediate_files
+
+        refseq_packages = list(
+            _find_matching_refseq_packages(
+                config.paths.refseq,
+                refseq_intermediate_files,
+            )
+        )
+
+    logger.info(
+        "MMseqs reference sources: placement=%s (%d packages), refseq=%s (%d packages)",
+        "enabled" if use_placement else "disabled",
+        len(placement_packages),
+        "enabled" if use_refseq else "disabled",
+        len(refseq_packages),
     )
 
-    placement_types = {
-        protein_type
-        for package_dir, _ in placement_packages
-        for protein_type in load_annotations(
-            Path(package_dir) / "annotations.tsv"
-        ).values()
-    }
-    refseq_intermediate_files = {
-        protein_type: files
-        for protein_type, files in intermediate_files.items()
-        if protein_type not in placement_types
-    }
-    refseq_packages = list(
-        _find_matching_refseq_packages(
-            config.paths.refseq,
-            refseq_intermediate_files,
-        )
-    )
     packages = placement_packages + refseq_packages
 
     if not packages:

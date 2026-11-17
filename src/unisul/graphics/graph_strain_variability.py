@@ -1,11 +1,11 @@
+import hashlib
 import os
 from pathlib import Path
 from typing import List
 
-import pandas as pd
-import hashlib
-import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import matplotlib.pyplot as plt
+import pandas as pd
 
 UNASSIGNED_LABEL = "Target genes absent"
 OTHER_LABEL = "Collapsed categories"

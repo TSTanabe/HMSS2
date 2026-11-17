@@ -1,4 +1,3 @@
-#!/usr/bin/python
 import os
 from collections import Counter, defaultdict
 from itertools import combinations

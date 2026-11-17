@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 
 from unisul.cli.config import Config
-from unisul.core.logging import get_logger, print_header
+from unisul.core.logging import get_logger
 from unisul.db import database as database
 
 log = get_logger(__name__)

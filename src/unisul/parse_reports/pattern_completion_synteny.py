@@ -1,14 +1,13 @@
-#!/usr/bin/python
 
 from collections import defaultdict
-from typing import List, Iterable, Dict, Tuple, Any, Set, Optional
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 import numpy as np
 from numpy._typing import NDArray
 from scipy.optimize import linear_sum_assignment
 
-from unisul.parse_reports.csb_finder import Keyword
 from unisul.core.logging import get_logger
+from unisul.parse_reports.csb_finder import Keyword
 
 logger = get_logger(__name__)
 

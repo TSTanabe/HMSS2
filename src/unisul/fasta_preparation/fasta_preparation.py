@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from unisul.cli.config import Config
 from unisul.core.logging import get_logger, print_header
-from unisul.fasta_preparation import translation, pyrodigal_translation
-from unisul.core.queue import queue_fna_inputs, queue_faa_without_gff
+from unisul.core.queue import queue_faa_without_gff, queue_fna_inputs
+from unisul.fasta_preparation import pyrodigal_translation, translation
 
 logger = get_logger(__name__)
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import glob
 import os
 
-from unisul.cli.config import Config, INTERMEDIATE_HITS_SUFFIX
+from unisul.cli.config import INTERMEDIATE_HITS_SUFFIX, Config
 from unisul.core.logging import get_logger
 from unisul.cross_check import search_cross_reference as search_cross_reference
 

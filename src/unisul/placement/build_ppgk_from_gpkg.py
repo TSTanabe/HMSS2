@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Build phylogenetic placement packages from a recursive tree of .gpkg folders.
 
 Edit PROTEIN_GROUPS below. Each group becomes one output package.
